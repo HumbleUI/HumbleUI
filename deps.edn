@@ -1,0 +1,25 @@
+{:deps
+ {org.clojure/clojure {:mvn/version "1.11.0-alpha2"}
+  io.github.humbleui.jwm/jwm {:mvn/version "0.2.6"}}
+ 
+ :aliases
+ {:windows
+  {:extra-deps {org.jetbrains.skija/skija-windows {:mvn/version "0.93.4"}}}
+
+  :linux
+  {:extra-deps {org.jetbrains.skija/skija-linux {:mvn/version "0.93.4"}}}
+
+  :macos-x64
+  {:extra-deps {org.jetbrains.skija/skija-macos-x64 {:mvn/version "0.93.4"}}
+   :jvm-opts  ["-XstartOnFirstThread"]}
+
+  :macos-arm64
+  {:extra-deps {org.jetbrains.skija/skija-macos-arm64 {:mvn/version "0.93.4"}}
+   :jvm-opts  ["-XstartOnFirstThread"]}
+
+  :dev
+  {:extra-paths ["dev"]
+   :extra-deps  {nrepl/nrepl {:mvn/version "0.8.3"}}}}
+ 
+ :mvn/repos
+ {"skija" {:url "https://packages.jetbrains.team/maven/p/skija/maven"}}}
