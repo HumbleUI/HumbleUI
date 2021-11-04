@@ -4,22 +4,19 @@
  
  :aliases
  {:windows
-  {:extra-deps {org.jetbrains.skija/skija-windows {:mvn/version "0.93.4"}}}
+  {:extra-deps {io.github.humbleui.skija/skija-windows {:mvn/version "0.96.0"}}}
 
   :linux
-  {:extra-deps {org.jetbrains.skija/skija-linux {:mvn/version "0.93.4"}}}
+  {:extra-deps {io.github.humbleui.skija/skija-linux {:mvn/version "0.96.0"}}}
 
   :macos-x64
-  {:extra-deps {org.jetbrains.skija/skija-macos-x64 {:mvn/version "0.93.4"}}
+  {:extra-deps {io.github.humbleui.skija/skija-macos-x64 {:mvn/version "0.96.0"}}
    :jvm-opts  ["-XstartOnFirstThread"]}
 
   :macos-arm64
-  {:extra-deps {org.jetbrains.skija/skija-macos-arm64 {:mvn/version "0.93.4"}}
+  {:extra-deps {io.github.humbleui.skija/skija-macos-arm64 {:mvn/version "0.96.0"}}
    :jvm-opts  ["-XstartOnFirstThread"]}
 
   :dev
   {:extra-paths ["dev"]
-   :extra-deps  {nrepl/nrepl {:mvn/version "0.8.3"}}}}
- 
- :mvn/repos
- {"skija" {:url "https://packages.jetbrains.team/maven/p/skija/maven"}}}
+   :extra-deps  {nrepl/nrepl {:mvn/version "0.8.3"}}}}}

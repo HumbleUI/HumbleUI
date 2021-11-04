@@ -3,7 +3,7 @@
    [io.github.humbleui.macro :as macro])
   (:import
    [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame LayerGL ZOrder]
-   [org.jetbrains.skija BackendRenderTarget ColorSpace DirectContext FramebufferFormat PixelGeometry Surface SurfaceColorFormat SurfaceOrigin SurfaceProps]
+   [io.github.humbleui.skija BackendRenderTarget ColorSpace DirectContext FramebufferFormat PixelGeometry Surface SurfaceColorFormat SurfaceOrigin SurfaceProps]
    [java.util.function Consumer]))
 
 (defrecord Window [jwm-window jwm-layer listener])
