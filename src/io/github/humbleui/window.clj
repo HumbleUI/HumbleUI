@@ -42,9 +42,9 @@
                        (instance? EventWindowCloseRequest e)
                        (do
                          (when on-close (on-close))
-                         (vswap! *context #(macro/doto-some % .abandon .close))
-                         (vswap! *surface #(macro/doto-some % .close))
-                         (vswap! *target #(macro/doto-some % .close))
+                         (vswap! *context #(do (macro/doto-some % .abandon .close) nil))
+                         (vswap! *surface #(do (macro/doto-some % .close) nil))
+                         (vswap! *target #(do (macro/doto-some % .close) nil))
                          (.close jwm-layer)
                          (.close jwm-window))
 
@@ -55,8 +55,7 @@
                          (let [outer  (.getWindowRect jwm-window)
                                inner  (.getContentRect jwm-window)
                                resize (EventWindowResize. (.getWidth outer) (.getHeight outer) (.getWidth inner) (.getHeight inner))]
-                           (listener resize))
-                         (when paint (paint)))
+                           (listener resize)))
 
                        (instance? EventWindowResize e)
                        (do
@@ -66,14 +65,15 @@
                                        :content-width  (.getContentWidth e)
                                        :content-height (.getContentHeight e)}))
                          (.resize jwm-layer (.getContentWidth e) (.getContentHeight e))
-                         (vswap! *surface #(macro/doto-some % .close))
-                         (vswap! *target #(macro/doto-some % .close))
-                         (vswap! *context #(macro/doto-some % .abandon .close))
+                         (vswap! *surface #(do (macro/doto-some % .close) nil))
+                         (vswap! *target #(do (macro/doto-some % .close) nil))
+                         (vswap! *context #(do (macro/doto-some % .abandon .close) nil))
                          (when paint (paint)))
 
                        (instance? EventFrame e)
                        (when paint (paint))))]
     (.setEventListener jwm-window (reify Consumer (accept [this e] (listener e))))
+    (listener EventWindowScreenChange/INSTANCE)
     (Window. jwm-window jwm-layer listener)))
 
 (defn set-title [window title]
