@@ -12,45 +12,46 @@
   (:jwm-window window))
 
 (defn make
-  ":on-close         (fn [])
-   :on-screen-change (fn [])
-   :on-resize        (fn [{:keys [window-width window-height content-width content-height]}])
-   :on-frame         (fn [])
-   :on-paint         (fn [canvas])
-   :on-event         (fn [event])"
-  [{:keys [on-close on-screen-change on-resize on-frame on-paint on-event]}]
+  ":on-close         (fn [window])
+   :on-screen-change (fn [window])
+   :on-resize        (fn [window {:keys [window-width window-height content-width content-height]}])
+   :on-paint         (fn [window canvas])
+   :on-event         (fn [window event])"
+  [{:keys [on-close on-screen-change on-resize on-paint on-event]}]
   (let [jwm-window (App/makeWindow)
         jwm-layer  (LayerGL.)
         _          (.attach jwm-layer jwm-window)
         *context   (volatile! nil)
         *target    (volatile! nil)
         *surface   (volatile! nil)
+        *window    (volatile! nil)
         paint      (when on-paint
                      (fn []
-                       (when (not (.-_closed jwm-window))
+                       (when-some [window @*window]
                          (.makeCurrent jwm-layer)
                          (vswap! *context #(or % (DirectContext/makeGL)))
                          (vswap! *target  #(or % (BackendRenderTarget/makeGL (.getWidth jwm-layer) (.getHeight jwm-layer) 0 8 0 FramebufferFormat/GR_GL_RGBA8)))
                          (vswap! *surface #(or % (Surface/makeFromBackendRenderTarget @*context @*target SurfaceOrigin/BOTTOM_LEFT SurfaceColorFormat/RGBA_8888 (ColorSpace/getSRGB) (SurfaceProps. PixelGeometry/RGB_H))))
-                         (on-paint (.getCanvas @*surface))
+                         (on-paint window (.getCanvas @*surface))
                          (.flushAndSubmit @*surface)
                          (.swapBuffers jwm-layer))))
         listener   (fn listener [e]
                      (when on-event
-                       (on-event e))
+                       (on-event @*window e))
                      (cond
                        (instance? EventWindowCloseRequest e)
                        (do
-                         (when on-close (on-close))
+                         (when on-close (on-close @*window))
                          (vswap! *context #(do (macro/doto-some % .abandon .close) nil))
                          (vswap! *surface #(do (macro/doto-some % .close) nil))
                          (vswap! *target #(do (macro/doto-some % .close) nil))
                          (.close jwm-layer)
-                         (.close jwm-window))
+                         (.close jwm-window)
+                         (vreset! *window nil))
 
                        (instance? EventWindowScreenChange e)
                        (do
-                         (when on-screen-change (on-screen-change))
+                         (when on-screen-change (on-screen-change @*window))
                          (.reconfigure jwm-layer)
                          (let [outer  (.getWindowRect jwm-window)
                                inner  (.getContentRect jwm-window)
@@ -60,10 +61,12 @@
                        (instance? EventWindowResize e)
                        (do
                          (when on-resize
-                           (on-resize {:window-width   (.getWindowWidth e)
-                                       :window-height  (.getWindowHeight e)
-                                       :content-width  (.getContentWidth e)
-                                       :content-height (.getContentHeight e)}))
+                           (on-resize
+                             @*window
+                             {:window-width   (.getWindowWidth e)
+                              :window-height  (.getWindowHeight e)
+                              :content-width  (.getContentWidth e)
+                              :content-height (.getContentHeight e)}))
                          (.resize jwm-layer (.getContentWidth e) (.getContentHeight e))
                          (vswap! *surface #(do (macro/doto-some % .close) nil))
                          (vswap! *target #(do (macro/doto-some % .close) nil))
@@ -71,10 +74,12 @@
                          (when paint (paint)))
 
                        (instance? EventFrame e)
-                       (when paint (paint))))]
-    (.setEventListener jwm-window (reify Consumer (accept [this e] (listener e))))
+                       (when paint (paint))))
+        _          (.setEventListener jwm-window (reify Consumer (accept [this e] (listener e))))
+        window     (Window. jwm-window jwm-layer listener)]
+    (vreset! *window window)
     (listener EventWindowScreenChange/INSTANCE)
-    (Window. jwm-window jwm-layer listener)))
+    window))
 
 (defn set-title [window title]
   (.setTitle (jwm-window window) title)
