@@ -6,7 +6,7 @@ def main():
 
   classpath = [
     "src",
-    common.fetch_maven("org.clojure", "clojure", "1.11.0-alpha2"),
+    common.fetch_maven("org.clojure", "clojure", "1.11.0-alpha3"),
     common.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
     common.fetch_maven("org.clojure", "spec.alpha", "0.2.194"),
     common.fetch_maven("io.github.humbleui.jwm", "jwm", "0.2.6"),

@@ -2,6 +2,12 @@
   (:import
    [io.github.humbleui.jwm App]))
 
+(defrecord Point [x y])
+
+(defrecord Rect [left top width height])
+
+(defrecord Size [width height])
+
 (defn init []
   (App/init))
 

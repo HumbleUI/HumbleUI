@@ -23,21 +23,25 @@
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
-  (let [bounds (.getContentRect (window/jwm-window window))
-        dt     (- (System/currentTimeMillis) t0)
-        ms     (mod dt 1000)
-        sec    (-> dt (quot 1000) (mod 60) int)
-        min    (-> dt (quot 1000) (quot 60) (mod 60) int)
-        hrs    (-> dt (quot 1000) (quot 60) (quot 60) (mod 60))
-        time   (format "%02d:%02d:%02d.%03d" hrs min sec ms)]
+  (let [bounds  (.getContentRect (window/jwm-window window))
+        dt      (- (System/currentTimeMillis) t0)
+        ms      (mod dt 1000)
+        sec     (-> dt (quot 1000) (mod 60) int)
+        min     (-> dt (quot 1000) (quot 60) (mod 60) int)
+        hrs     (-> dt (quot 1000) (quot 60) (quot 60) (mod 60))
+        time    (format "%02d:%02d:%02d.%03d" hrs min sec ms)
+        leading (.getCapHeight (.getMetrics ^Font @*font-default))]
     (with-open [ui (ui/valign 0.5
                      (ui/halign 0.5
                        (ui/column
-                         (ui/label "Hello, Humble UI!" @*font-default @*paint-fg)
-                         (let []
-                          (ui/label time @*font-default @*paint-fg)))))]
-      (ui/-draw ui canvas (ui/->Size (.getWidth bounds) (.getHeight bounds)))))
+                         (ui/label "Hello from Humble UI! 👋" @*font-default @*paint-fg)
+                         (ui/gap 0 leading)
+                         (ui/label time @*font-default @*paint-fg))))]
+      (ui/-draw ui canvas (hui/->Size (.getWidth bounds) (.getHeight bounds)))))
   (window/request-frame window))
+
+(comment
+  (window/request-frame @*window))
 
 (defn make-window []
   (doto
@@ -49,8 +53,17 @@
              (.close font))
            (reset! *font-default (Font. @*face-default (float (* 13 scale))))))
        :on-close (fn [_] (reset! *window nil))
-       :on-paint (fn [window canvas] ((resolve 'on-paint) window canvas))})
-    (window/set-title "Hello from Humble UI")
+       :on-paint (fn [window ^Canvas canvas]
+                   (let [layer (.save canvas)]
+                     (try
+                       ((resolve `on-paint) window canvas)
+                       (catch Exception e
+                         (.printStackTrace e)
+                         (.clear canvas (unchecked-int 0xFFCC3333))))
+                     (.restoreToCount canvas layer)))})
+    (window/set-title "Humble UI 👋")
+    (window/set-content-size 810 650)
+    (window/set-window-position 2994 630)
     (window/set-visible true)
     (window/set-z-order :floating)
     (window/request-frame)))
@@ -64,7 +77,7 @@
 (comment
   (reset! *window (hui/doui (make-window)))
   (hui/doui (window/close @*window))
-
+  
   @*window
 
   (hui/doui (window/set-title @*window "Look, another title!"))

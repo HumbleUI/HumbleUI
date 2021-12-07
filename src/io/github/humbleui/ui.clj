@@ -1,44 +1,36 @@
 (ns io.github.humbleui.ui
+  (:require
+   [io.github.humbleui.core :as hui])
   (:import
-   [java.lang
-    AutoCloseable]
-   [io.github.humbleui.skija
-    Canvas
-    Font
-    Paint
-    TextLine]))
-
-(defrecord Size [width height])
+   [java.lang AutoCloseable]
+   [io.github.humbleui.core Size]
+   [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]))
 
 (defprotocol IComponent
-  (-measure [_ ^Size size])
-  (-draw [_ ^Canvas canvas ^Size size]))
+  (-measure [_ size])
+  (-draw [_ canvas size]))
 
-(deftype Label [^String text ^Font font ^Paint paint ^:unsynchronized-mutable ^TextLine line]
+(deftype Label [^String text ^Font font ^Paint paint *line *metrics]
   IComponent
   (-measure [_ size]
-    (when (nil? line)
-      (set! line (TextLine/make text font)))
-    (Size. (.getWidth line) (.getHeight line)))
+    (hui/->Size (.getWidth ^TextLine @*line) (.getCapHeight ^FontMetrics @*metrics)))
 
   (-draw [_ canvas size]
-    (when (nil? line)
-      (set! line (TextLine/make text font)))
-    (.drawTextLine ^Canvas canvas line 0 0 paint))
+    (.drawTextLine ^Canvas canvas ^TextLine @*line 0 (.getCapHeight ^FontMetrics @*metrics) paint))
 
   AutoCloseable
   (close [_]
-    (when (some? line)
-      (.close line))))
+    (when (realized? *line)
+      (.close ^AutoCloseable @*line))))
 
 (defn label [text font paint]
-  (Label. text font paint nil))
+  (Label. text font paint (delay (TextLine/make text font)) (delay (.getMetrics ^Font font))))
 
 (deftype HAlign [coeff child-coeff child]
   IComponent
   (-measure [_ size]
     (let [child-size (-measure child size)]
-      (Size. (.-width ^Size size) (.-height ^Size child-size))))
+      (hui/->Size (.-width ^Size size) (.-height ^Size child-size))))
 
   (-draw [_ canvas size]
     (let [child-size (-measure child size)
@@ -49,7 +41,8 @@
 
   AutoCloseable
   (close [_]
-    (.close ^AutoCloseable child)))
+    (when (instance? AutoCloseable child)
+      (.close ^AutoCloseable child))))
 
 (defn halign
   ([coeff child] (halign coeff coeff child))
@@ -59,7 +52,7 @@
   IComponent
   (-measure [_ size]
     (let [child-size (-measure child size)]
-      (Size. (.-width ^Size child-size) (.-height ^Size size))))
+      (hui/->Size (.-width ^Size child-size) (.-height ^Size size))))
 
   (-draw [_ canvas size]
     (let [child-size (-measure child size)
@@ -70,7 +63,8 @@
 
   AutoCloseable
   (close [_]
-    (.close ^AutoCloseable child)))
+    (when (instance? AutoCloseable child)
+      (.close ^AutoCloseable child))))
 
 (defn valign
   ([coeff child] (valign coeff coeff child))
@@ -85,12 +79,12 @@
       (if children
         (let [child      (first children)
               remainder  (- (.-height ^Size size) height)
-              child-size (-measure child (Size. (.-width ^Size size) remainder))]
+              child-size (-measure child (hui/->Size (.-width ^Size size) remainder))]
           (recur
             (max width (.-width ^Size child-size))
             (+ height (.-height ^Size child-size))
             (next children)))
-        (Size. width height))))
+        (hui/->Size width height))))
 
   (-draw [_ canvas size]
     (let [layer (.save ^Canvas canvas)]
@@ -98,7 +92,7 @@
              children  children]
         (when children
           (let [child      (first children)
-                child-size (-measure child (Size. (.-width ^Size size) remainder))]
+                child-size (-measure child (hui/->Size (.-width ^Size size) remainder))]
             (-draw child canvas child-size)
             (.translate ^Canvas canvas 0 (.-height child-size))
             (recur (- remainder (.-height child-size)) (next children)))))
@@ -106,11 +100,21 @@
 
   AutoCloseable
   (close [_]
-    (doseq [child children]
+    (doseq [child children
+            :when (instance? AutoCloseable child)]
       (.close ^AutoCloseable child))))
 
 (defn column [& children]
   (Column. (vec children)))
+
+(defrecord Gap [width height]
+  IComponent
+  (-measure [_ size]
+    (hui/->Size width height))
+  (-draw [_ canvas size]))
+
+(defn gap [width height]
+  (Gap. width height))
 
 (comment
   (do

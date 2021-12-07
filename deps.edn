@@ -1,22 +1,15 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.11.0-alpha2"}
-  io.github.humbleui.jwm/jwm {:mvn/version "0.2.6"}}
- 
+ {org.clojure/clojure                        {:mvn/version "1.11.0-alpha3"}
+  io.github.humbleui.jwm/jwm                 {:mvn/version "0.2.6"}
+  io.github.humbleui.skija/skija-windows     {:mvn/version "0.96.0"}
+  io.github.humbleui.skija/skija-linux       {:mvn/version "0.96.0"}
+  io.github.humbleui.skija/skija-macos-x64   {:mvn/version "0.96.0"}
+  io.github.humbleui.skija/skija-macos-arm64 {:mvn/version "0.96.0"}}
  :aliases
- {:windows
-  {:extra-deps {io.github.humbleui.skija/skija-windows {:mvn/version "0.96.0"}}}
-
-  :linux
-  {:extra-deps {io.github.humbleui.skija/skija-linux {:mvn/version "0.96.0"}}}
-
-  :macos-x64
-  {:extra-deps {io.github.humbleui.skija/skija-macos-x64 {:mvn/version "0.96.0"}}
-   :jvm-opts  ["-XstartOnFirstThread"]}
-
-  :macos-arm64
-  {:extra-deps {io.github.humbleui.skija/skija-macos-arm64 {:mvn/version "0.96.0"}}
-   :jvm-opts  ["-XstartOnFirstThread"]}
+ {:macos
+  {:jvm-opts  ["-XstartOnFirstThread"]}
 
   :dev
   {:extra-paths ["dev"]
-   :extra-deps  {nrepl/nrepl {:mvn/version "0.8.3"}}}}}
+   :extra-deps  {nrepl/nrepl {:mvn/version "0.8.3"}}
+   :main-opts   ["-m" "user" "--interactive"]}}}

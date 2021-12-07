@@ -1,7 +1,9 @@
 (ns io.github.humbleui.window
   (:require
+   [io.github.humbleui.core :as core]
    [io.github.humbleui.macro :as macro])
   (:import
+   ; [io.github.humbleui.core Point Size Rect]
    [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame LayerGL ZOrder]
    [io.github.humbleui.skija BackendRenderTarget ColorSpace DirectContext FramebufferFormat PixelGeometry Surface SurfaceColorFormat SurfaceOrigin SurfaceProps]
    [java.util.function Consumer]))
@@ -87,6 +89,22 @@
 
 (defn set-visible [window value]
   (.setVisible (jwm-window window) value)
+  window)
+
+(defn get-window-rect [window]
+  (let [rect (.getWindowRect (jwm-window window))]
+    (core/->Rect (.getLeft rect) (.getTop rect) (.getWidth rect) (.getHeight rect))))
+
+(defn set-window-position [window x y]
+  (.setWindowPosition (jwm-window window) x y)
+  window)
+
+(defn set-window-size [window width height]
+  (.setWindowSize (jwm-window window) width height)
+  window)
+
+(defn set-content-size [window width height]
+  (.setContentSize (jwm-window window) width height)
   window)
 
 (defn set-z-order [window order]
