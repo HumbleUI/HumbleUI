@@ -1,12 +1,29 @@
 (ns io.github.humbleui.core
   (:import
-   [io.github.humbleui.jwm App]))
+   [io.github.humbleui.jwm App]
+   [java.lang AutoCloseable]))
 
 (defrecord Point [x y])
 
 (defrecord Rect [left top width height])
 
 (defrecord Size [width height])
+
+(defn memoize-last [ctor]
+  (let [*atom (volatile! nil)]
+    (fn [& args']
+      (or
+        (when-some [[args value] @*atom]
+          (if (= args args')
+            value
+            (when (instance? AutoCloseable value)
+              (.close ^AutoCloseable value))))
+        (let [value' (apply ctor args')]
+          (vreset! *atom [args' value'])
+          value')))))
+
+(defmacro defn-memoized-last [name & body]
+  `(def ~name (hui/memoize-one (fn ~@body))))
 
 (defn init []
   (App/init))
