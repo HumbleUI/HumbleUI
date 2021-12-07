@@ -30,14 +30,23 @@
         min     (-> dt (quot 1000) (quot 60) (mod 60) int)
         hrs     (-> dt (quot 1000) (quot 60) (quot 60) (mod 60))
         time    (format "%02d:%02d:%02d.%03d" hrs min sec ms)
+        scale   (.getScale (.getScreen (window/jwm-window window)))
         leading (.getCapHeight (.getMetrics ^Font @*font-default))]
-    (with-open [ui (ui/valign 0.5
+    (with-open [fill-button-normal (doto (Paint.) (.setColor (unchecked-int 0xFFade8f4)))
+                ui (ui/valign 0.5
                      (ui/halign 0.5
                        (ui/column
                          (ui/label "Hello from Humble UI! 👋" @*font-default @*paint-fg)
                          (ui/gap 0 leading)
-                         (ui/label time @*font-default @*paint-fg))))]
-      (ui/-draw ui canvas (hui/->Size (.getWidth bounds) (.getHeight bounds)))))
+                         (ui/label time @*font-default @*paint-fg)
+                         (ui/gap 0 leading)
+                         (ui/clip-rrect (* scale 4)
+                           (ui/fill-solid fill-button-normal
+                             (ui/padding (* scale 20) leading
+                               (ui/label "Press me" @*font-default @*paint-fg)))))))]
+      (let [ctx {:hui/scale   scale
+                 :hui/font-ui @*font-default}]
+        (ui/-draw ui ctx canvas (hui/->Size (.getWidth bounds) (.getHeight bounds))))))
   (window/request-frame window))
 
 (comment
@@ -75,13 +84,10 @@
   (hui/start))
 
 (comment
-  (reset! *window (hui/doui (make-window)))
-  (hui/doui (window/close @*window))
+  (do
+    (hui/doui (some-> @*window window/close))
+    (reset! *window (hui/doui (make-window))))
   
-  @*window
-
-  (hui/doui (window/set-title @*window "Look, another title!"))
-
   (hui/doui (window/set-z-order @*window :normal))
   (hui/doui (window/set-z-order @*window :floating))
 )
