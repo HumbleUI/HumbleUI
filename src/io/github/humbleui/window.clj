@@ -34,7 +34,15 @@
                          (vswap! *context #(or % (DirectContext/makeGL)))
                          (vswap! *target  #(or % (BackendRenderTarget/makeGL (.getWidth jwm-layer) (.getHeight jwm-layer) 0 8 0 FramebufferFormat/GR_GL_RGBA8)))
                          (vswap! *surface #(or % (Surface/makeFromBackendRenderTarget @*context @*target SurfaceOrigin/BOTTOM_LEFT SurfaceColorFormat/RGBA_8888 (ColorSpace/getSRGB) (SurfaceProps. PixelGeometry/RGB_H))))
-                         (on-paint window (.getCanvas @*surface))
+                         (let [canvas (.getCanvas ^Surface @*surface)
+                               layer  (.save canvas)]
+                           (try
+                             (on-paint window canvas)
+                             (catch Exception e
+                               (.printStackTrace e)
+                               (.clear canvas (unchecked-int 0xFFCC3333)))
+                             (finally
+                               (.restoreToCount canvas layer))))
                          (.flushAndSubmit @*surface)
                          (.swapBuffers jwm-layer))))
         listener   (fn listener [e]

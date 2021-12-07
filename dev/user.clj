@@ -62,14 +62,7 @@
              (.close font))
            (reset! *font-default (Font. @*face-default (float (* 13 scale))))))
        :on-close (fn [_] (reset! *window nil))
-       :on-paint (fn [window ^Canvas canvas]
-                   (let [layer (.save canvas)]
-                     (try
-                       ((resolve `on-paint) window canvas)
-                       (catch Exception e
-                         (.printStackTrace e)
-                         (.clear canvas (unchecked-int 0xFFCC3333))))
-                     (.restoreToCount canvas layer)))})
+       :on-paint #'on-paint})
     (window/set-title "Humble UI 👋")
     (window/set-content-size 810 650)
     (window/set-window-position 2994 630)
