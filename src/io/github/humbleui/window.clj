@@ -91,6 +91,9 @@
     (listener EventWindowScreenChange/INSTANCE)
     window))
 
+(defn scale [window]
+  (.getScale (.getScreen (jwm-window window))))
+
 (defn set-title [window title]
   (.setTitle (jwm-window window) title)
   window)

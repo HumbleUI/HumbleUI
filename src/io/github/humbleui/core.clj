@@ -5,9 +5,17 @@
 
 (defrecord Point [x y])
 
-(defrecord Rect [left top width height])
+(defn point-offset [a b]
+  (Point. (+ (:x a) (:x b)) (+ (:y a) (:y b))))
 
 (defrecord Size [width height])
+
+(defrecord Rect [x y width height])
+
+(defn rect-contains? [{:keys [x y width height]} point]
+  (and
+    (<= x (:x point) (+ x width))
+    (<= y (:y point) (+ y height))))
 
 (defn memoize-last [ctor]
   (let [*atom (volatile! nil)]
@@ -23,7 +31,7 @@
           value')))))
 
 (defmacro defn-memoized-last [name & body]
-  `(def ~name (hui/memoize-one (fn ~@body))))
+  `(def ~name (memoize-last (fn ~@body))))
 
 (defn init []
   (App/init))

@@ -1,194 +1,322 @@
 (ns io.github.humbleui.ui
   (:require
-   [io.github.humbleui.core :as hui])
+   [io.github.humbleui.core :as core])
   (:import
    [java.lang AutoCloseable]
    [io.github.humbleui.core Size]
    [io.github.humbleui.skija Canvas Font FontMetrics Paint Rect RRect TextLine]))
 
 (defprotocol IComponent
-  (-measure [_ ctx size])
-  (-draw    [_ ctx canvas size]))
+  (-layout [_ ctx cs])
+  (-draw   [_ ctx canvas])
+  (-event  [_ event]))
 
-(defn ctx-resolve [ctx obj]
-  (if (fn? obj)
-    (obj ctx)
-    obj))
+(defn event-propagate [event child child-rect]
+  (if (contains? event :hui.event/pos)
+    (let [pos  (:hui.event/pos event)
+          pos' (core/->Point (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))]
+      (-event child (assoc event :hui.event/pos pos')))
+    (-event child event)))
 
-(deftype Label [^String text ^Font font ^Paint paint *line *metrics]
+(defn child-close [child]
+  (when (instance? AutoCloseable child)
+    (.close ^AutoCloseable child)))
+
+(deftype Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   IComponent
-  (-measure [_ ctx size]
-    (hui/->Size (.getWidth ^TextLine @*line) (.getCapHeight ^FontMetrics @*metrics)))
+  (-layout [_ ctx cs]
+    (core/->Size (.getWidth line) (.getCapHeight metrics)))
 
-  (-draw [_ ctx canvas size]
-    (.drawTextLine ^Canvas canvas ^TextLine @*line 0 (.getCapHeight ^FontMetrics @*metrics) paint))
+  (-draw [_ ctx canvas]
+    (.drawTextLine ^Canvas canvas line 0 (.getCapHeight metrics) paint))
+
+  (-event [_ event])
 
   AutoCloseable
   (close [_]
-    (when (realized? *line)
-      (.close ^AutoCloseable @*line))))
+    (.close line)))
 
 (defn label [text font paint]
-  (Label. text font paint (delay (TextLine/make text font)) (delay (.getMetrics ^Font font))))
+  (Label. text font paint (TextLine/make text font) (.getMetrics ^Font font)))
 
-(deftype HAlign [coeff child-coeff child]
+(deftype HAlign [coeff child-coeff child ^:unsynchronized-mutable child-rect]
   IComponent
-  (-measure [_ ctx size]
-    (let [child-size (-measure child ctx size)]
-      (hui/->Size (:width size) (:height child-size))))
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect
+        (core/->Rect
+          (- (* (:width cs) coeff) (* (:width child-size) child-coeff))
+          0
+          (:width child-size)
+          (:height child-size)))
+      (core/->Size (:width cs) (:height child-size))))
 
-  (-draw [_ ctx canvas size]
-    (let [child-size (-measure child ctx size)
-          layer      (.save ^Canvas canvas)]
-      (.translate ^Canvas canvas (- (* (:width size) coeff) (* (:width child-size) child-coeff)) 0)
-      (-draw child ctx canvas child-size)
-      (.restoreToCount ^Canvas canvas layer)))
+  (-draw [_ ctx canvas]
+    (let [canvas ^Canvas canvas
+          layer (.save ^Canvas canvas)]
+      (try
+        (.translate canvas (:x child-rect) (:y child-rect))
+        (-draw child ctx canvas)
+        (finally
+          (.restoreToCount canvas layer)))))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
 
   AutoCloseable
   (close [_]
-    (when (instance? AutoCloseable child)
-      (.close ^AutoCloseable child))))
+    (child-close child)))
 
 (defn halign
   ([coeff child] (halign coeff coeff child))
-  ([coeff child-coeff child] (HAlign. coeff child-coeff child)))
+  ([coeff child-coeff child] (HAlign. coeff child-coeff child nil)))
 
-(deftype VAlign [coeff child-coeff child]
+(deftype VAlign [coeff child-coeff child ^:unsynchronized-mutable child-rect]
   IComponent
-  (-measure [_ ctx size]
-    (let [child-size (-measure child ctx size)]
-      (hui/->Size (:width child-size) (:height size))))
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect
+        (core/->Rect
+          0
+          (- (* (:height cs) coeff) (* (:height child-size) child-coeff))
+          (:width child-size)
+          (:height child-size)))
+      (core/->Size (:width child-size) (:height cs))))
 
-  (-draw [_ ctx canvas size]
-    (let [child-size (-measure child ctx size)
-          layer      (.save ^Canvas canvas)]
-      (.translate ^Canvas canvas 0 (- (* (:height size) coeff) (* (:height child-size) child-coeff)))
-      (-draw child ctx canvas child-size)
-      (.restoreToCount ^Canvas canvas layer)))
+  (-draw [_ ctx canvas]
+    (let [canvas ^Canvas canvas
+          layer (.save ^Canvas canvas)]
+      (try
+        (.translate canvas (:x child-rect) (:y child-rect))
+        (-draw child ctx canvas)
+        (finally
+          (.restoreToCount ^Canvas canvas layer)))))
+
+  (-event [_ event]
+    (event-propagate event child child-rect))
 
   AutoCloseable
   (close [_]
-    (when (instance? AutoCloseable child)
-      (.close ^AutoCloseable child))))
+    (child-close child)))
 
 (defn valign
   ([coeff child] (valign coeff coeff child))
-  ([coeff child-coeff child] (VAlign. coeff child-coeff child)))
+  ([coeff child-coeff child] (VAlign. coeff child-coeff child nil)))
 
-(defrecord Column [children]
+;; figure out align
+(deftype Column [children ^:unsynchronized-mutable child-rects]
   IComponent
-  (-measure [_ ctx size]
+  (-layout [_ ctx cs]
     (loop [width    0
            height   0
+           rects    []
            children children]
       (if children
         (let [child      (first children)
-              remainder  (- (:height size) height)
-              child-size (-measure child ctx (hui/->Size (:width size) remainder))]
+              remainder  (- (:height cs) height)
+              child-cs   (core/->Size (:width cs) remainder)
+              child-size (-layout child ctx child-cs)]
           (recur
             (max width (:width child-size))
             (+ height (:height child-size))
+            (conj rects (core/->Rect 0 height (:width child-size) (:height child-size)))
             (next children)))
-        (hui/->Size width height))))
+        (do
+          (set! child-rects rects)
+          (core/->Size width height)))))
 
-  (-draw [_ ctx canvas size]
-    (let [layer (.save ^Canvas canvas)]
-      (loop [remainder (:height size)
-             children  children]
-        (when children
-          (let [child      (first children)
-                child-size (-measure child ctx (hui/->Size (:width size) remainder))]
-            (-draw child ctx canvas child-size)
-            (.translate ^Canvas canvas 0 (.-height child-size))
-            (recur (- remainder (.-height child-size)) (next children)))))
-      (.restoreToCount ^Canvas canvas layer)))
+  (-draw [_ ctx canvas]
+    (doseq [[child rect] (map vector children child-rects)]
+      (let [layer (.save ^Canvas canvas)]
+        (try
+          (.translate ^Canvas canvas (:x rect) (:y rect))
+          (-draw child ctx canvas)
+          (finally
+            (.restoreToCount ^Canvas canvas layer))))))
+
+  (-event [_ event]
+    (doseq [[child rect] (map vector children child-rects)]
+      (event-propagate event child rect)))
 
   AutoCloseable
   (close [_]
-    (doseq [child children
-            :when (instance? AutoCloseable child)]
-      (.close ^AutoCloseable child))))
+    (doseq [child children]
+      (child-close child))))
 
 (defn column [& children]
-  (Column. (vec children)))
+  (Column. (vec children) nil))
 
 (defrecord Gap [width height]
   IComponent
-  (-measure [_ ctx size]
-    (hui/->Size width height))
-  (-draw [_ ctx canvas size]))
+  (-layout [_ ctx cs]
+    (core/->Size width height))
+  (-draw [_ ctx canvas])
+  (-event [_ event]))
 
 (defn gap [width height]
   (Gap. width height))
 
-(defrecord Padding [left top right bottom child]
+(deftype Padding [left top right bottom child ^:unsynchronized-mutable child-rect]
   IComponent
-  (-measure [_ ctx size]
-    (let [child-cs   (hui/->Size (- (:width size) left right) (- (:height size) top bottom))
-          child-size (-measure child ctx child-cs)]
-      (hui/->Size
+  (-layout [_ ctx cs]
+    (let [child-cs   (core/->Size (- (:width cs) left right) (- (:height cs) top bottom))
+          child-size (-layout child ctx child-cs)]
+      (set! child-rect (core/->Rect left top (:width child-size) (:height child-size)))
+      (core/->Size
         (+ (:width child-size) left right)
         (+ (:height child-size) top bottom))))
 
-  (-draw [_ ctx canvas size]
-    (let [canvas     ^Canvas canvas
-          child-size (hui/->Size (- (:width size) left right) (- (:height size) top bottom))
-          layer      (.save canvas)]
+  (-draw [_ ctx canvas]
+    (let [canvas ^Canvas canvas
+          layer  (.save canvas)]
       (try
         (.translate canvas left top)
-        (-draw child ctx canvas child-size)
+        (-draw child ctx canvas)
         (finally
           (.restoreToCount canvas layer)))))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
 
   AutoCloseable
   (close [_]
-    (when (instance? AutoCloseable child)
-      (.close ^AutoCloseable child))))
+    (child-close child)))
 
 (defn padding
-  ([p child] (Padding. p p p p child))
-  ([w h child] (Padding. w h w h child))
-  ([l t r b child] (Padding. l t r b child))) 
+  ([p child] (Padding. p p p p child nil))
+  ([w h child] (Padding. w h w h child nil))
+  ([l t r b child] (Padding. l t r b child nil)))
 
-(defrecord FillSolid [paint child]
+(deftype FillSolid [paint child ^:unsynchronized-mutable child-rect]
   IComponent
-  (-measure [_ ctx size]
-    (-measure child ctx size))
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      child-size))
 
-  (-draw [_ ctx canvas size]
-    (.drawRect canvas (Rect/makeXYWH 0 0 (:width size) (:height size)) (ctx-resolve ctx paint))
-    (-draw child ctx canvas size))
+  (-draw [_ ctx canvas]
+    (.drawRect canvas (Rect/makeXYWH 0 0 (:width child-rect) (:height child-rect)) paint)
+    (-draw child ctx canvas))
+
+  (-event [_ event]
+    (event-propagate event child child-rect))
 
   AutoCloseable
   (close [_]
-    (when (instance? AutoCloseable child)
-      (.close ^AutoCloseable child))))
+    (child-close child)))
 
 (defn fill-solid [paint child]
-  (FillSolid. paint child))
+  (FillSolid. paint child nil))
 
-(defrecord ClipRRect [radii child]
+(deftype ClipRRect [radii child ^:unsynchronized-mutable child-rect]
   IComponent
-  (-measure [_ ctx size]
-    (-measure child ctx size))
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      child-size))
 
-  (-draw [_ ctx canvas size]
+  (-draw [_ ctx canvas]
     (let [canvas ^Canvas canvas
           layer  (.save canvas)
-          rrect  (RRect/makeComplexXYWH 0 0 (:width size) (:height size) radii)]
+          rrect  (RRect/makeComplexXYWH 0 0 (:width child-rect) (:height child-rect) radii)]
       (try
         (.clipRRect canvas rrect true)
-        (-draw child ctx canvas size)
+        (-draw child ctx canvas)
         (finally
           (.restoreToCount canvas layer)))))
 
+  (-event [_ event]
+    (event-propagate event child child-rect))
+
   AutoCloseable
   (close [_]
-    (when (instance? AutoCloseable child)
-      (.close ^AutoCloseable child))))
+    (child-close child)))
 
 (defn clip-rrect
-  ([r child] (ClipRRect. (into-array Float/TYPE [r]) child)))
+  ([r child] (ClipRRect. (into-array Float/TYPE [r]) child nil)))
+
+(deftype Hoverable [child ^:unsynchronized-mutable child-rect ^:unsynchronized-mutable hovered?]
+  IComponent
+  (-layout [_ ctx cs]
+    (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))
+          child-size (-layout child ctx' cs)]
+      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      child-size))
+
+  (-draw [_ ctx canvas]
+    (-draw child ctx canvas))
+
+  (-event [_ event]
+    (when (= :hui/mouse-move (:hui/event event))
+      (set! hovered? (core/rect-contains? child-rect (:hui.event/pos event))))
+    (event-propagate event child child-rect))
+
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn hoverable [child]
+  (Hoverable. child nil false))
+
+(deftype Clickable [on-click
+                    child
+                    ^:unsynchronized-mutable child-rect
+                    ^:unsynchronized-mutable hovered?
+                    ^:unsynchronized-mutable pressed?]
+  IComponent
+  (-layout [_ ctx cs]
+    (let [ctx'       (cond-> ctx
+                       hovered?                (assoc :hui/hovered? true)
+                       (and pressed? hovered?) (assoc :hui/active? true))
+          child-size (-layout child ctx' cs)]
+      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      child-size))
+
+  (-draw [_ ctx canvas]
+    (-draw child ctx canvas))
+
+  (-event [_ event]
+    (when (= :hui/mouse-move (:hui/event event))
+      (set! hovered? (core/rect-contains? child-rect (:hui.event/pos event))))
+    (when (= :hui/mouse-button (:hui/event event))
+      (if (:hui.event.mouse-button/is-pressed event)
+        (when hovered?
+          (set! pressed? true))
+        (do
+          (when (and pressed? hovered?)
+            (on-click))
+          (set! pressed? false))))
+    (event-propagate event child child-rect))
+
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn clickable [on-click child]
+  (Clickable. on-click child nil false false))
+
+(deftype Contextual [child-ctor
+                     ^:unsynchronized-mutable child
+                     ^:unsynchronized-mutable child-rect]
+  IComponent
+  (-layout [_ ctx cs]
+    (set! child (child-ctor ctx))
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      child-size))
+
+  (-draw [_ ctx canvas]
+    (-draw child ctx canvas))
+
+  (-event [_ event]
+    (event-propagate event child child-rect))
+
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn contextual [child-ctor]
+  (Contextual. child-ctor nil nil))
 
 (comment
   (do
