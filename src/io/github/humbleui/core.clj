@@ -33,6 +33,14 @@
 (defmacro defn-memoize-last [name & body]
   `(def ~name (memoize-last (fn ~@body))))
 
+(defn eager-or
+  ([] nil)
+  ([x] x)
+  ([x y] (or x y))
+  ([x y z] (or x y z))
+  ([x y z & rest]
+   (reduce #(or %1 %2) (or x y z) rest)))
+
 (defn init []
   (App/init))
 

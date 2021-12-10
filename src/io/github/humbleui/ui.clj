@@ -135,8 +135,11 @@
             (.restoreToCount ^Canvas canvas layer))))))
 
   (-event [_ event]
-    (doseq [[child rect] (map vector children child-rects)]
-      (event-propagate event child rect)))
+    (reduce
+      (fn [acc [child rect]]
+        (core/eager-or acc (event-propagate event child rect)))
+      false
+      (map vector children child-rects)))
 
   AutoCloseable
   (close [_]
@@ -247,9 +250,13 @@
     (-draw child ctx canvas))
 
   (-event [_ event]
-    (when (= :hui/mouse-move (:hui/event event))
-      (set! hovered? (core/rect-contains? child-rect (:hui.event/pos event))))
-    (event-propagate event child child-rect))
+    (core/eager-or
+      (event-propagate event child child-rect)
+      (when (= :hui/mouse-move (:hui/event event))
+        (let [hovered?' (core/rect-contains? child-rect (:hui.event/pos event))]
+          (when (not= hovered? hovered?')
+            (set! hovered? hovered?')
+            true)))))
 
   AutoCloseable
   (close [_]
@@ -276,17 +283,22 @@
     (-draw child ctx canvas))
 
   (-event [_ event]
-    (when (= :hui/mouse-move (:hui/event event))
-      (set! hovered? (core/rect-contains? child-rect (:hui.event/pos event))))
-    (when (= :hui/mouse-button (:hui/event event))
-      (if (:hui.event.mouse-button/is-pressed event)
-        (when hovered?
-          (set! pressed? true))
-        (do
-          (when (and pressed? hovered?)
-            (on-click))
-          (set! pressed? false))))
-    (event-propagate event child child-rect))
+    (core/eager-or
+      (when (= :hui/mouse-move (:hui/event event))
+        (let [hovered?' (core/rect-contains? child-rect (:hui.event/pos event))]
+          (when (not= hovered? hovered?')
+            (set! hovered? hovered?')
+            true)))
+      (when (= :hui/mouse-button (:hui/event event))
+        (let [pressed?' (if (:hui.event.mouse-button/is-pressed event)
+                          (when hovered? true)
+                          (do
+                            (when (and pressed? hovered?) (on-click))
+                            false))]
+          (when (not= pressed? pressed?')
+            (set! pressed? pressed?')
+            true)))
+      (event-propagate event child child-rect)))
 
   AutoCloseable
   (close [_]

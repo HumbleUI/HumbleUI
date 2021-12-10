@@ -55,24 +55,25 @@
         bounds (.getContentRect (window/jwm-window window))
         ctx    {}]
     (ui/-layout app ctx (hui/->Size (.getWidth bounds) (.getHeight bounds)))
-    (ui/-draw app ctx canvas))
-  (window/request-frame window))
+    (ui/-draw app ctx canvas)))
 
 (defn on-event [window event]
-  (let [app (app (window/scale window))]
-    (condp instance? event
-      EventMouseMove
-      (let [pos   (hui/->Point (.getX event) (.getY event))
-            event {:hui/event :hui/mouse-move
-                   :hui.event/pos pos}]
-        (ui/-event app event))
+  (let [app (app (window/scale window))
+        changed? (condp instance? event
+                   EventMouseMove
+                   (let [pos   (hui/->Point (.getX event) (.getY event))
+                         event {:hui/event :hui/mouse-move
+                                :hui.event/pos pos}]
+                     (ui/-event app event))
 
-      EventMouseButton
-      (let [event {:hui/event :hui/mouse-button
-                   :hui.event.mouse-button/is-pressed (.isPressed event)}]
-        (ui/-event app event))
+                   EventMouseButton
+                   (let [event {:hui/event :hui/mouse-button
+                                :hui.event.mouse-button/is-pressed (.isPressed event)}]
+                     (ui/-event app event))
 
-      nil)))
+                   nil)]
+    (when changed?
+      (window/request-frame window))))
 
 (defn make-window []
   (doto
