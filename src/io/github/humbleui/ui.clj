@@ -12,11 +12,20 @@
   (-event  [_ event]))
 
 (defn event-propagate [event child child-rect]
-  (if (contains? event :hui.event/pos)
-    (let [pos  (:hui.event/pos event)
-          pos' (core/->Point (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))]
-      (-event child (assoc event :hui.event/pos pos')))
-    (-event child event)))
+  (let [pos    (:hui.event/pos event)
+        event' (cond
+                 (nil? pos)
+                 event
+                 
+                 (not (core/rect-contains? child-rect pos))
+                 (dissoc event :hui.event/pos)
+
+                 (= 0 (:x child-rect) (:y child-rect)) event
+                 event
+
+                 (assoc event :hui.event/pos
+                   (core/->Point (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))))]
+    (-event child event')))
 
 (defn child-close [child]
   (when (instance? AutoCloseable child)
@@ -253,7 +262,7 @@
     (core/eager-or
       (event-propagate event child child-rect)
       (when (= :hui/mouse-move (:hui/event event))
-        (let [hovered?' (core/rect-contains? child-rect (:hui.event/pos event))]
+        (let [hovered?' (some? (:hui.event/pos event))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))))
@@ -285,13 +294,13 @@
   (-event [_ event]
     (core/eager-or
       (when (= :hui/mouse-move (:hui/event event))
-        (let [hovered?' (core/rect-contains? child-rect (:hui.event/pos event))]
+        (let [hovered?' (some? (:hui.event/pos event))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))
       (when (= :hui/mouse-button (:hui/event event))
         (let [pressed?' (if (:hui.event.mouse-button/is-pressed event)
-                          (when hovered? true)
+                          hovered?
                           (do
                             (when (and pressed? hovered?) (on-click))
                             false))]
