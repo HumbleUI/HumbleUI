@@ -318,6 +318,32 @@
 (defn contextual [child-ctor]
   (Contextual. child-ctor nil nil))
 
+(defn collect
+  ([pred form] (collect [] pred form))
+  ([acc pred form]
+   (cond
+    (pred form)        (conj acc form)
+    (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
+    (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
+    :else              acc)))
+
+(defn bindings->syms [bindings]
+  (->> bindings
+    (partition 2)
+    (collect symbol?)
+    (map name)
+    (map symbol)
+    (into #{})
+    (vec)))
+
+(defmacro dynamic [ctx-sym bindings & body]
+  (let [syms (bindings->syms bindings)]
+    `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
+       (contextual
+         (fn [~ctx-sym]
+           (let [~@bindings]
+             (inputs-fn# ~@syms)))))))
+
 (comment
   (do
     (println)

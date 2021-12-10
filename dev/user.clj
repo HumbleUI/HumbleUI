@@ -16,9 +16,9 @@
 (defonce face-default
   (.matchFamiliesStyle font-mgr (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL))
 
-(def *clicks (atom 0))
+(defonce *clicks (atom 0))
 
-(hui/defn-memoized-last app [scale]
+(hui/defn-memoize-last app [scale]
   (let [font-default        (Font. face-default (float (* 13 scale)))
         leading             (.getCapHeight (.getMetrics font-default))
         fill-text           (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))
@@ -30,20 +30,24 @@
         (ui/column
           (ui/label "Hello from Humble UI! 👋" font-default fill-text)
           (ui/gap 0 leading)
-          (ui/contextual (fn [_] (ui/label (str "Clicked: " @*clicks) font-default fill-text)))
+          (ui/dynamic _ [clicks @*clicks]
+            (ui/label (str "Clicked: " clicks) font-default fill-text))
           (ui/gap 0 leading)
           (ui/clickable
             #(swap! *clicks inc)
             (ui/clip-rrect (* scale 4)
-              (ui/contextual
-                (fn [ctx]
-                  (let [[label fill] (cond
-                                       (:hui/active? ctx)  ["Active"    fill-button-active]
-                                       (:hui/hovered? ctx) ["Hovered"   fill-button-hovered]
-                                       :else               ["Unpressed" fill-button-normal])]
-                    (ui/fill-solid fill
-                      (ui/padding (* scale 20) leading
-                        (ui/label label font-default fill-text)))))))))))))
+              (ui/dynamic ctx [active?  (:hui/active? ctx)
+                               hovered? (:hui/hovered? ctx)]
+                (let [[label fill] (cond
+                                     active?  ["Active"    fill-button-active]
+                                     hovered? ["Hovered"   fill-button-hovered]
+                                     :else    ["Unpressed" fill-button-normal])]
+                  (ui/fill-solid fill
+                    (ui/padding (* scale 20) leading
+                      (ui/label label font-default fill-text))))))))))))
+
+(comment
+  (window/request-frame @*window))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
@@ -69,9 +73,6 @@
         (ui/-event app event))
 
       nil)))
-
-(comment
-  (window/request-frame @*window))
 
 (defn make-window []
   (doto

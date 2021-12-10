@@ -30,7 +30,7 @@
           (vreset! *atom [args' value'])
           value')))))
 
-(defmacro defn-memoized-last [name & body]
+(defmacro defn-memoize-last [name & body]
   `(def ~name (memoize-last (fn ~@body))))
 
 (defn init []
