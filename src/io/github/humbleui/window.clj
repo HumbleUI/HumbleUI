@@ -1,7 +1,6 @@
 (ns io.github.humbleui.window
   (:require
-   [io.github.humbleui.core :as core]
-   [io.github.humbleui.macro :as macro])
+   [io.github.humbleui.core :as core])
   (:import
    ; [io.github.humbleui.core Point Size Rect]
    [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame LayerGL ZOrder]
@@ -52,9 +51,9 @@
                        (instance? EventWindowCloseRequest e)
                        (do
                          (when on-close (on-close @*window))
-                         (vswap! *context #(do (macro/doto-some % .abandon .close) nil))
-                         (vswap! *surface #(do (macro/doto-some % .close) nil))
-                         (vswap! *target #(do (macro/doto-some % .close) nil))
+                         (vswap! *context #(do (core/doto-some % .abandon .close) nil))
+                         (vswap! *surface #(do (core/doto-some % .close) nil))
+                         (vswap! *target #(do (core/doto-some % .close) nil))
                          (.close jwm-layer)
                          (.close jwm-window)
                          (vreset! *window nil))
@@ -78,9 +77,9 @@
                               :content-width  (.getContentWidth e)
                               :content-height (.getContentHeight e)}))
                          (.resize jwm-layer (.getContentWidth e) (.getContentHeight e))
-                         (vswap! *surface #(do (macro/doto-some % .close) nil))
-                         (vswap! *target #(do (macro/doto-some % .close) nil))
-                         (vswap! *context #(do (macro/doto-some % .abandon .close) nil))
+                         (vswap! *surface #(do (core/doto-some % .close) nil))
+                         (vswap! *target #(do (core/doto-some % .close) nil))
+                         (vswap! *context #(do (core/doto-some % .abandon .close) nil))
                          (when paint (paint)))
 
                        (instance? EventFrame e)

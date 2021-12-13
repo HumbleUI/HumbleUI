@@ -60,3 +60,8 @@
      (if (instance? Throwable res#)
        (throw res#)
        res#)))
+
+(defmacro doto-some [x & forms]
+  `(let [x# ~x]
+     (when (some? x#)
+       (doto x# ~@forms))))
