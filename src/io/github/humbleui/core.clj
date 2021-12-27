@@ -48,7 +48,7 @@
   (App/start))
 
 (defn terminate []
-  (App/start))
+  (App/terminate))
 
 (defmacro doui-async [& forms]
   `(let [p# (promise)]
