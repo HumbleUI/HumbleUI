@@ -1,23 +1,19 @@
 #! /usr/bin/env python3
-import common, os, platform, subprocess, sys
+import build, build_utils, common, os, platform, subprocess, sys
 
 def main():
-  os.chdir(common.root)
+  build.main()
 
-  classpath = [
+  os.chdir(common.basedir)
+  classpath = common.deps() + [
     "src",
-    common.fetch_maven("org.clojure", "clojure", "1.11.0-alpha3"),
-    common.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
-    common.fetch_maven("org.clojure", "spec.alpha", "0.2.194"),
-    common.fetch_maven("io.github.humbleui.jwm", "jwm", "0.2.6"),
-    common.fetch_maven("io.github.humbleui.skija", "skija-shared", "0.96.0"),
-    common.fetch_maven("io.github.humbleui.skija", common.skija_artifact, "0.96.0"),
     "dev",
-    common.fetch_maven("nrepl", "nrepl", "0.8.3", repo = common.clojars),
+    "target/classes",
+    build_utils.fetch_maven("nrepl", "nrepl", "0.9.0", repo = common.clojars)
   ]
   return subprocess.call(["java",
-    "--class-path", common.classpath_separator.join(classpath)]
-    + (["-XstartOnFirstThread"] if common.system == 'macos' else []) +
+    "--class-path", build_utils.classpath_join(classpath)]
+    + (["-XstartOnFirstThread"] if build_utils.system == 'macos' else []) +
     ["clojure.main",
      "-m", "user",
      "--interactive"]

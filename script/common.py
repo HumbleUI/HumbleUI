@@ -1,24 +1,48 @@
 #! /usr/bin/env python3
-import os, platform, subprocess, sys, urllib.request
+import argparse, build_utils, functools, os
 
-arch = {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
-system = {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
-skija_artifact = "skija-" + system + (('-' + arch) if system == 'macos' else '')
-classpath_separator = ';' if system == 'windows' else ':'
-root = os.path.abspath(os.path.dirname(__file__) + '/..')
+basedir = os.path.abspath(os.path.dirname(__file__) + '/..')
+
 clojars = "https://repo.clojars.org"
 
-def fetch(url, file):
-  if not os.path.exists(file):
-    print('Downloading', url)
-    if os.path.dirname(file):
-      os.makedirs(os.path.dirname(file), exist_ok = True)
-    content = urllib.request.urlopen(url).read()
-    with open(file, 'wb') as f:
-      f.write(content)
+@functools.lru_cache(maxsize=1)
+def deps():
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--jwm-dir', default=None)
+  parser.add_argument('--jwm-version', default="0.3.0")
+  parser.add_argument('--skija-dir', default=None)
+  parser.add_argument('--skija-version', default='0.98.0')
+  (args, _) = parser.parse_known_args()
 
-def fetch_maven(group, name, version, classifier=None, repo='https://repo1.maven.org/maven2'):
-  path = '/'.join([group.replace('.', '/'), name, version, name + '-' + version + ('-' + classifier if classifier else '') + '.jar'])
-  file = os.path.join(os.path.expanduser('~'), '.m2', 'repository', path)
-  fetch(repo + '/' + path, file)
-  return file
+  deps = [
+    build_utils.fetch_maven("org.clojure", "clojure", "1.11.0-alpha3"),
+    build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
+    build_utils.fetch_maven("org.clojure", "spec.alpha", "0.2.194")
+  ]
+
+  if args.jwm_dir:
+    deps += [
+      build_utils.execdir + '/' + args.jwm_dir + '/windows/build',
+      build_utils.execdir + '/' + args.jwm_dir + '/linux/build',
+      build_utils.execdir + '/' + args.jwm_dir + '/macos/build',
+      build_utils.execdir + '/' + args.jwm_dir + '/target/classes',
+    ]
+  else:
+    deps += [
+      build_utils.fetch_maven('io.github.humbleui', 'jwm', args.jwm_version),
+    ]
+
+  if args.skija_dir:
+    deps += [
+      build_utils.execdir + '/' + args.skija_dir + '/platform/build',
+      build_utils.execdir + '/' + args.skija_dir + '/platform/target/classes',
+      build_utils.execdir + '/' + args.skija_dir + '/shared/target/classes',
+    ]
+  else:
+    skija_native = 'skija-' + build_utils.system + (('-' + build_utils.arch) if 'macos' == build_utils.system else '')
+    deps += [
+      build_utils.fetch_maven('io.github.humbleui', 'skija-shared', args.skija_version),
+      build_utils.fetch_maven('io.github.humbleui', skija_native, args.skija_version),
+    ]
+
+  return deps
