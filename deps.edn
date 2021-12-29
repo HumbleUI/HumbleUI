@@ -1,4 +1,4 @@
-{:paths ["src" "java"]
+{:paths ["src" "target/classes"]
  :deps
  {org.clojure/clojure                  {:mvn/version "1.11.0-alpha3"}
   io.github.humbleui/jwm               {:mvn/version "0.3.0"  :exclusions [io.github.humbleui/types]}
@@ -13,4 +13,7 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps  {nrepl/nrepl {:mvn/version "0.9.0"}}
-   :main-opts   ["-m" "user" "--interactive"]}}}
+   :main-opts   ["-m" "user" "--interactive"]}
+
+  :test
+  {:extra-paths ["test"]}}}

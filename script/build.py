@@ -3,10 +3,7 @@ import build_utils, common, os, sys
 
 def main():
   os.chdir(common.basedir)
-  classpath = [
-    build_utils.fetch_maven('org.projectlombok', 'lombok', '1.18.22'),
-    build_utils.fetch_maven('org.jetbrains', 'annotations', '20.1.0'),
-  ]
+  classpath = common.deps_compile()
   build_utils.javac(build_utils.files("java/**/*.java"), "target/classes", classpath=classpath, modulepath=classpath)
   return 0
 
