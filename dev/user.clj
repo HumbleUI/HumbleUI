@@ -5,9 +5,9 @@
    [io.github.humbleui.ui :as ui]
    [nrepl.cmdline :as nrepl])
   (:import
-   [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove]
-   [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint Rect]
-   [io.github.humbleui.window Window]))
+   [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove Window]
+   [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint]
+   [io.github.humbleui.types IPoint]))
 
 (defonce font-mgr (FontMgr/getDefault))
 
@@ -52,16 +52,16 @@
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
   (let [app    (app (window/scale window))
-        bounds (.getContentRect (window/jwm-window window))
+        bounds (window/content-rect window)
         ctx    {}]
-    (ui/-layout app ctx (hui/->Size (.getWidth bounds) (.getHeight bounds)))
+    (ui/-layout app ctx (IPoint. (.getWidth bounds) (.getHeight bounds)))
     (ui/-draw app ctx canvas)))
 
 (defn on-event [window event]
   (let [app (app (window/scale window))
         changed? (condp instance? event
                    EventMouseMove
-                   (let [pos   (hui/->Point (.getX event) (.getY event))
+                   (let [pos   (IPoint. (.getX event) (.getY event))
                          event {:hui/event :hui/mouse-move
                                 :hui.event/pos pos}]
                      (ui/-event app event))
@@ -78,7 +78,7 @@
 (defn make-window []
   (doto
     (window/make
-      {:on-close (fn [_] (reset! *window nil))
+      {:on-close (fn [window] (window/close window) (reset! *window nil))
        :on-paint #'on-paint
        :on-event #'on-event})
     (window/set-title "Humble UI 👋")

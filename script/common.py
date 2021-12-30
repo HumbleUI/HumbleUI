@@ -24,7 +24,7 @@ def deps_compile():
 def deps_run():
   parser = argparse.ArgumentParser()
   parser.add_argument('--jwm-dir', default=None)
-  parser.add_argument('--jwm-version', default="0.3.0")
+  parser.add_argument('--jwm-version', default="0.3.1")
   parser.add_argument('--skija-dir', default=None)
   parser.add_argument('--skija-version', default='0.98.0')
   (args, _) = parser.parse_known_args()

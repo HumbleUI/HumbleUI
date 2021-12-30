@@ -2,123 +2,87 @@
   (:require
    [io.github.humbleui.core :as core])
   (:import
-   ; [io.github.humbleui.core Point Size Rect]
-   [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame LayerGL ZOrder]
-   [io.github.humbleui.skija BackendRenderTarget ColorSpace DirectContext FramebufferFormat PixelGeometry Surface SurfaceColorFormat SurfaceOrigin SurfaceProps]
+   [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame Platform Window ZOrder]
+   [io.github.humbleui.jwm.skija EventFrameSkija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
    [java.util.function Consumer]))
-
-(defrecord Window [jwm-window jwm-layer listener])
-
-(defn jwm-window ^io.github.humbleui.jwm.Window [window]
-  (:jwm-window window))
 
 (defn make
   ":on-close         (fn [window])
    :on-screen-change (fn [window])
-   :on-resize        (fn [window {:keys [window-width window-height content-width content-height]}])
+   :on-resize        (fn [window])
    :on-paint         (fn [window canvas])
    :on-event         (fn [window event])"
   [{:keys [on-close on-screen-change on-resize on-paint on-event]}]
-  (let [jwm-window (App/makeWindow)
-        jwm-layer  (LayerGL.)
-        _          (.attach jwm-layer jwm-window)
-        *context   (volatile! nil)
-        *target    (volatile! nil)
-        *surface   (volatile! nil)
-        *window    (volatile! nil)
-        paint      (when on-paint
-                     (fn []
-                       (when-some [window @*window]
-                         (.makeCurrent jwm-layer)
-                         (vswap! *context #(or % (DirectContext/makeGL)))
-                         (vswap! *target  #(or % (BackendRenderTarget/makeGL (.getWidth jwm-layer) (.getHeight jwm-layer) 0 8 0 FramebufferFormat/GR_GL_RGBA8)))
-                         (vswap! *surface #(or % (Surface/makeFromBackendRenderTarget @*context @*target SurfaceOrigin/BOTTOM_LEFT SurfaceColorFormat/RGBA_8888 (ColorSpace/getSRGB) (SurfaceProps. PixelGeometry/RGB_H))))
-                         (let [canvas (.getCanvas ^Surface @*surface)
-                               layer  (.save canvas)]
+  (let [window   (App/makeWindow)
+        layer    (condp = Platform/CURRENT
+                   Platform/MACOS   (LayerMetalSkija.)
+                   Platform/WINDOWS (LayerD3D12Skija.)
+                   Platform/X11     (LayerGLSkija.))
+        listener (reify Consumer
+                   (accept [this e]
+                     (when on-event
+                       (on-event window e))
+                     (condp instance? e
+                       EventWindowCloseRequest
+                       (when on-close
+                         (on-close window))
+
+                       EventWindowScreenChange
+                       (when on-screen-change
+                         (on-screen-change window))
+
+                       EventWindowResize
+                       (when on-resize
+                         (on-resize window))
+
+                       EventFrameSkija
+                       (when on-paint
+                         (let [canvas (-> ^EventFrameSkija e .getSurface .getCanvas)
+                               layer   (.save canvas)]
                            (try
                              (on-paint window canvas)
                              (catch Exception e
                                (.printStackTrace e)
                                (.clear canvas (unchecked-int 0xFFCC3333)))
                              (finally
-                               (.restoreToCount canvas layer))))
-                         (.flushAndSubmit @*surface)
-                         (.swapBuffers jwm-layer))))
-        listener   (fn listener [e]
-                     (when on-event
-                       (on-event @*window e))
-                     (cond
-                       (instance? EventWindowCloseRequest e)
-                       (do
-                         (when on-close (on-close @*window))
-                         (vswap! *context #(do (core/doto-some % .abandon .close) nil))
-                         (vswap! *surface #(do (core/doto-some % .close) nil))
-                         (vswap! *target #(do (core/doto-some % .close) nil))
-                         (.close jwm-layer)
-                         (.close jwm-window)
-                         (vreset! *window nil))
+                               (.restoreToCount canvas layer)))))
 
-                       (instance? EventWindowScreenChange e)
-                       (do
-                         (when on-screen-change (on-screen-change @*window))
-                         (.reconfigure jwm-layer)
-                         (let [outer  (.getWindowRect jwm-window)
-                               inner  (.getContentRect jwm-window)
-                               resize (EventWindowResize. (.getWidth outer) (.getHeight outer) (.getWidth inner) (.getHeight inner))]
-                           (listener resize)))
-
-                       (instance? EventWindowResize e)
-                       (do
-                         (when on-resize
-                           (on-resize
-                             @*window
-                             {:window-width   (.getWindowWidth e)
-                              :window-height  (.getWindowHeight e)
-                              :content-width  (.getContentWidth e)
-                              :content-height (.getContentHeight e)}))
-                         (.resize jwm-layer (.getContentWidth e) (.getContentHeight e))
-                         (vswap! *surface #(do (core/doto-some % .close) nil))
-                         (vswap! *target #(do (core/doto-some % .close) nil))
-                         (vswap! *context #(do (core/doto-some % .abandon .close) nil))
-                         (when paint (paint)))
-
-                       (instance? EventFrame e)
-                       (when paint (paint))))
-        _          (.setEventListener jwm-window (reify Consumer (accept [this e] (listener e))))
-        window     (Window. jwm-window jwm-layer listener)]
-    (vreset! *window window)
-    (listener EventWindowScreenChange/INSTANCE)
+                       nil)))]
+    (.setLayer window layer)
+    (.setEventListener window listener)
     window))
 
-(defn scale [window]
-  (.getScale (.getScreen (jwm-window window))))
+(defn scale [^Window window]
+  (.getScale (.getScreen window)))
 
-(defn set-title [window title]
-  (.setTitle (jwm-window window) title)
+(defn set-title [^Window window ^String title]
+  (.setTitle window title)
   window)
 
-(defn set-visible [window value]
-  (.setVisible (jwm-window window) value)
+(defn set-visible [^Window window ^Boolean value]
+  (.setVisible window value)
   window)
 
-(defn get-window-rect [window]
-  (let [rect (.getWindowRect (jwm-window window))]
-    (core/->Rect (.getLeft rect) (.getTop rect) (.getWidth rect) (.getHeight rect))))
+(defn window-rect [^Window window]
+  (.getWindowRect window))
 
-(defn set-window-position [window x y]
-  (.setWindowPosition (jwm-window window) x y)
+(defn content-rect [^Window window]
+  (.getContentRect window))
+
+(defn set-window-position [^Window window ^long x ^long y]
+  (.setWindowPosition window x y)
   window)
 
-(defn set-window-size [window width height]
-  (.setWindowSize (jwm-window window) width height)
+(defn set-window-size [^Window window ^long width ^long height]
+  (.setWindowSize window width height)
   window)
 
-(defn set-content-size [window width height]
-  (.setContentSize (jwm-window window) width height)
+(defn set-content-size [^Window window ^long width ^long height]
+  (.setContentSize window width height)
   window)
 
-(defn set-z-order [window order]
-  (.setZOrder (jwm-window window)
+(defn set-z-order [^Window window order]
+  (.setZOrder window
     (case order
       :normal       ZOrder/NORMAL
       :floating     ZOrder/FLOATING
@@ -129,10 +93,9 @@
       :screen-saver ZOrder/SCREEN_SAVER))
   window)
 
-(defn request-frame [window]
-  (.requestFrame (jwm-window window))
+(defn request-frame [^Window window]
+  (.requestFrame window)
   window)
 
-(defn close [window]
-  ((:listener window) EventWindowCloseRequest/INSTANCE)
-  nil)
+(defn close [^Window window]
+  (.close window))

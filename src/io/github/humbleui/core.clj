@@ -3,20 +3,6 @@
    [io.github.humbleui.jwm App]
    [java.lang AutoCloseable]))
 
-(defrecord Point [x y])
-
-(defn point-offset [a b]
-  (Point. (+ (:x a) (:x b)) (+ (:y a) (:y b))))
-
-(defrecord Size [width height])
-
-(defrecord Rect [x y width height])
-
-(defn rect-contains? [{:keys [x y width height]} point]
-  (and
-    (<= x (:x point) (+ x width))
-    (<= y (:y point) (+ y height))))
-
 (defn memoize-last [ctor]
   (let [*atom (volatile! nil)]
     (fn [& args']

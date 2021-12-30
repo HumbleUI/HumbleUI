@@ -146,9 +146,18 @@ public class Rect extends ARecord {
         return _right == _left || _top == _bottom;
     }
 
+    public boolean contains(float x, float y) {
+        return _left <= x && x <= _right && _top <= y && y <= _bottom;
+    }
+
+    public boolean contains(@NotNull Point vec) {
+        assert vec != null : "Rect::contains expected vec != null";
+        return _left <= vec._x && vec._x <= _right && _top <= vec._y && vec._y <= _bottom;
+    }
+
     // ILookup
-    public static final Keyword _KEYWORD_LEFT   = Keyword.intern(null, "left");
-    public static final Keyword _KEYWORD_TOP    = Keyword.intern(null, "top");
+    public static final Keyword _KEYWORD_X      = Keyword.intern(null, "x");
+    public static final Keyword _KEYWORD_Y      = Keyword.intern(null, "y");
     public static final Keyword _KEYWORD_RIGHT  = Keyword.intern(null, "right");
     public static final Keyword _KEYWORD_BOTTOM = Keyword.intern(null, "bottom");
     public static final Keyword _KEYWORD_WIDTH  = Keyword.intern(null, "width");
@@ -156,9 +165,9 @@ public class Rect extends ARecord {
 
     @Override
     public Object valAt(Object key, Object notFound) {
-        if (_KEYWORD_LEFT == key)
+        if (_KEYWORD_X == key)
             return _left;
-        else if (_KEYWORD_TOP == key)
+        else if (_KEYWORD_Y == key)
             return _top;
         else if (_KEYWORD_RIGHT == key)
             return _right;
@@ -178,8 +187,8 @@ public class Rect extends ARecord {
         IPersistentCollection ret = PersistentList.EMPTY;
         ret = ret.cons(MapEntry.create(_KEYWORD_BOTTOM, _bottom));
         ret = ret.cons(MapEntry.create(_KEYWORD_RIGHT, _right));
-        ret = ret.cons(MapEntry.create(_KEYWORD_TOP, _top));
-        ret = ret.cons(MapEntry.create(_KEYWORD_LEFT, _left));
+        ret = ret.cons(MapEntry.create(_KEYWORD_Y, _top));
+        ret = ret.cons(MapEntry.create(_KEYWORD_X, _left));
         return ret.seq();
     }
 
@@ -192,15 +201,15 @@ public class Rect extends ARecord {
     // Associative
     @Override
     public boolean containsKey(Object key) {
-        return key == _KEYWORD_LEFT || key == _KEYWORD_TOP || key == _KEYWORD_RIGHT || key == _KEYWORD_BOTTOM || key == _KEYWORD_WIDTH || key == _KEYWORD_HEIGHT;
+        return key == _KEYWORD_X || key == _KEYWORD_Y || key == _KEYWORD_RIGHT || key == _KEYWORD_BOTTOM || key == _KEYWORD_WIDTH || key == _KEYWORD_HEIGHT;
     }
 
     @Override
     public IMapEntry entryAt(Object key) {
-        if (_KEYWORD_LEFT == key)
-            return MapEntry.create(_KEYWORD_LEFT, _left);
-        else if (_KEYWORD_TOP == key)
-            return MapEntry.create(_KEYWORD_TOP, _top);
+        if (_KEYWORD_X == key)
+            return MapEntry.create(_KEYWORD_X, _left);
+        else if (_KEYWORD_Y == key)
+            return MapEntry.create(_KEYWORD_Y, _top);
         else if (_KEYWORD_RIGHT == key)
             return MapEntry.create(_KEYWORD_RIGHT, _right);
         else if (_KEYWORD_BOTTOM == key)
@@ -216,9 +225,9 @@ public class Rect extends ARecord {
     @Override
     public Associative assoc(Object key, Object val) {
         float floatVal = RT.floatCast(val);
-        if (_KEYWORD_LEFT == key)
+        if (_KEYWORD_X == key)
             return withLeft(floatVal);
-        else if (_KEYWORD_TOP == key)
+        else if (_KEYWORD_Y == key)
             return withTop(floatVal);
         else if (_KEYWORD_RIGHT == key)
             return withRight(floatVal);

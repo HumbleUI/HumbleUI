@@ -3,8 +3,8 @@
    [io.github.humbleui.core :as core])
   (:import
    [java.lang AutoCloseable]
-   [io.github.humbleui.core Size]
-   [io.github.humbleui.skija Canvas Font FontMetrics Paint Rect RRect TextLine]))
+   [io.github.humbleui.types IPoint IRect Point Rect RRect]
+   [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]))
 
 (defprotocol IComponent
   (-layout [_ ctx cs])
@@ -17,14 +17,15 @@
                  (nil? pos)
                  event
                  
-                 (not (core/rect-contains? child-rect pos))
+                 (not (.contains ^IRect child-rect pos))
                  (dissoc event :hui.event/pos)
 
-                 (= 0 (:x child-rect) (:y child-rect)) event
+                 (= 0 (:x child-rect) (:y child-rect))
                  event
 
+                 :else
                  (assoc event :hui.event/pos
-                   (core/->Point (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))))]
+                   (IPoint. (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))))]
     (-event child event')))
 
 (defn child-close [child]
@@ -34,7 +35,7 @@
 (deftype Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   IComponent
   (-layout [_ ctx cs]
-    (core/->Size (.getWidth line) (.getCapHeight metrics)))
+    (IPoint. (.getWidth line) (.getCapHeight metrics)))
 
   (-draw [_ ctx canvas]
     (.drawTextLine ^Canvas canvas line 0 (.getCapHeight metrics) paint))
@@ -53,12 +54,12 @@
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
       (set! child-rect
-        (core/->Rect
+        (IRect/makeXYWH
           (- (* (:width cs) coeff) (* (:width child-size) child-coeff))
           0
           (:width child-size)
           (:height child-size)))
-      (core/->Size (:width cs) (:height child-size))))
+      (IPoint. (:width cs) (:height child-size))))
 
   (-draw [_ ctx canvas]
     (let [canvas ^Canvas canvas
@@ -85,12 +86,12 @@
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
       (set! child-rect
-        (core/->Rect
+        (IRect/makeXYWH
           0
           (- (* (:height cs) coeff) (* (:height child-size) child-coeff))
           (:width child-size)
           (:height child-size)))
-      (core/->Size (:width child-size) (:height cs))))
+      (IPoint. (:width child-size) (:height cs))))
 
   (-draw [_ ctx canvas]
     (let [canvas ^Canvas canvas
@@ -123,16 +124,16 @@
       (if children
         (let [child      (first children)
               remainder  (- (:height cs) height)
-              child-cs   (core/->Size (:width cs) remainder)
+              child-cs   (IPoint. (:width cs) remainder)
               child-size (-layout child ctx child-cs)]
           (recur
             (max width (:width child-size))
             (+ height (:height child-size))
-            (conj rects (core/->Rect 0 height (:width child-size) (:height child-size)))
+            (conj rects (IRect/makeXYWH 0 height (:width child-size) (:height child-size)))
             (next children)))
         (do
           (set! child-rects rects)
-          (core/->Size width height)))))
+          (IPoint. width height)))))
 
   (-draw [_ ctx canvas]
     (doseq [[child rect] (map vector children child-rects)]
@@ -161,7 +162,7 @@
 (defrecord Gap [width height]
   IComponent
   (-layout [_ ctx cs]
-    (core/->Size width height))
+    (IPoint. width height))
   (-draw [_ ctx canvas])
   (-event [_ event]))
 
@@ -171,10 +172,10 @@
 (deftype Padding [left top right bottom child ^:unsynchronized-mutable child-rect]
   IComponent
   (-layout [_ ctx cs]
-    (let [child-cs   (core/->Size (- (:width cs) left right) (- (:height cs) top bottom))
+    (let [child-cs   (IPoint. (- (:width cs) left right) (- (:height cs) top bottom))
           child-size (-layout child ctx child-cs)]
-      (set! child-rect (core/->Rect left top (:width child-size) (:height child-size)))
-      (core/->Size
+      (set! child-rect (IRect/makeXYWH left top (:width child-size) (:height child-size)))
+      (IPoint.
         (+ (:width child-size) left right)
         (+ (:height child-size) top bottom))))
 
@@ -203,7 +204,7 @@
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
-      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
 
   (-draw [_ ctx canvas]
@@ -224,7 +225,7 @@
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
-      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
 
   (-draw [_ ctx canvas]
@@ -250,9 +251,9 @@
 (deftype Hoverable [child ^:unsynchronized-mutable child-rect ^:unsynchronized-mutable hovered?]
   IComponent
   (-layout [_ ctx cs]
-    (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))
+    (let [ctx'       (cond-> ctx hovered? (assoc :hui/hovered? true))
           child-size (-layout child ctx' cs)]
-      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
 
   (-draw [_ ctx canvas]
@@ -285,7 +286,7 @@
                        hovered?                (assoc :hui/hovered? true)
                        (and pressed? hovered?) (assoc :hui/active? true))
           child-size (-layout child ctx' cs)]
-      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
 
   (-draw [_ ctx canvas]
@@ -323,7 +324,7 @@
   (-layout [_ ctx cs]
     (set! child (child-ctor ctx))
     (let [child-size (-layout child ctx cs)]
-      (set! child-rect (core/->Rect 0 0 (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
 
   (-draw [_ ctx canvas]
