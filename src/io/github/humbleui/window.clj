@@ -6,6 +6,8 @@
    [io.github.humbleui.jwm.skija EventFrameSkija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
    [java.util.function Consumer]))
 
+(set! *warn-on-reflection* true)
+
 (defn make
   ":on-close         (fn [window])
    :on-screen-change (fn [window])

@@ -6,27 +6,30 @@
    [io.github.humbleui.types IPoint IRect Point Rect RRect]
    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]))
 
+(set! *warn-on-reflection* true)
+
 (defprotocol IComponent
   (-layout [_ ctx cs])
   (-draw   [_ ctx canvas])
   (-event  [_ event]))
 
 (defn event-propagate [event child child-rect]
-  (let [pos    (:hui.event/pos event)
-        event' (cond
-                 (nil? pos)
-                 event
-                 
-                 (not (.contains ^IRect child-rect pos))
-                 (dissoc event :hui.event/pos)
+  (when child-rect
+    (let [pos    (:hui.event/pos event)
+          event' (cond
+                   (nil? pos)
+                   event
+                   
+                   (not (.contains ^IRect child-rect pos))
+                   (dissoc event :hui.event/pos)
 
-                 (= 0 (:x child-rect) (:y child-rect))
-                 event
+                   (= 0 (:x child-rect) (:y child-rect))
+                   event
 
-                 :else
-                 (assoc event :hui.event/pos
-                   (IPoint. (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))))]
-    (-event child event')))
+                   :else
+                   (assoc event :hui.event/pos
+                     (IPoint. (- (:x pos) (:x child-rect)) (- (:y pos) (:y child-rect)))))]
+      (-event child event'))))
 
 (defn child-close [child]
   (when (instance? AutoCloseable child)
@@ -44,7 +47,7 @@
 
   AutoCloseable
   (close [_]
-    (.close line)))
+    #_(.close line))) ; TODO
 
 (defn label [text font paint]
   (Label. text font paint (TextLine/make text font) (.getMetrics ^Font font)))
@@ -127,8 +130,8 @@
               child-cs   (IPoint. (:width cs) remainder)
               child-size (-layout child ctx child-cs)]
           (recur
-            (max width (:width child-size))
-            (+ height (:height child-size))
+            (max width (int (:width child-size)))
+            (+ height (int (:height child-size)))
             (conj rects (IRect/makeXYWH 0 height (:width child-size) (:height child-size)))
             (next children)))
         (do
@@ -172,8 +175,8 @@
               child-cs   (IPoint. remainder (:height cs))
               child-size (-layout child ctx child-cs)]
           (recur
-            (+ width (:width child-size))
-            (max height (:height child-size))
+            (+ width (int (:width child-size)))
+            (max height (int (:height child-size)))
             (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height child-size)))
             (next children)))
         (do
@@ -367,10 +370,13 @@
                      ^:unsynchronized-mutable child-rect]
   IComponent
   (-layout [_ ctx cs]
-    (set! child (child-ctor ctx))
-    (let [child-size (-layout child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (child-close child)
+        (set! child child'))
+      (let [child-size (-layout child ctx cs)]
+        (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
+        child-size)))
 
   (-draw [_ ctx canvas]
     (-draw child ctx canvas))
@@ -397,6 +403,7 @@
 (defn bindings->syms [bindings]
   (->> bindings
     (partition 2)
+    (map first)
     (collect symbol?)
     (map name)
     (map symbol)
