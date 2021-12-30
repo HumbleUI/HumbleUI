@@ -42,23 +42,55 @@
                                      active?  ["Active"    fill-button-active]
                                      hovered? ["Hovered"   fill-button-hovered]
                                      :else    ["Unpressed" fill-button-normal])]
-                  (ui/fill-solid fill
+                  (ui/fill fill
                     (ui/padding (* scale 20) leading
                       (ui/label label font-default fill-text))))))))))))
 
+(defn random-green []
+  (let [r (+ 32  (rand-int 32))
+        g (+ 192 (rand-int 32))
+        b (+ 32  (rand-int 32))]
+    (unchecked-int
+      (bit-or
+        (unchecked-int 0xFF000000)
+        (bit-shift-left r 16)
+        (bit-shift-left g 8)
+        (bit-shift-left b 0)))))
+
+(hui/defn-memoize-last new-year-app [scale]
+  (let [font      (Font. face-default (float (* 13 scale)))
+        fill-text (doto (Paint.) (.setColor (unchecked-int 0xFFFFFFFF)))
+        text      (cycle (map str "HappyNew2022!"))]
+    (ui/valign 0.5
+      (ui/halign 0.5
+        (apply ui/column
+          (interpose (ui/gap 0 (* 1 scale))
+            (for [y (range 15)]
+              (ui/halign 0.5
+                (apply ui/row
+                  (interpose (ui/gap (* 1 scale) 0)
+                    (for [x (range (inc y))]
+                      (if (= x y 0)
+                        (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCC3333)))
+                          (ui/padding (* 5 scale) (* 5 scale)
+                            (ui/label "★" font fill-text)))
+                          (ui/fill (doto (Paint.) (.setColor (random-green)))
+                            (ui/padding (* 5 scale) (* 5 scale)
+                              (let [idx (+ x (* y (+ y 1) 1/2) -1)]
+                                (ui/label (nth text idx) font fill-text))))))))))))))))
 (comment
   (window/request-frame @*window))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
-  (let [app    (app (window/scale window))
+  (let [app    (new-year-app (window/scale window))
         bounds (window/content-rect window)
         ctx    {}]
     (ui/-layout app ctx (IPoint. (.getWidth bounds) (.getHeight bounds)))
     (ui/-draw app ctx canvas)))
 
 (defn on-event [window event]
-  (let [app (app (window/scale window))
+  (let [app (new-year-app (window/scale window))
         changed? (condp instance? event
                    EventMouseMove
                    (let [pos   (IPoint. (.getX event) (.getY event))
@@ -87,7 +119,7 @@
     (window/set-visible true)
     (window/set-z-order :floating)
     (window/request-frame)))
-
+  
 (defn -main [& args]
   (future (apply nrepl/-main args))
   (hui/init)

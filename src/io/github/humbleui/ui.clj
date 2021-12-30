@@ -159,6 +159,51 @@
 (defn column [& children]
   (Column. (vec children) nil))
 
+(deftype Row [children ^:unsynchronized-mutable child-rects]
+  IComponent
+  (-layout [_ ctx cs]
+    (loop [width    0
+           height   0
+           rects    []
+           children children]
+      (if children
+        (let [child      (first children)
+              remainder  (- (:width cs) width)
+              child-cs   (IPoint. remainder (:height cs))
+              child-size (-layout child ctx child-cs)]
+          (recur
+            (+ width (:width child-size))
+            (max height (:height child-size))
+            (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height child-size)))
+            (next children)))
+        (do
+          (set! child-rects rects)
+          (IPoint. width height)))))
+
+  (-draw [_ ctx canvas]
+    (doseq [[child rect] (map vector children child-rects)]
+      (let [layer (.save ^Canvas canvas)]
+        (try
+          (.translate ^Canvas canvas (:x rect) (:y rect))
+          (-draw child ctx canvas)
+          (finally
+            (.restoreToCount ^Canvas canvas layer))))))
+
+  (-event [_ event]
+    (reduce
+      (fn [acc [child rect]]
+        (core/eager-or acc (event-propagate event child rect)))
+      false
+      (map vector children child-rects)))
+
+  AutoCloseable
+  (close [_]
+    (doseq [child children]
+      (child-close child))))
+
+(defn row [& children]
+  (Row. (vec children) nil))
+
 (defrecord Gap [width height]
   IComponent
   (-layout [_ ctx cs]
@@ -200,7 +245,7 @@
   ([w h child] (Padding. w h w h child nil))
   ([l t r b child] (Padding. l t r b child nil)))
 
-(deftype FillSolid [paint child ^:unsynchronized-mutable child-rect]
+(deftype Fill [paint child ^:unsynchronized-mutable child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
@@ -218,8 +263,8 @@
   (close [_]
     (child-close child)))
 
-(defn fill-solid [paint child]
-  (FillSolid. paint child nil))
+(defn fill [paint child]
+  (Fill. paint child nil))
 
 (deftype ClipRRect [radii child ^:unsynchronized-mutable child-rect]
   IComponent
