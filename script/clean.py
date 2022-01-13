@@ -3,6 +3,7 @@ import build_utils, common, os, sys
 
 def main():
   os.chdir(common.basedir)
+  build_utils.rmdir(".cpcache")
   build_utils.rmdir("target")
   return 0
 

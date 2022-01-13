@@ -2,38 +2,25 @@
 import argparse, build_utils, functools, os
 
 basedir = os.path.abspath(os.path.dirname(__file__) + '/..')
-
+version = build_utils.get_arg("version") or build_utils.parse_ref() or build_utils.parse_sha() or "0.0.0-SNAPSHOT"
 clojars = "https://repo.clojars.org"
 
 @functools.lru_cache(maxsize=1)
-def deps_clojure():
-  return [
+def deps():
+  deps = [
     build_utils.fetch_maven("org.clojure", "clojure", "1.11.0-alpha3"),
     build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
-    build_utils.fetch_maven("org.clojure", "spec.alpha", "0.2.194")
+    build_utils.fetch_maven("org.clojure", "spec.alpha", "0.2.194"),
+    build_utils.fetch_maven("io.github.humbleui", "types", "0.1.2", classifier="clojure"),
+    "src",
   ]
 
-@functools.lru_cache(maxsize=1)
-def deps_compile():
-  return deps_clojure() + [
-    build_utils.fetch_maven('org.projectlombok', 'lombok', '1.18.22'),
-    build_utils.fetch_maven('org.jetbrains', 'annotations', '20.1.0'),
-  ]
-
-@functools.lru_cache(maxsize=1)
-def deps_run():
   parser = argparse.ArgumentParser()
   parser.add_argument('--jwm-dir', default=None)
   parser.add_argument('--jwm-version', default="0.3.1")
   parser.add_argument('--skija-dir', default=None)
   parser.add_argument('--skija-version', default='0.98.0')
   (args, _) = parser.parse_known_args()
-
-  deps = deps_clojure()
-  deps += [
-    "src",
-    "target/classes",
-  ]
 
   if args.jwm_dir:
     deps += [

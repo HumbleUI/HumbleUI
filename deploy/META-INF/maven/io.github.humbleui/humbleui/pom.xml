@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.humbleui</groupId>
+    <artifactId>humbleui</artifactId>
+    <version>${version}</version>
+    <packaging>jar</packaging>
+
+    <name>io.github.humbleui:humbleui</name>
+    <description>Cross-platform UI framework for Clojure</description>
+    <url>https://github.com/humbleui/humbleui</url>
+    
+    <licenses>
+      <license>
+        <name>The Apache Software License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Nikita Prokopov</name>
+            <url>https://github.com/tonsky</url>
+            <timezone>Europe/Berlin</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/humbleui/humbleui.git</connection>
+        <developerConnection>scm:git:ssh://github.com/humbleui/humbleui.git</developerConnection>
+        <url>http://github.com/humbleui/humbleui/tree/master</url>
+    </scm>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+        <repository>
+            <id>clojars</id>
+            <url>https://repo.clojars.org/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>20.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.clojure</groupId>
+            <artifactId>cloure</artifactId>
+            <version>1.11.0-alpha3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>types</artifactId>
+            <version>0.1.2</version>
+            <classifier>clojure</classifier>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>jwm</artifactId>
+            <version>0.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>skija-windows</artifactId>
+            <version>0.98.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>skija-linux</artifactId>
+            <version>0.98.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>skija-macos-x64</artifactId>
+            <version>0.98.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.humbleui</groupId>
+            <artifactId>skija-macos-arm64</artifactId>
+            <version>0.98.1</version>
+        </dependency>
+    </dependencies>
+</project>

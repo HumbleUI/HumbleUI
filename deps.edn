@@ -1,11 +1,12 @@
-{:paths ["src" "target/classes"]
+{:paths ["src"]
  :deps
  {org.clojure/clojure                  {:mvn/version "1.11.0-alpha3"}
-  io.github.humbleui/jwm               {:mvn/version "0.3.0"  :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-windows     {:mvn/version "0.98.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-linux       {:mvn/version "0.98.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-x64   {:mvn/version "0.98.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.98.0" :exclusions [io.github.humbleui/types]}}
+  io.github.humbleui/types$clojure     {:mvn/version "0.1.2"}
+  io.github.humbleui/jwm               {:mvn/version "0.3.1"  :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-windows     {:mvn/version "0.98.1" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-linux       {:mvn/version "0.98.1" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-x64   {:mvn/version "0.98.1" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.98.1" :exclusions [io.github.humbleui/types]}}
  :aliases
  {:macos
   {:jvm-opts  ["-XstartOnFirstThread"]}
