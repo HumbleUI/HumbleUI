@@ -96,7 +96,7 @@
         app    app]
     (ui/-layout app ctx (IPoint. (:width bounds) (:height bounds)))
     (ui/-draw app ctx canvas)
-    (some-> @*window window/request-frame)))
+    (window/request-frame window)))
 
 (defn on-event [window event]
   (let [app      app
@@ -117,17 +117,23 @@
       (window/request-frame window))))
 
 (defn make-window []
-  (doto
-    (window/make
-      {:on-close (fn [window] (window/close window) (reset! *window nil))
-       :on-paint #'on-paint
-       :on-event #'on-event})
-    (window/set-title "Humble UI 👋")
-    (window/set-content-size 810 650)
-    (window/set-window-position 2994 630)
-    (window/set-visible true)
-    (window/set-z-order :floating)
-    (window/request-frame)))
+  (let [{:keys [work-area]} (hui/primary-screen)
+        window-width  (/ (:width work-area) 3)
+        window-height (/ (:height work-area) 3)
+        window-left   (- (:right work-area) window-width)
+        window-top    (-> (:y work-area)
+                        (+ (/ (:height work-area) 2))
+                        (- (/ window-height 2)))]
+    (doto
+      (window/make
+        {:on-close #(reset! *window nil)
+         :on-paint #'on-paint
+         :on-event #'on-event})
+      (window/set-title "Humble UI 👋")
+      (window/set-window-size window-width window-height)
+      (window/set-window-position window-left window-top)
+      (window/set-visible true)
+      (window/set-z-order :floating))))
   
 (defn -main [& args]
   (future (apply nrepl/-main args))

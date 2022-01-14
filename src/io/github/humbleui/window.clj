@@ -1,20 +1,25 @@
 (ns io.github.humbleui.window
   (:require
-   [io.github.humbleui.core :as core])
+    [io.github.humbleui.core :as core])
   (:import
-   [io.github.humbleui.jwm App Event EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame Platform Window ZOrder]
-   [io.github.humbleui.jwm.skija EventFrameSkija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
-   [java.util.function Consumer]))
+    [io.github.humbleui.jwm App Event EventWindowClose EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame Platform Window ZOrder]
+    [io.github.humbleui.jwm.skija EventFrameSkija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
+    [java.util.function Consumer]))
 
 (set! *warn-on-reflection* true)
 
+(defn close [^Window window]
+  (.close window))
+
 (defn make
-  ":on-close         (fn [window])
+  ":on-close-request (fn [window])
+   :on-close         (fn [])
    :on-screen-change (fn [window])
    :on-resize        (fn [window])
    :on-paint         (fn [window canvas])
    :on-event         (fn [window event])"
-  [{:keys [on-close on-screen-change on-resize on-paint on-event]}]
+  [{:keys [on-close-request on-close on-screen-change on-resize on-paint on-event]
+    :or {on-close-request close}}]
   (let [window   (App/makeWindow)
         layer    (condp = Platform/CURRENT
                    Platform/MACOS   (LayerMetalSkija.)
@@ -24,23 +29,28 @@
                    (accept [this e]
                      (when on-event
                        (on-event window e))
+                     
                      (condp instance? e
                        EventWindowCloseRequest
+                       (when on-close-request
+                         (on-close-request window))
+                       
+                       EventWindowClose
                        (when on-close
-                         (on-close window))
-
+                         (on-close))
+                       
                        EventWindowScreenChange
                        (when on-screen-change
                          (on-screen-change window))
-
+                       
                        EventWindowResize
                        (when on-resize
                          (on-resize window))
-
+                       
                        EventFrameSkija
                        (when on-paint
                          (let [canvas (-> ^EventFrameSkija e .getSurface .getCanvas)
-                               layer   (.save canvas)]
+                               layer  (.save canvas)]
                            (try
                              (on-paint window canvas)
                              (catch Exception e
@@ -48,7 +58,7 @@
                                (.clear canvas (unchecked-int 0xFFCC3333)))
                              (finally
                                (.restoreToCount canvas layer)))))
-
+                       
                        nil)))]
     (.setLayer window layer)
     (.setEventListener window listener)
@@ -98,6 +108,3 @@
 (defn request-frame [^Window window]
   (.requestFrame window)
   window)
-
-(defn close [^Window window]
-  (.close window))

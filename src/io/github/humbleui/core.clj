@@ -1,6 +1,6 @@
 (ns io.github.humbleui.core
   (:import
-   [io.github.humbleui.jwm App]
+   [io.github.humbleui.jwm App Screen]
    [java.lang AutoCloseable]))
 
 (defn memoize-last [ctor]
@@ -51,3 +51,16 @@
   `(let [x# ~x]
      (when (some? x#)
        (doto x# ~@forms))))
+
+(defn screen->clj [^Screen screen]
+  {:id        (.getId screen)
+   :primary?  (.isPrimary screen)
+   :bounds    (.getBounds screen)
+   :work-area (.getWorkArea screen)
+   :scale     (.getScale screen)})
+
+(defn primary-screen []
+  (screen->clj (App/getPrimaryScreen)))
+
+(defn screens []
+  (mapv screen->clj (App/getScreens)))
