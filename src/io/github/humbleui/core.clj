@@ -1,7 +1,9 @@
 (ns io.github.humbleui.core
+  (:require
+    [clojure.set :as set])
   (:import
-   [io.github.humbleui.jwm App Screen]
-   [java.lang AutoCloseable]))
+    [io.github.humbleui.jwm App Screen]
+    [java.lang AutoCloseable]))
 
 (defn memoize-last [ctor]
   (let [*atom (volatile! nil)]
@@ -67,3 +69,22 @@
 
 (defn screens []
   (mapv screen->clj (App/getScreens)))
+
+(defmacro deftype+
+  "Same as deftype, but allows for:
+
+   1. Using ^:mut instead of ^:unsynchronized-mutable
+   2. Using type annotations in protocol arglist"
+  [name fields & body]
+  (let [update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
+        remove-tag    #(vary-meta % dissoc :tag)
+        update-method (fn [[name args & body]]
+                        (list name
+                          (mapv remove-tag args)
+                          (list* 'clojure.core/let
+                            (vec (mapcat #(vector % (remove-tag %)) (filter #(:tag (meta %)) args)))
+                            body)))]
+    (list* 'clojure.core/deftype
+      name
+      (mapv update-field fields)
+      (map #(if (list? %) (update-method %) %) body))))

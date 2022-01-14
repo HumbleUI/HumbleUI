@@ -1,6 +1,6 @@
 (ns io.github.humbleui.ui
   (:require
-    [io.github.humbleui.core :as core])
+    [io.github.humbleui.core :as core :refer [deftype+]])
   (:import
     [java.lang AutoCloseable]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
@@ -38,13 +38,13 @@
   (when (instance? AutoCloseable child)
     (.close ^AutoCloseable child)))
 
-(deftype Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
+(deftype+ Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   IComponent
   (-layout [_ ctx cs]
     (IPoint. (.getWidth line) (.getCapHeight metrics)))
   
-  (-draw [_ ctx canvas]
-    (.drawTextLine ^Canvas canvas line 0 (.getCapHeight metrics) paint))
+  (-draw [_ ctx ^Canvas canvas]
+    (.drawTextLine canvas line 0 (.getCapHeight metrics) paint))
   
   (-event [_ event])
   
@@ -55,7 +55,7 @@
 (defn label [text font paint]
   (Label. text font paint (TextLine/make text font) (.getMetrics ^Font font)))
 
-(deftype HAlign [coeff child-coeff child ^:unsynchronized-mutable child-rect]
+(deftype+ HAlign [coeff child-coeff child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
@@ -67,9 +67,8 @@
           (:height child-size)))
       (IPoint. (:width cs) (:height child-size))))
   
-  (-draw [_ ctx canvas]
-    (let [canvas ^Canvas canvas
-          layer (.save ^Canvas canvas)]
+  (-draw [_ ctx ^Canvas canvas]
+    (let [layer (.save canvas)]
       (try
         (.translate canvas (:x child-rect) (:y child-rect))
         (-draw child ctx canvas)
@@ -87,7 +86,7 @@
   ([coeff child] (halign coeff coeff child))
   ([coeff child-coeff child] (HAlign. coeff child-coeff child nil)))
 
-(deftype VAlign [coeff child-coeff child ^:unsynchronized-mutable child-rect]
+(deftype+ VAlign [coeff child-coeff child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
@@ -99,14 +98,13 @@
           (:height child-size)))
       (IPoint. (:width child-size) (:height cs))))
   
-  (-draw [_ ctx canvas]
-    (let [canvas ^Canvas canvas
-          layer (.save ^Canvas canvas)]
+  (-draw [_ ctx ^Canvas canvas]
+    (let [layer (.save canvas)]
       (try
         (.translate canvas (:x child-rect) (:y child-rect))
         (-draw child ctx canvas)
         (finally
-          (.restoreToCount ^Canvas canvas layer)))))
+          (.restoreToCount canvas layer)))))
   
   (-event [_ event]
     (event-propagate event child child-rect))
@@ -120,7 +118,7 @@
   ([coeff child-coeff child] (VAlign. coeff child-coeff child nil)))
 
 ;; figure out align
-(deftype Column [children ^:unsynchronized-mutable child-rects]
+(deftype+ Column [children ^:mut child-rects]
   IComponent
   (-layout [_ ctx cs]
     (loop [width    0
@@ -141,14 +139,14 @@
           (set! child-rects rects)
           (IPoint. width height)))))
   
-  (-draw [_ ctx canvas]
+  (-draw [_ ctx ^Canvas canvas]
     (doseq [[child rect] (map vector children child-rects)]
-      (let [layer (.save ^Canvas canvas)]
+      (let [layer (.save canvas)]
         (try
-          (.translate ^Canvas canvas (:x rect) (:y rect))
+          (.translate canvas (:x rect) (:y rect))
           (-draw child ctx canvas)
           (finally
-            (.restoreToCount ^Canvas canvas layer))))))
+            (.restoreToCount canvas layer))))))
   
   (-event [_ event]
     (reduce
@@ -165,7 +163,7 @@
 (defn column [& children]
   (Column. (vec children) nil))
 
-(deftype Row [children ^:unsynchronized-mutable child-rects]
+(deftype+ Row [children ^:mut child-rects]
   IComponent
   (-layout [_ ctx cs]
     (loop [width    0
@@ -186,14 +184,14 @@
           (set! child-rects rects)
           (IPoint. width height)))))
   
-  (-draw [_ ctx canvas]
+  (-draw [_ ctx ^Canvas canvas]
     (doseq [[child rect] (map vector children child-rects)]
-      (let [layer (.save ^Canvas canvas)]
+      (let [layer (.save canvas)]
         (try
-          (.translate ^Canvas canvas (:x rect) (:y rect))
+          (.translate canvas (:x rect) (:y rect))
           (-draw child ctx canvas)
           (finally
-            (.restoreToCount ^Canvas canvas layer))))))
+            (.restoreToCount canvas layer))))))
   
   (-event [_ event]
     (reduce
@@ -220,7 +218,7 @@
 (defn gap [width height]
   (Gap. width height))
 
-(deftype Padding [left top right bottom child ^:unsynchronized-mutable child-rect]
+(deftype+ Padding [left top right bottom child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-cs   (IPoint. (- (:width cs) left right) (- (:height cs) top bottom))
@@ -230,9 +228,8 @@
         (+ (:width child-size) left right)
         (+ (:height child-size) top bottom))))
   
-  (-draw [_ ctx canvas]
-    (let [canvas ^Canvas canvas
-          layer  (.save canvas)]
+  (-draw [_ ctx ^Canvas canvas]
+    (let [layer (.save canvas)]
       (try
         (.translate canvas left top)
         (-draw child ctx canvas)
@@ -251,15 +248,15 @@
   ([w h child] (Padding. w h w h child nil))
   ([l t r b child] (Padding. l t r b child nil)))
 
-(deftype Fill [paint child ^:unsynchronized-mutable child-rect]
+(deftype+ Fill [paint child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
       (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
   
-  (-draw [_ ctx canvas]
-    (.drawRect ^Canvas canvas (Rect/makeXYWH 0 0 (:width child-rect) (:height child-rect)) paint)
+  (-draw [_ ctx ^Canvas canvas]
+    (.drawRect canvas (Rect/makeXYWH 0 0 (:width child-rect) (:height child-rect)) paint)
     (-draw child ctx canvas))
   
   (-event [_ event]
@@ -272,16 +269,15 @@
 (defn fill [paint child]
   (Fill. paint child nil))
 
-(deftype ClipRRect [radii child ^:unsynchronized-mutable child-rect]
+(deftype+ ClipRRect [radii child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
       (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
       child-size))
   
-  (-draw [_ ctx canvas]
-    (let [canvas ^Canvas canvas
-          layer  (.save canvas)
+  (-draw [_ ctx ^Canvas canvas]
+    (let [layer  (.save canvas)
           rrect  (RRect/makeComplexXYWH 0 0 (:width child-rect) (:height child-rect) radii)]
       (try
         (.clipRRect canvas rrect true)
@@ -299,7 +295,7 @@
 (defn clip-rrect
   ([r child] (ClipRRect. (into-array Float/TYPE [r]) child nil)))
 
-(deftype Hoverable [child ^:unsynchronized-mutable child-rect ^:unsynchronized-mutable hovered?]
+(deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
   IComponent
   (-layout [_ ctx cs]
     (let [ctx'       (cond-> ctx hovered? (assoc :hui/hovered? true))
@@ -326,11 +322,11 @@
 (defn hoverable [child]
   (Hoverable. child nil false))
 
-(deftype Clickable [on-click
+(deftype+ Clickable [on-click
                     child
-                    ^:unsynchronized-mutable child-rect
-                    ^:unsynchronized-mutable hovered?
-                    ^:unsynchronized-mutable pressed?]
+                    ^:mut child-rect
+                    ^:mut hovered?
+                    ^:mut pressed?]
   IComponent
   (-layout [_ ctx cs]
     (let [ctx'       (cond-> ctx
@@ -368,9 +364,9 @@
 (defn clickable [on-click child]
   (Clickable. on-click child nil false false))
 
-(deftype Contextual [child-ctor
-                     ^:unsynchronized-mutable child
-                     ^:unsynchronized-mutable child-rect]
+(deftype+ Contextual [child-ctor
+                     ^:mut child
+                     ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child' (child-ctor ctx)]
@@ -421,7 +417,7 @@
            (let [~@bindings]
              (inputs-fn# ~@syms)))))))
 
-(deftype VScroll [child ^:unsynchronized-mutable offset ^:unsynchronized-mutable size ^:unsynchronized-mutable child-size]
+(deftype+ VScroll [child ^:mut offset ^:mut size ^:mut child-size]
   IComponent
   (-layout [_ ctx cs]
     (set! child-size (-layout child ctx cs))
@@ -429,9 +425,8 @@
     (set! offset (core/clamp offset (- (:height size) (:height child-size)) 0))
     (Point. (:width child-size) (:height cs)))
   
-  (-draw [_ ctx canvas]
-    (let [canvas ^Canvas canvas
-          layer  (.save canvas)]
+  (-draw [_ ctx ^Canvas canvas]
+    (let [layer (.save canvas)]
       (try
         (.clipRect canvas (Rect/makeXYWH 0 0 (:width size) (:height size)))
         (.translate canvas 0 offset)
