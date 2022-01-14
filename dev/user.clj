@@ -1,13 +1,13 @@
 (ns user
   (:require
-   [io.github.humbleui.core :as hui]
-   [io.github.humbleui.window :as window]
-   [io.github.humbleui.ui :as ui]
-   [nrepl.cmdline :as nrepl])
+    [io.github.humbleui.core :as hui]
+    [io.github.humbleui.window :as window]
+    [io.github.humbleui.ui :as ui]
+    [nrepl.cmdline :as nrepl])
   (:import
-   [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove Window]
-   [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint]
-   [io.github.humbleui.types IPoint]))
+    [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll Window]
+    [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint]
+    [io.github.humbleui.types IPoint]))
 
 (set! *warn-on-reflection* true)
 
@@ -25,29 +25,45 @@
     (let [font-default        (Font. face-default (float (* 13 scale)))
           leading             (.getCapHeight (.getMetrics font-default))
           fill-text           (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))
+          fill-hover          (doto (Paint.) (.setColor (unchecked-int 0xFFDAF0FF)))
           fill-button-normal  (doto (Paint.) (.setColor (unchecked-int 0xFFade8f4)))
           fill-button-hovered (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8)))
           fill-button-active  (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4)))]
-      (ui/valign 0.5
-        (ui/halign 0.5
-          (ui/column
-            (ui/label "Hello from Humble UI! 👋" font-default fill-text)
-            (ui/gap 0 leading)
-            (ui/dynamic _ [clicks @*clicks]
-              (ui/label (str "Clicked: " clicks) font-default fill-text))
-            (ui/gap 0 leading)
-            (ui/clickable
-              #(swap! *clicks inc)
-              (ui/clip-rrect (* scale 4)
-                (ui/dynamic ctx [active?  (:hui/active? ctx)
-                                 hovered? (:hui/hovered? ctx)]
-                  (let [[label fill] (cond
-                                       active?  ["Active"    fill-button-active]
-                                       hovered? ["Hovered"   fill-button-hovered]
-                                       :else    ["Unpressed" fill-button-normal])]
-                    (ui/fill fill
-                      (ui/padding (* scale 20) leading
-                        (ui/label label font-default fill-text)))))))))))))
+      (ui/row
+        (ui/vscroll
+          (apply ui/column
+            (mapv
+              #(let [label (ui/padding (* scale 20) leading
+                             (ui/label (str %) font-default fill-text))]
+                 (ui/hoverable
+                   (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
+                     (if hovered?
+                       (ui/fill fill-hover label)
+                       label))))
+              (range 0 100))))
+        (ui/valign 0.5
+          (ui/halign 0.5
+            (ui/column
+              (ui/label "Hello from Humble UI! 👋" font-default fill-text)
+              (ui/gap 0 leading)
+              (ui/dynamic _ [clicks @*clicks]
+                (ui/label (str "Clicked: " clicks) font-default fill-text))
+              (ui/gap 0 leading)
+              (ui/clickable
+                #(swap! *clicks inc)
+                (ui/clip-rrect (* scale 4)
+                  (ui/dynamic ctx [active?  (:hui/active? ctx)
+                                   hovered? (:hui/hovered? ctx)]
+                    (let [[label fill] (cond
+                                         active?  ["Active"    fill-button-active]
+                                         hovered? ["Hovered"   fill-button-hovered]
+                                         :else    ["Unpressed" fill-button-normal])]
+                      (ui/fill fill
+                        (ui/padding (* scale 20) leading
+                          (ui/label label font-default fill-text))))))))))))))
+
+(comment
+  (window/request-frame @*window))
 
 (defn random-green []
   (let [r (+ 32  (rand-int 32))
@@ -81,13 +97,10 @@
                             (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCC3333)))
                               (ui/padding (* 5 scale) (* 5 scale)
                                 (ui/label "★" font fill-text)))
-                              (ui/fill (doto (Paint.) (.setColor (random-green)))
-                                (ui/padding (* 5 scale) (* 5 scale)
-                                  (let [idx (+ x (* y (+ y 1) 1/2) -1)]
-                                    (nth labels idx))))))))))))))))))
-
-(comment
-  (window/request-frame @*window))
+                            (ui/fill (doto (Paint.) (.setColor (random-green)))
+                              (ui/padding (* 5 scale) (* 5 scale)
+                                (let [idx (+ x (* y (+ y 1) 1/2) -1)]
+                                  (nth labels idx))))))))))))))))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
@@ -96,7 +109,9 @@
         app    app]
     (ui/-layout app ctx (IPoint. (:width bounds) (:height bounds)))
     (ui/-draw app ctx canvas)
-    (window/request-frame window)))
+    #_(window/request-frame window)))
+
+(some-> @*window window/request-frame)
 
 (defn on-event [window event]
   (let [app      app
@@ -106,20 +121,26 @@
                          event {:hui/event :hui/mouse-move
                                 :hui.event/pos pos}]
                      (ui/-event app event))
-
+                   
                    EventMouseButton
                    (let [event {:hui/event :hui/mouse-button
                                 :hui.event.mouse-button/is-pressed (.isPressed ^EventMouseButton event)}]
                      (ui/-event app event))
-
+                   
+                   EventMouseScroll
+                   (ui/-event app
+                     {:hui/event :hui/mouse-scroll
+                      :hui.event.mouse-scroll/dx (.getDeltaX ^EventMouseScroll event)
+                      :hui.event.mouse-scroll/dy (.getDeltaY ^EventMouseScroll event)})
+                   
                    nil)]
     (when changed?
       (window/request-frame window))))
 
 (defn make-window []
   (let [{:keys [work-area]} (hui/primary-screen)
-        window-width  (/ (:width work-area) 3)
-        window-height (/ (:height work-area) 3)
+        window-width  (/ (:width work-area) 4)
+        window-height (/ (:height work-area) 2)
         window-left   (- (:right work-area) window-width)
         window-top    (-> (:y work-area)
                         (+ (/ (:height work-area) 2))
@@ -134,7 +155,7 @@
       (window/set-window-position window-left window-top)
       (window/set-visible true)
       (window/set-z-order :floating))))
-  
+
 (defn -main [& args]
   (future (apply nrepl/-main args))
   (hui/init)
@@ -148,4 +169,4 @@
   
   (hui/doui (window/set-z-order @*window :normal))
   (hui/doui (window/set-z-order @*window :floating))
-)
+  )

@@ -27,6 +27,9 @@
   ([x y z & rest]
    (reduce #(or %1 %2) (or x y z) rest)))
 
+(defn clamp [x from to]
+  (min (max x from) to))
+
 (defn init []
   (App/init))
 
