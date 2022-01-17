@@ -450,6 +450,54 @@
 (defn vscroll [child]
   (VScroll. child 0 nil nil))
 
+(deftype+ VScrollbar [child scale ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
+  IComponent
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child ctx cs)]
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
+      child-size))
+  
+  (-draw [_ ctx ^Canvas canvas]
+    (-draw child ctx canvas)
+    (let [content-y (- (:offset child))
+          content-h (:height (:child-size child))
+          scroll-y  (:y child-rect)
+          scroll-h  (:height child-rect)
+          scroll-r  (:right child-rect)
+          
+          padding (* 4 scale)
+          track-w (* 4 scale)
+          track-x (- scroll-r track-w padding)
+          track-y (+ scroll-y padding)
+          track-h (- scroll-h (* 2 padding))
+          track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
+          
+          thumb-w       (* 4 scale)
+          min-thumb-h   (* 16 scale)
+          thumb-y-ratio (/ content-y content-h)
+          thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ track-y))
+          thumb-b-ratio (/ (+ content-y scroll-h) content-h)
+          thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
+          thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
+      (.drawRRect canvas track fill-track)
+      (.drawRRect canvas thumb fill-thumb)))
+
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (.close fill-track)
+    (.close fill-thumb)
+    (child-close child)))
+
+(defn vscrollbar [scale child]
+  (when-not (instance? VScroll child)
+    (throw (ex-info (str "Expected VScroll, got: " (type child)) {:child child})))
+  (VScrollbar. child scale
+    (doto (Paint.) (.setColor (unchecked-int 0x10000000)))
+    (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
+    nil))
 
 (comment
   (do

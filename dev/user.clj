@@ -30,17 +30,18 @@
           fill-button-hovered (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8)))
           fill-button-active  (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4)))]
       (ui/row
-        (ui/vscroll
-          (apply ui/column
-            (mapv
-              #(let [label (ui/padding (* scale 20) leading
-                             (ui/label (str %) font-default fill-text))]
-                 (ui/hoverable
-                   (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                     (if hovered?
-                       (ui/fill fill-hover label)
-                       label))))
-              (range 0 100))))
+        (ui/vscrollbar scale
+          (ui/vscroll
+            (apply ui/column
+              (mapv
+                #(let [label (ui/padding (* scale 20) leading
+                               (ui/label (str %) font-default fill-text))]
+                   (ui/hoverable
+                     (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
+                       (if hovered?
+                         (ui/fill fill-hover label)
+                         label))))
+                (range 0 100)))))
         (ui/valign 0.5
           (ui/halign 0.5
             (ui/column
