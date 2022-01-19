@@ -211,7 +211,8 @@
 (defrecord Gap [width height]
   IComponent
   (-layout [_ ctx cs]
-    (IPoint. width height))
+    (let [{:keys [scale]} ctx]
+      (IPoint. (* scale width) (* scale height))))
   (-draw [_ ctx canvas])
   (-event [_ event]))
 
@@ -221,17 +222,25 @@
 (deftype+ Padding [left top right bottom child ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
-    (let [child-cs   (IPoint. (- (:width cs) left right) (- (:height cs) top bottom))
+    (let [{:keys [scale]} ctx
+          left'   (* scale left)
+          right'  (* scale right)
+          top'    (* scale top)
+          bottom' (* scale bottom)
+          child-cs   (IPoint. (- (:width cs) left' right') (- (:height cs) top' bottom'))
           child-size (-layout child ctx child-cs)]
-      (set! child-rect (IRect/makeXYWH left top (:width child-size) (:height child-size)))
+      (set! child-rect (IRect/makeXYWH left' top' (:width child-size) (:height child-size)))
       (IPoint.
-        (+ (:width child-size) left right)
-        (+ (:height child-size) top bottom))))
+        (+ (:width child-size) left' right')
+        (+ (:height child-size) top' bottom'))))
   
   (-draw [_ ctx ^Canvas canvas]
-    (let [layer (.save canvas)]
+    (let [{:keys [scale]} ctx
+          left'   (* scale left)
+          top'    (* scale top)
+          layer (.save canvas)]
       (try
-        (.translate canvas left top)
+        (.translate canvas left' top')
         (-draw child ctx canvas)
         (finally
           (.restoreToCount canvas layer)))))
@@ -277,8 +286,10 @@
       child-size))
   
   (-draw [_ ctx ^Canvas canvas]
-    (let [layer  (.save canvas)
-          rrect  (RRect/makeComplexXYWH 0 0 (:width child-rect) (:height child-rect) radii)]
+    (let [{:keys [scale]} ctx
+          radii' (into-array Float/TYPE (map #(* scale %) radii))
+          rrect  (RRect/makeComplexXYWH 0 0 (:width child-rect) (:height child-rect) radii')
+          layer  (.save canvas)]
       (try
         (.clipRRect canvas rrect true)
         (-draw child ctx canvas)
@@ -293,7 +304,7 @@
     (child-close child)))
 
 (defn clip-rrect
-  ([r child] (ClipRRect. (into-array Float/TYPE [r]) child nil)))
+  ([r child] (ClipRRect. [r] child nil)))
 
 (deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
   IComponent
@@ -417,6 +428,26 @@
            (let [~@bindings]
              (inputs-fn# ~@syms)))))))
 
+(deftype+ WithContext [data child ^:mut child-rect]
+  IComponent
+  (-layout [_ ctx cs]
+    (let [child-size (-layout child (merge ctx data) cs)]
+      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
+      child-size))
+  
+  (-draw [_ ctx ^Canvas canvas]
+    (-draw child (merge ctx data) canvas))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn with-context [data child]
+  (WithContext. data child nil))
+
 (deftype+ VScroll [child ^:mut offset ^:mut size ^:mut child-size]
   IComponent
   (-layout [_ ctx cs]
@@ -450,7 +481,7 @@
 (defn vscroll [child]
   (VScroll. child 0 nil nil))
 
-(deftype+ VScrollbar [child scale ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
+(deftype+ VScrollbar [child ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
   IComponent
   (-layout [_ ctx cs]
     (let [child-size (-layout child ctx cs)]
@@ -459,7 +490,8 @@
   
   (-draw [_ ctx ^Canvas canvas]
     (-draw child ctx canvas)
-    (let [content-y (- (:offset child))
+    (let [{:keys [scale]} ctx
+          content-y (- (:offset child))
           content-h (:height (:child-size child))
           scroll-y  (:y child-rect)
           scroll-h  (:height child-rect)
@@ -487,14 +519,15 @@
   
   AutoCloseable
   (close [_]
-    (.close fill-track)
-    (.close fill-thumb)
+    ;; TODO causes crash
+    ; (.close fill-track)
+    ; (.close fill-thumb)
     (child-close child)))
 
-(defn vscrollbar [scale child]
+(defn vscrollbar [child]
   (when-not (instance? VScroll child)
     (throw (ex-info (str "Expected VScroll, got: " (type child)) {:child child})))
-  (VScrollbar. child scale
+  (VScrollbar. child
     (doto (Paint.) (.setColor (unchecked-int 0x10000000)))
     (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
     nil))
