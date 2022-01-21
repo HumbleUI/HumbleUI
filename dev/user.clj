@@ -33,7 +33,7 @@
     (let [font-ui   (Font. face-default (float (* 13 scale)))
           leading   (-> font-ui .getMetrics .getCapHeight (/ scale) Math/ceil)
           fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
-      (ui/row
+      (ui/row {:height :stretch}
         (ui/vscrollbar
           (ui/vscroll
             (apply ui/column
@@ -45,45 +45,44 @@
                     (let [label (ui/padding 20 leading
                                   (ui/label name font-ui fill-text))]
                       (cond
-                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4))) label)
-                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8))) label)
+                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4))) (ui/hstretch label))
+                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8))) (ui/hstretch label))
                         :else     label))))))))
-        (ui/with-context {:font-ui   font-ui
-                          :leading   leading
-                          :fill-text fill-text}
-          (ui/valign 0.5
+        (with-meta
+          (ui/with-context {:font-ui   font-ui
+                            :leading   leading
+                            :fill-text fill-text}
             (ui/halign 0.5
-              (ui/dynamic _ [example @*example]
-                example))))))))
+              (ui/valign 0.5
+                (ui/dynamic _ [example @*example]
+                  example))))
+          {:stretch 1})))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
   (let [bounds (window/content-rect window)
         ctx    {:bounds bounds
-                :scale  (window/scale window)}
-        app    app]
-    (ui/-layout app ctx (IPoint. (:width bounds) (:height bounds)))
-    (ui/-draw app ctx canvas)
+                :scale  (window/scale window)}]
+    (ui/draw app ctx bounds canvas)
     #_(window/request-frame window)))
 
 (some-> @*window window/request-frame)
 
 (defn on-event [window event]
-  (let [app      app
-        changed? (condp instance? event
+  (let [changed? (condp instance? event
                    EventMouseMove
                    (let [pos   (IPoint. (.getX ^EventMouseMove event) (.getY ^EventMouseMove event))
                          event {:hui/event :hui/mouse-move
                                 :hui.event/pos pos}]
-                     (ui/-event app event))
+                     (ui/event app event))
                    
                    EventMouseButton
                    (let [event {:hui/event :hui/mouse-button
                                 :hui.event.mouse-button/is-pressed (.isPressed ^EventMouseButton event)}]
-                     (ui/-event app event))
+                     (ui/event app event))
                    
                    EventMouseScroll
-                   (ui/-event app
+                   (ui/event app
                      {:hui/event :hui/mouse-scroll
                       :hui.event.mouse-scroll/dx (.getDeltaX ^EventMouseScroll event)
                       :hui.event.mouse-scroll/dy (.getDeltaY ^EventMouseScroll event)})
@@ -93,21 +92,25 @@
       (window/request-frame window))))
 
 (defn make-window []
-  (let [{:keys [work-area]} (hui/primary-screen)
-        window-width  (/ (:width work-area) 4)
-        window-height (/ (:height work-area) 2)
-        window-left   (- (:right work-area) window-width)
-        window-top    (-> (:y work-area)
-                        (+ (/ (:height work-area) 2))
-                        (- (/ window-height 2)))]
+  (let [[x y width height] (if-some [screen (second (hui/screens))]
+                             (let [area (:work-area screen)]
+                               [(:x area)
+                                (+ (:y area) (/ (:height area) 4))
+                                (* (:width area) 0.33)
+                                (* (:height area) 0.5)])
+                             (let [area (:work-area (hui/primary-screen))]
+                               [(+ (:left area) (* (:width area) 0.75))
+                                (+ (:y area) (/ (:height area) 4))
+                                (* (:width area) 0.75)
+                                (* (:height area) 0.5)]))]
     (doto
       (window/make
         {:on-close #(reset! *window nil)
          :on-paint #'on-paint
          :on-event #'on-event})
       (window/set-title "Humble UI 👋")
-      (window/set-window-size window-width window-height)
-      (window/set-window-position window-left window-top)
+      (window/set-window-size width height)
+      (window/set-window-position x y)
       (window/set-visible true)
       (window/set-z-order :floating))))
 

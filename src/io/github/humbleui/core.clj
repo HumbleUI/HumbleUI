@@ -32,6 +32,15 @@
 (defn clamp [x from to]
   (min (max x from) to))
 
+(defmacro for-vec [& body]
+  `(vec (for ~@body)))
+
+(defmacro for-map [& body]
+  `(into {} (for ~@body)))
+
+(defn zip [& xs]
+  (apply map vector xs))
+
 (defn init []
   (App/init))
 
@@ -79,7 +88,8 @@
    1. Uses ^:mut instead of ^:unsynchronized-mutable
    2. Allows using type annotations in protocol arglist
    3. Read mutable fields through ILookup: (:field instance)
-   4. Write to mutable fields from outside through ISettable: (-set! instance key value)"
+   4. Write to mutable fields from outside through ISettable: (-set! instance key value)
+   5. Allow with-meta"
   [name fields & body]
   (let [update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
         remove-tag    #(vary-meta % dissoc :tag)
@@ -90,17 +100,30 @@
                             (vec (mapcat #(vector % (remove-tag %)) (filter #(:tag (meta %)) args)))
                             body)))
         value-sym     (gensym 'value)]
-    `(deftype ~name
-       ~(mapv update-field fields)
-       ~@(map #(if (list? %) (update-method %) %) body)
-       clojure.lang.ILookup
-       (valAt [_# key# notFound#]
-         (case key#
-           ~@(mapcat #(vector (keyword %) %) fields)
-           notFound#))
-       (valAt [this# key#]
-         (.valAt this# key# nil))
-       ISettable
-       (-set! [_# key# ~value-sym]
-         (case key#
-           ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) (filter #(:mut (meta %)) fields)))))))
+    `(do
+       (deftype ~name
+         ~(mapv update-field (conj fields '__m))
+       
+         ~@(map #(if (list? %) (update-method %) %) body)
+       
+         clojure.lang.IMeta
+         (meta [_] ~'__m)
+       
+         clojure.lang.IObj
+         (withMeta [_ meta#]
+           (new ~name ~@fields meta#))
+       
+         clojure.lang.ILookup
+         (valAt [_# key# notFound#]
+           (case key#
+             ~@(mapcat #(vector (keyword %) %) fields)
+             notFound#))
+         (valAt [this# key#]
+           (.valAt this# key# nil))
+       
+         ISettable
+         (-set! [_# key# ~value-sym]
+           (case key#
+             ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) (filter #(:mut (meta %)) fields)))))
+       (defn ~(symbol (str '-> name)) ~fields
+         (new ~name ~@fields nil)))))
