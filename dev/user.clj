@@ -33,7 +33,7 @@
     (let [font-ui   (Font. face-default (float (* 13 scale)))
           leading   (-> font-ui .getMetrics .getCapHeight (/ scale) Math/ceil)
           fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
-      (ui/row {:height :stretch}
+      (ui/row
         (ui/vscrollbar
           (ui/vscroll
             (apply ui/column
@@ -45,18 +45,17 @@
                     (let [label (ui/padding 20 leading
                                   (ui/label name font-ui fill-text))]
                       (cond
-                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4))) (ui/hstretch label))
-                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8))) (ui/hstretch label))
+                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4))) label)
+                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8))) label)
                         :else     label))))))))
-        (with-meta
+        (ui/stretch
           (ui/with-context {:font-ui   font-ui
                             :leading   leading
                             :fill-text fill-text}
             (ui/halign 0.5
               (ui/valign 0.5
                 (ui/dynamic _ [example @*example]
-                  example))))
-          {:stretch 1})))))
+                  example)))))))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF0F0F0))
@@ -99,9 +98,9 @@
                                 (* (:width area) 0.33)
                                 (* (:height area) 0.5)])
                              (let [area (:work-area (hui/primary-screen))]
-                               [(+ (:left area) (* (:width area) 0.75))
+                               [(+ (:x area) (* (:width area) 0.75))
                                 (+ (:y area) (/ (:height area) 4))
-                                (* (:width area) 0.75)
+                                (* (:width area) 0.25)
                                 (* (:height area) 0.5)]))]
     (doto
       (window/make

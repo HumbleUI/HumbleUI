@@ -61,14 +61,13 @@
 (deftype+ HAlign [coeff child-coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [layer (.save canvas)
-          left  (- (* (:width cs) coeff) (* (:width child-rect) child-coeff))]
-      (set! child-rect (IRect/makeXYWH left 0 (:width child-rect) (:height cs)))
+    (let [layer      (.save canvas)
+          child-size (-measure child ctx cs)
+          left       (- (* (:width cs) coeff) (* (:width child-size) child-coeff))]
+      (set! child-rect (IRect/makeXYWH left 0 (:width child-size) (:height cs)))
       (try
         (.translate canvas left 0)
         (-draw child ctx child-rect canvas)
@@ -89,14 +88,13 @@
 (deftype+ VAlign [coeff child-coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [layer (.save canvas)
-          top   (- (* (:height cs) coeff) (* (:height child-rect) child-coeff))]
-      (set! child-rect (IRect/makeXYWH 0 top (:width cs) (:height child-rect)))
+    (let [layer      (.save canvas)
+          child-size (-measure child ctx cs)
+          top        (- (* (:height cs) coeff) (* (:height child-size) child-coeff))]
+      (set! child-rect (IRect/makeXYWH 0 top (:width cs) (:height child-size)))
       (try
         (.translate canvas 0 top)
         (-draw child ctx child-rect canvas)
@@ -114,68 +112,50 @@
   ([coeff child] (valign coeff coeff child))
   ([coeff child-coeff child] (->VAlign coeff child-coeff child nil)))
 
-(deftype+ HStretch [child ^:mut child-rect]
+(defn stretch
+  ([child]
+   (with-meta child {:stretch 1}))
+  ([coeff child]
+   (with-meta child {:stretch coeff})))
+
+(deftype+ Column [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (reduce
+      (fn [{:keys [width height]} child]
+        (let [child-size (-measure child ctx (update cs :height - height))]
+          (IPoint. (max width (:width child-size)) (+ height (:height child-size)))))
+      (IPoint. 0 0) children))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (-draw child ctx cs canvas))
-  
-  (-event [_ event]
-    (event-propagate event child child-rect))
-  
-  AutoCloseable
-  (close [_]
-    (child-close child)))
-
-(defn hstretch [child]
-  (->HStretch child nil))
-
-(deftype+ Column [opts children ^:mut child-rects]
-  IComponent
-  (-measure [_ ctx cs]
     (let [known   (core/for-map [child children
                                  :when (not (:stretch (meta child)))]
-                    [child (-measure child ctx cs)])
-          left    (- (:height cs) (reduce + (for [[_ size] known] (:height size))))
-          stretch (reduce + (map #(:stretch (meta %) 0) children))]
-      (loop [width    0
-             height   0
-             rects    []
-             children children]
-        (if children
-          (let [child      (first children)
-                child-size (or (known child)
-                             (let [child-cs (IPoint. (:width cs) (-> left (/ stretch) (* (:stretch (meta child)))))]
-                               (-measure child ctx child-cs)
-                               child-cs))]
-            (recur
-              (max width (int (:width child-size)))
-              (+ height (int (:height child-size)))
-              (conj rects (IRect/makeXYWH 0 height (:width child-size) (:height child-size)))
-              (next children)))
-          (let [width' (if (= :stretch (:width opts)) (:width cs) width)]
-            (set! child-rects (map #(assoc % :width width') rects))
-            (IPoint. width' height))))))
-  
-  (-draw [_ ctx cs ^Canvas canvas]
-    (doseq [[child rect] (core/zip children child-rects)]
-      (let [layer (.save canvas)]
-        (try
-          (.translate canvas (:x rect) (:y rect))
-          (-draw child ctx rect canvas)
-          (finally
-            (.restoreToCount canvas layer))))))
+                    [child (-measure child ctx cs)]) ;; TODO cs
+          space   (- (:height cs) (reduce + (for [[_ size] known] (:height size))))
+          stretch (reduce + (map #(:stretch (meta %) 0) children))
+          layer   (.save canvas)]
+      (try
+        (loop [height   0
+               rects    []
+               children children]
+          (if-some [child (first children)]
+            (let [child-size (or (known child)
+                               (IPoint. (:width cs) (-> space (/ stretch) (* (:stretch (meta child))))))]
+              (-draw child ctx (assoc child-size :width (:width cs)) canvas)
+              (.translate canvas 0 (:height child-size))
+              (recur
+                (+ height (:height child-size))
+                (conj rects (IRect/makeXYWH 0 height (:width cs) (:height child-size)))
+                (next children)))
+            (set! child-rects rects)))
+        (.restoreToCount canvas layer))))
   
   (-event [_ event]
     (reduce
       (fn [acc [child rect]]
         (core/eager-or acc (event-propagate event child rect)))
       false
-      (map vector children child-rects)))
+      (core/zip children child-rects)))
   
   AutoCloseable
   (close [_]
@@ -183,52 +163,46 @@
       (child-close child))))
 
 (defn column [& children]
-  (if (map? (first children))
-    (->Column (first children) (vec (next children)) nil)
-    (->Column {} (vec children) nil)))
+  (->Column (vec children) nil))
 
-(deftype+ Row [opts children ^:mut child-rects]
+(deftype+ Row [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
-    (let [known   (core/for-map [child children
-                                 :when (not (:stretch (meta child)))]
-                    [child (-measure child ctx cs)])
-          left    (- (:width cs) (reduce + (for [[_ size] known] (:width size))))
-          stretch (transduce (map #(:stretch (meta %) 0)) + 0 children)]
-      (loop [width    0
-             height   0
-             rects    []
-             children children]
-        (if children
-          (let [child      (first children)
-                child-size (or (known child)
-                             (let [child-cs (IPoint. (-> left (/ stretch) (* (:stretch (meta child)))) (:height cs))]
-                               (-measure child ctx child-cs)
-                               child-cs))]
-            (recur
-              (+ width (int (:width child-size)))
-              (max height (int (:height child-size)))
-              (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height child-size)))
-              (next children)))
-          (let [height' (if (= :stretch (:height opts)) (:height cs) height)]
-            (set! child-rects (map #(assoc % :height height') rects))
-            (IPoint. width height'))))))
+    (reduce
+      (fn [{:keys [width height]} child]
+        (let [child-size (-measure child ctx (update cs :width - width))]
+          (IPoint. (+ width (:width child-size)) (max height (:height child-size)))))
+      (IPoint. 0 0) children))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (doseq [[child rect] (core/zip children child-rects)]
-      (let [layer (.save canvas)]
-        (try
-          (.translate canvas (:x rect) (:y rect))
-          (-draw child ctx rect canvas)
-          (finally
-            (.restoreToCount canvas layer))))))
+    (let [known   (core/for-map [child children
+                                 :when (not (:stretch (meta child)))]
+                    [child (-measure child ctx cs)]) ;; TODO cs
+          space   (- (:width cs) (reduce + (for [[_ size] known] (:width size))))
+          stretch (reduce + (map #(:stretch (meta %) 0) children))
+          layer   (.save canvas)]
+      (try
+        (loop [width   0
+               rects    []
+               children children]
+          (if-some [child (first children)]
+            (let [child-size (or (known child)
+                               (IPoint. (-> space (/ stretch) (* (:stretch (meta child)))) (:height cs)))]
+              (-draw child ctx (assoc child-size :height (:height cs)) canvas)
+              (.translate canvas (:width child-size) 0)
+              (recur
+                (+ width (:width child-size))
+                (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height cs)))
+                (next children)))
+            (set! child-rects rects)))
+        (.restoreToCount canvas layer))))
   
   (-event [_ event]
     (reduce
       (fn [acc [child rect]]
         (core/eager-or acc (event-propagate event child rect)))
       false
-      (map vector children child-rects)))
+      (core/zip children child-rects)))
   
   AutoCloseable
   (close [_]
@@ -236,9 +210,7 @@
       (child-close child))))
 
 (defn row [& children]
-  (if (map? (first children))
-    (->Row (first children) (vec (next children)) nil)
-    (->Row {} (vec children) nil)))
+  (->Row (vec children) nil))
 
 (defrecord Gap [width height]
   IComponent
@@ -261,20 +233,23 @@
           bottom' (* scale bottom)
           child-cs   (IPoint. (- (:width cs) left' right') (- (:height cs) top' bottom'))
           child-size (-measure child ctx child-cs)]
-      (set! child-rect (IRect/makeXYWH left' top' (:width child-size) (:height child-size)))
       (IPoint.
         (+ (:width child-size) left' right')
         (+ (:height child-size) top' bottom'))))
   
   (-draw [_ ctx cs ^Canvas canvas]
     (let [{:keys [scale]} ctx
-          left'   (* scale left)
-          top'    (* scale top)
-          layer   (.save canvas)
-          child-cs (IPoint. (- (:width cs) left' (* scale right)) (- (:height cs) top' (* scale bottom)))]
+          left'    (* scale left)
+          top'     (* scale top)
+          right'   (* scale right)
+          bottom'  (* scale bottom)
+          layer    (.save canvas)
+          width'   (- (:width cs) left' right')
+          height'  (- (:height cs) top' bottom')]
+      (set! child-rect (IRect/makeXYWH left' top' width' height'))
       (try
         (.translate canvas left' top')
-        (-draw child ctx child-cs canvas)
+        (-draw child ctx (IPoint. width' height') canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
@@ -293,12 +268,11 @@
 (deftype+ Fill [paint child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (.drawRect canvas (Rect/makeXYWH 0 0 (:width child-rect) (:height child-rect)) paint)
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (.drawRect canvas (Rect/makeXYWH 0 0 (:width cs) (:height cs)) paint)
     (-draw child ctx cs canvas))
   
   (-event [_ event]
@@ -314,16 +288,15 @@
 (deftype+ ClipRRect [radii child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
     (let [{:keys [scale]} ctx
           radii' (into-array Float/TYPE (map #(* scale %) radii))
-          rrect  (RRect/makeComplexXYWH 0 0 (:width child-rect) (:height child-rect) radii')
+          rrect  (RRect/makeComplexXYWH 0 0 (:width cs) (:height cs) radii')
           layer  (.save canvas)]
       (try
+        (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
         (.clipRRect canvas rrect true)
         (-draw child ctx cs canvas)
         (finally
@@ -342,13 +315,12 @@
 (deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
   IComponent
   (-measure [_ ctx cs]
-    (let [ctx'       (cond-> ctx hovered? (assoc :hui/hovered? true))
-          child-size (-measure child ctx' cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs canvas]
-    (-draw child ctx cs canvas))
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))]
+      (-draw child ctx' cs canvas)))
   
   (-event [_ event]
     (core/eager-or
@@ -369,15 +341,14 @@
 (deftype+ Clickable [on-click child ^:mut child-rect ^:mut hovered? ^:mut pressed?]
   IComponent
   (-measure [_ ctx cs]
-    (let [ctx'       (cond-> ctx
-                       hovered?                (assoc :hui/hovered? true)
-                       (and pressed? hovered?) (assoc :hui/active? true))
-          child-size (-measure child ctx' cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs canvas]
-    (-draw child ctx cs canvas))
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (let [ctx' (cond-> ctx
+                 hovered?                (assoc :hui/hovered? true)
+                 (and pressed? hovered?) (assoc :hui/active? true))]
+      (-draw child ctx' cs canvas)))
   
   (-event [_ event]
     (core/eager-or
@@ -410,12 +381,15 @@
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
         (child-close child)
-        (set! child child'))
-      (let [child-size (-measure child ctx cs)]
-        (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-        child-size)))
+        (set! child child')))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs canvas]
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (child-close child)
+        (set! child child')))
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
     (-draw child ctx cs canvas))
   
   (-event [_ event]
@@ -458,11 +432,10 @@
 (deftype+ WithContext [data child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child (merge ctx data) cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child (merge ctx data) cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
     (-draw child (merge ctx data) cs canvas))
   
   (-event [_ event]
@@ -481,7 +454,7 @@
     (let [child-cs (assoc cs :height Integer/MAX_VALUE)]
       (set! child-size (-measure child ctx child-cs))
       (set! offset (core/clamp offset (- (:height cs) (:height child-size)) 0))
-      (IPoint. (:width child-size) (min (:height cs) (:height child-size)))))
+      (IPoint. (:width child-size) (:height cs))))
   
   (-draw [_ ctx cs ^Canvas canvas]
     (set! size cs)
@@ -513,11 +486,10 @@
 (deftype+ VScrollbar [child ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [child-size (-measure child ctx cs)]
-      (set! child-rect (IRect/makeXYWH 0 0 (:width child-size) (:height child-size)))
-      child-size))
+    (-measure child ctx cs))
   
   (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
     (-draw child ctx cs canvas)
     (let [{:keys [scale]} ctx
           content-y (- (:offset child))
