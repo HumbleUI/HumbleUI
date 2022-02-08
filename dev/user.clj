@@ -4,6 +4,7 @@
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
     [nrepl.cmdline :as nrepl]
+    [examples.align]
     [examples.button]
     [examples.label]
     [examples.scroll]
@@ -20,10 +21,11 @@
 (defonce ^Typeface face-default
   (.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL))
 
-(def *example (atom examples.label/ui))
+(def *example (atom examples.align/ui))
 
 (def examples
-  {"Button" examples.button/ui
+  {"Align"  examples.align/ui
+   "Button" examples.button/ui
    "Label"  examples.label/ui
    "Scroll" examples.scroll/ui
    "Tree"   examples.tree/ui})

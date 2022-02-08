@@ -112,6 +112,27 @@
   ([coeff child] (valign coeff coeff child))
   ([coeff child-coeff child] (->VAlign coeff child-coeff child nil)))
 
+(deftype+ WidthRatio [ratio child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [cs' (update cs :width * ratio)
+          child-size (-measure child ctx cs')]
+      (assoc child-size :width (:width cs'))))
+  
+  (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (-draw child ctx cs canvas))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn width-ratio [ratio child]
+  (->WidthRatio ratio child nil))
+
 (defn stretch
   ([child]
    (with-meta child {:stretch 1}))
