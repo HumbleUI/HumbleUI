@@ -112,12 +112,16 @@
   ([coeff child] (valign coeff coeff child))
   ([coeff child-coeff child] (->VAlign coeff child-coeff child nil)))
 
-(deftype+ WidthRatio [ratio child ^:mut child-rect]
+(deftype+ Width [type value child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [cs' (update cs :width * ratio)
+    (let [width      (:width cs)
+          width'     (case type
+                       :ratio (* width value)
+                       :px    value)
+          cs'        (assoc cs :width width')
           child-size (-measure child ctx cs')]
-      (assoc child-size :width (:width cs'))))
+      (assoc child-size :width width')))
   
   (-draw [_ ctx cs ^Canvas canvas]
     (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
@@ -130,8 +134,33 @@
   (close [_]
     (child-close child)))
 
-(defn width-ratio [ratio child]
-  (->WidthRatio ratio child nil))
+(defn width [type value child]
+  (->Width type value child nil))
+
+(deftype+ Height [type value child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [height      (:height cs)
+          height'     (case type
+                        :ratio (* height value)
+                        :px    value)
+          cs'        (assoc cs :height height')
+          child-size (-measure child ctx cs')]
+      (assoc child-size :height height')))
+  
+  (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (-draw child ctx cs canvas))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn height [type value child]
+  (->Height type value child nil))
 
 (defn stretch
   ([child]
@@ -149,24 +178,26 @@
       (IPoint. 0 0) children))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [known   (core/for-map [child children
-                                 :when (not (:stretch (meta child)))]
-                    [child (-measure child ctx cs)]) ;; TODO cs
-          space   (- (:height cs) (reduce + (for [[_ size] known] (:height size))))
+    (let [known   (for [child children]
+                    (when-not (:stretch (meta child))
+                      (-measure child ctx cs))) ;; TODO cs
+          space   (- (:height cs) (transduce (keep :height) + 0 known))
           stretch (reduce + (map #(:stretch (meta %) 0) children))
           layer   (.save canvas)]
       (try
         (loop [height   0
                rects    []
+               known    known
                children children]
           (if-some [child (first children)]
-            (let [child-size (or (known child)
+            (let [child-size (or (first known)
                                (IPoint. (:width cs) (-> space (/ stretch) (* (:stretch (meta child))))))]
               (-draw child ctx (assoc child-size :width (:width cs)) canvas)
               (.translate canvas 0 (:height child-size))
               (recur
                 (+ height (:height child-size))
                 (conj rects (IRect/makeXYWH 0 height (:width cs) (:height child-size)))
+                (next known)
                 (next children)))
             (set! child-rects rects)))
         (.restoreToCount canvas layer))))
@@ -184,7 +215,7 @@
       (child-close child))))
 
 (defn column [& children]
-  (->Column (vec children) nil))
+  (->Column (vec (flatten children)) nil))
 
 (deftype+ Row [children ^:mut child-rects]
   IComponent
@@ -196,24 +227,26 @@
       (IPoint. 0 0) children))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [known   (core/for-map [child children
-                                 :when (not (:stretch (meta child)))]
-                    [child (-measure child ctx cs)]) ;; TODO cs
-          space   (- (:width cs) (reduce + (for [[_ size] known] (:width size))))
+    (let [known   (for [child children]
+                    (when-not (:stretch (meta child))
+                      (-measure child ctx cs))) ;; TODO cs
+          space   (- (:width cs) (transduce (keep :width) + 0 known))
           stretch (reduce + (map #(:stretch (meta %) 0) children))
           layer   (.save canvas)]
       (try
-        (loop [width   0
+        (loop [width    0
                rects    []
+               known    known
                children children]
           (if-some [child (first children)]
-            (let [child-size (or (known child)
+            (let [child-size (or (first known)
                                (IPoint. (-> space (/ stretch) (* (:stretch (meta child)))) (:height cs)))]
               (-draw child ctx (assoc child-size :height (:height cs)) canvas)
               (.translate canvas (:width child-size) 0)
               (recur
                 (+ width (:width child-size))
                 (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height cs)))
+                (next known)
                 (next children)))
             (set! child-rects rects)))
         (.restoreToCount canvas layer))))
@@ -231,7 +264,7 @@
       (child-close child))))
 
 (defn row [& children]
-  (->Row (vec children) nil))
+  (->Row (vec (flatten children)) nil))
 
 (defrecord Gap [width height]
   IComponent

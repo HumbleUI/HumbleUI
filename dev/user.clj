@@ -47,20 +47,18 @@
                     (let [label (ui/padding 20 leading
                                   (ui/label name font-ui fill-text))]
                       (cond
-                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF48cae4))) label)
-                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFcaf0f8))) label)
+                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
+                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
                         :else     label))))))))
         (ui/stretch
           (ui/with-context {:font-ui   font-ui
                             :leading   leading
                             :fill-text fill-text}
-            (ui/halign 0.5
-              (ui/valign 0.5
-                (ui/dynamic _ [example @*example]
-                  example)))))))))
+            (ui/dynamic _ [example @*example]
+              example)))))))
 
 (defn on-paint [window ^Canvas canvas]
-  (.clear canvas (unchecked-int 0xFFF0F0F0))
+  (.clear canvas (unchecked-int 0xFFF6F6F6))
   (let [bounds (window/content-rect window)
         ctx    {:bounds bounds
                 :scale  (window/scale window)}]
