@@ -36,26 +36,25 @@
           leading   (-> font-ui .getMetrics .getCapHeight (/ scale) Math/ceil)
           fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
       (ui/row
-        (ui/vscrollbar
-          (ui/vscroll
-            (apply ui/column
-              (for [[name ui] (sort-by first examples)]
-                (ui/clickable
-                  #(reset! *example ui)
-                  (ui/dynamic ctx [selected? (= ui @*example)
-                                   hovered?  (:hui/hovered? ctx)]
-                    (let [label (ui/padding 20 leading
-                                  (ui/label name font-ui fill-text))]
-                      (cond
-                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
-                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
-                        :else     label))))))))
-        (ui/stretch
-          (ui/with-context {:font-ui   font-ui
-                            :leading   leading
-                            :fill-text fill-text}
-            (ui/dynamic _ [example @*example]
-              example)))))))
+        [:hug nil (ui/vscrollbar
+                    (ui/vscroll
+                      (apply ui/column
+                        (for [[name ui] (sort-by first examples)]
+                          [:hug nil (ui/clickable
+                                      #(reset! *example ui)
+                                      (ui/dynamic ctx [selected? (= ui @*example)
+                                                       hovered?  (:hui/hovered? ctx)]
+                                        (let [label (ui/padding 20 leading
+                                                      (ui/label name font-ui fill-text))]
+                                          (cond
+                                            selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
+                                            hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
+                                            :else     label))))]))))]
+        [:stretch 1 (ui/with-context {:font-ui   font-ui
+                                      :leading   leading
+                                      :fill-text fill-text}
+                      (ui/dynamic _ [example @*example]
+                        example))]))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF6F6F6))

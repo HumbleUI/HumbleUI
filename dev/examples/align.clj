@@ -18,28 +18,48 @@
 (def ui
   (ui/valign 0.5
     (ui/row
-      (ui/gap 1 0)
-      (ui/stretch
-        (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
-          (ui/column
-            (interpose (ui/gap 0 1)
-              (for [i (range 0 1.1 1/10)]
-                (ui/stretch
-                  (ui/halign i
-                    (ui/width :ratio (float 1/3)
-                      (label (case i 0 "Left" 1/2 "Centre" 1 "Right" (str (float i)))))))))
-            (ui/gap 0 1)
-            (ui/stretch (label "Stretch")))))
-      (ui/gap 1 0)
-      (ui/stretch
-        (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
-          (ui/row
-            (interpose (ui/gap 1 0)
-              (for [i (range 0 1.1 1/10)]
-                (ui/stretch
-                  (ui/valign i
-                    (ui/height :ratio (float 1/3)
-                      (label (case i 0 "Top" 1/2 "Middle" 1 "Bottom" (str (float i)))))))))
-            (ui/gap 1 0)
-            (ui/stretch (label "Stretch")))))
-      (ui/gap 1 0))))
+      [:stretch 1 nil]
+      [:stretch 2 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
+                    (ui/column
+                      [:stretch 1 (ui/halign 1 0   (label "Right to left"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0.5 0 (label "Center to left"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0     (label "Left to left"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 1 0.5 (label "Right to center"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0.5   (label "Center to center"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0 0.5 (label "Left to center"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 1 1   (label "Right to right"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0.5 1 (label "Center to right"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (ui/halign 0 1   (label "Left to right"))]
+                      [:hug nil (ui/gap 0 1)]
+                      [:stretch 1 (label "Stretch")]))]
+      [:stretch 1 nil]
+      [:stretch 2 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
+                    (ui/row
+                      [:stretch 1 (ui/valign 1 0   (label "Bottom to top"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0.5 0 (label "Middle to top"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0     (label "Top to top"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 1 0.5 (label "Bottom to middle"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0.5   (label "Middle to middle"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0 0.5 (label "Top to middle"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 1 1   (label "Bottom to bottom"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0.5 1 (label "Middle to bottom"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (ui/valign 0 1   (label "Top to bottom"))]
+                      [:hug nil (ui/gap 1 0)]
+                      [:stretch 1 (label "Stretch")]))]
+      [:stretch 1 nil])))

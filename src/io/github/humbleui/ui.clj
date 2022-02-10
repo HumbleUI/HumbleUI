@@ -20,7 +20,7 @@
   ([event child child-rect]
    (event-propagate event child child-rect child-rect))
   ([event child child-rect offset]
-   (when child-rect
+   (when (and child child-rect)
      (let [pos    (:hui.event/pos event)
            event' (cond
                     (nil? pos)
@@ -58,7 +58,7 @@
 (defn label [text font paint]
   (->Label text font paint (TextLine/make text font) (.getMetrics ^Font font)))
 
-(deftype+ HAlign [coeff child-coeff child ^:mut child-rect]
+(deftype+ HAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (-measure child ctx cs))
@@ -83,9 +83,9 @@
 
 (defn halign
   ([coeff child] (halign coeff coeff child))
-  ([coeff child-coeff child] (->HAlign coeff child-coeff child nil)))
+  ([child-coeff coeff child] (->HAlign child-coeff coeff child nil)))
 
-(deftype+ VAlign [coeff child-coeff child ^:mut child-rect]
+(deftype+ VAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (-measure child ctx cs))
@@ -110,7 +110,7 @@
 
 (defn valign
   ([coeff child] (valign coeff coeff child))
-  ([coeff child-coeff child] (->VAlign coeff child-coeff child nil)))
+  ([child-coeff coeff child] (->VAlign child-coeff coeff child nil)))
 
 (deftype+ Width [type value child ^:mut child-rect]
   IComponent
@@ -162,37 +162,34 @@
 (defn height [type value child]
   (->Height type value child nil))
 
-(defn stretch
-  ([child]
-   (with-meta child {:stretch 1}))
-  ([coeff child]
-   (with-meta child {:stretch coeff})))
-
 (deftype+ Column [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
     (reduce
       (fn [{:keys [width height]} child]
-        (let [child-size (-measure child ctx (update cs :height - height))]
+        (let [child-size (-measure child ctx cs)]
           (IPoint. (max width (:width child-size)) (+ height (:height child-size)))))
-      (IPoint. 0 0) children))
+      (IPoint. 0 0)
+      (keep #(nth % 2) children)))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [known   (for [child children]
-                    (when-not (:stretch (meta child))
-                      (-measure child ctx cs))) ;; TODO cs
+    (let [known   (for [[mode _ child] children]
+                    (when (= :hug mode)
+                      (-measure child ctx cs)))
           space   (- (:height cs) (transduce (keep :height) + 0 known))
-          stretch (reduce + (map #(:stretch (meta %) 0) children))
+          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
       (try
         (loop [height   0
                rects    []
                known    known
                children children]
-          (if-some [child (first children)]
-            (let [child-size (or (first known)
-                               (IPoint. (:width cs) (-> space (/ stretch) (* (:stretch (meta child))))))]
-              (-draw child ctx (assoc child-size :width (:width cs)) canvas)
+          (if-some [[mode value child] (first children)]
+            (let [child-size (case mode
+                               :hug     (first known)
+                               :stretch (IPoint. (:width cs) (-> space (/ stretch) (* value))))]
+              (when child
+                (-draw child ctx (assoc child-size :width (:width cs)) canvas))
               (.translate canvas 0 (:height child-size))
               (recur
                 (+ height (:height child-size))
@@ -204,44 +201,47 @@
   
   (-event [_ event]
     (reduce
-      (fn [acc [child rect]]
+      (fn [acc [[_ _ child] rect]]
         (core/eager-or acc (event-propagate event child rect)))
       false
       (core/zip children child-rects)))
   
   AutoCloseable
   (close [_]
-    (doseq [child children]
+    (doseq [[_ _ child] children]
       (child-close child))))
 
 (defn column [& children]
-  (->Column (vec (flatten children)) nil))
+  (->Column (vec children) nil))
 
 (deftype+ Row [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
     (reduce
       (fn [{:keys [width height]} child]
-        (let [child-size (-measure child ctx (update cs :width - width))]
+        (let [child-size (-measure child ctx cs)]
           (IPoint. (+ width (:width child-size)) (max height (:height child-size)))))
-      (IPoint. 0 0) children))
+      (IPoint. 0 0)
+      (keep #(nth % 2) children)))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (let [known   (for [child children]
-                    (when-not (:stretch (meta child))
-                      (-measure child ctx cs))) ;; TODO cs
+    (let [known   (for [[mode _ child] children]
+                    (when (= :hug mode)
+                      (-measure child ctx cs)))
           space   (- (:width cs) (transduce (keep :width) + 0 known))
-          stretch (reduce + (map #(:stretch (meta %) 0) children))
+          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
       (try
         (loop [width    0
                rects    []
                known    known
                children children]
-          (if-some [child (first children)]
-            (let [child-size (or (first known)
-                               (IPoint. (-> space (/ stretch) (* (:stretch (meta child)))) (:height cs)))]
-              (-draw child ctx (assoc child-size :height (:height cs)) canvas)
+          (if-some [[mode value child] (first children)]
+            (let [child-size (case mode
+                               :hug     (first known)
+                               :stretch (IPoint. (-> space (/ stretch) (* value)) (:height cs)))]
+              (when child
+                (-draw child ctx (assoc child-size :height (:height cs)) canvas))
               (.translate canvas (:width child-size) 0)
               (recur
                 (+ width (:width child-size))
@@ -253,18 +253,18 @@
   
   (-event [_ event]
     (reduce
-      (fn [acc [child rect]]
-        (core/eager-or acc (event-propagate event child rect)))
+      (fn [acc [[_ _ child] rect]]
+        (core/eager-or acc (event-propagate event child rect) false))
       false
       (core/zip children child-rects)))
   
   AutoCloseable
   (close [_]
-    (doseq [child children]
+    (doseq [[_ _ child] children]
       (child-close child))))
 
 (defn row [& children]
-  (->Row (vec (flatten children)) nil))
+  (->Row (vec children) nil))
 
 (defrecord Gap [width height]
   IComponent
