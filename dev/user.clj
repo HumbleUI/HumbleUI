@@ -6,6 +6,8 @@
     [nrepl.cmdline :as nrepl]
     [examples.align]
     [examples.button]
+    [examples.calculator]
+    [examples.container]
     [examples.label]
     [examples.scroll]
     [examples.tree])
@@ -21,14 +23,16 @@
 (defonce ^Typeface face-default
   (.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL))
 
-(def *example (atom examples.align/ui))
+(def *example (atom examples.calculator/ui))
 
 (def examples
-  {"Align"  examples.align/ui
-   "Button" examples.button/ui
-   "Label"  examples.label/ui
-   "Scroll" examples.scroll/ui
-   "Tree"   examples.tree/ui})
+  {"Align"      examples.align/ui
+   "Button"     examples.button/ui
+   "Calculator" examples.calculator/ui
+   "Container"  examples.container/ui
+   "Label"      examples.label/ui
+   "Scroll"     examples.scroll/ui
+   "Tree"       examples.tree/ui})
 
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
@@ -110,7 +114,7 @@
       (window/set-window-size width height)
       (window/set-window-position x y)
       (window/set-visible true)
-      (window/set-z-order :floating))))
+      #_(window/set-z-order :floating))))
 
 (defn -main [& args]
   (future (apply nrepl/-main args))
