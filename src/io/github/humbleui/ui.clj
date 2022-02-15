@@ -41,6 +41,14 @@
   (when (instance? AutoCloseable child)
     (.close ^AutoCloseable child)))
 
+(defn dimension [size cs ctx]
+  (let [scale (:scale ctx)]
+    (if (fn? size)
+      (* scale
+        (size {:width  (/ (:width cs) scale)
+               :height (/ (:height cs) scale)}))
+      (* scale size))))
+
 (deftype+ Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   IComponent
   (-measure [_ ctx cs]
@@ -112,15 +120,11 @@
   ([coeff child] (valign coeff coeff child))
   ([child-coeff coeff child] (->VAlign child-coeff coeff child nil)))
 
-(deftype+ Width [type value child ^:mut child-rect]
+(deftype+ Width [value child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [width      (:width cs)
-          width'     (case type
-                       :ratio (* width value)
-                       :px    value)
-          cs'        (assoc cs :width width')
-          child-size (-measure child ctx cs')]
+    (let [width'     (dimension value cs ctx)
+          child-size (-measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width')))
   
   (-draw [_ ctx cs ^Canvas canvas]
@@ -134,18 +138,14 @@
   (close [_]
     (child-close child)))
 
-(defn width [type value child]
-  (->Width type value child nil))
+(defn width [value child]
+  (->Width value child nil))
 
-(deftype+ Height [type value child ^:mut child-rect]
+(deftype+ Height [value child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [height      (:height cs)
-          height'     (case type
-                        :ratio (* height value)
-                        :px    value)
-          cs'        (assoc cs :height height')
-          child-size (-measure child ctx cs')]
+    (let [height'    (dimension value cs ctx)
+          child-size (-measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height')))
   
   (-draw [_ ctx cs ^Canvas canvas]
@@ -159,8 +159,8 @@
   (close [_]
     (child-close child)))
 
-(defn height [type value child]
-  (->Height type value child nil))
+(defn height [value child]
+  (->Height value child nil))
 
 (deftype+ Column [children ^:mut child-rects]
   IComponent
@@ -211,8 +211,17 @@
     (doseq [[_ _ child] children]
       (child-close child))))
 
+(defn- flatten-container [children]
+  (into []
+    (mapcat
+      #(cond
+         (vector? %)     [%]
+         (sequential? %) (flatten-container %)
+         :else           [[:hug nil %]]))
+    children))
+
 (defn column [& children]
-  (->Column (vec children) nil))
+  (->Column (flatten-container children) nil))
 
 (deftype+ Row [children ^:mut child-rects]
   IComponent
@@ -264,7 +273,7 @@
       (child-close child))))
 
 (defn row [& children]
-  (->Row (vec children) nil))
+  (->Row (flatten-container children) nil))
 
 (defrecord Gap [width height]
   IComponent
@@ -280,11 +289,10 @@
 (deftype+ Padding [left top right bottom child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [{:keys [scale]} ctx
-          left'   (* scale left)
-          right'  (* scale right)
-          top'    (* scale top)
-          bottom' (* scale bottom)
+    (let [left'   (dimension left cs ctx)
+          right'  (dimension right cs ctx)
+          top'    (dimension top cs ctx)
+          bottom' (dimension bottom cs ctx)
           child-cs   (IPoint. (- (:width cs) left' right') (- (:height cs) top' bottom'))
           child-size (-measure child ctx child-cs)]
       (IPoint.
@@ -293,10 +301,10 @@
   
   (-draw [_ ctx cs ^Canvas canvas]
     (let [{:keys [scale]} ctx
-          left'    (* scale left)
-          top'     (* scale top)
-          right'   (* scale right)
-          bottom'  (* scale bottom)
+          left'    (dimension left cs ctx)
+          right'   (dimension right cs ctx)
+          top'     (dimension top cs ctx)
+          bottom'  (dimension bottom cs ctx)
           layer    (.save canvas)
           width'   (- (:width cs) left' right')
           height'  (- (:height cs) top' bottom')]

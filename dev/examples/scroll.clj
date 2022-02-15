@@ -15,9 +15,9 @@
             (mapv
               #(let [label (ui/padding 20 leading
                              (ui/label (str %) font-ui fill-text))]
-                 [:hug nil (ui/hoverable
-                             (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                               (if hovered?
-                                 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCFE8FC))) label)
-                                 label)))])
+                 (ui/hoverable
+                   (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
+                     (if hovered?
+                       (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCFE8FC))) label)
+                       label))))
               (range 0 100))))))))

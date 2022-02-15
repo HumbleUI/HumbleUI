@@ -20,43 +20,42 @@
     (ui/valign 0.5
       (ui/halign 0.5
         (ui/column
-          [:hug nil (ui/padding 0 leading
-                      (ui/label "Hug" font-ui fill-text))]
-          [:hug nil (ui/row
-                      [:hug nil (label "Ok")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:hug nil (label "Cancel")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:hug nil (label "Abort request")])]
-          [:hug nil (ui/gap 0 leading)]
+          (ui/padding 0 leading
+            (ui/label "Hug" font-ui fill-text))
+          (ui/row
+            (label "Ok")
+            (ui/gap 10 0)
+            (label "Cancel")
+            (ui/gap 10 0)
+            (label "Abort request"))
+          (ui/gap 0 leading)
           
-          [:hug nil (ui/padding 0 leading
-                      (ui/label "Stretch 1-1-1" font-ui fill-text))]
-          [:hug nil (ui/row
-                      [:stretch 1 (label "Ok")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:stretch 1 (label "Cancel")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:stretch 1 (label "Abort request")])]
-          [:hug nil (ui/gap 0 leading)]
+          (ui/padding 0 leading
+            (ui/label "Stretch 1-1-1" font-ui fill-text))
+          (ui/row
+            [:stretch 1 (label "Ok")]
+            (ui/gap 10 0)
+            [:stretch 1 (label "Cancel")]
+            (ui/gap 10 0)
+            [:stretch 1 (label "Abort request")])
+          (ui/gap 0 leading)
           
-          [:hug nil (ui/padding 0 leading
-                      (ui/label "Stretch 3-2-1" font-ui fill-text))]
-          [:hug nil (ui/row
-                      [:stretch 3 (label "Ok")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:stretch 2 (label "Cancel")]
-                      [:hug nil (ui/gap 10 0)]
-                      [:stretch 1 (label "Abort request")])]
-          [:hug nil (ui/gap 0 leading)]
+          (ui/padding 0 leading
+            (ui/label "Stretch 3-2-1" font-ui fill-text))
+          (ui/row
+            [:stretch 3 (label "Ok")]
+            (ui/gap 10 0)
+            [:stretch 2 (label "Cancel")]
+            (ui/gap 10 0)
+            [:stretch 1 (label "Abort request")])
+          (ui/gap 0 leading)
           
-          [:hug nil (ui/padding 0 leading
-                      (ui/label "Hug 20%-30%-40%" font-ui fill-text))]
-          [:hug nil (ui/row
-                      [:hug nil (ui/width :ratio 0.2 (label "Ok"))]
-                      [:hug nil (ui/gap 10 0)]
-                      [:hug nil (ui/width :ratio 0.3 (label "Cancel"))]
-                      [:hug nil (ui/gap 10 0)]
-                      [:hug nil (ui/width :ratio 0.4 (label "Abort request"))])]
-          [:hug nil (ui/gap 0 leading)]
-          )))))
+          (ui/padding 0 leading
+            (ui/label "Hug 20%-30%-40%" font-ui fill-text))
+          (ui/row
+            (ui/width #(* 0.2 (:width %)) (label "Ok"))
+            (ui/gap 10 0)
+            (ui/width #(* 0.3 (:width %)) (label "Cancel"))
+            (ui/gap 10 0)
+            (ui/width #(* 0.4 (:width %)) (label "Abort request")))
+          (ui/gap 0 leading))))))

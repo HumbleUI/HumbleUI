@@ -27,18 +27,18 @@
                            time (quot (System/currentTimeMillis) 1000)]
             (apply ui/column
               (interpose
-                [:hug nil (ui/gap 0 1)]
+                (ui/gap 0 1)
                 (for [y (range rows)]
-                  [:hug nil (ui/halign 0.5
-                              (apply ui/row
-                                (interpose
-                                  [:hug nil (ui/gap 1 0)]
-                                  (for [x (range (inc y))]
-                                    [:hug nil (if (= x y 0)
-                                                (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCC3333)))
-                                                  (ui/padding 5 5
-                                                    (ui/label "★" font-ui fill-text)))
-                                                (ui/fill (doto (Paint.) (.setColor (random-green)))
-                                                  (ui/padding 5 5
-                                                    (let [idx (+ x (* y (+ y 1) 1/2) -1)]
-                                                      (nth labels idx)))))]))))])))))))))
+                  (ui/halign 0.5
+                    (apply ui/row
+                      (interpose
+                        (ui/gap 1 0)
+                        (for [x (range (inc y))]
+                          (if (= x y 0)
+                            (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCC3333)))
+                              (ui/padding 5 5
+                                (ui/label "★" font-ui fill-text)))
+                            (ui/fill (doto (Paint.) (.setColor (random-green)))
+                              (ui/padding 5 5
+                                (let [idx (+ x (* y (+ y 1) 1/2) -1)]
+                                  (nth labels idx))))))))))))))))))

@@ -20,55 +20,55 @@
 (defn on-click
   ([s] (swap! *state on-click s))
   ([state s]
-  (let [{:keys [a op b screen]} state]
-    (case s
-      "C"
-      {:b "0" :screen :b}
+   (let [{:keys [a op b screen]} state]
+     (case s
+       "C"
+       {:b "0" :screen :b}
       
-      ("0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
-      (cond
-        (= screen :a)
-        (assoc state :screen :b, :b s)
+       ("0" "1" "2" "3" "4" "5" "6" "7" "8" "9")
+       (cond
+         (= screen :a)
+         (assoc state :screen :b, :b s)
         
-        (= b "0")
-        (assoc state :b s)
+         (= b "0")
+         (assoc state :b s)
         
-        (nil? b)
-        (assoc state :b s)
+         (nil? b)
+         (assoc state :b s)
         
-        (= b "-0")
-        (assoc state :b (str "-" s))
+         (= b "-0")
+         (assoc state :b (str "-" s))
         
-        :else
-        (update state :b str s))
+         :else
+         (update state :b str s))
       
-      "."
-      (cond
-        (= :a screen)
-        (assoc state :screen :b, :b "0.")
+       "."
+       (cond
+         (= :a screen)
+         (assoc state :screen :b, :b "0.")
         
-        (not (str/includes? b "."))
-        (update state :b str "."))
+         (not (str/includes? b "."))
+         (update state :b str "."))
 
-      ("+" "−" "×" "÷")
-      (if op 
-        (-> state (on-click "=") (assoc :op s))
-        (assoc state :screen :a, :a b, :op s))
+       ("+" "−" "×" "÷")
+       (if op 
+         (-> state (on-click "=") (assoc :op s))
+         (assoc state :screen :a, :a b, :op s))
       
-      "="
-      (when (some? op)
-        (let [a (some-> a parse-double)
-              b (or (some-> b parse-double) a)]
-          (case op
-            "+" (assoc state :screen :a :a (stringify (+ a b)))
-            "−" (assoc state :screen :a :a (stringify (- a b)))
-            "×" (assoc state :screen :a :a (stringify (* a b)))
-            "÷" (assoc state :screen :a :a (stringify (/ a b))))))
+       "="
+       (when (some? op)
+         (let [a (some-> a parse-double)
+               b (or (some-> b parse-double) a)]
+           (case op
+             "+" (assoc state :screen :a :a (stringify (+ a b)))
+             "−" (assoc state :screen :a :a (stringify (- a b)))
+             "×" (assoc state :screen :a :a (stringify (* a b)))
+             "÷" (assoc state :screen :a :a (stringify (/ a b))))))
       
-      "±"
-      (if (str/starts-with? b "-")
-        (update state :b subs 1)
-        (update state :b #(str "-" %)))))))
+       "±"
+       (if (str/starts-with? b "-")
+         (update state :b subs 1)
+         (update state :b #(str "-" %)))))))
 
 (deftest test-logic
   (are [keys res] (let [state' (reduce #(on-click %1 (str %2)) {:b "0" :screen :b} keys)]
@@ -103,77 +103,87 @@
 
 (comment (test/run-test test-logic))
 
-(defn button [text]
+(defn button [text color]
   (ui/clickable
     #(on-click text)
     (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-ui fill-text]} ctx]
-      (let [color (cond
-                    active?  0xFFA2C7EE
-                    :else    0xFFB2D7FE)]
-        (ui/fill (doto (Paint.) (.setColor (unchecked-int color)))
+      (let [color' (if active?
+                     (bit-or 0x80000000 (bit-and 0xFFFFFF color))
+                     color)]
+        (ui/fill (doto (Paint.) (.setColor (unchecked-int color')))
           (ui/halign 0.5
             (ui/valign 0.5
               (ui/label text font-ui fill-text))))))))
+
+(def color-digit   0xFF797979)
+(def color-op      0xFFFF9F0A)
+(def color-clear   0xFF646464)
+(def color-display 0xFF4E4E4E)
+(def padding 1)
+
+(defn scale-font [^Font font cap-height']
+  (let [size       (.getSize font)
+        cap-height (-> font .getMetrics .getCapHeight)]
+    (-> size (/ cap-height) (* cap-height'))))
 
 (def ui
   (ui/with-bounds ::bounds
     (ui/dynamic ctx [{:keys [font-ui scale]} ctx
                      height (:height (::bounds ctx))]
       (let [font-ui     ^Font font-ui
-            size        (.getSize font-ui)
-            cap-height  (-> font-ui .getMetrics .getCapHeight)
-            btn-height  (-> height (- 70) (/ 6))
-            cap-height' (-> btn-height (/ 3) (* scale) (Math/floor))
-            size'       (-> size (/ cap-height) (* cap-height'))]
-        (ui/dynamic _ [size' size']
-          (ui/with-context {:font-ui (.makeWithSize font-ui size')}  
-            (ui/padding 10 10
-              (ui/column
-                [:stretch 1 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE)))
-                              (ui/padding 10 10
-                                (ui/halign 1
-                                  (ui/valign 0.5
-                                    (ui/dynamic ctx [{:keys [font-ui fill-text]} ctx
-                                                     val (get @*state (:screen @*state))]
-                                      (ui/label val font-ui fill-text))))))]
-                [:hug nil (ui/gap 0 10)]
-                [:stretch 1 (ui/row
-                              [:stretch 2 (button "C")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "±")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "÷")])]
-                [:hug nil (ui/gap 0 10)]
-                [:stretch 1 (ui/row
-                              [:stretch 1 (button "7")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "8")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "9")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "×")])]
-                [:hug nil (ui/gap 0 10)]
-                [:stretch 1 (ui/row
-                              [:stretch 1 (button "4")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "5")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "6")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "−")])]
-                [:hug nil (ui/gap 0 10)]
-                [:stretch 1 (ui/row
-                              [:stretch 1 (button "1")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "2")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "3" )]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "+")])]
-                [:hug nil (ui/gap 0 10)]
-                [:stretch 1 (ui/row
-                              [:stretch 2 (button "0")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button ".")]
-                              [:hug nil (ui/gap 10 0)]
-                              [:stretch 1 (button "=")])]))))))))
+            btn-height  (-> height (- (* 7 padding)) (/ 13) (* 2))
+            cap-height' (-> btn-height (/ 3) (* scale) (Math/floor))]
+        (ui/dynamic _ [size' (scale-font font-ui cap-height')]
+          (ui/with-context {:font-ui   (.makeWithSize font-ui size')
+                            :fill-text (doto (Paint.) (.setColor (unchecked-int 0xFFEBEBEB)))}  
+            (ui/fill (doto (Paint.) (.setColor (unchecked-int color-display)))
+              (ui/padding padding padding
+                (ui/column
+                  [:stretch 3 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF404040)))
+                                (ui/padding #(/ (:height %) 3) 0
+                                  (ui/halign 1
+                                    (ui/valign 0.5
+                                      (ui/dynamic ctx [{:keys [font-ui fill-text]} ctx
+                                                       val (get @*state (:screen @*state))]
+                                        (ui/label val font-ui fill-text))))))]
+                  (ui/gap 0 padding)
+                  [:stretch 2 (ui/row
+                                (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "C" color-clear))
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "±" color-clear)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "÷" color-op)])]
+                  (ui/gap 0 padding)
+                  [:stretch 2 (ui/row
+                                [:stretch 1 (button "7" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "8" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "9" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "×" color-op)])]
+                  (ui/gap 0 padding)
+                  [:stretch 2 (ui/row
+                                [:stretch 1 (button "4" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "5" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "6" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "−" color-op)])]
+                  (ui/gap 0 padding)
+                  [:stretch 2 (ui/row
+                                [:stretch 1 (button "1" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "2" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "3" color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "+" color-op)])]
+                  (ui/gap 0 padding)
+                  [:stretch 2 (ui/row
+                                (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "0" color-digit))
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "." color-digit)]
+                                (ui/gap padding 0)
+                                [:stretch 1 (button "=" color-op)])])))))))))
