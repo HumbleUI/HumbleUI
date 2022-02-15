@@ -192,7 +192,7 @@
                 (-draw child ctx (assoc child-size :width (:width cs)) canvas))
               (.translate canvas 0 (:height child-size))
               (recur
-                (+ height (:height child-size))
+                (+ height (long (:height child-size)))
                 (conj rects (IRect/makeXYWH 0 height (:width cs) (:height child-size)))
                 (next known)
                 (next children)))
@@ -244,7 +244,7 @@
                 (-draw child ctx (assoc child-size :height (:height cs)) canvas))
               (.translate canvas (:width child-size) 0)
               (recur
-                (+ width (:width child-size))
+                (+ width (long (:width child-size)))
                 (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height cs)))
                 (next known)
                 (next children)))
@@ -501,6 +501,29 @@
 
 (defn with-context [data child]
   (->WithContext data child nil))
+
+(deftype+ WithBounds [key child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [width  (-> (:width cs) (/ (:scale ctx)))
+          height (-> (:height cs) (/ (:scale ctx)))]
+      (-measure child (assoc ctx key (IPoint. width height)) cs)))
+  
+  (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (let [width  (-> (:width cs) (/ (:scale ctx)))
+          height (-> (:height cs) (/ (:scale ctx)))]
+      (-draw child (assoc ctx key (IPoint. width height)) cs canvas)))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn with-bounds [key child]
+  (->WithBounds key child nil))
 
 (deftype+ VScroll [child ^:mut offset ^:mut size ^:mut child-size]
   IComponent

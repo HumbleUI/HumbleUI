@@ -18,6 +18,14 @@
           (vreset! *atom [args' value'])
           value')))))
 
+(defmacro cond+ [& clauses]
+  (when-some [[test expr & rest] clauses]
+    (condp = test
+      :do   `(do ~expr (cond+ ~@rest))
+      :let  `(let ~expr (cond+ ~@rest))
+      :some `(or ~expr (cond+ ~@rest))
+      `(if ~test ~expr (cond+ ~@rest)))))
+
 (defmacro defn-memoize-last [name & body]
   `(def ~name (memoize-last (fn ~@body))))
 
@@ -41,11 +49,8 @@
 (defn zip [& xs]
   (apply map vector xs))
 
-(defn init []
-  (App/init))
-
-(defn start []
-  (App/start))
+(defn start [^Runnable cb]
+  (App/start cb))
 
 (defn terminate []
   (App/terminate))

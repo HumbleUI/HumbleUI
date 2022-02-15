@@ -8,11 +8,8 @@ def main():
     build_utils.fetch_maven("nrepl", "nrepl", "0.9.0", repo = common.clojars),
   ]
   return subprocess.call(["java",
-    "--class-path", build_utils.classpath_join(classpath)]
-    + (["-XstartOnFirstThread"] if build_utils.system == 'macos' else []) +
-    ["clojure.main",
-     "-m", "user",
-     "--interactive"]
+    "--class-path", build_utils.classpath_join(classpath),
+    "clojure.main", "-m", "user", "--interactive"]
   )
 
 if __name__ == '__main__':

@@ -54,7 +54,8 @@
                                             selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
                                             hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
                                             :else     label))))]))))]
-        [:stretch 1 (ui/with-context {:font-ui   font-ui
+        [:stretch 1 (ui/with-context {:face-ui   face-default
+                                      :font-ui   font-ui
                                       :leading   leading
                                       :fill-text fill-text}
                       (ui/dynamic _ [example @*example]
@@ -118,15 +119,13 @@
 
 (defn -main [& args]
   (future (apply nrepl/-main args))
-  (hui/init)
-  (reset! *window (make-window))
-  (hui/start))
+  (hui/start #(reset! *window (make-window))))
 
-(comment
+(comment  
   (do
     (hui/doui (some-> @*window window/close))
     (reset! *window (hui/doui (make-window))))
   
   (hui/doui (window/set-z-order @*window :normal))
   (hui/doui (window/set-z-order @*window :floating))
-  )
+)

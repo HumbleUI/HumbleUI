@@ -30,24 +30,24 @@
                      (when on-event
                        (on-event window e))
                      
-                     (condp instance? e
-                       EventWindowCloseRequest
+                     (cond
+                       (instance? EventWindowCloseRequest e)
                        (when on-close-request
                          (on-close-request window))
                        
-                       EventWindowClose
+                       (instance? EventWindowClose e)
                        (when on-close
                          (on-close))
                        
-                       EventWindowScreenChange
+                       (instance? EventWindowScreenChange e)
                        (when on-screen-change
                          (on-screen-change window))
                        
-                       EventWindowResize
+                       (instance? EventWindowResize e)
                        (when on-resize
                          (on-resize window))
                        
-                       EventFrameSkija
+                       (instance? EventFrameSkija e)
                        (when on-paint
                          (let [canvas (-> ^EventFrameSkija e .getSurface .getCanvas)
                                layer  (.save canvas)]
@@ -57,9 +57,7 @@
                                (.printStackTrace e)
                                (.clear canvas (unchecked-int 0xFFCC3333)))
                              (finally
-                               (.restoreToCount canvas layer)))))
-                       
-                       nil)))]
+                               (.restoreToCount canvas layer))))))))]
     (.setLayer window layer)
     (.setEventListener window listener)
     window))
