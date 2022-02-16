@@ -126,19 +126,6 @@
         cap-height (-> font .getMetrics .getCapHeight)]
     (-> size (/ cap-height) (* cap-height'))))
 
-(defn variate-typeface ^Typeface [^Typeface face & opts]
-  (let [axes       (reduce #(conj %1 (.getTag ^FontVariationAxis %2)) #{} (.getVariationAxes face))
-        variations (reduce
-                    (fn [acc [tag value]]
-                      (if (axes tag)
-                        (conj acc (FontVariation. ^String tag (float value)))
-                        acc))
-                    []
-                    (partition 2 opts))]
-    (if (empty? variations)
-      face
-      (.makeClone face ^"[Lio.github.humbleui.skija.FontVariation;" (into-array FontVariation variations)))))
-
 (def ui
   (ui/with-bounds ::bounds
     (ui/dynamic ctx [{:keys [face-ui font-ui scale]} ctx
@@ -146,13 +133,12 @@
       (let [face-ui        ^Typeface face-ui
             btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
             cap-height'    (-> btn-height (/ 3) (* scale) (Math/floor))
-            face-display   (variate-typeface face-ui "wght" 200)
             display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
             cap-height''   (-> display-height (/ 3) (* scale) (Math/floor))]
         (ui/dynamic _ [size'  (scale-font font-ui cap-height')
                        size'' (scale-font font-ui cap-height'')]
           (ui/with-context {:font-btn     (Font. face-ui (float size'))
-                            :font-display (Font. face-display (float size''))
+                            :font-display (Font. face-ui (float size''))
                             :fill-text    (doto (Paint.) (.setColor (unchecked-int 0xFFEBEBEB)))}  
             (ui/fill (doto (Paint.) (.setColor (unchecked-int color-display)))
               (ui/padding padding padding
@@ -205,3 +191,6 @@
                                 [:stretch 1 (button "." color-digit)]
                                 (ui/gap padding 0)
                                 [:stretch 1 (button "=" color-op)])])))))))))
+
+; (require 'user :reload)
+; (reset! user/*example "Calculator")

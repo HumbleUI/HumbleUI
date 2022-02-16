@@ -1,12 +1,13 @@
 (ns io.github.humbleui.ui
   (:require
     [io.github.humbleui.core :as core :refer [deftype+]]
+    [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols :refer [IComponent -measure -draw -event]])
   (:import
     [java.lang AutoCloseable]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
     [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]
-    [io.github.humbleui.skija.shaper ShapingOptions]))
+    [io.github.humbleui.skija.shaper Shaper ShapingOptions]))
 
 (set! *warn-on-reflection* true)
 
@@ -50,13 +51,17 @@
                :height (/ (:height cs) scale)}))
       (* scale size))))
 
+(def ^:private ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
+
 (deftype+ Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   IComponent
   (-measure [_ ctx cs]
-    (IPoint. (.getWidth line) (.getCapHeight metrics)))
+    (IPoint.
+      (Math/ceil (.getWidth line))
+      (Math/ceil (.getCapHeight metrics))))
   
   (-draw [_ ctx cs ^Canvas canvas]
-    (.drawTextLine canvas line 0 (.getCapHeight metrics) paint))
+    (.drawTextLine canvas line 0 (Math/ceil (.getCapHeight metrics)) paint))
   
   (-event [_ event])
   
@@ -64,9 +69,11 @@
   (close [_]
     #_(.close line))) ; TODO
 
-(defn label [text font paint & features]
-  (let [opts (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
-    (->Label text font paint (TextLine/make text font opts) (.getMetrics ^Font font))))
+(defn label [^String text ^Font font ^Paint paint & features]
+  ; (profile/measure "label"
+  (let [opts (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)
+        line (.shapeLine shaper text font ^ShapingOptions opts)]
+    (->Label text font paint line (.getMetrics ^Font font))))
 
 (deftype+ HAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
@@ -349,6 +356,31 @@
 (defn fill [paint child]
   (->Fill paint child nil))
 
+(deftype+ Clip [child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (-measure child ctx cs))
+  
+  (-draw [_ ctx cs ^Canvas canvas]
+    (let [rect  (Rect/makeXYWH 0 0 (:width cs) (:height cs))
+          layer (.save canvas)]
+      (try
+        (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+        (.clipRect canvas rect)
+        (-draw child ctx cs canvas)
+        (finally
+          (.restoreToCount canvas layer)))))
+  
+  (-event [_ event]
+    (event-propagate event child child-rect))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn clip [child]
+  (->Clip child nil))
+
 (deftype+ ClipRRect [radii child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
@@ -373,8 +405,8 @@
   (close [_]
     (child-close child)))
 
-(defn clip-rrect
-  ([r child] (->ClipRRect [r] child nil)))
+(defn clip-rrect [r child]
+  (->ClipRRect [r] child nil))
 
 (deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
   IComponent

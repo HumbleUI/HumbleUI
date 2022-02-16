@@ -1,6 +1,7 @@
 (ns user
   (:require
     [io.github.humbleui.core :as hui]
+    [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
     [nrepl.cmdline :as nrepl]
@@ -20,10 +21,11 @@
 
 (defonce *window (atom nil))
 
-(defonce ^Typeface face-default
-  (.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL))
+(def ^Typeface face-default
+  #_(.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL)
+  (Typeface/makeFromFile "dev/fonts/Inter-Regular.ttf"))
 
-(def *example (atom examples.calculator/ui))
+(defonce *example (atom "Calculator"))
 
 (def examples
   {"Align"      examples.align/ui
@@ -37,36 +39,39 @@
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
     (let [font-ui   (Font. face-default (float (* 13 scale)))
-          leading   (-> font-ui .getMetrics .getCapHeight (/ scale) Math/ceil)
+          leading   (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))
           fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
       (ui/row
-        [:hug nil (ui/vscrollbar
-                    (ui/vscroll
-                      (apply ui/column
-                        (for [[name ui] (sort-by first examples)]
-                          [:hug nil (ui/clickable
-                                      #(reset! *example ui)
-                                      (ui/dynamic ctx [selected? (= ui @*example)
-                                                       hovered?  (:hui/hovered? ctx)]
-                                        (let [label (ui/padding 20 leading
-                                                      (ui/label name font-ui fill-text))]
-                                          (cond
-                                            selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
-                                            hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
-                                            :else     label))))]))))]
-        [:stretch 1 (ui/with-context {:face-ui   face-default
-                                      :font-ui   font-ui
-                                      :leading   leading
-                                      :fill-text fill-text}
-                      (ui/dynamic _ [example @*example]
-                        example))]))))
+        (ui/vscrollbar
+          (ui/vscroll
+            (ui/column
+              (for [[name ui] (sort-by first examples)]
+                (ui/clickable
+                  #(reset! *example name)
+                  (ui/dynamic ctx [selected? (= name @*example)
+                                   hovered?  (:hui/hovered? ctx)]
+                    (let [label (ui/padding 20 leading
+                                  (ui/label name font-ui fill-text))]
+                      (cond
+                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
+                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
+                        :else     label))))))))
+        [:stretch 1
+         (ui/with-context {:face-ui   face-default
+                           :font-ui   font-ui
+                           :leading   leading
+                           :fill-text fill-text}
+           (ui/dynamic _ [name @*example]
+             (examples name)))]))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF6F6F6))
   (let [bounds (window/content-rect window)
-        ctx    {:bounds bounds
-                :scale  (window/scale window)}]
+        ctx    {:scale (window/scale window)}]
+    (profile/reset)
+    ; (profile/measure "frame"
     (ui/draw app ctx bounds canvas)
+    (profile/log)
     #_(window/request-frame window)))
 
 (some-> @*window window/request-frame)
@@ -128,4 +133,4 @@
   
   (hui/doui (window/set-z-order @*window :normal))
   (hui/doui (window/set-z-order @*window :floating))
-)
+  )
