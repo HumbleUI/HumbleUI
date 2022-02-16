@@ -79,10 +79,11 @@ def has_newer(sources, targets):
 def fetch(url, file):
   if not os.path.exists(file):
     print('Downloading', url)
+    data = urllib.request.urlopen(url).read()
     if os.path.dirname(file):
       makedirs(os.path.dirname(file))
     with open(file, 'wb') as f:
-      f.write(urllib.request.urlopen(url).read())
+      f.write(data)
 
 def fetch_maven(group, name, version, classifier=None, repo='https://repo1.maven.org/maven2'):
   path = '/'.join([group.replace('.', '/'), name, version, name + '-' + version + ('-' + classifier if classifier else '') + '.jar'])
