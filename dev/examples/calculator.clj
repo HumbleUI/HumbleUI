@@ -5,7 +5,7 @@
     [io.github.humbleui.core :refer [cond+]]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Paint Font]))
+    [io.github.humbleui.skija Font FontVariation FontVariationAxis Typeface Paint]))
 
 (set! *warn-on-reflection* true)
 
@@ -106,14 +106,14 @@
 (defn button [text color]
   (ui/clickable
     #(on-click text)
-    (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-ui fill-text]} ctx]
+    (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn fill-text]} ctx]
       (let [color' (if active?
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                      color)]
         (ui/fill (doto (Paint.) (.setColor (unchecked-int color')))
           (ui/halign 0.5
             (ui/valign 0.5
-              (ui/label text font-ui fill-text))))))))
+              (ui/label text font-btn fill-text "tnum"))))))))
 
 (def color-digit   0xFF797979)
 (def color-op      0xFFFF9F0A)
@@ -126,16 +126,34 @@
         cap-height (-> font .getMetrics .getCapHeight)]
     (-> size (/ cap-height) (* cap-height'))))
 
+(defn variate-typeface ^Typeface [^Typeface face & opts]
+  (let [axes       (reduce #(conj %1 (.getTag ^FontVariationAxis %2)) #{} (.getVariationAxes face))
+        variations (reduce
+                    (fn [acc [tag value]]
+                      (if (axes tag)
+                        (conj acc (FontVariation. ^String tag (float value)))
+                        acc))
+                    []
+                    (partition 2 opts))]
+    (if (empty? variations)
+      face
+      (.makeClone face ^"[Lio.github.humbleui.skija.FontVariation;" (into-array FontVariation variations)))))
+
 (def ui
   (ui/with-bounds ::bounds
-    (ui/dynamic ctx [{:keys [font-ui scale]} ctx
+    (ui/dynamic ctx [{:keys [face-ui font-ui scale]} ctx
                      height (:height (::bounds ctx))]
-      (let [font-ui     ^Font font-ui
-            btn-height  (-> height (- (* 7 padding)) (/ 13) (* 2))
-            cap-height' (-> btn-height (/ 3) (* scale) (Math/floor))]
-        (ui/dynamic _ [size' (scale-font font-ui cap-height')]
-          (ui/with-context {:font-ui   (.makeWithSize font-ui size')
-                            :fill-text (doto (Paint.) (.setColor (unchecked-int 0xFFEBEBEB)))}  
+      (let [face-ui        ^Typeface face-ui
+            btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
+            cap-height'    (-> btn-height (/ 3) (* scale) (Math/floor))
+            face-display   (variate-typeface face-ui "wght" 200)
+            display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
+            cap-height''   (-> display-height (/ 3) (* scale) (Math/floor))]
+        (ui/dynamic _ [size'  (scale-font font-ui cap-height')
+                       size'' (scale-font font-ui cap-height'')]
+          (ui/with-context {:font-btn     (Font. face-ui (float size'))
+                            :font-display (Font. face-display (float size''))
+                            :fill-text    (doto (Paint.) (.setColor (unchecked-int 0xFFEBEBEB)))}  
             (ui/fill (doto (Paint.) (.setColor (unchecked-int color-display)))
               (ui/padding padding padding
                 (ui/column
@@ -143,9 +161,9 @@
                                 (ui/padding #(/ (:height %) 3) 0
                                   (ui/halign 1
                                     (ui/valign 0.5
-                                      (ui/dynamic ctx [{:keys [font-ui fill-text]} ctx
+                                      (ui/dynamic ctx [{:keys [font-display fill-text]} ctx
                                                        val (get @*state (:screen @*state))]
-                                        (ui/label val font-ui fill-text))))))]
+                                        (ui/label val font-display fill-text "tnum"))))))]
                   (ui/gap 0 padding)
                   [:stretch 2 (ui/row
                                 (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "C" color-clear))

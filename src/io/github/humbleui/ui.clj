@@ -5,7 +5,8 @@
   (:import
     [java.lang AutoCloseable]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
-    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]))
+    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]
+    [io.github.humbleui.skija.shaper ShapingOptions]))
 
 (set! *warn-on-reflection* true)
 
@@ -63,8 +64,9 @@
   (close [_]
     #_(.close line))) ; TODO
 
-(defn label [text font paint]
-  (->Label text font paint (TextLine/make text font) (.getMetrics ^Font font)))
+(defn label [text font paint & features]
+  (let [opts (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
+    (->Label text font paint (TextLine/make text font opts) (.getMetrics ^Font font))))
 
 (deftype+ HAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
