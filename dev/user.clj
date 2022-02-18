@@ -11,9 +11,10 @@
     [examples.container]
     [examples.label]
     [examples.scroll]
-    [examples.tree])
+    [examples.tree]
+    [examples.wordle])
   (:import
-    [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll Window]
+    [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll EventKey Window]
     [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint PaintMode]
     [io.github.humbleui.types IPoint]))
 
@@ -25,7 +26,7 @@
   #_(.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL)
   (Typeface/makeFromFile "dev/fonts/Inter-Regular.ttf"))
 
-(defonce *example (atom "Calculator"))
+(defonce *example (atom "Wordle"))
 
 (defonce *floating (atom false))
 
@@ -43,7 +44,8 @@
    "Container"  examples.container/ui
    "Label"      examples.label/ui
    "Scroll"     examples.scroll/ui
-   "Tree"       examples.tree/ui})
+   "Tree"       examples.tree/ui
+   "Wordle"     examples.wordle/ui})
 
 (defn checkbox [*checked text]
   (ui/clickable
@@ -126,6 +128,11 @@
                      {:hui/event :hui/mouse-scroll
                       :hui.event.mouse-scroll/dx (.getDeltaX ^EventMouseScroll event)
                       :hui.event.mouse-scroll/dy (.getDeltaY ^EventMouseScroll event)})
+                   
+                   EventKey
+                   (ui/event app
+                     {:hui/event (if (.isPressed ^EventKey event) :hui/key-down :hui/key-up)
+                      :hui.event.key/key (.getName (.getKey ^EventKey event))})
                    
                    nil)]
     (when changed?

@@ -235,6 +235,7 @@
   (into []
     (mapcat
       #(cond
+         (nil? %)        []
          (vector? %)     [%]
          (sequential? %) (flatten-container %)
          :else           [[:hug nil %]]))
@@ -662,6 +663,31 @@
     (doto (Paint.) (.setColor (unchecked-int 0x10000000)))
     (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
     nil))
+
+(deftype+ KeyListener [event-type callback child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (-measure child ctx cs))
+  
+  (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (-draw child ctx cs canvas))
+  
+  (-event [_ event]
+    (core/eager-or
+      (when (= event-type (:hui/event event))
+        (callback event))
+      (event-propagate event child child-rect)))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn on-key-down [callback child]
+  (->KeyListener :hui/key-down callback child nil))
+
+(defn on-key-up [callback child]
+  (->KeyListener :hui/key-up callback child nil))
 
 (comment
   (do
