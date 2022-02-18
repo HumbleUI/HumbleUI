@@ -14,7 +14,7 @@
     [examples.tree])
   (:import
     [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll Window]
-    [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint]
+    [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint PaintMode]
     [io.github.humbleui.types IPoint]))
 
 (set! *warn-on-reflection* true)
@@ -27,6 +27,15 @@
 
 (defonce *example (atom "Calculator"))
 
+(defonce *floating (atom false))
+
+(add-watch *floating ::window
+  (fn [_ _ _ floating]
+    (when-some [window @*window]
+      (if floating
+        (window/set-z-order window :floating)
+        (window/set-z-order window :normal)))))
+
 (def examples
   {"Align"      examples.align/ui
    "Button"     examples.button/ui
@@ -36,33 +45,56 @@
    "Scroll"     examples.scroll/ui
    "Tree"       examples.tree/ui})
 
+(defn checkbox [*checked text]
+  (ui/clickable
+    #(swap! *checked not)
+    (ui/dynamic ctx [checked @*checked
+                     {:keys [font-ui fill-text leading scale]} ctx]
+      (let [border (doto (Paint.)
+                     (.setColor (unchecked-int 0xFF000000))
+                     (.setMode PaintMode/STROKE)
+                     (.setStrokeWidth (* 1 scale)))]
+        (ui/row
+          (ui/fill border
+            (if checked
+              (ui/padding 1 1
+                (ui/fill fill-text
+                  (ui/gap (- leading 2) (- leading 2))))
+              (ui/gap leading leading)))
+          (ui/gap 5 0)
+          (ui/label text font-ui fill-text))))))
+
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
     (let [font-ui   (Font. face-default (float (* 13 scale)))
           leading   (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))
           fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
-      (ui/row
-        (ui/vscrollbar
-          (ui/vscroll
-            (ui/column
-              (for [[name ui] (sort-by first examples)]
-                (ui/clickable
-                  #(reset! *example name)
-                  (ui/dynamic ctx [selected? (= name @*example)
-                                   hovered?  (:hui/hovered? ctx)]
-                    (let [label (ui/padding 20 leading
-                                  (ui/label name font-ui fill-text))]
-                      (cond
-                        selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
-                        hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
-                        :else     label))))))))
-        [:stretch 1
-         (ui/with-context {:face-ui   face-default
-                           :font-ui   font-ui
-                           :leading   leading
-                           :fill-text fill-text}
+      (ui/with-context {:face-ui   face-default
+                        :font-ui   font-ui
+                        :leading   leading
+                        :fill-text fill-text}
+        (ui/row
+          (ui/column
+            [:stretch 1
+             (ui/vscrollbar
+               (ui/vscroll
+                 (ui/column
+                   (for [[name ui] (sort-by first examples)]
+                     (ui/clickable
+                       #(reset! *example name)
+                       (ui/dynamic ctx [selected? (= name @*example)
+                                        hovered?  (:hui/hovered? ctx)]
+                         (let [label (ui/padding 20 leading
+                                       (ui/label name font-ui fill-text))]
+                           (cond
+                             selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
+                             hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
+                             :else     label))))))))]
+            (ui/padding 10 10
+              (checkbox *floating "On top")))
+          [:stretch 1
            (ui/dynamic _ [name @*example]
-             (examples name)))]))))
+             (examples name))])))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF6F6F6))
@@ -100,17 +132,13 @@
       (window/request-frame window))))
 
 (defn make-window []
-  (let [[x y width height] (if-some [screen (second (hui/screens))]
-                             (let [area (:work-area screen)]
-                               [(:x area)
-                                (+ (:y area) (/ (:height area) 4))
-                                (* (:width area) 0.33)
-                                (* (:height area) 0.5)])
-                             (let [area (:work-area (hui/primary-screen))]
-                               [(+ (:x area) (* (:width area) 0.75))
-                                (+ (:y area) (/ (:height area) 4))
-                                (* (:width area) 0.25)
-                                (* (:height area) 0.5)]))]
+  (let [screen (hui/primary-screen)
+        scale  (:scale screen)
+        width  (* 400 scale)
+        height (* 400 scale)
+        area   (:work-area screen)
+        x      0 #_(- (:right area) width)
+        y      (-> (:height area) (- height) (/ 2) (+ (:y area)))]
     (doto
       (window/make
         {:on-close #(reset! *window nil)
@@ -119,8 +147,7 @@
       (window/set-title "Humble UI 👋")
       (window/set-window-size width height)
       (window/set-window-position x y)
-      (window/set-visible true)
-      #_(window/set-z-order :floating))))
+      (window/set-visible true))))
 
 (defn -main [& args]
   (future (apply nrepl/-main args))
@@ -129,6 +156,7 @@
 (comment  
   (do
     (hui/doui (some-> @*window window/close))
+    (reset! *floating false)
     (reset! *window (hui/doui (make-window))))
   
   (hui/doui (window/set-z-order @*window :normal))
