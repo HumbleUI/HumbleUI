@@ -1,5 +1,6 @@
 (ns io.github.humbleui.ui
   (:require
+    [clojure.math :as math]
     [io.github.humbleui.core :as core :refer [deftype+]]
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols :refer [IComponent -measure -draw -event]])
@@ -17,7 +18,7 @@
 
 (defn event [app event]
   (-event app event))
-  
+
 (defn event-propagate
   ([event child child-rect]
    (event-propagate event child child-rect child-rect))
@@ -43,13 +44,23 @@
   (when (instance? AutoCloseable child)
     (.close ^AutoCloseable child)))
 
-(defn dimension [size cs ctx]
+(defn dimension ^long [size cs ctx]
   (let [scale (:scale ctx)]
-    (if (fn? size)
-      (* scale
-        (size {:width  (/ (:width cs) scale)
-               :height (/ (:height cs) scale)}))
-      (* scale size))))
+    (->
+      (if (fn? size)
+        (* scale
+          (size {:width  (/ (:width cs) scale)
+                 :height (/ (:height cs) scale)
+                 :scale  scale}))
+        (* scale size))
+      (math/round)
+      (long))))
+
+(defn round ^double [^double n ^double scale]
+  (-> n
+    (* scale)
+    (math/round)
+    (/ scale)))
 
 (def ^:private ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
 
@@ -196,7 +207,7 @@
           (if-some [[mode value child] (first children)]
             (let [child-size (case mode
                                :hug     (first known)
-                               :stretch (IPoint. (:width cs) (-> space (/ stretch) (* value))))]
+                               :stretch (IPoint. (:width cs) (-> space (/ stretch) (* value) (math/round))))]
               (when child
                 (-draw child ctx (assoc child-size :width (:width cs)) canvas))
               (.translate canvas 0 (:height child-size))
@@ -257,7 +268,7 @@
           (if-some [[mode value child] (first children)]
             (let [child-size (case mode
                                :hug     (first known)
-                               :stretch (IPoint. (-> space (/ stretch) (* value)) (:height cs)))]
+                               :stretch (IPoint. (-> space (/ stretch) (* value) (math/round)) (:height cs)))]
               (when child
                 (-draw child ctx (assoc child-size :height (:height cs)) canvas))
               (.translate canvas (:width child-size) 0)

@@ -26,6 +26,11 @@
       :some `(or ~expr (cond+ ~@rest))
       `(if ~test ~expr (cond+ ~@rest)))))
 
+(defmacro spy [msg & body]
+  `(let [ret# (do ~@body)]
+     (println (str ~msg ":") ret#)
+     ret#))
+
 (defmacro defn-memoize-last [name & body]
   `(def ~name (memoize-last (fn ~@body))))
 
