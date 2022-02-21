@@ -200,5 +200,5 @@
               (ui/gap 0 padding)
               (ui/halign 0.5 keyboard))))))))
 
-(require 'user :reload)
-(reset! user/*example "Wordle")
+; (require 'user :reload)
+; (reset! user/*example "Wordle")

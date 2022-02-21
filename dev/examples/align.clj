@@ -21,23 +21,25 @@
       [:stretch 1 nil]
       [:stretch 2 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
                     (ui/column
-                      [:stretch 1 (ui/halign 1 0   (label "Right to left"))]
+                      [:stretch 1 (ui/halign 1 0   (label "Right to left (1 0)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0.5 0 (label "Center to left"))]
+                      [:stretch 1 (ui/halign 0.5 0 (label "Center to left (0.5 0)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0     (label "Left to left"))]
+                      [:stretch 1 (ui/halign 0.6 0.2   (label "Arbitrary (0.6 0.2)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 1 0.5 (label "Right to center"))]
+                      [:stretch 1 (ui/halign 0     (label "Left to left (0 0)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0.5   (label "Center to center"))]
+                      [:stretch 1 (ui/halign 1 0.5 (label "Right to center (1 0.5)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0 0.5 (label "Left to center"))]
+                      [:stretch 1 (ui/halign 0.5   (label "Center to center (0.5 0.5)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 1 1   (label "Right to right"))]
+                      [:stretch 1 (ui/halign 0 0.5 (label "Left to center (0 0.5)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0.5 1 (label "Center to right"))]
+                      [:stretch 1 (ui/halign 1 1   (label "Right to right (1 1)"))]
                       (ui/gap 0 1)
-                      [:stretch 1 (ui/halign 0 1   (label "Left to right"))]
+                      [:stretch 1 (ui/halign 0.5 1 (label "Center to right (0.5 1)"))]
+                      (ui/gap 0 1)
+                      [:stretch 1 (ui/halign 0 1   (label "Left to right (0 1)"))]
                       (ui/gap 0 1)
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil]
@@ -63,3 +65,6 @@
                       (ui/gap 1 0)
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil])))
+
+; (require 'user :reload)
+; (reset! user/*example "Align")

@@ -1,6 +1,7 @@
 (ns user
   (:require
     [io.github.humbleui.core :as hui]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
@@ -139,12 +140,12 @@
       (window/request-frame window))))
 
 (defn make-window []
-  (let [screen (hui/primary-screen)
+  (let [screen (last (hui/screens))
         scale  (:scale screen)
-        width  (* 400 scale)
+        width  (* 600 scale)
         height (* 400 scale)
         area   (:work-area screen)
-        x      0 #_(- (:right area) width)
+        x      (:x area)
         y      (-> (:height area) (- height) (/ 2) (+ (:y area)))]
     (doto
       (window/make
