@@ -39,7 +39,7 @@ See `(comment)` forms in [user.clj](https://github.com/HumbleUI/HumbleUI/tree/ma
 |---|---|
 |![](extras/screenshot_calculator.png)|![](extras/screenshot_wordle.png)|
 
-```
+```clj
 (ns examples.label
   (:require
     [io.github.humbleui.ui :as ui]))
