@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import build_utils, common, os, platform, subprocess, sys, test
+import build_utils, common, os, platform, subprocess, sys
 
 def main():
   os.chdir(common.basedir)
