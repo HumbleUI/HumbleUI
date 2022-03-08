@@ -350,7 +350,7 @@
   (-event [_ event]
     (reduce
       (fn [acc [[_ _ child] rect]]
-        (core/eager-or acc (event-propagate event child rect) false))
+        (core/eager-or acc (event-propagate event child rect)))
       false
       (core/zip children child-rects)))
 
