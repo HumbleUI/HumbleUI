@@ -307,6 +307,11 @@
 (defn gap [width height]
   (->Gap width height))
 
+(defn fragment [& children]
+  (flatten-container children))
+
+(def <> #'fragment)
+
 (deftype+ Padding [left top right bottom child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
