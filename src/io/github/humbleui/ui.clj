@@ -664,6 +664,31 @@
     (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
     nil))
 
+(deftype+ CustomUI [width height on-paint on-event ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (IPoint. width height))
+  (-draw [_ ctx cs ^Canvas canvas]
+    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+    (when on-paint
+      (let [canvas ^Canvas canvas
+            {:keys [width height]} cs
+            layer  (.save canvas)
+            rect  (Rect/makeXYWH 0 0 width height)]
+        (try
+          (on-paint canvas width height)
+          (finally
+            (.restoreToCount canvas layer))))))
+  (-event [_ event]
+    (when on-event
+      (on-event event))))
+
+(defn custom-ui
+  "(custom-ui 400 300 {:on-paint #'on-paint-impl
+                       :on-event #'on-event-impl})"
+  [width height {:keys [on-paint on-event]}]
+  (->CustomUI width height on-paint on-event nil))
+
 (deftype+ KeyListener [event-type callback child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
