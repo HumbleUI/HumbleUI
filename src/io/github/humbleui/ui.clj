@@ -307,8 +307,60 @@
 (defn gap [width height]
   (->Gap width height))
 
+(deftype+ Fragment [children ^:mut child-rects]
+  IComponent
+  (-measure [_ ctx cs]
+    (reduce
+      (fn [{:keys [width height]} child]
+        (let [child-size (-measure child ctx cs)]
+          (IPoint. (+ width (:width child-size)) (+ height (:height child-size)))))
+      (IPoint. 0 0)
+      (keep #(nth % 2) children)))
+
+  (-draw [_ ctx cs ^Canvas canvas]
+    (let [known   (for [[mode _ child] children]
+                    (when (= :hug mode)
+                      (-measure child ctx cs)))
+          space-w   (- (:width cs) (transduce (keep :width) + 0 known))
+          space-h   (- (:height cs) (transduce (keep :height) + 0 known))
+          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
+          layer   (.save canvas)]
+      (try
+        (loop [width    0
+               height   0
+               rects    []
+               known    known
+               children children]
+          (if-some [[mode value child] (first children)]
+            (let [child-size (case mode
+                               :hug     (first known)
+                               :stretch (IPoint. (-> space-w (/ stretch) (* value) (math/round)) (-> space-h (/ stretch) (* value) (math/round))))]
+              (when child
+                (-draw child ctx (assoc child-size :width (:width cs) :height (:height cs)) canvas))
+              (.translate canvas (:width child-size) (:height child-size))
+              (recur
+                (+ width (long (:width child-size)))
+                (+ height (long (:height child-size)))
+                (conj rects (IRect/makeXYWH width height (:width child-size) (:height child-size)))
+                (next known)
+                (next children)))
+            (set! child-rects rects)))
+        (.restoreToCount canvas layer))))
+
+  (-event [_ event]
+    (reduce
+      (fn [acc [[_ _ child] rect]]
+        (core/eager-or acc (event-propagate event child rect) false))
+      false
+      (core/zip children child-rects)))
+
+  AutoCloseable
+  (close [_]
+    (doseq [[_ _ child] children]
+      (child-close child))))
+
 (defn fragment [& children]
-  (flatten-container children))
+  (->Fragment (flatten-container children) nil))
 
 (def <> #'fragment)
 
