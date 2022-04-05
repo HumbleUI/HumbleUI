@@ -8,7 +8,7 @@ clojars = "https://repo.clojars.org"
 @functools.lru_cache(maxsize=1)
 def deps():
   deps = [
-    build_utils.fetch_maven("org.clojure", "clojure", "1.11.0-rc1"),
+    build_utils.fetch_maven("org.clojure", "clojure", "1.11.1"),
     build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
     build_utils.fetch_maven("org.clojure", "spec.alpha", "0.3.218"),
     build_utils.fetch_maven("io.github.humbleui", "types", "0.1.2", classifier="clojure"),
@@ -19,7 +19,7 @@ def deps():
   parser.add_argument('--jwm-dir', default=None)
   parser.add_argument('--jwm-version', default="0.4.0")
   parser.add_argument('--skija-dir', default=None)
-  parser.add_argument('--skija-version', default='0.98.1')
+  parser.add_argument('--skija-version', default='0.100.0')
   (args, _) = parser.parse_known_args()
 
   if args.jwm_dir:
