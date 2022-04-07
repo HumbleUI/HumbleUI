@@ -12,33 +12,23 @@
 
 (set! *warn-on-reflection* true)
 
-(defn draw [app ctx cs canvas]
-  (-measure app ctx cs)
-  (-draw app ctx cs canvas))
+(defn draw [comp ctx rect canvas]
+  (-draw comp ctx rect canvas))
 
-(defn event [app event]
-  (-event app event))
+(defn event [comp event]
+  (-event comp event))
 
-(defn event-propagate
-  ([event child child-rect]
-   (event-propagate event child child-rect child-rect))
-  ([event child child-rect offset]
-   (when (and child child-rect)
-     (let [pos    (:hui.event/pos event)
-           event' (cond
-                    (nil? pos)
-                    event
-                    
-                    (not (.contains ^IRect child-rect pos))
-                    (dissoc event :hui.event/pos)
-                    
-                    (= 0 (:x offset) (:y offset))
-                    event
-                    
-                    :else
-                    (assoc event :hui.event/pos
-                      (IPoint. (- (:x pos) (:x offset)) (- (:y pos) (:y offset)))))]
-       (-event child event')))))
+(defn- draw-child [comp ctx ^IRect rect ^Canvas canvas]
+  (when comp
+    (let [count (.getSaveCount canvas)]
+      (try
+        (-draw comp ctx rect canvas)
+        (finally
+          (.restoreToCount canvas count))))))
+
+(defn- event-child [comp event]
+  (when comp
+    (-event comp event)))
 
 (defn child-close [child]
   (when (instance? AutoCloseable child)
@@ -71,8 +61,8 @@
       (Math/ceil (.getWidth line))
       (Math/ceil (.getCapHeight metrics))))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (.drawTextLine canvas line 0 (Math/ceil (.getCapHeight metrics)) paint))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (.drawTextLine canvas line (:x rect) (+ (:y rect) (Math/ceil (.getCapHeight metrics))) paint))
   
   (-event [_ event])
   
@@ -91,19 +81,17 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [layer      (.save canvas)
-          child-size (-measure child ctx cs)
-          left       (- (* (:width cs) coeff) (* (:width child-size) child-coeff))]
-      (set! child-rect (IRect/makeXYWH left 0 (:width child-size) (:height cs)))
-      (try
-        (.translate canvas left 0)
-        (-draw child ctx child-rect canvas)
-        (finally
-          (.restoreToCount canvas layer)))))
+          child-size (-measure child ctx rect)
+          left       (+ (:x rect)
+                       (* (:width rect) coeff)
+                       (- (* (:width child-size) child-coeff)))]
+      (set! child-rect (IRect/makeXYWH left (:y rect) (:width child-size) (:height rect)))
+      (draw-child child ctx child-rect canvas)))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -118,19 +106,17 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [layer      (.save canvas)
-          child-size (-measure child ctx cs)
-          top        (- (* (:height cs) coeff) (* (:height child-size) child-coeff))]
-      (set! child-rect (IRect/makeXYWH 0 top (:width cs) (:height child-size)))
-      (try
-        (.translate canvas 0 top)
-        (-draw child ctx child-rect canvas)
-        (finally
-          (.restoreToCount canvas layer)))))
+          child-size (-measure child ctx rect)
+          top        (+ (:y rect)
+                       (* (:height rect) coeff)
+                       (- (* (:height child-size) child-coeff)))]
+      (set! child-rect (IRect/makeXYWH (:x rect) top (:width rect) (:height child-size)))
+      (draw-child child ctx child-rect canvas)))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -147,12 +133,12 @@
           child-size (-measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width')))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child ctx cs canvas))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child ctx child-rect canvas))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -168,12 +154,12 @@
           child-size (-measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height')))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child ctx cs canvas))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (-draw child ctx rect canvas))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -192,39 +178,37 @@
       (IPoint. 0 0)
       (keep #(nth % 2) children)))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [known   (for [[mode _ child] children]
                     (when (= :hug mode)
-                      (-measure child ctx cs)))
-          space   (- (:height cs) (transduce (keep :height) + 0 known))
+                      (-measure child ctx rect)))
+          space   (- (:height rect) (transduce (keep :height) + 0 known))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
-      (try
-        (loop [height   0
-               rects    []
-               known    known
-               children children]
-          (if-some [[mode value child] (first children)]
-            (let [child-size (case mode
-                               :hug     (first known)
-                               :stretch (IPoint. (:width cs) (-> space (/ stretch) (* value) (math/round))))]
-              (when child
-                (-draw child ctx (assoc child-size :width (:width cs)) canvas))
-              (.translate canvas 0 (:height child-size))
-              (recur
-                (+ height (long (:height child-size)))
-                (conj rects (IRect/makeXYWH 0 height (:width cs) (:height child-size)))
-                (next known)
-                (next children)))
-            (set! child-rects rects)))
-        (.restoreToCount canvas layer))))
+      (loop [height   0
+             rects    []
+             known    known
+             children children]
+        (if-some [[mode value child] (first children)]
+          (let [child-height (long
+                               (case mode
+                                 :hug     (:height (first known))
+                                 :stretch (-> space (/ stretch) (* value) (math/round))))
+                child-rect (IRect/makeXYWH (:x rect) (+ (:y rect) height) (:width rect) child-height)]
+            (draw-child child ctx child-rect canvas)
+            (recur
+              (+ height child-height)
+              (conj rects child-rect)
+              (next known)
+              (next children)))
+          (set! child-rects rects)))))
   
   (-event [_ event]
     (reduce
-      (fn [acc [[_ _ child] rect]]
-        (core/eager-or acc (event-propagate event child rect)))
+      (fn [acc [_ _ child]]
+        (core/eager-or acc (event-child child event)))
       false
-      (core/zip children child-rects)))
+      children))
   
   AutoCloseable
   (close [_]
@@ -254,39 +238,36 @@
       (IPoint. 0 0)
       (keep #(nth % 2) children)))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [known   (for [[mode _ child] children]
                     (when (= :hug mode)
-                      (-measure child ctx cs)))
-          space   (- (:width cs) (transduce (keep :width) + 0 known))
+                      (-measure child ctx rect)))
+          space   (- (:width rect) (transduce (keep :width) + 0 known))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
-      (try
-        (loop [width    0
-               rects    []
-               known    known
-               children children]
-          (if-some [[mode value child] (first children)]
-            (let [child-size (case mode
-                               :hug     (first known)
-                               :stretch (IPoint. (-> space (/ stretch) (* value) (math/round)) (:height cs)))]
-              (when child
-                (-draw child ctx (assoc child-size :height (:height cs)) canvas))
-              (.translate canvas (:width child-size) 0)
-              (recur
-                (+ width (long (:width child-size)))
-                (conj rects (IRect/makeXYWH width 0 (:width child-size) (:height cs)))
-                (next known)
-                (next children)))
-            (set! child-rects rects)))
-        (.restoreToCount canvas layer))))
+      (loop [width    0
+             rects    []
+             known    known
+             children children]
+        (if-some [[mode value child] (first children)]
+          (let [child-size (case mode
+                             :hug     (first known)
+                             :stretch (IPoint. (-> space (/ stretch) (* value) (math/round)) (:height rect)))
+                child-rect (IRect/makeXYWH (+ (:x rect) width) (:y rect) (:width child-size) (:height rect))]
+            (draw-child child ctx child-rect canvas)
+            (recur
+              (+ width (long (:width child-size)))
+              (conj rects )
+              (next known)
+              (next children)))
+          (set! child-rects rects)))))
   
   (-event [_ event]
     (reduce
-      (fn [acc [[_ _ child] rect]]
-        (core/eager-or acc (event-propagate event child rect) false))
+      (fn [acc [_ _ child]]
+        (core/eager-or acc (event-child child event) false))
       false
-      (core/zip children child-rects)))
+      children))
   
   AutoCloseable
   (close [_]
@@ -301,7 +282,7 @@
   (-measure [_ ctx cs]
     (let [{:keys [scale]} ctx]
       (IPoint. (* scale width) (* scale height))))
-  (-draw [_ ctx cs canvas])
+  (-draw [_ ctx rect canvas])
   (-event [_ event]))
 
 (defn gap [width height]
@@ -320,24 +301,20 @@
         (+ (:width child-size) left' right')
         (+ (:height child-size) top' bottom'))))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [scale]} ctx
-          left'    (dimension left cs ctx)
-          right'   (dimension right cs ctx)
-          top'     (dimension top cs ctx)
-          bottom'  (dimension bottom cs ctx)
+          left'    (dimension left rect ctx)
+          right'   (dimension right rect ctx)
+          top'     (dimension top rect ctx)
+          bottom'  (dimension bottom rect ctx)
           layer    (.save canvas)
-          width'   (- (:width cs) left' right')
-          height'  (- (:height cs) top' bottom')]
-      (set! child-rect (IRect/makeXYWH left' top' width' height'))
-      (try
-        (.translate canvas left' top')
-        (-draw child ctx (IPoint. width' height') canvas)
-        (finally
-          (.restoreToCount canvas layer)))))
+          width'   (- (:width rect) left' right')
+          height'  (- (:height rect) top' bottom')]
+      (set! child-rect (IRect/makeXYWH (+ (:x rect) left') (+ (:y rect) top') width' height'))
+      (draw-child child ctx child-rect canvas)))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -353,13 +330,13 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (.drawRect canvas (Rect/makeXYWH 0 0 (:width cs) (:height cs)) paint)
-    (-draw child ctx cs canvas))
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (set! child-rect rect)
+    (.drawRect canvas (.toRect rect) paint)
+    (draw-child child ctx child-rect canvas))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -373,18 +350,17 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (let [rect  (Rect/makeXYWH 0 0 (:width cs) (:height cs))
-          layer (.save canvas)]
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (let [layer (.save canvas)]
       (try
-        (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-        (.clipRect canvas rect)
-        (-draw child ctx cs canvas)
+        (set! child-rect rect)
+        (.clipRect canvas (.toRect rect))
+        (-draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -398,20 +374,20 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [scale]} ctx
           radii' (into-array Float/TYPE (map #(* scale %) radii))
-          rrect  (RRect/makeComplexXYWH 0 0 (:width cs) (:height cs) radii')
+          rrect  (RRect/makeComplexXYWH (:x rect) (:y rect) (:width rect) (:height rect) radii')
           layer  (.save canvas)]
       (try
-        (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+        (set! child-rect rect)
         (.clipRRect canvas rrect true)
-        (-draw child ctx cs canvas)
+        (-draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -425,19 +401,21 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+  (-draw [_ ctx rect canvas]
+    (set! child-rect rect)
     (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))]
-      (-draw child ctx' cs canvas)))
+      (draw-child child ctx' child-rect canvas)))
   
   (-event [_ event]
     (core/eager-or
-      (event-propagate event child child-rect)
-      (when (= :hui/mouse-move (:hui/event event))
-        (let [hovered?' (some? (:hui.event/pos event))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')
-            true)))))
+      (event-child child event)
+      (let [type (:hui/event event)]
+        (when (= :hui/mouse-move type)
+          (let [pos (:hui.event/pos event)
+                hovered?' (.contains ^IRect child-rect pos)]
+            (when (not= hovered? hovered?')
+              (set! hovered? hovered?')
+              true))))))
   
   AutoCloseable
   (close [_]
@@ -451,30 +429,32 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+  (-draw [_ ctx rect canvas]
+    (set! child-rect rect)
     (let [ctx' (cond-> ctx
                  hovered?                (assoc :hui/hovered? true)
                  (and pressed? hovered?) (assoc :hui/active? true))]
-      (-draw child ctx' cs canvas)))
+      (-draw child ctx' child-rect canvas)))
   
   (-event [_ event]
-    (core/eager-or
-      (when (= :hui/mouse-move (:hui/event event))
-        (let [hovered?' (some? (:hui.event/pos event))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')
-            true)))
-      (when (= :hui/mouse-button (:hui/event event))
-        (let [pressed?' (if (:hui.event.mouse-button/is-pressed event)
-                          hovered?
-                          (do
-                            (when (and pressed? hovered?) (on-click))
-                            false))]
-          (when (not= pressed? pressed?')
-            (set! pressed? pressed?')
-            true)))
-      (event-propagate event child child-rect)))
+    (let [type (:hui/event event)]
+      (core/eager-or
+        (when (= :hui/mouse-move type)
+          (let [pos (:hui.event/pos event)
+                hovered?' (.contains ^IRect child-rect pos)]
+            (when (not= hovered? hovered?')
+              (set! hovered? hovered?')
+              true)))
+        (when (= :hui/mouse-button type)
+          (let [pressed?' (if (:hui.event.mouse-button/is-pressed event)
+                            hovered?
+                            (do
+                              (when (and pressed? hovered?) (on-click))
+                              false))]
+            (when (not= pressed? pressed?')
+              (set! pressed? pressed?')
+              true)))
+        (event-child child event))))
   
   AutoCloseable
   (close [_]
@@ -492,16 +472,16 @@
         (set! child child')))
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs canvas]
+  (-draw [_ ctx rect canvas]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
         (child-close child)
         (set! child child')))
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child ctx cs canvas))
+    (set! child-rect rect)
+    (draw-child child ctx child-rect canvas))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -542,12 +522,12 @@
   (-measure [_ ctx cs]
     (-measure child (merge ctx data) cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child (merge ctx data) cs canvas))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child (merge ctx data) child-rect canvas))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -563,14 +543,14 @@
           height (-> (:height cs) (/ (:scale ctx)))]
       (-measure child (assoc ctx key (IPoint. width height)) cs)))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (let [width  (-> (:width cs) (/ (:scale ctx)))
-          height (-> (:height cs) (/ (:scale ctx)))]
-      (-draw child (assoc ctx key (IPoint. width height)) cs canvas)))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (let [width  (-> (:width rect) (/ (:scale ctx)))
+          height (-> (:height rect) (/ (:scale ctx)))]
+      (draw-child child (assoc ctx key (IPoint. width height)) child-rect canvas)))
   
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -587,25 +567,27 @@
       (set! offset (core/clamp offset (- (:height cs) (:height child-size)) 0))
       (IPoint. (:width child-size) (:height cs))))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! size cs)
-    (let [layer    (.save canvas)
-          child-cs (assoc cs :height Integer/MAX_VALUE)]
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (set! size rect)
+    (let [layer      (.save canvas)
+          child-rect (-> rect
+                       (update :y + offset)
+                       (assoc :height Integer/MAX_VALUE))]
       (try
-        (.clipRect canvas (Rect/makeXYWH 0 0 (:width cs) (:height cs)))
-        (.translate canvas 0 offset)
-        (-draw child ctx child-cs canvas)
+        (.clipRect canvas (.toRect rect))
+        (-draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (let [changed?   (not= 0 (:hui.event.mouse-scroll/dy event 0))
-          _          (when changed?
-                       (set! offset (-> offset
-                                      (+ (:hui.event.mouse-scroll/dy event))
-                                      (core/clamp (- (:height size) (:height child-size)) 0))))
-          child-rect (IRect/makeLTRB 0 0 (min (:width child-size) (:width size)) (min (:height child-size) (:height size)))]
-      (core/eager-or changed? (event-propagate event child child-rect (IPoint. 0 offset)))))
+    (let [changed? (not= 0 (:hui.event.mouse-scroll/dy event 0))]
+      (when changed?
+        (set! offset (-> offset
+                       (+ (:hui.event.mouse-scroll/dy event))
+                       (core/clamp (- (:height size) (:height child-size)) 0))))
+      (core/eager-or
+        changed?
+        (event-child child event))))
   
   AutoCloseable
   (close [_]
@@ -619,27 +601,27 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child ctx cs canvas)
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child ctx child-rect canvas)
     (let [{:keys [scale]} ctx
           content-y (- (:offset child))
           content-h (:height (:child-size child))
           scroll-y  (:y child-rect)
-          scroll-h  (:height cs)
+          scroll-h  (:height child-rect)
           scroll-r  (:right child-rect)
           
           padding (* 4 scale)
           track-w (* 4 scale)
-          track-x (- (:width cs) track-w padding)
-          track-y (+ scroll-y padding)
+          track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
+          track-y (+ (:y rect) scroll-y padding)
           track-h (- scroll-h (* 2 padding))
           track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
           
           thumb-w       (* 4 scale)
           min-thumb-h   (* 16 scale)
           thumb-y-ratio (/ content-y content-h)
-          thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ track-y))
+          thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
           thumb-b-ratio (/ (+ content-y scroll-h) content-h)
           thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
           thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
@@ -647,7 +629,7 @@
       (.drawRRect canvas thumb fill-thumb)))
 
   (-event [_ event]
-    (event-propagate event child child-rect))
+    (event-child child event))
   
   AutoCloseable
   (close [_]
@@ -668,17 +650,17 @@
   IComponent
   (-measure [_ ctx cs]
     (IPoint. width height))
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
+  
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
     (when on-paint
-      (let [canvas ^Canvas canvas
-            {:keys [width height]} cs
-            layer  (.save canvas)
-            rect  (Rect/makeXYWH 0 0 width height)]
+      (let [layer  (.save canvas)]
         (try
+          (.translate canvas (:x rect) (:y rect))
           (on-paint canvas width height)
           (finally
             (.restoreToCount canvas layer))))))
+  
   (-event [_ event]
     (when on-event
       (on-event event))))
@@ -694,15 +676,15 @@
   (-measure [_ ctx cs]
     (-measure child ctx cs))
   
-  (-draw [_ ctx cs ^Canvas canvas]
-    (set! child-rect (IRect/makeXYWH 0 0 (:width cs) (:height cs)))
-    (-draw child ctx cs canvas))
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child ctx rect canvas))
   
   (-event [_ event]
     (core/eager-or
       (when (= event-type (:hui/event event))
         (callback event))
-      (event-propagate event child child-rect)))
+      (event-child child event)))
   
   AutoCloseable
   (close [_]
@@ -713,6 +695,8 @@
 
 (defn on-key-up [callback child]
   (->KeyListener :hui/key-up callback child nil))
+
+; (require 'user :reload)
 
 (comment
   (do

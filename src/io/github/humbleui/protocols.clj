@@ -2,5 +2,5 @@
 
 (defprotocol IComponent
   (-measure [_ ctx cs])
-  (-draw    [_ ctx cs canvas])
+  (-draw    [_ ctx rect canvas])
   (-event   [_ event]))

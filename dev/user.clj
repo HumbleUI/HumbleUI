@@ -17,7 +17,7 @@
   (:import
     [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll EventKey Window]
     [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint PaintMode]
-    [io.github.humbleui.types IPoint]))
+    [io.github.humbleui.types IPoint IRect]))
 
 (set! *warn-on-reflection* true)
 
@@ -105,7 +105,7 @@
         ctx    {:scale (window/scale window)}]
     (profile/reset)
     ; (profile/measure "frame"
-    (ui/draw app ctx bounds canvas)
+    (ui/draw app ctx (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
     (profile/log)
     #_(window/request-frame window)))
 
