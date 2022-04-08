@@ -26,6 +26,17 @@
       :some `(or ~expr (cond+ ~@rest))
       `(if ~test ~expr (cond+ ~@rest)))))
 
+(defmacro case-instance [e & clauses]
+  `(condp instance? ~e
+     ~@(mapcat
+         (fn [expr]
+           (case (count expr)
+             1 expr
+             2 (let [[type clause] expr]
+                 [type `(let [~e ~(vary-meta e assoc :tag type)]
+                          ~clause)])))
+         (partition-all 2 clauses))))
+
 (defmacro spy [msg & body]
   `(let [ret# (do ~@body)]
      (println (str ~msg ":") ret#)

@@ -112,32 +112,8 @@
 (some-> @*window window/request-frame)
 
 (defn on-event [window event]
-  (let [changed? (condp instance? event
-                   EventMouseMove
-                   (let [pos   (IPoint. (.getX ^EventMouseMove event) (.getY ^EventMouseMove event))
-                         event {:hui/event :hui/mouse-move
-                                :hui.event/pos pos}]
-                     (ui/event app event))
-                   
-                   EventMouseButton
-                   (let [event {:hui/event :hui/mouse-button
-                                :hui.event.mouse-button/is-pressed (.isPressed ^EventMouseButton event)}]
-                     (ui/event app event))
-                   
-                   EventMouseScroll
-                   (ui/event app
-                     {:hui/event :hui/mouse-scroll
-                      :hui.event.mouse-scroll/dx (.getDeltaX ^EventMouseScroll event)
-                      :hui.event.mouse-scroll/dy (.getDeltaY ^EventMouseScroll event)})
-                   
-                   EventKey
-                   (ui/event app
-                     {:hui/event (if (.isPressed ^EventKey event) :hui/key-down :hui/key-up)
-                      :hui.event.key/key (.getName (.getKey ^EventKey event))})
-                   
-                   nil)]
-    (when changed?
-      (window/request-frame window))))
+  (when-let [changed? (ui/event app event)]
+    (window/request-frame window)))
 
 (defn make-window []
   (let [screen (last (hui/screens))

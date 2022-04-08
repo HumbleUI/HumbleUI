@@ -409,13 +409,11 @@
   (-event [_ event]
     (core/eager-or
       (event-child child event)
-      (let [type (:hui/event event)]
-        (when (= :hui/mouse-move type)
-          (let [pos (:hui.event/pos event)
-                hovered?' (.contains ^IRect child-rect pos)]
-            (when (not= hovered? hovered?')
-              (set! hovered? hovered?')
-              true))))))
+      (when (= :mouse-move (:event event))
+        (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
+          (when (not= hovered? hovered?')
+            (set! hovered? hovered?')
+            true)))))
   
   AutoCloseable
   (close [_]
@@ -437,16 +435,14 @@
       (-draw child ctx' child-rect canvas)))
   
   (-event [_ event]
-    (let [type (:hui/event event)]
       (core/eager-or
-        (when (= :hui/mouse-move type)
-          (let [pos (:hui.event/pos event)
-                hovered?' (.contains ^IRect child-rect pos)]
+        (when (= :mouse-move (:event event))
+          (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
             (when (not= hovered? hovered?')
               (set! hovered? hovered?')
               true)))
-        (when (= :hui/mouse-button type)
-          (let [pressed?' (if (:hui.event.mouse-button/is-pressed event)
+        (when (= :mouse-button (:event event))
+          (let [pressed?' (if (:pressed? event)
                             hovered?
                             (do
                               (when (and pressed? hovered?) (on-click))
@@ -454,7 +450,7 @@
             (when (not= pressed? pressed?')
               (set! pressed? pressed?')
               true)))
-        (event-child child event))))
+        (event-child child event)))
   
   AutoCloseable
   (close [_]
@@ -580,10 +576,11 @@
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (let [changed? (not= 0 (:hui.event.mouse-scroll/dy event 0))]
+    (let [changed? (and (= :mouse-scroll (:event event))
+                     (not= 0 (:delta-y event 0)))]
       (when changed?
         (set! offset (-> offset
-                       (+ (:hui.event.mouse-scroll/dy event))
+                       (+ (:delta-y event))
                        (core/clamp (- (:height size) (:height child-size)) 0))))
       (core/eager-or
         changed?
@@ -671,7 +668,7 @@
   [width height {:keys [on-paint on-event]}]
   (->CustomUI width height on-paint on-event nil))
 
-(deftype+ KeyListener [event-type callback child ^:mut child-rect]
+(deftype+ KeyListener [pressed callback child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (-measure child ctx cs))
@@ -682,7 +679,9 @@
   
   (-event [_ event]
     (core/eager-or
-      (when (= event-type (:hui/event event))
+      (when (and
+              (= :key (:event event))
+              (= pressed (:pressed? event)))
         (callback event))
       (event-child child event)))
   
@@ -691,10 +690,33 @@
     (child-close child)))
 
 (defn on-key-down [callback child]
-  (->KeyListener :hui/key-down callback child nil))
+  (->KeyListener true callback child nil))
 
 (defn on-key-up [callback child]
-  (->KeyListener :hui/key-up callback child nil))
+  (->KeyListener false callback child nil))
+
+(deftype+ TextListener [callback child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (-measure child ctx cs))
+  
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child ctx rect canvas))
+  
+  (-event [_ event]
+    (core/eager-or
+      (when (= :text-input (:event event))
+        (callback (:text event)))
+      (event-child child event)))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn on-text-input [callback child]
+  (->TextListener callback child nil))
+
 
 ; (require 'user :reload)
 

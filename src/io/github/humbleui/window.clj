@@ -1,9 +1,11 @@
 (ns io.github.humbleui.window
   (:require
-    [io.github.humbleui.core :as core])
+    [io.github.humbleui.core :as core]
+    [io.github.humbleui.event :as event])
   (:import
-    [io.github.humbleui.jwm App Event EventWindowClose EventWindowCloseRequest EventWindowScreenChange EventWindowResize EventFrame Platform Window ZOrder]
-    [io.github.humbleui.jwm.skija EventFrameSkija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
+    [io.github.humbleui.jwm App Platform Window ZOrder]
+    [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
+    [io.github.humbleui.skija Surface]
     [java.util.function Consumer]))
 
 (set! *warn-on-reflection* true)
@@ -26,38 +28,41 @@
                    Platform/WINDOWS (LayerD3D12Skija.)
                    Platform/X11     (LayerGLSkija.))
         listener (reify Consumer
-                   (accept [this e]
-                     (when on-event
-                       (on-event window e))
-                     
-                     (cond
-                       (instance? EventWindowCloseRequest e)
-                       (when on-close-request
-                         (on-close-request window))
+                   (accept [this jwm-event]
+                     (let [e (event/event->map jwm-event)]
+                       (when on-event
+                         (on-event window e))
                        
-                       (instance? EventWindowClose e)
-                       (when on-close
-                         (on-close))
-                       
-                       (instance? EventWindowScreenChange e)
-                       (when on-screen-change
-                         (on-screen-change window))
-                       
-                       (instance? EventWindowResize e)
-                       (when on-resize
-                         (on-resize window))
-                       
-                       (instance? EventFrameSkija e)
-                       (when on-paint
-                         (let [canvas (-> ^EventFrameSkija e .getSurface .getCanvas)
-                               layer  (.save canvas)]
-                           (try
-                             (on-paint window canvas)
-                             (catch Exception e
-                               (.printStackTrace e)
-                               (.clear canvas (unchecked-int 0xFFCC3333)))
-                             (finally
-                               (.restoreToCount canvas layer))))))))]
+                       (case (:event e)
+                         :window-close-request
+                         (when on-close-request
+                           (on-close-request window))
+                         
+                         :window-close
+                         (when on-close
+                           (on-close))
+                         
+                         :window-screen-change
+                         (when on-screen-change
+                           (on-screen-change window))
+                         
+                         :window-resize
+                         (when on-resize
+                           (on-resize window))
+                         
+                         :frame-skija
+                         (when on-paint
+                           (let [canvas (.getCanvas ^Surface (:surface e))
+                                 layer  (.save canvas)]
+                             (try
+                               (on-paint window canvas)
+                               (catch Exception e
+                                 (.printStackTrace e)
+                                 (.clear canvas (unchecked-int 0xFFCC3333)))
+                               (finally
+                                 (.restoreToCount canvas layer)))))
+                         
+                         nil))))]
     (.setLayer window layer)
     (.setEventListener window listener)
     window))

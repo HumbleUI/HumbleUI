@@ -40,18 +40,18 @@
 (defn won? [{:keys [word guesses]}]
   (= (last guesses) word))
 
-(defn type [code]
+(defn type! [code]
   (let [{:keys [typing] :as state} @*state
         typed (count typing)]
     (when-not (won? @*state)
       (cond
-        (and (< typed 5) (contains? (into #{} (map str) "ABCDEFGHIJKLMNOPQRSTUVWXYZ") code))
+        (and (< typed 5) (string? code) (contains? (into #{} (map str) "ABCDEFGHIJKLMNOPQRSTUVWXYZ") code))
         (swap! *state update :typing str code)
 
-        (and (> typed 0) (= "Backspace" code))
+        (and (> typed 0) (= :backspace code))
         (swap! *state update :typing subs 0 (dec typed))
         
-        (and (= 5 typed) (= "Enter" code))
+        (and (= 5 typed) (= :enter code))
         (if (contains? dictionary typing)
           (swap! *state #(-> % (assoc :typing "") (update :guesses conj typing))))))))
 
@@ -129,7 +129,7 @@
   ([char] (key char {:width 25 :code char}))
   ([char {:keys [width code]}]
    (ui/clickable
-     #(type code)
+     #(type! code)
      (ui/dynamic ctx [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ctx
                       color (get (:colors ctx) char)]
        (ui/fill
@@ -162,43 +162,44 @@
         (ui/gap 0 padding)
         (ui/halign 0.5
           (ui/row
-            (key "⏎" {:width (+ (* 2 25) padding), :code "Enter"})
+            (key "⏎" {:width (+ (* 2 25) padding), :code :enter})
             (ui/gap padding 0)
             (interpose (ui/gap padding 0)
               (map #(key (str %)) "UVWXYZ"))
             (ui/gap padding 0)
-            (key "⌫" {:width (+ (* 2 25) padding), :code "Backspace"})))))))
+            (key "⌫" {:width (+ (* 2 25) padding), :code :backspace})))))))
 
 (def ui
-  (ui/on-key-down #(type (:hui.event.key/key %))
-    (ui/padding padding padding
-      (ui/dynamic ctx [{:keys [scale face-ui]} ctx]
-        (let [font-small (Font. typeface (float (* scale 13)))
-              fill-black (paint/fill 0xFF000000)
-              fill-light-gray (paint/fill 0xFFD4D6DA)]
-          (ui/with-context
-            {:font-large      (Font. typeface (float (* scale 26)))
-             :font-small      font-small
-             :fill-white      (paint/fill 0xFFFFFFFF)
-             :fill-black      fill-black
-             :fill-light-gray fill-light-gray
-             :fill-dark-gray  (paint/fill 0xFF777C7E)
-             :fill-green      (paint/fill 0xFF6AAA64)
-             :fill-yellow     (paint/fill 0xFFC9B457)
-             :stroke-light-gray (paint/stroke 0xFFD4D6DA (* 2 scale))
-             :stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))}
-            (ui/column
-              (ui/halign 0.5
-                (ui/clickable
-                  #(reset! *state (empty-state))
-                  (ui/padding 10 10
-                    (ui/label "↻ Reset" font-small fill-black))))
-              (ui/gap 0 padding)
-              [:stretch 1 nil]
-              (ui/halign 0.5 field)
-              [:stretch 1 nil]
-              (ui/gap 0 padding)
-              (ui/halign 0.5 keyboard))))))))
+  (ui/on-key-down #(type! (:key %))
+    (ui/on-text-input #(type! (str/upper-case %))
+      (ui/padding padding padding
+        (ui/dynamic ctx [{:keys [scale face-ui]} ctx]
+          (let [font-small (Font. typeface (float (* scale 13)))
+                fill-black (paint/fill 0xFF000000)
+                fill-light-gray (paint/fill 0xFFD4D6DA)]
+            (ui/with-context
+              {:font-large      (Font. typeface (float (* scale 26)))
+               :font-small      font-small
+               :fill-white      (paint/fill 0xFFFFFFFF)
+               :fill-black      fill-black
+               :fill-light-gray fill-light-gray
+               :fill-dark-gray  (paint/fill 0xFF777C7E)
+               :fill-green      (paint/fill 0xFF6AAA64)
+               :fill-yellow     (paint/fill 0xFFC9B457)
+               :stroke-light-gray (paint/stroke 0xFFD4D6DA (* 2 scale))
+               :stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))}
+              (ui/column
+                (ui/halign 0.5
+                  (ui/clickable
+                    #(reset! *state (empty-state))
+                    (ui/padding 10 10
+                      (ui/label "↻ Reset" font-small fill-black))))
+                (ui/gap 0 padding)
+                [:stretch 1 nil]
+                (ui/halign 0.5 field)
+                [:stretch 1 nil]
+                (ui/gap 0 padding)
+                (ui/halign 0.5 keyboard)))))))))
 
 ; (require 'user :reload)
 ; (reset! user/*example "Wordle")
