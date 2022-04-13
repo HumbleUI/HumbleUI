@@ -194,7 +194,7 @@
                                (case mode
                                  :hug     (:height (first known))
                                  :stretch (-> space (/ stretch) (* value) (math/round))))
-                child-rect (IRect/makeXYWH (:x rect) (+ (:y rect) height) (:width rect) child-height)]
+                child-rect (IRect/makeXYWH (:x rect) (+ (:y rect) height) (max 0 (:width rect)) (max 0 child-height))]
             (draw-child child ctx child-rect canvas)
             (recur
               (+ height child-height)
@@ -253,7 +253,7 @@
           (let [child-size (case mode
                              :hug     (first known)
                              :stretch (IPoint. (-> space (/ stretch) (* value) (math/round)) (:height rect)))
-                child-rect (IRect/makeXYWH (+ (:x rect) width) (:y rect) (:width child-size) (:height rect))]
+                child-rect (IRect/makeXYWH (+ (:x rect) width) (:y rect) (max 0 (:width child-size)) (max 0 (:height rect)))]
             (draw-child child ctx child-rect canvas)
             (recur
               (+ width (long (:width child-size)))
@@ -310,7 +310,7 @@
           layer    (.save canvas)
           width'   (- (:width rect) left' right')
           height'  (- (:height rect) top' bottom')]
-      (set! child-rect (IRect/makeXYWH (+ (:x rect) left') (+ (:y rect) top') width' height'))
+      (set! child-rect (IRect/makeXYWH (+ (:x rect) left') (+ (:y rect) top') (max 0 width') (max 0 height')))
       (draw-child child ctx child-rect canvas)))
   
   (-event [_ event]
