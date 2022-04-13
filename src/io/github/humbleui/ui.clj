@@ -435,22 +435,22 @@
       (-draw child ctx' child-rect canvas)))
   
   (-event [_ event]
-      (core/eager-or
-        (when (= :mouse-move (:event event))
-          (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
-            (when (not= hovered? hovered?')
-              (set! hovered? hovered?')
-              true)))
-        (when (= :mouse-button (:event event))
-          (let [pressed?' (if (:pressed? event)
-                            hovered?
-                            (do
-                              (when (and pressed? hovered?) (on-click))
-                              false))]
-            (when (not= pressed? pressed?')
-              (set! pressed? pressed?')
-              true)))
-        (event-child child event)))
+    (core/eager-or
+      (when (= :mouse-move (:event event))
+        (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
+          (when (not= hovered? hovered?')
+            (set! hovered? hovered?')
+            true)))
+      (when (= :mouse-button (:event event))
+        (let [pressed?' (if (:pressed? event)
+                          hovered?
+                          (do
+                            (when (and pressed? hovered?) (on-click))
+                            false))]
+          (when (not= pressed? pressed?')
+            (set! pressed? pressed?')
+            true)))
+      (event-child child event)))
   
   AutoCloseable
   (close [_]
@@ -555,7 +555,7 @@
 (defn with-bounds [key child]
   (->WithBounds key child nil))
 
-(deftype+ VScroll [child ^:mut offset ^:mut size ^:mut child-size]
+(deftype+ VScroll [child ^:mut offset ^:mut self-rect ^:mut child-size ^:mut hovered?]
   IComponent
   (-measure [_ ctx cs]
     (let [child-cs (assoc cs :height Integer/MAX_VALUE)]
@@ -564,7 +564,7 @@
       (IPoint. (:width child-size) (:height cs))))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (set! size rect)
+    (set! self-rect rect)
     (let [layer      (.save canvas)
           child-rect (-> rect
                        (update :y + offset)
@@ -576,22 +576,27 @@
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (let [changed? (and (= :mouse-scroll (:event event))
-                     (not= 0 (:delta-y event 0)))]
-      (when changed?
+    (core/eager-or
+      (when (= :mouse-move (:event event))
+        (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
+          (when (not= hovered? hovered?')
+            (set! hovered? hovered?')))
+        false)
+      (when (and (= :mouse-scroll (:event event))
+              hovered?
+              (not= 0 (:delta-y event 0)))
         (set! offset (-> offset
                        (+ (:delta-y event))
-                       (core/clamp (- (:height size) (:height child-size)) 0))))
-      (core/eager-or
-        changed?
-        (event-child child event))))
+                       (core/clamp (- (:height self-rect) (:height child-size)) 0)))
+        true)
+      (event-child child event)))
   
   AutoCloseable
   (close [_]
     (child-close child)))
 
 (defn vscroll [child]
-  (->VScroll child 0 nil nil))
+  (->VScroll child 0 nil nil nil))
 
 (deftype+ VScrollbar [child ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
   IComponent
@@ -601,29 +606,30 @@
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
     (draw-child child ctx child-rect canvas)
-    (let [{:keys [scale]} ctx
-          content-y (- (:offset child))
-          content-h (:height (:child-size child))
-          scroll-y  (:y child-rect)
-          scroll-h  (:height child-rect)
-          scroll-r  (:right child-rect)
-          
-          padding (* 4 scale)
-          track-w (* 4 scale)
-          track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
-          track-y (+ (:y rect) scroll-y padding)
-          track-h (- scroll-h (* 2 padding))
-          track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
-          
-          thumb-w       (* 4 scale)
-          min-thumb-h   (* 16 scale)
-          thumb-y-ratio (/ content-y content-h)
-          thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
-          thumb-b-ratio (/ (+ content-y scroll-h) content-h)
-          thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
-          thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
-      (.drawRRect canvas track fill-track)
-      (.drawRRect canvas thumb fill-thumb)))
+    (when (> (:height (:child-size child)) (:height child-rect))
+      (let [{:keys [scale]} ctx
+            content-y (- (:offset child))
+            content-h (:height (:child-size child))
+            scroll-y  (:y child-rect)
+            scroll-h  (:height child-rect)
+            scroll-r  (:right child-rect)
+            
+            padding (* 4 scale)
+            track-w (* 4 scale)
+            track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
+            track-y (+ (:y rect) scroll-y padding)
+            track-h (- scroll-h (* 2 padding))
+            track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
+            
+            thumb-w       (* 4 scale)
+            min-thumb-h   (* 16 scale)
+            thumb-y-ratio (/ content-y content-h)
+            thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
+            thumb-b-ratio (/ (+ content-y scroll-h) content-h)
+            thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
+            thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
+        (.drawRRect canvas track fill-track)
+        (.drawRRect canvas thumb fill-thumb))))
 
   (-event [_ event]
     (event-child child event))
