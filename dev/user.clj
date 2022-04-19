@@ -10,6 +10,7 @@
     [examples.button]
     [examples.calculator]
     [examples.container]
+    [examples.event-bubbling]
     [examples.label]
     [examples.scroll]
     [examples.tree]
@@ -27,8 +28,6 @@
   #_(.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL)
   (Typeface/makeFromFile "dev/fonts/Inter-Regular.ttf"))
 
-(defonce *example (atom "Align"))
-
 (defonce *floating (atom false))
 
 (add-watch *floating ::window
@@ -39,14 +38,17 @@
         (window/set-z-order window :normal)))))
 
 (def examples
-  {"Align"      examples.align/ui
-   "Button"     examples.button/ui
-   "Calculator" examples.calculator/ui
-   "Container"  examples.container/ui
-   "Label"      examples.label/ui
-   "Scroll"     examples.scroll/ui
-   "Tree"       examples.tree/ui
-   "Wordle"     examples.wordle/ui})
+  {"Align"          examples.align/ui
+   "Button"         examples.button/ui
+   "Calculator"     examples.calculator/ui
+   "Container"      examples.container/ui
+   "Event Bubbling" examples.event-bubbling/ui
+   "Label"          examples.label/ui
+   "Scroll"         examples.scroll/ui
+   "Tree"           examples.tree/ui
+   "Wordle"         examples.wordle/ui})
+
+(defonce *example (atom "Event Bubbling"))
 
 (defn checkbox [*checked text]
   (ui/clickable
@@ -109,7 +111,10 @@
     (profile/log)
     #_(window/request-frame window)))
 
-(some-> @*window window/request-frame)
+(defn redraw []
+  (some-> @*window window/request-frame))
+
+(redraw)
 
 (defn on-event [window event]
   (when-let [changed? (ui/event app event)]

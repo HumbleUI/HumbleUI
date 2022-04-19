@@ -21,9 +21,6 @@
   {:pre [(instance? IRect rect)]}
   (-draw comp ctx rect canvas))
 
-(defn event [comp event]
-  (-event comp event))
-
 (defn- draw-child [comp ctx ^IRect rect ^Canvas canvas]
   (when comp
     (let [count (.getSaveCount canvas)]
@@ -31,6 +28,9 @@
         (draw comp ctx rect canvas)
         (finally
           (.restoreToCount canvas count))))))
+
+(defn event [comp event]
+  (-event comp event))
 
 (defn- event-child [comp event]
   (when comp
@@ -492,7 +492,8 @@
         (let [pressed?' (if (:pressed? event)
                           hovered?
                           (do
-                            (when (and pressed? hovered?) (on-click))
+                            (when (and pressed? hovered? on-click)
+                              (on-click))
                             false))]
           (when (not= pressed? pressed?')
             (set! pressed? pressed?')
@@ -679,20 +680,19 @@
               padding (* 4 scale)
               track-w (* 4 scale)
               track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
-              track-y (+ (:y rect) scroll-y padding)
+              track-y (+ scroll-y padding)
               track-h (- scroll-h (* 2 padding))
               track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
               
               thumb-w       (* 4 scale)
               min-thumb-h   (* 16 scale)
               thumb-y-ratio (/ content-y content-h)
-              thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
+              thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ track-y))
               thumb-b-ratio (/ (+ content-y scroll-h) content-h)
               thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
               thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
           (.drawRRect canvas track fill-track)
-          (.drawRRect canvas thumb fill-thumb)))
-      draw-rect))
+          (.drawRRect canvas thumb fill-thumb)))))
 
   (-event [_ event]
     (event-child child event))
