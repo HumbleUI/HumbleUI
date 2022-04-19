@@ -27,7 +27,7 @@
   #_(.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL)
   (Typeface/makeFromFile "dev/fonts/Inter-Regular.ttf"))
 
-(defonce *example (atom "Wordle"))
+(defonce *example (atom "Align"))
 
 (defonce *floating (atom false))
 

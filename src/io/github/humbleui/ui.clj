@@ -12,7 +12,13 @@
 
 (set! *warn-on-reflection* true)
 
-(defn draw [comp ctx rect canvas]
+(defn measure [comp ctx ^IPoint cs]
+  {:pre  [(instance? IPoint cs)]
+   :post [(instance? IPoint %)]}
+  (-measure comp ctx cs))
+
+(defn draw [comp ctx ^IRect rect ^Canvas canvas]
+  {:pre [(instance? IRect rect)]}
   (-draw comp ctx rect canvas))
 
 (defn event [comp event]
@@ -22,7 +28,7 @@
   (when comp
     (let [count (.getSaveCount canvas)]
       (try
-        (-draw comp ctx rect canvas)
+        (draw comp ctx rect canvas)
         (finally
           (.restoreToCount canvas count))))))
 
@@ -76,14 +82,33 @@
         line (.shapeLine shaper text font ^ShapingOptions opts)]
     (->Label text font paint line (.getMetrics ^Font font))))
 
+
+;; gap
+
+(defrecord Gap [width height]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [{:keys [scale]} ctx]
+      (IPoint. (* scale width) (* scale height))))
+  
+  (-draw [_ ctx rect canvas])
+  
+  (-event [_ event]))
+
+(defn gap [width height]
+  (->Gap width height))
+
+
+;; halign
+
 (deftype+ HAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (let [layer      (.save canvas)
-          child-size (-measure child ctx rect)
+          child-size (measure child ctx (IPoint. (:width rect) (:height rect)))
           left       (+ (:x rect)
                        (* (:width rect) coeff)
                        (- (* (:width child-size) child-coeff)))]
@@ -101,14 +126,17 @@
   ([coeff child] (halign coeff coeff child))
   ([child-coeff coeff child] (->HAlign child-coeff coeff child nil)))
 
+
+;; valign
+
 (deftype+ VAlign [child-coeff coeff child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (let [layer      (.save canvas)
-          child-size (-measure child ctx rect)
+          child-size (measure child ctx (IPoint. (:width rect) (:height rect)))
           top        (+ (:y rect)
                        (* (:height rect) coeff)
                        (- (* (:height child-size) child-coeff)))]
@@ -126,11 +154,14 @@
   ([coeff child] (valign coeff coeff child))
   ([child-coeff coeff child] (->VAlign child-coeff coeff child nil)))
 
+
+;; width
+
 (deftype+ Width [value child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (let [width'     (dimension value cs ctx)
-          child-size (-measure child ctx (assoc cs :width width'))]
+          child-size (measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width')))
   
   (-draw [_ ctx rect ^Canvas canvas]
@@ -147,16 +178,19 @@
 (defn width [value child]
   (->Width value child nil))
 
+
+;; height
+
 (deftype+ Height [value child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (let [height'    (dimension value cs ctx)
-          child-size (-measure child ctx (assoc cs :height height'))]
+          child-size (measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height')))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
-    (-draw child ctx rect canvas))
+    (draw child ctx rect canvas))
   
   (-event [_ event]
     (event-child child event))
@@ -168,12 +202,15 @@
 (defn height [value child]
   (->Height value child nil))
 
+
+;; column
+
 (deftype+ Column [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
     (reduce
       (fn [{:keys [width height]} child]
-        (let [child-size (-measure child ctx cs)]
+        (let [child-size (measure child ctx cs)]
           (IPoint. (max width (:width child-size)) (+ height (:height child-size)))))
       (IPoint. 0 0)
       (keep #(nth % 2) children)))
@@ -181,7 +218,7 @@
   (-draw [_ ctx rect ^Canvas canvas]
     (let [known   (for [[mode _ child] children]
                     (when (= :hug mode)
-                      (-measure child ctx rect)))
+                      (measure child ctx (IPoint. (:width rect) (:height rect)))))
           space   (- (:height rect) (transduce (keep :height) + 0 known))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
@@ -228,12 +265,15 @@
 (defn column [& children]
   (->Column (flatten-container children) nil))
 
+
+;; row
+
 (deftype+ Row [children ^:mut child-rects]
   IComponent
   (-measure [_ ctx cs]
     (reduce
       (fn [{:keys [width height]} child]
-        (let [child-size (-measure child ctx cs)]
+        (let [child-size (measure child ctx cs)]
           (IPoint. (+ width (:width child-size)) (max height (:height child-size)))))
       (IPoint. 0 0)
       (keep #(nth % 2) children)))
@@ -241,7 +281,7 @@
   (-draw [_ ctx rect ^Canvas canvas]
     (let [known   (for [[mode _ child] children]
                     (when (= :hug mode)
-                      (-measure child ctx rect)))
+                      (measure child ctx (IPoint. (:width rect) (:height rect)))))
           space   (- (:width rect) (transduce (keep :width) + 0 known))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
@@ -277,26 +317,18 @@
 (defn row [& children]
   (->Row (flatten-container children) nil))
 
-(defrecord Gap [width height]
-  IComponent
-  (-measure [_ ctx cs]
-    (let [{:keys [scale]} ctx]
-      (IPoint. (* scale width) (* scale height))))
-  (-draw [_ ctx rect canvas])
-  (-event [_ event]))
 
-(defn gap [width height]
-  (->Gap width height))
+;; padding
 
 (deftype+ Padding [left top right bottom child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (let [left'   (dimension left cs ctx)
-          right'  (dimension right cs ctx)
-          top'    (dimension top cs ctx)
-          bottom' (dimension bottom cs ctx)
+    (let [left'      (dimension left cs ctx)
+          right'     (dimension right cs ctx)
+          top'       (dimension top cs ctx)
+          bottom'    (dimension bottom cs ctx)
           child-cs   (IPoint. (- (:width cs) left' right') (- (:height cs) top' bottom'))
-          child-size (-measure child ctx child-cs)]
+          child-size (measure child ctx child-cs)]
       (IPoint.
         (+ (:width child-size) left' right')
         (+ (:height child-size) top' bottom'))))
@@ -325,10 +357,13 @@
   ([w h child] (->Padding w h w h child nil))
   ([l t r b child] (->Padding l t r b child nil)))
 
+
+;; fill
+
 (deftype+ Fill [paint child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
     (set! child-rect rect)
@@ -345,17 +380,20 @@
 (defn fill [paint child]
   (->Fill paint child nil))
 
+
+;; clip
+
 (deftype+ Clip [child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
     (let [layer (.save canvas)]
       (try
         (set! child-rect rect)
         (.clipRect canvas (.toRect rect))
-        (-draw child ctx child-rect canvas)
+        (draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
@@ -369,10 +407,13 @@
 (defn clip [child]
   (->Clip child nil))
 
+
+;; clip-rrect
+
 (deftype+ ClipRRect [radii child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [scale]} ctx
@@ -382,7 +423,7 @@
       (try
         (set! child-rect rect)
         (.clipRRect canvas rrect true)
-        (-draw child ctx child-rect canvas)
+        (draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
@@ -396,10 +437,13 @@
 (defn clip-rrect [r child]
   (->ClipRRect [r] child nil))
 
+
+;; hoverable
+
 (deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect canvas]
     (set! child-rect rect)
@@ -422,17 +466,20 @@
 (defn hoverable [child]
   (->Hoverable child nil false))
 
+
+;; clickable
+
 (deftype+ Clickable [on-click child ^:mut child-rect ^:mut hovered? ^:mut pressed?]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (let [ctx' (cond-> ctx
                  hovered?                (assoc :hui/hovered? true)
                  (and pressed? hovered?) (assoc :hui/active? true))]
-      (-draw child ctx' child-rect canvas)))
+      (draw-child child ctx' child-rect canvas)))
   
   (-event [_ event]
     (core/eager-or
@@ -459,6 +506,9 @@
 (defn clickable [on-click child]
   (->Clickable on-click child nil false false))
 
+
+;; contextual / dynamic
+
 (deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
@@ -466,7 +516,7 @@
       (when-not (identical? child child')
         (child-close child)
         (set! child child')))
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect canvas]
     (let [child' (child-ctor ctx)]
@@ -513,10 +563,13 @@
            (let [~@bindings]
              (inputs-fn# ~@syms)))))))
 
+
+;; with-context
+
 (deftype+ WithContext [data child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child (merge ctx data) cs))
+    (measure child (merge ctx data) cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
@@ -532,12 +585,15 @@
 (defn with-context [data child]
   (->WithContext data child nil))
 
+
+;; with-bounds
+
 (deftype+ WithBounds [key child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
     (let [width  (-> (:width cs) (/ (:scale ctx)))
           height (-> (:height cs) (/ (:scale ctx)))]
-      (-measure child (assoc ctx key (IPoint. width height)) cs)))
+      (measure child (assoc ctx key (IPoint. width height)) cs)))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
@@ -555,6 +611,9 @@
 (defn with-bounds [key child]
   (->WithBounds key child nil))
 
+
+;; vscroll
+
 (deftype+ VScroll [child ^:mut offset ^:mut self-rect ^:mut child-size ^:mut hovered?]
   IComponent
   (-measure [_ ctx cs]
@@ -571,7 +630,7 @@
                        (assoc :height Integer/MAX_VALUE))]
       (try
         (.clipRect canvas (.toRect rect))
-        (-draw child ctx child-rect canvas)
+        (draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
   
@@ -598,38 +657,42 @@
 (defn vscroll [child]
   (->VScroll child 0 nil nil nil))
 
+
+;; vscrollbar
+
 (deftype+ VScrollbar [child ^Paint fill-track ^Paint fill-thumb ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
-    (draw-child child ctx child-rect canvas)
-    (when (> (:height (:child-size child)) (:height child-rect))
-      (let [{:keys [scale]} ctx
-            content-y (- (:offset child))
-            content-h (:height (:child-size child))
-            scroll-y  (:y child-rect)
-            scroll-h  (:height child-rect)
-            scroll-r  (:right child-rect)
-            
-            padding (* 4 scale)
-            track-w (* 4 scale)
-            track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
-            track-y (+ (:y rect) scroll-y padding)
-            track-h (- scroll-h (* 2 padding))
-            track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
-            
-            thumb-w       (* 4 scale)
-            min-thumb-h   (* 16 scale)
-            thumb-y-ratio (/ content-y content-h)
-            thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
-            thumb-b-ratio (/ (+ content-y scroll-h) content-h)
-            thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
-            thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
-        (.drawRRect canvas track fill-track)
-        (.drawRRect canvas thumb fill-thumb))))
+    (let [draw-rect (draw-child child ctx child-rect canvas)]
+      (when (> (:height (:child-size child)) (:height child-rect))
+        (let [{:keys [scale]} ctx
+              content-y (- (:offset child))
+              content-h (:height (:child-size child))
+              scroll-y  (:y child-rect)
+              scroll-h  (:height child-rect)
+              scroll-r  (:right child-rect)
+              
+              padding (* 4 scale)
+              track-w (* 4 scale)
+              track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
+              track-y (+ (:y rect) scroll-y padding)
+              track-h (- scroll-h (* 2 padding))
+              track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
+              
+              thumb-w       (* 4 scale)
+              min-thumb-h   (* 16 scale)
+              thumb-y-ratio (/ content-y content-h)
+              thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ (:y rect)) (+ track-y))
+              thumb-b-ratio (/ (+ content-y scroll-h) content-h)
+              thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
+              thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
+          (.drawRRect canvas track fill-track)
+          (.drawRRect canvas thumb fill-thumb)))
+      draw-rect))
 
   (-event [_ event]
     (event-child child event))
@@ -648,6 +711,9 @@
     (doto (Paint.) (.setColor (unchecked-int 0x10000000)))
     (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
     nil))
+
+
+;; custom-ui
 
 (deftype+ CustomUI [width height on-paint on-event ^:mut child-rect]
   IComponent
@@ -674,10 +740,13 @@
   [width height {:keys [on-paint on-event]}]
   (->CustomUI width height on-paint on-event nil))
 
+
+;; on-key-down / on-key-up
+
 (deftype+ KeyListener [pressed callback child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
@@ -701,10 +770,13 @@
 (defn on-key-up [callback child]
   (->KeyListener false callback child nil))
 
+
+;; text-listener
+
 (deftype+ TextListener [callback child ^:mut child-rect]
   IComponent
   (-measure [_ ctx cs]
-    (-measure child ctx cs))
+    (measure child ctx cs))
   
   (-draw [_ ctx rect ^Canvas canvas]
     (set! child-rect rect)
