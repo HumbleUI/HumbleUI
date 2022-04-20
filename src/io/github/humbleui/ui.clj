@@ -758,7 +758,7 @@
   (-measure [_ ctx cs]
     (IPoint. (:width cs) (:height cs)))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
     (when on-paint
       (let [layer (.save canvas)]
         (try
