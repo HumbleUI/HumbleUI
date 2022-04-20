@@ -1,6 +1,7 @@
 (ns examples.align
   (:require
     [clojure.string :as str]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Paint]))
@@ -8,18 +9,17 @@
 (set! *warn-on-reflection* true)
 
 (defn label [text]
-  (ui/dynamic ctx [{:keys [font-ui fill-text]} ctx]
-    (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE)))
-      (ui/halign 0.5
-        (ui/valign 0.5
-          (ui/padding 10 10
-            (ui/label text font-ui fill-text)))))))
+  (ui/fill (paint/fill 0xFFB2D7FE)
+    (ui/halign 0.5
+      (ui/valign 0.5
+        (ui/padding 10 10
+          (ui/label text))))))
 
 (def ui
   (ui/valign 0.5
     (ui/row
       [:stretch 1 nil]
-      [:stretch 2 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
+      [:stretch 2 (ui/fill (paint/fill 0xFFE1EFFA)
                     (ui/column
                       [:stretch 1 (ui/halign 1 0   (label "Right to left (1 0)"))]
                       (ui/gap 0 1)
@@ -43,7 +43,7 @@
                       (ui/gap 0 1)
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil]
-      [:stretch 2 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA)))
+      [:stretch 2 (ui/fill (paint/fill 0xFFE1EFFA)
                     (ui/row
                       [:stretch 1 (ui/valign 1 0   (label "Bottom to top"))]
                       (ui/gap 1 0)

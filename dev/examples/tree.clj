@@ -1,5 +1,6 @@
 (ns examples.tree
   (:require
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Paint]))
@@ -38,13 +39,13 @@
                           (ui/gap 1 0)
                           (for [x (range (inc y))]
                             (if (= x y 0)
-                              (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFCC3333)))
+                              (ui/fill (paint/fill 0xFFCC3333)
                                 (ui/padding 5 5
-                                  (ui/label "★" font-ui fill-text)))
-                              (ui/fill (doto (Paint.) (.setColor (random-green)))
+                                  (ui/label "★")))
+                              (ui/fill (paint/fill (random-green))
                                 (ui/padding 5 5
                                   (let [idx (+ x (* y (+ y 1) 1/2) -1)]
-                                    (ui/label (nth letters idx) font-ui fill-text)))))))))))))))))))
+                                    (ui/label (nth letters idx))))))))))))))))))))
 
 ; (require 'user :reload)
 ; (reset! user/*example "Tree")

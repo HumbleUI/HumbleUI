@@ -1,6 +1,7 @@
 (ns examples.container
   (:require
     [clojure.string :as str]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Paint]))
@@ -8,12 +9,12 @@
 (set! *warn-on-reflection* true)
 
 (defn label [text]
-  (ui/dynamic ctx [{:keys [font-ui fill-text leading]} ctx]
-    (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE)))
+  (ui/dynamic ctx [{:keys [leading]} ctx]
+    (ui/fill (paint/fill 0xFFB2D7FE)
       (ui/halign 0.5
         (ui/valign 0.5
           (ui/padding 10 leading
-            (ui/label text font-ui fill-text)))))))
+            (ui/label text)))))))
 
 (def ui
   (ui/dynamic ctx [{:keys [font-ui fill-text leading]} ctx]
@@ -21,7 +22,7 @@
       (ui/halign 0.5
         (ui/column
           (ui/padding 0 leading
-            (ui/label "Hug" font-ui fill-text))
+            (ui/label "Hug"))
           (ui/row
             (label "Ok")
             (ui/gap 10 0)
@@ -31,7 +32,7 @@
           (ui/gap 0 leading)
           
           (ui/padding 0 leading
-            (ui/label "Stretch 1-1-1" font-ui fill-text))
+            (ui/label "Stretch 1-1-1"))
           (ui/row
             [:stretch 1 (label "Ok")]
             (ui/gap 10 0)
@@ -41,7 +42,7 @@
           (ui/gap 0 leading)
           
           (ui/padding 0 leading
-            (ui/label "Stretch 3-2-1" font-ui fill-text))
+            (ui/label "Stretch 3-2-1"))
           (ui/row
             [:stretch 3 (label "Ok")]
             (ui/gap 10 0)
@@ -51,7 +52,7 @@
           (ui/gap 0 leading)
           
           (ui/padding 0 leading
-            (ui/label "Hug 20%-30%-40%" font-ui fill-text))
+            (ui/label "Hug 20%-30%-40%"))
           (ui/row
             (ui/width #(* 0.2 (:width %)) (label "Ok"))
             (ui/gap 10 0)

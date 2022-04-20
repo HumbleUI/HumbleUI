@@ -8,34 +8,23 @@
 
 (set! *warn-on-reflection* true)
 
-(defn button [child]
-  (ui/clickable
-    nil
-    (ui/clip-rrect 4
-      (ui/dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
-        (ui/fill
-          (cond
-            active?  (paint/fill 0x80000000)
-            hovered? (paint/fill 0x80404040)
-            :else    (paint/fill 0x80808080))
-          (ui/padding 20 20
-            (ui/with-context
-              {:hui/active? false
-               :hui/hovered? false}
-              child)))))))
+(def button-opts
+  {:bg         0x20000000
+   :bg-hovered 0x40000000
+   :bg-active  0x80000000})
 
 (def ui
   (ui/dynamic ctx [{:keys [font-ui fill-text leading]} ctx]
     (ui/halign 0.5
       (ui/row
         (ui/valign 0.5
-          (button
+          (ui/button nil button-opts
             (ui/column
-              (button
-                (ui/label "Inner button 1" font-ui fill-text))
+              (ui/button nil button-opts
+                (ui/label "Inner button 1"))
               (ui/gap 0 leading)
-              (button
-                (ui/label "Inner button 2" font-ui fill-text)))))
+              (ui/button nil button-opts
+                (ui/label "Inner button 2")))))
 
         (ui/gap 20 0)
 
@@ -44,7 +33,7 @@
             (ui/column
               (for [i (range 1 6)]
                 (ui/padding 20 leading
-                  (ui/label (str "Item " i) font-ui fill-text)))
+                  (ui/label (str "Item " i))))
               
               (ui/height 130
                 (ui/padding 0 0 12 0
@@ -54,11 +43,11 @@
                         (ui/column
                           (for [ch (map str "ABCDEFGHIJKLMN")]
                             (ui/padding 20 leading
-                              (ui/label (str "Nested " ch) font-ui fill-text)))))))))
+                              (ui/label (str "Nested " ch))))))))))
 
               (for [i (range 6 12)]
                 (ui/padding 20 leading
-                  (ui/label (str "Item " i) font-ui fill-text))))))))))
+                  (ui/label (str "Item " i)))))))))))
 
-(require 'user :reload)
-(reset! user/*example "Event Bubbling")
+; (require 'user :reload)
+; (reset! user/*example "Event Bubbling")

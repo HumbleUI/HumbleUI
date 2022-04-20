@@ -3,6 +3,7 @@
     [clojure.string :as str]
     [clojure.test :as test :refer [is are deftest testing]]
     [io.github.humbleui.core :refer [cond+]]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Font FontVariation FontVariationAxis Typeface Paint]))
@@ -106,14 +107,14 @@
 (defn button [text color]
   (ui/clickable
     #(on-click text)
-    (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn fill-text]} ctx]
+    (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn]} ctx]
       (let [color' (if active?
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                      color)]
-        (ui/fill (doto (Paint.) (.setColor (unchecked-int color')))
+        (ui/fill (paint/fill color')
           (ui/halign 0.5
             (ui/valign 0.5
-              (ui/label text font-btn fill-text "tnum"))))))))
+              (ui/label text {:font font-btn :features ["tnum"]}))))))))
 
 (def color-digit   0xFF797979)
 (def color-op      0xFFFF9F0A)
@@ -139,17 +140,17 @@
                        size'' (scale-font font-ui cap-height'')]
           (ui/with-context {:font-btn     (Font. face-ui (float size'))
                             :font-display (Font. face-ui (float size''))
-                            :fill-text    (doto (Paint.) (.setColor (unchecked-int 0xFFEBEBEB)))}  
-            (ui/fill (doto (Paint.) (.setColor (unchecked-int color-display)))
+                            :fill-text    (paint/fill 0xFFEBEBEB)}
+            (ui/fill (paint/fill color-display)
               (ui/padding padding padding
                 (ui/column
-                  [:stretch 3 (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFF404040)))
+                  [:stretch 3 (ui/fill (paint/fill 0xFF404040)
                                 (ui/padding #(/ (:height %) 3) 0
                                   (ui/halign 1
                                     (ui/valign 0.5
                                       (ui/dynamic ctx [{:keys [font-display fill-text]} ctx
                                                        val (get @*state (:screen @*state))]
-                                        (ui/label val font-display fill-text "tnum"))))))]
+                                        (ui/label val {:font font-display :features ["tnum"]}))))))]
                   (ui/gap 0 padding)
                   [:stretch 2 (ui/row
                                 (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "C" color-clear))

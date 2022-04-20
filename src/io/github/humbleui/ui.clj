@@ -2,6 +2,7 @@
   (:require
     [clojure.math :as math]
     [io.github.humbleui.core :as core :refer [deftype+]]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols :refer [IComponent -measure -draw -event]])
   (:import
@@ -58,6 +59,114 @@
     (math/round)
     (/ scale)))
 
+
+;; contextual / dynamic
+
+(deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (child-close child)
+        (set! child child')))
+    (measure child ctx cs))
+  
+  (-draw [_ ctx rect canvas]
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (child-close child)
+        (set! child child')))
+    (set! child-rect rect)
+    (draw-child child ctx child-rect canvas))
+  
+  (-event [_ event]
+    (event-child child event))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn contextual [child-ctor]
+  (->Contextual child-ctor nil nil))
+
+(defn collect
+  ([pred form] (collect [] pred form))
+  ([acc pred form]
+   (cond
+     (pred form)        (conj acc form)
+     (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
+     (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
+     :else              acc)))
+
+(defn bindings->syms [bindings]
+  (->> bindings
+    (partition 2)
+    (map first)
+    (collect symbol?)
+    (map name)
+    (map symbol)
+    (into #{})
+    (vec)))
+
+(defmacro dynamic [ctx-sym bindings & body]
+  (let [syms (bindings->syms bindings)]
+    `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
+       (contextual
+         (fn [~ctx-sym]
+           (let [~@bindings]
+             (inputs-fn# ~@syms)))))))
+
+
+;; with-context
+
+(deftype+ WithContext [data child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (measure child (merge ctx data) cs))
+  
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (draw-child child (merge ctx data) child-rect canvas))
+  
+  (-event [_ event]
+    (event-child child event))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn with-context [data child]
+  (->WithContext data child nil))
+
+
+;; with-bounds
+
+(deftype+ WithBounds [key child ^:mut child-rect]
+  IComponent
+  (-measure [_ ctx cs]
+    (let [width  (-> (:width cs) (/ (:scale ctx)))
+          height (-> (:height cs) (/ (:scale ctx)))]
+      (measure child (assoc ctx key (IPoint. width height)) cs)))
+  
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (let [width  (-> (:width rect) (/ (:scale ctx)))
+          height (-> (:height rect) (/ (:scale ctx)))]
+      (draw-child child (assoc ctx key (IPoint. width height)) child-rect canvas)))
+  
+  (-event [_ event]
+    (event-child child event))
+  
+  AutoCloseable
+  (close [_]
+    (child-close child)))
+
+(defn with-bounds [key child]
+  (->WithBounds key child nil))
+
+
+;; label
+
 (def ^:private ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
 
 (deftype+ Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
@@ -76,12 +185,16 @@
   (close [_]
     #_(.close line))) ; TODO
 
-(defn label [^String text ^Font font ^Paint paint & features]
-  ; (profile/measure "label"
-  (let [opts (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)
-        line (.shapeLine shaper text font ^ShapingOptions opts)]
-    (->Label text font paint line (.getMetrics ^Font font))))
-
+(defn label
+  ([text]
+   (label text nil))
+  ([text opts]
+   (dynamic ctx [font ^Font (or (:font opts) (:font-ui ctx))
+                 paint ^Paint (or (:paint opts) (:fill-text ctx))]
+     (let [text (str text)
+           opts (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))
+           line (.shapeLine shaper text font ^ShapingOptions opts)]
+       (->Label text font paint line (.getMetrics ^Font font))))))
 
 ;; gap
 
@@ -510,111 +623,6 @@
   (->Clickable on-click child nil false false))
 
 
-;; contextual / dynamic
-
-(deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
-  IComponent
-  (-measure [_ ctx cs]
-    (let [child' (child-ctor ctx)]
-      (when-not (identical? child child')
-        (child-close child)
-        (set! child child')))
-    (measure child ctx cs))
-  
-  (-draw [_ ctx rect canvas]
-    (let [child' (child-ctor ctx)]
-      (when-not (identical? child child')
-        (child-close child)
-        (set! child child')))
-    (set! child-rect rect)
-    (draw-child child ctx child-rect canvas))
-  
-  (-event [_ event]
-    (event-child child event))
-  
-  AutoCloseable
-  (close [_]
-    (child-close child)))
-
-(defn contextual [child-ctor]
-  (->Contextual child-ctor nil nil))
-
-(defn collect
-  ([pred form] (collect [] pred form))
-  ([acc pred form]
-   (cond
-     (pred form)        (conj acc form)
-     (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
-     (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
-     :else              acc)))
-
-(defn bindings->syms [bindings]
-  (->> bindings
-    (partition 2)
-    (map first)
-    (collect symbol?)
-    (map name)
-    (map symbol)
-    (into #{})
-    (vec)))
-
-(defmacro dynamic [ctx-sym bindings & body]
-  (let [syms (bindings->syms bindings)]
-    `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
-       (contextual
-         (fn [~ctx-sym]
-           (let [~@bindings]
-             (inputs-fn# ~@syms)))))))
-
-
-;; with-context
-
-(deftype+ WithContext [data child ^:mut child-rect]
-  IComponent
-  (-measure [_ ctx cs]
-    (measure child (merge ctx data) cs))
-  
-  (-draw [_ ctx rect ^Canvas canvas]
-    (set! child-rect rect)
-    (draw-child child (merge ctx data) child-rect canvas))
-  
-  (-event [_ event]
-    (event-child child event))
-  
-  AutoCloseable
-  (close [_]
-    (child-close child)))
-
-(defn with-context [data child]
-  (->WithContext data child nil))
-
-
-;; with-bounds
-
-(deftype+ WithBounds [key child ^:mut child-rect]
-  IComponent
-  (-measure [_ ctx cs]
-    (let [width  (-> (:width cs) (/ (:scale ctx)))
-          height (-> (:height cs) (/ (:scale ctx)))]
-      (measure child (assoc ctx key (IPoint. width height)) cs)))
-  
-  (-draw [_ ctx rect ^Canvas canvas]
-    (set! child-rect rect)
-    (let [width  (-> (:width rect) (/ (:scale ctx)))
-          height (-> (:height rect) (/ (:scale ctx)))]
-      (draw-child child (assoc ctx key (IPoint. width height)) child-rect canvas)))
-  
-  (-event [_ event]
-    (event-child child event))
-  
-  AutoCloseable
-  (close [_]
-    (child-close child)))
-
-(defn with-bounds [key child]
-  (->WithBounds key child nil))
-
-
 ;; vscroll
 
 (deftype+ VScroll [child ^:mut offset ^:mut self-rect ^:mut child-size ^:mut hovered?]
@@ -710,10 +718,7 @@
 (defn vscrollbar [child]
   (when-not (instance? VScroll child)
     (throw (ex-info (str "Expected VScroll, got: " (type child)) {:child child})))
-  (->VScrollbar child
-    (doto (Paint.) (.setColor (unchecked-int 0x10000000)))
-    (doto (Paint.) (.setColor (unchecked-int 0x60000000)))
-    nil))
+  (->VScrollbar child (paint/fill 0x10000000) (paint/fill 0x60000000) nil))
 
 
 ;; custom-ui
@@ -797,6 +802,40 @@
 
 (defn on-text-input [callback child]
   (->TextListener callback child nil))
+
+
+;; button
+
+(defn button
+  ([on-click child]
+   (button on-click nil child))
+  ([on-click opts child]
+   (dynamic ctx [{:keys [leading]} ctx]
+     (let [{:keys [bg bg-active bg-hovered border-radius padding-left padding-top padding-right padding-bottom]
+            p :padding} opts
+           bg-active      (or bg-active bg-hovered bg 0xFFA2C7EE)
+           bg-hovered     (or bg-hovered bg 0xFFCFE8FC)
+           bg             (or bg 0xFFB2D7FE)
+           border-radius  (or border-radius 4)
+           padding-left   (or padding-left   p 20)
+           padding-top    (or padding-top    p leading)
+           padding-right  (or padding-right  p 20)
+           padding-bottom (or padding-bottom p leading)]
+       (clickable
+         on-click
+         (clip-rrect border-radius
+           (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
+             (fill
+               (cond
+                 active?  (paint/fill bg-active)
+                 hovered? (paint/fill bg-hovered)
+                 :else    (paint/fill bg))
+               (padding padding-left padding-top padding-right padding-bottom
+                 (halign 0.5
+                   (with-context
+                     {:hui/active? false
+                      :hui/hovered? false}
+                     child)))))))))))
 
 
 ; (require 'user :reload)

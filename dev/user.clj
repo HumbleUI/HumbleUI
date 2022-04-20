@@ -48,32 +48,29 @@
    "Tree"           examples.tree/ui
    "Wordle"         examples.wordle/ui})
 
-(defonce *example (atom "Event Bubbling"))
+(defonce *example (atom "Align"))
 
 (defn checkbox [*checked text]
   (ui/clickable
     #(swap! *checked not)
     (ui/dynamic ctx [checked @*checked
-                     {:keys [font-ui fill-text leading scale]} ctx]
-      (let [border (doto (Paint.)
-                     (.setColor (unchecked-int 0xFF000000))
-                     (.setMode PaintMode/STROKE)
-                     (.setStrokeWidth (* 1 scale)))]
+                     {:keys [leading scale]} ctx]
+      (let [border (paint/stroke 0xFF000000 (* 1 scale))]
         (ui/row
           (ui/fill border
             (if checked
               (ui/padding 1 1
-                (ui/fill fill-text
+                (ui/fill (paint/fill 0xFF000000)
                   (ui/gap (- leading 2) (- leading 2))))
               (ui/gap leading leading)))
           (ui/gap 5 0)
-          (ui/label text font-ui fill-text))))))
+          (ui/label text))))))
 
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
     (let [font-ui   (Font. face-default (float (* 13 scale)))
           leading   (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))
-          fill-text (doto (Paint.) (.setColor (unchecked-int 0xFF000000)))]
+          fill-text (paint/fill 0xFF000000)]
       (ui/with-context {:face-ui   face-default
                         :font-ui   font-ui
                         :leading   leading
@@ -90,10 +87,10 @@
                        (ui/dynamic ctx [selected? (= name @*example)
                                         hovered?  (:hui/hovered? ctx)]
                          (let [label (ui/padding 20 leading
-                                       (ui/label name font-ui fill-text))]
+                                       (ui/label name))]
                            (cond
-                             selected? (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFB2D7FE))) label)
-                             hovered?  (ui/fill (doto (Paint.) (.setColor (unchecked-int 0xFFE1EFFA))) label)
+                             selected? (ui/fill (paint/fill 0xFFB2D7FE) label)
+                             hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
                              :else     label))))))))]
             (ui/padding 10 10
               (checkbox *floating "On top")))

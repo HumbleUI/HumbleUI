@@ -47,6 +47,5 @@ See `(comment)` forms in [user.clj](https://github.com/HumbleUI/HumbleUI/tree/ma
 (def ui
   (ui/valign 0.5
     (ui/halign 0.5
-      (ui/dynamic ctx [{:keys [font-ui fill-text]} ctx]
-        (ui/label "Hello from Humble UI! 👋" font-ui fill-text)))))
+      (ui/label "Hello from Humble UI! 👋"))))
 ```
