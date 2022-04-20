@@ -30,29 +30,33 @@
       (ui/row
         (ui/valign 0.5
           (button
-            (button
-              (ui/label "Inner button" font-ui fill-text))))
+            (ui/column
+              (button
+                (ui/label "Inner button 1" font-ui fill-text))
+              (ui/gap 0 leading)
+              (button
+                (ui/label "Inner button 2" font-ui fill-text)))))
 
         (ui/gap 20 0)
 
         (ui/vscrollbar
           (ui/vscroll
             (ui/column
-              (for [i (range 1 5)]
+              (for [i (range 1 6)]
                 (ui/padding 20 leading
                   (ui/label (str "Item " i) font-ui fill-text)))
               
-              (ui/height 170
-                (ui/padding 20 0
+              (ui/height 130
+                (ui/padding 0 0 12 0
                   (ui/fill (paint/stroke 0xFF000000 1)
                     (ui/vscrollbar
                       (ui/vscroll
                         (ui/column
-                          (for [ch (map str "ABCDEFGHIJKLMNOPQRSTUVWXYZ")]
+                          (for [ch (map str "ABCDEFGHIJKLMN")]
                             (ui/padding 20 leading
                               (ui/label (str "Nested " ch) font-ui fill-text)))))))))
 
-              (for [i (range 5 20)]
+              (for [i (range 6 12)]
                 (ui/padding 20 leading
                   (ui/label (str "Item " i) font-ui fill-text))))))))))
 

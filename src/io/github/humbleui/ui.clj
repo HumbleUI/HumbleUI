@@ -488,17 +488,19 @@
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))
-      (when (= :mouse-button (:event event))
-        (let [pressed?' (if (:pressed? event)
-                          hovered?
-                          (do
-                            (when (and pressed? hovered? on-click)
-                              (on-click))
-                            false))]
-          (when (not= pressed? pressed?')
-            (set! pressed? pressed?')
-            true)))
-      (event-child child event)))
+      (if (= :mouse-button (:event event))
+        (or
+          (event-child child event)
+          (let [pressed?' (if (:pressed? event)
+                            hovered?
+                            (do
+                              (when (and pressed? hovered? on-click)
+                                (on-click))
+                              false))]
+            (when (not= pressed? pressed?')
+              (set! pressed? pressed?')
+              true)))
+        (event-child child event))))
   
   AutoCloseable
   (close [_]
@@ -636,19 +638,20 @@
           (.restoreToCount canvas layer)))))
   
   (-event [_ event]
-    (core/eager-or
-      (when (= :mouse-move (:event event))
-        (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')))
-        false)
-      (when (and (= :mouse-scroll (:event event))
-              hovered?
-              (not= 0 (:delta-y event 0)))
-        (set! offset (-> offset
-                       (+ (:delta-y event))
-                       (core/clamp (- (:height self-rect) (:height child-size)) 0)))
-        true)
+    (when (= :mouse-move (:event event))
+      (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
+        (when (not= hovered? hovered?')
+          (set! hovered? hovered?'))))
+    (if (= :mouse-scroll (:event event))
+      (or
+        (event-child child event)
+        (when hovered?
+          (let [offset' (-> offset
+                          (+ (:delta-y event))
+                          (core/clamp (- (:height self-rect) (:height child-size)) 0))]
+            (when (not= offset offset')
+              (set! offset offset')
+              true))))
       (event-child child event)))
   
   AutoCloseable
