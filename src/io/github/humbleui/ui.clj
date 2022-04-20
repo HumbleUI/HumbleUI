@@ -1,5 +1,6 @@
 (ns io.github.humbleui.ui
   (:require
+    [clojure.java.io :as io]
     [clojure.math :as math]
     [io.github.humbleui.core :as core :refer [deftype+]]
     [io.github.humbleui.paint :as paint]
@@ -7,8 +8,9 @@
     [io.github.humbleui.protocols :as protocols :refer [IComponent -measure -draw -event]])
   (:import
     [java.lang AutoCloseable]
+    [java.io File]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
-    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]
+    [io.github.humbleui.skija Canvas Font FontMetrics Image Paint TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]))
 
 (set! *warn-on-reflection* true)
@@ -519,6 +521,34 @@
 
 (defn clip [child]
   (->Clip child nil))
+
+
+;; image
+
+(deftype+ AnImage [^Image img]
+  IComponent
+  (-measure [_ ctx cs]
+    (IPoint. (.getWidth img) (.getHeight img)))
+  
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (.drawImageRect canvas img (.toRect rect)))
+  
+  (-event [_ event])
+  
+  AutoCloseable
+  (close [_]
+    #_(.close img))) ;; TODO
+
+(defn image [src]
+  (cond
+    (bytes? src)
+    (->AnImage (Image/makeFromEncoded src))
+    
+    (instance? File src)
+    (recur (with-open [is (io/input-stream src)] (.readAllBytes is)))
+    
+    (instance? String src)
+    (recur (io/file src))))
 
 
 ;; clip-rrect
