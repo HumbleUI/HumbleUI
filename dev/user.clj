@@ -9,6 +9,7 @@
     [examples.align]
     [examples.button]
     [examples.calculator]
+    [examples.canvas]
     [examples.container]
     [examples.event-bubbling]
     [examples.label]
@@ -41,6 +42,7 @@
   {"Align"          examples.align/ui
    "Button"         examples.button/ui
    "Calculator"     examples.calculator/ui
+   "Canvas"         examples.canvas/ui
    "Container"      examples.container/ui
    "Event Bubbling" examples.event-bubbling/ui
    "Label"          examples.label/ui

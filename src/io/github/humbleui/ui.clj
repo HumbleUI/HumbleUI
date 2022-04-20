@@ -751,20 +751,20 @@
   (->VScrollbar child (paint/fill 0x10000000) (paint/fill 0x60000000) nil))
 
 
-;; custom-ui
+;; canvas
 
-(deftype+ CustomUI [width height on-paint on-event ^:mut child-rect]
+(deftype+ ACanvas [on-paint on-event]
   IComponent
   (-measure [_ ctx cs]
-    (IPoint. width height))
+    (IPoint. (:width cs) (:height cs)))
   
   (-draw [_ ctx rect ^Canvas canvas]
-    (set! child-rect rect)
     (when on-paint
-      (let [layer  (.save canvas)]
+      (let [layer (.save canvas)]
         (try
+          (.clipRect canvas (.toRect rect))
           (.translate canvas (:x rect) (:y rect))
-          (on-paint canvas width height)
+          (on-paint ctx canvas (IPoint. (:width rect) (:height rect)))
           (finally
             (.restoreToCount canvas layer))))))
   
@@ -772,11 +772,8 @@
     (when on-event
       (on-event event))))
 
-(defn custom-ui
-  "(custom-ui 400 300 {:on-paint #'on-paint-impl
-                       :on-event #'on-event-impl})"
-  [width height {:keys [on-paint on-event]}]
-  (->CustomUI width height on-paint on-event nil))
+(defn canvas [{:keys [on-paint on-event]}]
+  (->ACanvas on-paint on-event))
 
 
 ;; on-key-down / on-key-up
@@ -866,6 +863,9 @@
                      {:hui/active? false
                       :hui/hovered? false}
                      child)))))))))))
+
+
+;; checkbox
 
 
 ; (require 'user :reload)
