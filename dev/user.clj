@@ -101,8 +101,9 @@
             (ui/padding 10 10
               (ui/checkbox *floating (ui/label "On top"))))
           [:stretch 1
-           (ui/dynamic _ [name @*example]
-             (examples name))])))))
+           (ui/clip
+             (ui/dynamic _ [name @*example]
+               (examples name)))])))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF6F6F6))

@@ -722,11 +722,13 @@
   (-measure [_ ctx cs]
     (let [child-cs (assoc cs :height Integer/MAX_VALUE)]
       (set! child-size (-measure child ctx child-cs))
-      (set! offset (core/clamp offset (- (:height cs) (:height child-size)) 0))
       (IPoint. (:width child-size) (:height cs))))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (when (nil? child-size)
+      (set! child-size (-measure child ctx (IPoint. (:width rect) Integer/MAX_VALUE))))
     (set! self-rect rect)
+    (set! offset (core/clamp offset (- (:height rect) (:height child-size)) 0))
     (let [layer      (.save canvas)
           child-rect (-> rect
                        (update :y + offset)
