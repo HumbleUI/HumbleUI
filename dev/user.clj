@@ -10,6 +10,7 @@
     [examples.button]
     [examples.calculator]
     [examples.canvas]
+    [examples.checkbox]
     [examples.container]
     [examples.event-bubbling]
     [examples.label]
@@ -44,6 +45,7 @@
    "Button"         examples.button/ui
    "Calculator"     examples.calculator/ui
    "Canvas"         examples.canvas/ui
+   "Checkbox"       examples.checkbox/ui
    "Container"      examples.container/ui
    "Event Bubbling" examples.event-bubbling/ui
    "Label"          examples.label/ui
@@ -52,7 +54,7 @@
    "Tree"           examples.tree/ui
    "Wordle"         examples.wordle/ui})
 
-(defonce *example (atom "SVG"))
+(defonce *example (atom "Checkbox"))
 
 (defn checkbox [*checked text]
   (ui/clickable
@@ -97,7 +99,7 @@
                              hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
                              :else     label))))))))]
             (ui/padding 10 10
-              (checkbox *floating "On top")))
+              (ui/checkbox *floating (ui/label "On top"))))
           [:stretch 1
            (ui/dynamic _ [name @*example]
              (examples name))])))))
