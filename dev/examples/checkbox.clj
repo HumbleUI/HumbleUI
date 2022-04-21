@@ -43,7 +43,7 @@
       (ui/column
         (ui/dynamic ctx [{:keys [face-ui scale]} ctx]
           (ui/with-context
-            (let [font-ui (Font. ^Typeface face-ui (float (* 18 scale)))]
+            (let [font-ui (Font. ^Typeface face-ui (float (* 26 scale)))]
               {:font-ui font-ui
                :leading (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))})
             (ui/checkbox *state-group (ui/label "Group state"))))

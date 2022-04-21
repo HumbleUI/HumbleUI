@@ -67,8 +67,15 @@
   (apply map vector xs))
 
 (defn ^bytes slurp-bytes [src]
-  (with-open [is (io/input-stream src)]
-    (.readAllBytes is)))
+  (if (bytes? src)
+    src
+    (with-open [is (io/input-stream src)]
+      (.readAllBytes is))))
+
+(defn lazy-resource [path]
+  (delay
+    (slurp-bytes
+      (io/resource (str "io/github/humbleui/" path)))))
 
 (defn start [^Runnable cb]
   (App/start cb))
