@@ -10,8 +10,9 @@
     [java.lang AutoCloseable]
     [java.io File]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
-    [io.github.humbleui.skija Canvas Font FontMetrics Image Paint TextLine]
-    [io.github.humbleui.skija.shaper Shaper ShapingOptions]))
+    [io.github.humbleui.skija Canvas Data Font FontMetrics Image Paint Surface TextLine]
+    [io.github.humbleui.skija.shaper Shaper ShapingOptions]
+    [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
 
 (set! *warn-on-reflection* true)
 
@@ -540,15 +541,76 @@
     #_(.close img))) ;; TODO
 
 (defn image [src]
-  (cond
-    (bytes? src)
-    (->AnImage (Image/makeFromEncoded src))
-    
-    (instance? File src)
-    (recur (with-open [is (io/input-stream src)] (.readAllBytes is)))
-    
-    (instance? String src)
-    (recur (io/file src))))
+  (-> src
+    (core/slurp-bytes)
+    (Image/makeFromEncoded)
+    (->AnImage)))
+
+
+;; vector-image
+
+(deftype+ SVG [^SVGDOM dom ^SVGPreserveAspectRatio scaling ^:mut ^Image image]
+  IComponent
+  (-measure [_ ctx cs]
+    cs)
+  
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (let [{:keys [x y width height]} rect]
+      (when (or (nil? image)
+              (not= (.getWidth image) (:width rect))
+              (not= (.getHeight image) (:height rect)))
+        (when image
+          (.close image))
+      
+        (set! image
+          (with-open [surface (Surface/makeRasterN32Premul width height)]
+            (let [image-canvas (.getCanvas surface)
+                  root (.getRoot dom)]
+              (.setWidth root (SVGLength. width))
+              (.setHeight root (SVGLength. height))
+              (.setPreserveAspectRatio root scaling)
+              (.render dom image-canvas)
+              (.makeImageSnapshot surface)))))
+      
+      (.drawImageRect canvas image (.toRect rect))))
+  
+  (-event [_ event])
+  
+  AutoCloseable
+  (close [_]
+    #_(.close dom))) ;; TODO
+
+(defn svg
+  ([src] (svg src nil))
+  ([src opts]
+    (let [{:keys [preserve-aspect-ratio xpos ypos scale]
+           :or {preserve-aspect-ratio true
+                xpos :mid
+                ypos :mid
+                scale :meet}} opts
+          scaling (if-not preserve-aspect-ratio
+                    (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET)
+                    (case [xpos ypos scale]
+                      [:min :min :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMIN  SVGPreserveAspectRatioScale/MEET)
+                      [:min :mid :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMID  SVGPreserveAspectRatioScale/MEET)
+                      [:min :max :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMAX  SVGPreserveAspectRatioScale/MEET)
+                      [:mid :min :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMIN  SVGPreserveAspectRatioScale/MEET)
+                      [:mid :mid :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMID  SVGPreserveAspectRatioScale/MEET)
+                      [:mid :max :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMAX  SVGPreserveAspectRatioScale/MEET)
+                      [:max :min :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMIN  SVGPreserveAspectRatioScale/MEET)
+                      [:max :mid :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMID  SVGPreserveAspectRatioScale/MEET)
+                      [:max :max :meet]  (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMAX  SVGPreserveAspectRatioScale/MEET)
+                      [:min :min :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMIN  SVGPreserveAspectRatioScale/SLICE)
+                      [:min :mid :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMID  SVGPreserveAspectRatioScale/SLICE)
+                      [:min :max :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMIN_YMAX  SVGPreserveAspectRatioScale/SLICE)
+                      [:mid :min :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMIN  SVGPreserveAspectRatioScale/SLICE)
+                      [:mid :mid :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMID  SVGPreserveAspectRatioScale/SLICE)
+                      [:mid :max :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMID_YMAX  SVGPreserveAspectRatioScale/SLICE)
+                      [:max :min :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMIN  SVGPreserveAspectRatioScale/SLICE)
+                      [:max :mid :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMID  SVGPreserveAspectRatioScale/SLICE)
+                      [:max :max :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMAX  SVGPreserveAspectRatioScale/SLICE)))
+          dom (SVGDOM. (Data/makeFromBytes (core/slurp-bytes src)))]
+    (->SVG dom scaling nil))))
 
 
 ;; clip-rrect

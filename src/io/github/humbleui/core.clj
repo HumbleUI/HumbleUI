@@ -1,5 +1,6 @@
 (ns io.github.humbleui.core
   (:require
+    [clojure.java.io :as io]
     [clojure.set :as set])
   (:import
     [io.github.humbleui.jwm App Screen]
@@ -64,6 +65,10 @@
 
 (defn zip [& xs]
   (apply map vector xs))
+
+(defn ^bytes slurp-bytes [src]
+  (with-open [is (io/input-stream src)]
+    (.readAllBytes is)))
 
 (defn start [^Runnable cb]
   (App/start cb))

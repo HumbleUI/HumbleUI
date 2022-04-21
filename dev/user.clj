@@ -14,6 +14,7 @@
     [examples.event-bubbling]
     [examples.label]
     [examples.scroll]
+    [examples.svg]
     [examples.tree]
     [examples.wordle])
   (:import
@@ -47,10 +48,11 @@
    "Event Bubbling" examples.event-bubbling/ui
    "Label"          examples.label/ui
    "Scroll"         examples.scroll/ui
+   "SVG"            examples.svg/ui
    "Tree"           examples.tree/ui
    "Wordle"         examples.wordle/ui})
 
-(defonce *example (atom "Align"))
+(defonce *example (atom "SVG"))
 
 (defn checkbox [*checked text]
   (ui/clickable
