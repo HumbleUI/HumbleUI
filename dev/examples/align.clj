@@ -66,5 +66,4 @@
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil])))
 
-; (require 'user :reload)
-; (reset! user/*example "Align")
+; (reset! user/*example "align")

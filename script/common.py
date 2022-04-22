@@ -19,7 +19,7 @@ def deps():
   parser.add_argument('--jwm-dir', default=None)
   parser.add_argument('--jwm-version', default="0.4.2")
   parser.add_argument('--skija-dir', default=None)
-  parser.add_argument('--skija-version', default='0.100.0')
+  parser.add_argument('--skija-version', default='0.102.0')
   (args, _) = parser.parse_known_args()
 
   if args.jwm_dir:

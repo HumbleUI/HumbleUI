@@ -47,5 +47,4 @@
                                   (let [idx (+ x (* y (+ y 1) 1/2) -1)]
                                     (ui/label (nth letters idx))))))))))))))))))))
 
-; (require 'user :reload)
-; (reset! user/*example "Tree")
+; (reset! user/*example "tree")

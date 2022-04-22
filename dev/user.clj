@@ -5,19 +5,7 @@
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
-    [nrepl.cmdline :as nrepl]
-    [examples.align]
-    [examples.button]
-    [examples.calculator]
-    [examples.canvas]
-    [examples.checkbox]
-    [examples.container]
-    [examples.event-bubbling]
-    [examples.label]
-    [examples.scroll]
-    [examples.svg]
-    [examples.tree]
-    [examples.wordle])
+    [nrepl.cmdline :as nrepl])
   (:import
     [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll EventKey Window]
     [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint PaintMode]
@@ -41,20 +29,21 @@
         (window/set-z-order window :normal)))))
 
 (def examples
-  {"Align"          examples.align/ui
-   "Button"         examples.button/ui
-   "Calculator"     examples.calculator/ui
-   "Canvas"         examples.canvas/ui
-   "Checkbox"       examples.checkbox/ui
-   "Container"      examples.container/ui
-   "Event Bubbling" examples.event-bubbling/ui
-   "Label"          examples.label/ui
-   "Scroll"         examples.scroll/ui
-   "SVG"            examples.svg/ui
-   "Tree"           examples.tree/ui
-   "Wordle"         examples.wordle/ui})
+  ["align"
+   "button"
+   "calculator"
+   "canvas"
+   "checkbox"
+   "container"
+   "event-bubbling"
+   "label"
+   "scroll"
+   "svg"
+   "text-field"
+   "tree"
+   "wordle"])
 
-(defonce *example (atom "Checkbox"))
+(defonce *example (atom "text-field"))
 
 (defn checkbox [*checked text]
   (ui/clickable
@@ -87,7 +76,7 @@
              (ui/vscrollbar
                (ui/vscroll
                  (ui/column
-                   (for [[name ui] (sort-by first examples)]
+                   (for [name (sort examples)]
                      (ui/clickable
                        #(reset! *example name)
                        (ui/dynamic ctx [selected? (= name @*example)
@@ -102,8 +91,8 @@
               (ui/checkbox *floating (ui/label "On top"))))
           [:stretch 1
            (ui/clip
-             (ui/dynamic _ [name @*example]
-               (examples name)))])))))
+             (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
+               ui))])))))
 
 (defn on-paint [window ^Canvas canvas]
   (.clear canvas (unchecked-int 0xFFF6F6F6))
@@ -117,6 +106,10 @@
 
 (defn redraw []
   (some-> @*window window/request-frame))
+
+(add-watch *example ::redraw
+  (fn [_ _ _ _]
+    (redraw)))
 
 (redraw)
 

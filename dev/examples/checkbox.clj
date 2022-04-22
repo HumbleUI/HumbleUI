@@ -52,5 +52,4 @@
         (ui/gap 0 10)
         (ui/checkbox *state-second (ui/label "Second state"))))))
 
-; (require 'user :reload)
-; (reset! user/*example "Checkbox")
+; (reset! user/*example "checkbox")

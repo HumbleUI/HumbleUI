@@ -76,5 +76,4 @@
         
         ))))
 
-; (require 'user :reload)
-; (reset! user/*example "Scroll")
+; (reset! user/*example "scroll")

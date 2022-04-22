@@ -193,5 +193,4 @@
                                 (ui/gap padding 0)
                                 [:stretch 1 (button "=" color-op)])])))))))))
 
-; (require 'user :reload)
-; (reset! user/*example "Calculator")
+; (reset! user/*example "calculator")

@@ -35,5 +35,4 @@
       (ui/canvas {:on-paint on-paint
                   :on-event on-event}))))
 
-; (require 'user :reload)
-; (reset! user/*example "Canvas")
+; (reset! user/*example "canvas")

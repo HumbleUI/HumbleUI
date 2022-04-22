@@ -49,5 +49,4 @@
                 (ui/padding 20 leading
                   (ui/label (str "Item " i)))))))))))
 
-; (require 'user :reload)
-; (reset! user/*example "Event Bubbling")
+; (reset! user/*example "event_bubbling")

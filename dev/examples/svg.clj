@@ -57,5 +57,4 @@
                   (ui/height (* 7 step)
                     (ui/svg "dev/images/ratio.svg" {:preserve-aspect-ratio false})))))))))))
 
-; (require 'user :reload)
-; (reset! user/*example "SVG")
+; (reset! user/*example "svg")

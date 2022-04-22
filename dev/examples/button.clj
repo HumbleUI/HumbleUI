@@ -54,5 +54,4 @@
             (ui/button #(reset! *clicks 0)
               (ui/label "Reset"))))))))
 
-; (require 'user :reload)
-; (reset! user/*example "Button")
+; (reset! user/*example "button")

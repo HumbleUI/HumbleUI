@@ -60,3 +60,5 @@
             (ui/gap 10 0)
             (ui/width #(* 0.4 (:width %)) (label "Abort request")))
           (ui/gap 0 leading))))))
+
+; (reset! user/*example "container")
