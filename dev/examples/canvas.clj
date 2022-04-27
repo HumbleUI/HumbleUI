@@ -46,7 +46,7 @@
         (canvas/rotate canvas 90)
         (canvas/scale canvas 0.001)
         (with-open [stroke (paint/stroke 0xFFCCCCCC (* scale 1000))]
-          (doseq [[[x1 y1] [x2 y2]] (partition 2 1 (hilbert-curve size size 6))
+          (doseq [[[x1 y1] [x2 y2]] (partition 2 (hilbert-curve size size 6))
                   :let [x1'  (- x1 (/ size 2))
                         y1'  (- y1 (/ size 2))
                         x2'  (- x2 (/ size 2))

@@ -8,11 +8,14 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *clicks (atom 0))
+(defonce *text (atom "Change me"))
 
 (def ui
   (ui/valign 0.5
     (ui/halign 0.5
-      (ui/label "Text field !!!"))))
+      (ui/width #(/ (:width %) 2)
+        (ui/fill (paint/fill 0xFFFFFFFF)
+          (ui/padding 10 10
+            (ui/text-field *text)))))))
 
-; (reset! user/*example "text-field")
+(reset! user/*example "text-field")

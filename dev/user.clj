@@ -1,15 +1,17 @@
 (ns user
   (:require
-    [io.github.humbleui.core :as hui]
+    [clojure.string :as str]
+    [io.github.humbleui.app :as app]
+    [io.github.humbleui.canvas :as canvas]
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
     [nrepl.cmdline :as nrepl])
   (:import
-    [io.github.humbleui.jwm App EventFrame EventMouseButton EventMouseMove EventMouseScroll EventKey Window]
-    [io.github.humbleui.skija Canvas FontMgr FontStyle Typeface Font Paint PaintMode]
-    [io.github.humbleui.types IPoint IRect]))
+    [io.github.humbleui.skija FontMgr FontStyle Typeface Font]
+    [io.github.humbleui.types IRect]))
 
 (set! *warn-on-reflection* true)
 
@@ -45,22 +47,6 @@
 
 (defonce *example (atom "text-field"))
 
-(defn checkbox [*checked text]
-  (ui/clickable
-    #(swap! *checked not)
-    (ui/dynamic ctx [checked @*checked
-                     {:keys [leading scale]} ctx]
-      (let [border (paint/stroke 0xFF000000 (* 1 scale))]
-        (ui/row
-          (ui/fill border
-            (if checked
-              (ui/padding 1 1
-                (ui/fill (paint/fill 0xFF000000)
-                  (ui/gap (- leading 2) (- leading 2))))
-              (ui/gap leading leading)))
-          (ui/gap 5 0)
-          (ui/label text))))))
-
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
     (let [font-ui   (Font. face-default (float (* 13 scale)))
@@ -82,7 +68,10 @@
                        (ui/dynamic ctx [selected? (= name @*example)
                                         hovered?  (:hui/hovered? ctx)]
                          (let [label (ui/padding 20 leading
-                                       (ui/label name))]
+                                       (ui/label (-> name
+                                                   (str/split #"-")
+                                                   (->> (map str/capitalize)
+                                                     (str/join " ")))))]
                            (cond
                              selected? (ui/fill (paint/fill 0xFFB2D7FE) label)
                              hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
@@ -94,13 +83,13 @@
              (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
                ui))])))))
 
-(defn on-paint [window ^Canvas canvas]
-  (.clear canvas (unchecked-int 0xFFF6F6F6))
+(defn on-paint [window canvas]
+  (canvas/clear canvas 0xFFF6F6F6)
   (let [bounds (window/content-rect window)
         ctx    {:scale (window/scale window)}]
     (profile/reset)
     ; (profile/measure "frame"
-    (ui/draw app ctx (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
+    (core/draw app ctx (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
     (profile/log)
     #_(window/request-frame window)))
 
@@ -114,11 +103,11 @@
 (redraw)
 
 (defn on-event [window event]
-  (when-let [changed? (ui/event app event)]
+  (when-let [changed? (core/event app event)]
     (window/request-frame window)))
 
 (defn make-window []
-  (let [screen (last (hui/screens))
+  (let [screen (last (app/screens))
         scale  (:scale screen)
         width  (* 600 scale)
         height (* 400 scale)
@@ -137,14 +126,14 @@
 
 (defn -main [& args]
   (future (apply nrepl/-main args))
-  (hui/start #(reset! *window (make-window))))
+  (app/start #(reset! *window (make-window))))
 
 (comment  
   (do
-    (hui/doui (some-> @*window window/close))
+    (app/doui (some-> @*window window/close))
     (reset! *floating false)
-    (reset! *window (hui/doui (make-window))))
+    (reset! *window (app/doui (make-window))))
   
-  (hui/doui (window/set-z-order @*window :normal))
-  (hui/doui (window/set-z-order @*window :floating))
+  (app/doui (window/set-z-order @*window :normal))
+  (app/doui (window/set-z-order @*window :floating))
   )

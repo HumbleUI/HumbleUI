@@ -1,10 +1,21 @@
 (ns io.github.humbleui.core
   (:require
     [clojure.java.io :as io]
-    [clojure.set :as set])
+    [clojure.math :as math]
+    [clojure.set :as set]
+    [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.jwm App Screen]
+    [io.github.humbleui.skija Canvas]
+    [io.github.humbleui.skija.shaper Shaper]
+    [io.github.humbleui.types IPoint IRect]
     [java.lang AutoCloseable]))
+
+;; state
+
+(def ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
+
+;; macros
 
 (defn memoize-last [ctor]
   (let [*atom (volatile! nil)]
@@ -18,6 +29,9 @@
         (let [value' (apply ctor args')]
           (vreset! *atom [args' value'])
           value')))))
+
+(defmacro defn-memoize-last [name & body]
+  `(def ~name (memoize-last (fn ~@body))))
 
 (defmacro cond+ [& clauses]
   (when-some [[test expr & rest] clauses]
@@ -43,8 +57,13 @@
      (println (str ~msg ":") ret#)
      ret#))
 
-(defmacro defn-memoize-last [name & body]
-  `(def ~name (memoize-last (fn ~@body))))
+(defmacro doto-some [x & forms]
+  `(let [x# ~x]
+     (when (some? x#)
+       (doto x# ~@forms))))
+
+
+;; utilities
 
 (defn eager-or
   ([] nil)
@@ -66,6 +85,15 @@
 (defn zip [& xs]
   (apply map vector xs))
 
+(defn collect
+  ([pred form] (collect [] pred form))
+  ([acc pred form]
+   (cond
+     (pred form)        (conj acc form)
+     (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
+     (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
+     :else              acc)))
+
 (defn ^bytes slurp-bytes [src]
   (if (bytes? src)
     src
@@ -77,40 +105,47 @@
     (slurp-bytes
       (io/resource (str "io/github/humbleui/" path)))))
 
-(defn start [^Runnable cb]
-  (App/start cb))
+(defn measure [comp ctx ^IPoint cs]
+  {:pre  [(instance? IPoint cs)]
+   :post [(instance? IPoint %)]}
+  (protocols/-measure comp ctx cs))
 
-(defn terminate []
-  (App/terminate))
+(defn draw [comp ctx ^IRect rect ^Canvas canvas]
+  {:pre [(instance? IRect rect)]}
+  (protocols/-draw comp ctx rect canvas))
 
-(defmacro doui-async [& forms]
-  `(let [p# (promise)]
-     (App/runOnUIThread #(deliver p# (try ~@forms (catch Throwable t# t#))))
-     p#))
+(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
+  (when comp
+    (let [count (.getSaveCount canvas)]
+      (try
+        (draw comp ctx rect canvas)
+        (finally
+          (.restoreToCount canvas count))))))
 
-(defmacro doui [& forms]
-  `(let [res# (deref (doui-async ~@forms))]
-     (if (instance? Throwable res#)
-       (throw res#)
-       res#)))
+(defn event [comp event]
+  (protocols/-event comp event))
 
-(defmacro doto-some [x & forms]
-  `(let [x# ~x]
-     (when (some? x#)
-       (doto x# ~@forms))))
+(defn event-child [comp event]
+  (when comp
+    (protocols/-event comp event)))
 
-(defn screen->clj [^Screen screen]
-  {:id        (.getId screen)
-   :primary?  (.isPrimary screen)
-   :bounds    (.getBounds screen)
-   :work-area (.getWorkArea screen)
-   :scale     (.getScale screen)})
+(defn child-close [child]
+  (when (instance? AutoCloseable child)
+    (.close ^AutoCloseable child)))
 
-(defn primary-screen []
-  (screen->clj (App/getPrimaryScreen)))
+(defn dimension ^long [size cs ctx]
+  (let [scale (:scale ctx)]
+    (->
+      (if (fn? size)
+        (* scale
+          (size {:width  (/ (:width cs) scale)
+                 :height (/ (:height cs) scale)
+                 :scale  scale}))
+        (* scale size))
+      (math/round)
+      (long))))
 
-(defn screens []
-  (mapv screen->clj (App/getScreens)))
+;; deftype+
 
 (defprotocol ISettable
   (-set! [_ key value]))
