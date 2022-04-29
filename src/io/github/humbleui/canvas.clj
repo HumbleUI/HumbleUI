@@ -20,6 +20,11 @@
 (defn draw-string [^Canvas canvas s x y ^Font font ^Paint paint]
   (.drawString canvas (str s) x y font paint))
 
+(defn clip-rect [^Canvas canvas r]
+  (condp instance? r
+    Rect (.clipRect canvas r)
+    IRect (.clipRect canvas (.toRect ^IRect r))))
+
 (defn translate [^Canvas canvas dx dy]
   (.translate canvas dx dy))
 

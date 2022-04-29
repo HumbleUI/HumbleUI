@@ -1,6 +1,12 @@
 (ns io.github.humbleui.app
   (:import
-    [io.github.humbleui.jwm App Screen]))
+    [io.github.humbleui.jwm App Platform Screen]))
+
+(def platform
+  (condp = Platform/CURRENT
+    Platform/WINDOWS :windows
+    Platform/X11     :x11
+    Platform/MACOS   :macos))
 
 (defn start [^Runnable cb]
   (App/start cb))

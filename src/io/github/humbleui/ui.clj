@@ -2,6 +2,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]
+    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.profile :as profile]
@@ -404,13 +405,10 @@
     (core/measure child ctx cs))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (let [layer (.save canvas)]
-      (try
-        (set! child-rect rect)
-        (.clipRect canvas (.toRect rect))
-        (core/draw child ctx child-rect canvas)
-        (finally
-          (.restoreToCount canvas layer)))))
+    (canvas/with-canvas canvas
+      (set! child-rect rect)
+      (canvas/clip-rect canvas rect)
+      (core/draw child ctx child-rect canvas)))
   
   (-event [_ event]
     (core/event-child child event))

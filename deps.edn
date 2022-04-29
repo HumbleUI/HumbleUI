@@ -9,6 +9,6 @@
   io.github.humbleui/skija-macos-arm64 {:mvn/version "0.102.0" :exclusions [io.github.humbleui/types]}}
  :aliases
  {:dev
-  {:extra-paths ["dev"]
+  {:extra-paths ["dev" "test"]
    :extra-deps  {nrepl/nrepl {:mvn/version "0.9.0"}}
    :main-opts   ["-m" "user" "--interactive"]}}}

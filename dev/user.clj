@@ -52,10 +52,12 @@
     (let [font-ui   (Font. face-default (float (* 13 scale)))
           leading   (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))
           fill-text (paint/fill 0xFF000000)]
-      (ui/with-context {:face-ui   face-default
-                        :font-ui   font-ui
-                        :leading   leading
-                        :fill-text fill-text}
+      (ui/with-context {:face-ui        face-default
+                        :font-ui        font-ui
+                        :leading        leading
+                        :fill-text      fill-text
+                        :fill-cursor    fill-text
+                        :fill-selection (paint/fill 0xFFB1D7FF)}
         (ui/row
           (ui/column
             [:stretch 1

@@ -8,7 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *text (atom "Change me"))
+(defonce *text (atom {:text "Change me" :from 9 :to 9}))
 
 (def ui
   (ui/valign 0.5
