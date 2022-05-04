@@ -41,7 +41,9 @@
       :some `(or ~expr (cond+ ~@rest))
       `(if ~test ~expr (cond+ ~@rest)))))
 
-(defmacro case-instance [e & clauses]
+(defmacro case-instance
+  "Dispatch on `instance?` and tag symbol inside matched branch"
+  [e & clauses]
   `(condp instance? ~e
      ~@(mapcat
          (fn [expr]
@@ -51,6 +53,19 @@
                  [type `(let [~e ~(vary-meta e assoc :tag type)]
                           ~clause)])))
          (partition-all 2 clauses))))
+
+(defmacro when-case
+  "Same as
+   
+   (when <test>
+     (case <e>
+       <clauses>
+       nil))"
+  [test e & clauses]
+  `(when ~test
+     (case ~e
+       ~@clauses
+       nil)))
 
 (defmacro spy [msg & body]
   `(let [ret# (do ~@body)]
@@ -66,6 +81,7 @@
 ;; utilities
 
 (defn eager-or
+  "A version of `or` that always evaluates all its arguments first"
   ([] nil)
   ([x] x)
   ([x y] (or x y))
@@ -86,6 +102,7 @@
   (apply map vector xs))
 
 (defn collect
+  "Traverse `form` recursively, returnning a vector of elements that satisfy `pred`"
   ([pred form] (collect [] pred form))
   ([acc pred form]
    (cond

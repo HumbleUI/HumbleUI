@@ -8,7 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *text (atom {:text "Change me" :from 9 :to 9}))
+(defonce *text (atom {:text "Change me 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" :from 9 :to 9}))
 
 (def ui
   (ui/valign 0.5
@@ -18,4 +18,4 @@
           (ui/padding 10 10
             (ui/text-field *text)))))))
 
-(reset! user/*example "text-field")
+; (reset! user/*example "text-field")

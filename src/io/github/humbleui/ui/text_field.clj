@@ -20,12 +20,14 @@
 
 (defmulti edit (fn [state command arg] command))
 
-(defmethod edit :insert [{:keys [text to]} _ text']
+(defmethod edit :insert [{:keys [text from to]} _ text']
+  (assert (= from to))
   {:text (str (subs text 0 to) text' (subs text to))
    :from (+ to (count text'))
    :to   (+ to (count text'))})
   
 (defmethod edit :replace [{:keys [text from to]} _ text']
+  (assert (not= from to))
   (let [left  (min from to)
         right (max from to)]
     {:text (str (subs text 0 left) text' (subs text right))
@@ -81,6 +83,7 @@
    :to   (count text)})
 
 (defmethod edit :delete-left [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
   (if (> to 0)
     {:text (str (subs text 0 (- to 1)) (subs text to))
      :from (- to 1)
@@ -88,16 +91,55 @@
     state))
 
 (defmethod edit :delete-right [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
   (if (< to (count text))
     {:text (str (subs text 0 to) (subs text (+ to 1)))
      :from to
      :to   to}
     state))
 
+(defmethod edit :delete-beginning [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  (if (> to 0)
+    {:text (subs text to)
+     :from 0
+     :to   0}
+    state))
+
+(defmethod edit :delete-end [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  {:text (subs text 0 to)
+   :from to
+   :to   to})
+
 (defmethod edit :kill [{:keys [text from to] :as state} _ _]
+  (assert (not= from to))
   {:text (str (subs text 0 (min from to)) (subs text (max from to)))
    :from (min from to)
    :to   (min from to)})
+
+(defmethod edit :transpose [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  (cond
+    (= to 0)
+    state
+    
+    (< to (count text))
+    {:text (str
+             (subs text 0 (- to 1))
+             (subs text to (+ to 1))
+             (subs text (- to 1) to)
+             (subs text (+ to 1)))
+     :from (+ to 1)
+     :to   (+ to 1)}
+    
+    (= to (count text))
+    {:text (str
+             (subs text 0 (- to 2))
+             (subs text (- to 1) to)
+             (subs text (- to 2) (- to 1)))
+     :from to
+     :to   to}))
 
 (defmethod edit :select-all [{:keys [text from to] :as state} _ _]
   {:text text
@@ -145,30 +187,78 @@
       
       (cond 
         (= :text-input (:event event))
-        (let [op (if (= from to) :insert :replace)
+        (let [op     (if (= from to) :insert :replace)
               state' (swap! *state edit op (:text event))]
           (not= op state))
       
         (and (= :key (:event event)) (:pressed? event))
         (let [key        (:key event)
               shift?     ((:modifiers event) :shift)
-              super?     (if (= :macos app/platform)
-                           ((:modifiers event) :mac-command)
-                           ((:modifiers event) :control))
+              macos?     (= :macos app/platform)
+              cmd?       ((:modifiers event) :mac-command)
+              ctrl?      ((:modifiers event) :control)
               selection? (not= from to)
-              op         (cond
-                           (and (= :left key)  (not shift?)) :move-left
-                           (and (= :left key)  shift?)       :expand-left
-                           (and (= :right key) (not shift?)) :move-right
-                           (and (= :right key) shift?)       :expand-right
-                           (and (= :up key)    (not shift?)) :move-beginning
-                           (and (= :up key)    shift?)       :expand-beginning
-                           (and (= :down key)  (not shift?)) :move-end
-                           (and (= :down key)  shift?)       :expand-end
-                           (and (= :a key) super?)           :select-all
-                           (and (= :backspace key) (not selection?)) :delete-left
-                           (and (= :delete key)    (not selection?)) :delete-right
-                           (and (#{:backspace :delete} key) selection?) :kill)]
+              op         (or
+                           (core/when-case (and macos? cmd? shift?) key
+                             :left  :expand-beginning
+                             :right :expand-end)
+
+                           (core/when-case shift? key
+                             :left  :expand-left
+                             :right :expand-right
+                             :up    :expand-beginning
+                             :down  :expand-end
+                             :home  :expand-beginning
+                             :end   :expand-end)
+                           
+                           (core/when-case selection? key
+                             :backspace :kill
+                             :delete    :kill)
+                                                      
+                           (core/when-case (and macos? cmd?) key
+                             :left      :move-beginning
+                             :right     :move-end
+                             :a         :select-all
+                             :backspace :delete-beginning)
+                           
+                           (core/when-case (and macos? ctrl? shift?) key
+                             :b :expand-left
+                             :f :expand-right
+                             :a :expand-beginning
+                             :e :expand-end
+                             :p :expand-beginning
+                             :n :expand-end)
+                           
+                           (core/when-case (and macos? ctrl? selection?) key
+                             :h :kill
+                             :d :kill)
+                           
+                           (core/when-case (and macos? ctrl?) key
+                             :b :move-left
+                             :f :move-right
+                             :a :move-beginning
+                             :e :move-end
+                             :p :move-beginning
+                             :n :move-end
+                             :h :delete-left
+                             :d :delete-right
+                             :k :delete-end)
+                           
+                           (core/when-case (and macos? ctrl? (not selection?)) key
+                             :t :transpose)
+
+                           (core/when-case (and (not macos?) ctrl?) key
+                             :a :select-all)
+                           
+                           (core/when-case true key
+                             :left      :move-left
+                             :right     :move-right
+                             :up        :move-beginning
+                             :down      :move-end
+                             :home      :move-beginning
+                             :end       :move-end
+                             :backspace :delete-left
+                             :delete    :delete-right))]
           (when op
             (not= state (swap! *state edit op nil)))))))
   
@@ -187,5 +277,6 @@
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))]
        (->TextField *state font (.getMetrics ^Font font) features fill-text fill-cursor fill-selection nil nil)))))
 
-; (require 'examples.text-field :reload)
-; (reset! user/*example "text-field")
+(comment
+  (require 'examples.text-field :reload)
+  (reset! user/*example "text-field"))

@@ -288,6 +288,22 @@
     "ab|c" "ab|"
     "abc|" "abc|"))
 
+(deftest delete-beginning-test
+  (are [s res] (= (edit' s :delete-beginning nil) res)
+    "|"    "|"
+    "|abc" "|abc"
+    "a|bc" "|bc"
+    "ab|c" "|c"
+    "abc|" "|"))
+
+(deftest delete-end-test
+  (are [s res] (= (edit' s :delete-end nil) res)
+    "|"    "|"
+    "|abc" "|"
+    "a|bc" "a|"
+    "ab|c" "ab|"
+    "abc|" "abc|"))
+
 (deftest kill-test
   (are [s res] (= (edit' s :kill nil) res)
     "[a]bcdef" "|bcdef"
@@ -307,6 +323,16 @@
     "ab]cd[ef" "ab|ef" 
     "abcd]ef[" "abcd|"
     "]abcdef[" "|"))
+
+(deftest transpose-test
+  (are [s res] (= (edit' s :transpose nil) res)
+    "|"    "|"
+    "|12345" "|12345"
+    "1|2345" "21|345"
+    "12|345" "132|45"
+    "123|45" "1243|5"
+    "1234|5" "12354|"
+    "12345|" "12354|"))
 
 (deftest select-all-test
   (are [s res] (= (edit' s :select-all nil) res)
