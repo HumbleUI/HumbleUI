@@ -1,5 +1,6 @@
 (ns io.github.humbleui.window
   (:require
+    [clojure.java.io :as io]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.event :as event])
   (:import
@@ -72,6 +73,10 @@
 
 (defn set-title [^Window window ^String title]
   (.setTitle window title)
+  window)
+
+(defn set-icon [^Window window ^String path]
+  (.setIcon window (io/file path))
   window)
 
 (defn set-visible [^Window window ^Boolean value]

@@ -115,16 +115,17 @@
         height (* 400 scale)
         area   (:work-area screen)
         x      (:x area)
-        y      (-> (:height area) (- height) (/ 2) (+ (:y area)))]
-    (doto
-      (window/make
-        {:on-close #(reset! *window nil)
-         :on-paint #'on-paint
-         :on-event #'on-event})
-      (window/set-title "Humble UI 👋")
-      (window/set-window-size width height)
-      (window/set-window-position x y)
-      (window/set-visible true))))
+        y      (-> (:height area) (- height) (/ 2) (+ (:y area)))
+        window (window/make
+                 {:on-close #(reset! *window nil)
+                  :on-paint #'on-paint
+                  :on-event #'on-event})]
+    (window/set-title window "Humble UI 👋")
+    (when (= :macos app/platform)
+      (window/set-icon window "dev/images/icon.icns"))
+    (window/set-window-size window width height)
+    (window/set-window-position window x y)
+    (window/set-visible window true)))
 
 (defn -main [& args]
   (future (apply nrepl/-main args))
