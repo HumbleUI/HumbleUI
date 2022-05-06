@@ -4,6 +4,7 @@
     [clojure.math :as math]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
+    [io.github.humbleui.clipboard :as clipboard]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
@@ -315,6 +316,18 @@
     :from 0
     :to   (count text)))
 
+(defmethod edit :copy [{:keys [text from to] :as state} _ _]
+  (assert (not= from to))
+  (clipboard/set {:format :text/plain :text (subs text (min from to) (max from to))})
+  state)  
+
+(defmethod edit :paste [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  (when-some [{paste :text} (clipboard/get :text/plain)]
+    {:text (str (subs text 0 to) paste (subs text to))
+     :from (+ to (count paste))
+     :to   (+ to (count paste))}))
+
 (core/deftype+ TextField [*state
                           ^Font font
                           ^FontMetrics metrics
@@ -377,88 +390,96 @@
               option?    ((:modifiers event) :mac-option)
               ctrl?      ((:modifiers event) :control)
               selection? (not= from to)
-              op         (or
+              ops        (or
                            (core/when-case (and macos? cmd? shift?) key
-                             :left  :expand-doc-start
-                             :right :expand-doc-end)
+                             :left  [:expand-doc-start]
+                             :right [:expand-doc-end])
                            
                            (core/when-case (and macos? option? shift?) key
-                             :left  :expand-word-left
-                             :right :expand-word-right)
+                             :left  [:expand-word-left]
+                             :right [:expand-word-right])
 
                            (core/when-case shift? key
-                             :left  :expand-char-left
-                             :right :expand-char-right
-                             :up    :expand-doc-start
-                             :down  :expand-doc-end
-                             :home  :expand-doc-start
-                             :end   :expand-doc-end)
+                             :left  [:expand-char-left]
+                             :right [:expand-char-right]
+                             :up    [:expand-doc-start]
+                             :down  [:expand-doc-end]
+                             :home  [:expand-doc-start]
+                             :end   [:expand-doc-end])
                            
                            (core/when-case selection? key
-                             :backspace :kill
-                             :delete    :kill)
+                             :backspace [:kill]
+                             :delete    [:kill])
                            
+                           (core/when-case (and macos? cmd? selection?) key
+                             :x         [:copy :kill]
+                             :c         [:copy]
+                             :v         [:kill :paste])
+                             
                            (core/when-case (and macos? cmd?) key
-                             :left      :move-doc-start
-                             :right     :move-doc-end
-                             :a         :select-all
-                             :backspace :delete-doc-start
-                             :delete    :delete-doc-end)
+                             :left      [:move-doc-start]
+                             :right     [:move-doc-end]
+                             :a         [:select-all]
+                             :backspace [:delete-doc-start]
+                             :delete    [:delete-doc-end]
+                             :v         [:paste])
                            
                            (core/when-case (and macos? option?) key
-                             :left      :move-word-left
-                             :right     :move-word-right
-                             :backspace :delete-word-left
-                             :delete    :delete-word-right)
+                             :left      [:move-word-left]
+                             :right     [:move-word-right]
+                             :backspace [:delete-word-left]
+                             :delete    [:delete-word-right])
                            
                            (core/when-case (and macos? ctrl? option? shift?) key
-                             :b :expand-word-left
-                             :f :expand-word-right)
+                             :b [:expand-word-left]
+                             :f [:expand-word-right])
                              
                            (core/when-case (and macos? ctrl? shift?) key
-                             :b :expand-char-left
-                             :f :expand-char-right
-                             :a :expand-doc-start
-                             :e :expand-doc-end
-                             :p :expand-doc-start
-                             :n :expand-doc-end)
+                             :b [:expand-char-left]
+                             :f [:expand-char-right]
+                             :a [:expand-doc-start]
+                             :e [:expand-doc-end]
+                             :p [:expand-doc-start]
+                             :n [:expand-doc-end])
                            
                            (core/when-case (and macos? ctrl? selection?) key
-                             :h :kill
-                             :d :kill)
+                             :h [:kill]
+                             :d [:kill])
                            
                            (core/when-case (and macos? ctrl? option?) key
-                             :b :move-word-left
-                             :f :move-word-right)
+                             :b [:move-word-left]
+                             :f [:move-word-right])
                              
                            (core/when-case (and macos? ctrl?) key
-                             :b :move-char-left
-                             :f :move-char-right
-                             :a :move-doc-start
-                             :e :move-doc-end
-                             :p :move-doc-start
-                             :n :move-doc-end
-                             :h :delete-char-left
-                             :d :delete-char-right
-                             :k :delete-doc-end)
+                             :b [:move-char-left]
+                             :f [:move-char-right]
+                             :a [:move-doc-start]
+                             :e [:move-doc-end]
+                             :p [:move-doc-start]
+                             :n [:move-doc-end]
+                             :h [:delete-char-left]
+                             :d [:delete-char-right]
+                             :k [:delete-doc-end])
                            
                            (core/when-case (and macos? ctrl? (not selection?)) key
-                             :t :transpose)
+                             :t [:transpose])
 
                            (core/when-case (and (not macos?) ctrl?) key
-                             :a :select-all)
+                             :a [:select-all])
                            
                            (core/when-case true key
-                             :left      :move-char-left
-                             :right     :move-char-right
-                             :up        :move-doc-start
-                             :down      :move-doc-end
-                             :home      :move-doc-start
-                             :end       :move-doc-end
-                             :backspace :delete-char-left
-                             :delete    :delete-char-right))]
-          (when op
-            (not= state (swap! *state edit op nil)))))))
+                             :left      [:move-char-left]
+                             :right     [:move-char-right]
+                             :up        [:move-doc-start]
+                             :down      [:move-doc-end]
+                             :home      [:move-doc-start]
+                             :end       [:move-doc-end]
+                             :backspace [:delete-char-left]
+                             :delete    [:delete-char-right]))]
+          (when (seq ops)
+            (let [state' (swap! *state (fn [state]
+                                         (reduce #(edit %1 %2 nil) state ops)))]
+              (not= state state')))))))
   
   AutoCloseable
   (close [_]
