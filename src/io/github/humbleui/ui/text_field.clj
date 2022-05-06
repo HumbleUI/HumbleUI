@@ -12,11 +12,47 @@
     [java.lang AutoCloseable]
     [java.io File]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
-    [io.github.humbleui.skija Canvas Data Font FontMetrics Image Paint Surface TextLine]
+    [io.github.humbleui.skija BreakIterator Canvas Data Font FontMetrics Image Paint Surface TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
 
 (set! *warn-on-reflection* true)
+
+(defn- ^BreakIterator char-iter [state]
+  (or (:char-iter state)
+    (doto (BreakIterator/makeCharacterInstance)
+      (.setText (:text state)))))
+
+(defn- ^BreakIterator word-iter [state]
+  (or (:word-iter state)
+    (doto (BreakIterator/makeWordInstance)
+      (.setText (:text state)))))
+
+(defn- preceding-word [^BreakIterator word-iter text pos]
+  (let [pos' (.preceding word-iter pos)]
+    (core/cond+
+      (= 0 pos')
+      pos'
+      
+      :do (.next word-iter)
+      
+      (not (core/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
+      pos'
+      
+      :else
+      (recur word-iter text pos'))))
+
+(defn- following-word [^BreakIterator word-iter text pos]
+  (let [pos' (.following word-iter pos)]
+    (cond
+      (= (count text) pos')
+      pos'
+      
+      (not (core/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
+      pos'
+      
+      :else
+      (recur word-iter text pos'))))
 
 (defmulti edit (fn [state command arg] command))
 
@@ -34,71 +70,202 @@
      :from (+ left (count text'))
      :to   (+ left (count text'))}))
 
-(defmethod edit :move-left [{:keys [text from to]} _ _]
-  (if (= from to)
-    {:text text
-     :from (max 0 (- to 1))
-     :to   (max 0 (- to 1))}
-    {:text text
-     :from (min from to)
-     :to   (min from to)}))
+(defmethod edit :move-char-left [{:keys [text from to] :as state} _ _]
+  (cond
+    (not= from to)
+    (assoc state
+      :from (min from to)
+      :to   (min from to))
+    
+    (= 0 to)
+    state
+    
+    :else
+    (let [char-iter (char-iter state)
+          to'       (.preceding char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :from      to'
+        :to        to'))))
 
-(defmethod edit :expand-left [{:keys [text from to]} _ _]
-  {:text text
-   :from from
-   :to   (max 0 (- to 1))})
+(defmethod edit :move-char-right [{:keys [text from to] :as state} _ _]
+  (cond
+    (not= from to)
+    (assoc state
+      :from (max from to)
+      :to   (max from to))
+    
+    (= (count text) to)
+    state
+    
+    :else
+    (let [char-iter (char-iter state)
+          to'       (.following char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :from      to'
+        :to        to'))))
 
-(defmethod edit :move-right [{:keys [text from to]} _ _]
-  (if (= from to)
-    {:text text
-     :from (min (count text) (+ to 1))
-     :to   (min (count text) (+ to 1))}
-    {:text text
-     :from (max from to)
-     :to   (max from to)}))
+(defmethod edit :move-word-left [{:keys [text from to] :as state} _ _]
+  (cond
+    (not= from to)
+    (recur
+      (assoc state
+        :from (min from to)
+        :to   (min from to))
+      :move-word-left nil)
+    
+    (= 0 to)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (preceding-word word-iter text to)]
+      (assoc state
+        :word-iter word-iter
+        :from      to'
+        :to        to'))))
 
-(defmethod edit :expand-right [{:keys [text from to]} _ _]
-  {:text text
-   :from from
-   :to   (min (count text) (+ to 1))})
+(defmethod edit :move-word-right [{:keys [text from to] :as state} _ _]
+  (cond
+    (not= from to)
+    (recur
+      (assoc state
+        :from (max from to)
+        :to   (max from to))
+      :move-word-right nil)
+    
+    (= (count text) to)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (following-word word-iter text to)]
+      (assoc state
+        :word-iter word-iter
+        :from      to'
+        :to        to'))))
 
-(defmethod edit :move-beginning [{:keys [text from to]} _ _]
-  {:text text
-   :from 0
-   :to   0})
+(defmethod edit :move-doc-start [{:keys [text from to] :as state} _ _]
+  (assoc state
+    :from 0
+    :to   0))
 
-(defmethod edit :expand-beginning [{:keys [text from to]} _ _]
-  {:text text
-   :from (if (= 0 from) 0 (max from to))
-   :to   0})
+(defmethod edit :move-doc-end [{:keys [text from to] :as state} _ _]
+  (assoc state
+    :from (count text)
+    :to   (count text)))
 
-(defmethod edit :move-end [{:keys [text from to]} _ _]
-  {:text text
-   :from (count text)
-   :to   (count text)})
+(defmethod edit :expand-char-left [{:keys [text from to] :as state} _ _]
+  (cond
+    (= to 0)
+    state
+    
+    :else
+    (let [char-iter (char-iter state)
+          to'       (.preceding char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :to        to'))))
 
-(defmethod edit :expand-end [{:keys [text from to]} _ _]
-  {:text text
-   :from (if (= (count text) from) (count text) (min from to))
-   :to   (count text)})
+(defmethod edit :expand-char-right [{:keys [text from to] :as state} _ _]
+  (cond
+    (= (count text) to)
+    state
+    
+    :else
+    (let [char-iter (char-iter state)
+          to'       (.following char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :to  to'))))
 
-(defmethod edit :delete-left [{:keys [text from to] :as state} _ _]
+(defmethod edit :expand-word-left [{:keys [text from to] :as state} _ _]
+  (cond
+    (= to 0)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (preceding-word word-iter text to)]
+      (assoc state
+        :word-iter word-iter
+        :to        to'))))
+
+(defmethod edit :expand-word-right [{:keys [text from to] :as state} _ _]
+  (cond
+    (= (count text) to)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (following-word word-iter text to)]
+      (assoc state
+        :word-iter word-iter
+        :to  to'))))
+
+
+(defmethod edit :expand-doc-start [{:keys [text from to] :as state} _ _]
+  (assoc state
+    :from (if (= 0 from) 0 (max from to))
+    :to   0))
+
+(defmethod edit :expand-doc-end [{:keys [text from to] :as state} _ _]
+  (assoc state
+    :from (if (= (count text) from) (count text) (min from to))
+    :to   (count text)))
+
+(defmethod edit :delete-char-left [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (> to 0)
-    {:text (str (subs text 0 (- to 1)) (subs text to))
-     :from (- to 1)
-     :to   (- to 1)}
+    (let [char-iter (char-iter state)
+          to'       (.preceding char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :text      (str (subs text 0 to') (subs text to))
+        :from      to'
+        :to        to'))
     state))
 
-(defmethod edit :delete-right [{:keys [text from to] :as state} _ _]
+(defmethod edit :delete-char-right [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (< to (count text))
-    {:text (str (subs text 0 to) (subs text (+ to 1)))
-     :from to
-     :to   to}
+    (let [char-iter (char-iter state)
+          to'       (.following char-iter to)]
+      (assoc state
+        :char-iter char-iter
+        :text (str (subs text 0 to) (subs text to'))
+        :from to
+        :to   to))
     state))
 
-(defmethod edit :delete-beginning [{:keys [text from to] :as state} _ _]
+(defmethod edit :delete-word-left [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  (cond
+    (= 0 to)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (preceding-word word-iter text to)]
+      {:text (str (subs text 0 to') (subs text to))
+       :from to'
+       :to   to'})))
+
+(defmethod edit :delete-word-right [{:keys [text from to] :as state} _ _]
+  (assert (= from to))
+  (cond
+    (= (count text) to)
+    state
+    
+    :else
+    (let [word-iter (word-iter state)
+          to'       (following-word word-iter text to)]
+      {:text (str (subs text 0 to) (subs text to'))
+       :from to
+       :to   to})))
+
+(defmethod edit :delete-doc-start [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (> to 0)
     {:text (subs text to)
@@ -106,11 +273,13 @@
      :to   0}
     state))
 
-(defmethod edit :delete-end [{:keys [text from to] :as state} _ _]
+(defmethod edit :delete-doc-end [{:keys [text from to] :as state} _ _]
   (assert (= from to))
-  {:text (subs text 0 to)
-   :from to
-   :to   to})
+  (if (< to (count text))
+    {:text (subs text 0 to)
+     :from to
+     :to   to}
+    state))
 
 (defmethod edit :kill [{:keys [text from to] :as state} _ _]
   (assert (not= from to))
@@ -125,26 +294,26 @@
     state
     
     (< to (count text))
-    {:text (str
-             (subs text 0 (- to 1))
-             (subs text to (+ to 1))
-             (subs text (- to 1) to)
-             (subs text (+ to 1)))
-     :from (+ to 1)
-     :to   (+ to 1)}
+    (let [char-iter (char-iter state)
+          preceding (.preceding char-iter to)
+          following (.following char-iter to)]
+      {:text (str
+               (subs text 0 preceding)
+               (subs text to following)
+               (subs text preceding to)
+               (subs text following))
+       :from following
+       :to   following})
     
     (= to (count text))
-    {:text (str
-             (subs text 0 (- to 2))
-             (subs text (- to 1) to)
-             (subs text (- to 2) (- to 1)))
-     :from to
-     :to   to}))
+    (-> state
+      (edit :move-char-left nil)
+      (edit :transpose nil))))
 
 (defmethod edit :select-all [{:keys [text from to] :as state} _ _]
-  {:text text
-   :from 0
-   :to   (count text)})
+  (assoc state
+    :from 0
+    :to   (count text)))
 
 (core/deftype+ TextField [*state
                           ^Font font
@@ -161,25 +330,34 @@
   
   (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [text from to]} @*state
-          baseline (Math/ceil (.getCapHeight metrics))
-          ascent   (- (+ baseline (Math/ceil (.getAscent metrics))))
-          descent  (Math/ceil (.getDescent metrics))]
+          baseline   (Math/ceil (.getCapHeight metrics))
+          ascent     (- (+ baseline (Math/ceil (.getAscent metrics))))
+          descent    (Math/ceil (.getDescent metrics))
+          selection? (not= from to)]
       (when (not= text line-text)
         (some-> line .close)
         (set! line-text text)
         (set! line (.shapeLine core/shaper text font features)))
       (canvas/with-canvas canvas
+        ;; TODO do not clip vertically
         (canvas/clip-rect canvas (Rect/makeXYWH (:x rect) (- (:y rect) ascent) (:width rect) (+ ascent baseline descent)))
-        (canvas/draw-rect canvas
-          (Rect/makeLTRB
-            (+ (:x rect) (.getCoordAtOffset line (min from to)))
-            (- (:y rect) ascent)
-            (+ (:x rect) (.getCoordAtOffset line (max from to)) (:scale ctx))
-            (+ (:y rect) baseline descent))
-          (if (= from to)
-            fill-cursor
+        (when selection?
+          (canvas/draw-rect canvas
+            (Rect/makeLTRB
+              (+ (:x rect) (.getCoordAtOffset line (min from to)))
+              (- (:y rect) ascent)
+              (+ (:x rect) (.getCoordAtOffset line (max from to)))
+              (+ (:y rect) baseline descent))
             fill-selection))
-        (.drawTextLine canvas line (:x rect) (+ (:y rect) baseline) fill-text))))
+        (.drawTextLine canvas line (:x rect) (+ (:y rect) baseline) fill-text)
+        (when-not selection?
+          (canvas/draw-rect canvas
+            (Rect/makeLTRB
+              (+ (:x rect) (.getCoordAtOffset line to))
+              (- (:y rect) ascent)
+              (+ (:x rect) (.getCoordAtOffset line to) (* 1 (:scale ctx)))
+              (+ (:y rect) baseline descent))
+            fill-cursor)))))
         
   (-event [_ event]
     (let [state @*state
@@ -196,53 +374,73 @@
               shift?     ((:modifiers event) :shift)
               macos?     (= :macos app/platform)
               cmd?       ((:modifiers event) :mac-command)
+              option?    ((:modifiers event) :mac-option)
               ctrl?      ((:modifiers event) :control)
               selection? (not= from to)
               op         (or
                            (core/when-case (and macos? cmd? shift?) key
-                             :left  :expand-beginning
-                             :right :expand-end)
+                             :left  :expand-doc-start
+                             :right :expand-doc-end)
+                           
+                           (core/when-case (and macos? option? shift?) key
+                             :left  :expand-word-left
+                             :right :expand-word-right)
 
                            (core/when-case shift? key
-                             :left  :expand-left
-                             :right :expand-right
-                             :up    :expand-beginning
-                             :down  :expand-end
-                             :home  :expand-beginning
-                             :end   :expand-end)
+                             :left  :expand-char-left
+                             :right :expand-char-right
+                             :up    :expand-doc-start
+                             :down  :expand-doc-end
+                             :home  :expand-doc-start
+                             :end   :expand-doc-end)
                            
                            (core/when-case selection? key
                              :backspace :kill
                              :delete    :kill)
-                                                      
-                           (core/when-case (and macos? cmd?) key
-                             :left      :move-beginning
-                             :right     :move-end
-                             :a         :select-all
-                             :backspace :delete-beginning)
                            
+                           (core/when-case (and macos? cmd?) key
+                             :left      :move-doc-start
+                             :right     :move-doc-end
+                             :a         :select-all
+                             :backspace :delete-doc-start
+                             :delete    :delete-doc-end)
+                           
+                           (core/when-case (and macos? option?) key
+                             :left      :move-word-left
+                             :right     :move-word-right
+                             :backspace :delete-word-left
+                             :delete    :delete-word-right)
+                           
+                           (core/when-case (and macos? ctrl? option? shift?) key
+                             :b :expand-word-left
+                             :f :expand-word-right)
+                             
                            (core/when-case (and macos? ctrl? shift?) key
-                             :b :expand-left
-                             :f :expand-right
-                             :a :expand-beginning
-                             :e :expand-end
-                             :p :expand-beginning
-                             :n :expand-end)
+                             :b :expand-char-left
+                             :f :expand-char-right
+                             :a :expand-doc-start
+                             :e :expand-doc-end
+                             :p :expand-doc-start
+                             :n :expand-doc-end)
                            
                            (core/when-case (and macos? ctrl? selection?) key
                              :h :kill
                              :d :kill)
                            
+                           (core/when-case (and macos? ctrl? option?) key
+                             :b :move-word-left
+                             :f :move-word-right)
+                             
                            (core/when-case (and macos? ctrl?) key
-                             :b :move-left
-                             :f :move-right
-                             :a :move-beginning
-                             :e :move-end
-                             :p :move-beginning
-                             :n :move-end
-                             :h :delete-left
-                             :d :delete-right
-                             :k :delete-end)
+                             :b :move-char-left
+                             :f :move-char-right
+                             :a :move-doc-start
+                             :e :move-doc-end
+                             :p :move-doc-start
+                             :n :move-doc-end
+                             :h :delete-char-left
+                             :d :delete-char-right
+                             :k :delete-doc-end)
                            
                            (core/when-case (and macos? ctrl? (not selection?)) key
                              :t :transpose)
@@ -251,14 +449,14 @@
                              :a :select-all)
                            
                            (core/when-case true key
-                             :left      :move-left
-                             :right     :move-right
-                             :up        :move-beginning
-                             :down      :move-end
-                             :home      :move-beginning
-                             :end       :move-end
-                             :backspace :delete-left
-                             :delete    :delete-right))]
+                             :left      :move-char-left
+                             :right     :move-char-right
+                             :up        :move-doc-start
+                             :down      :move-doc-end
+                             :home      :move-doc-start
+                             :end       :move-doc-end
+                             :backspace :delete-char-left
+                             :delete    :delete-char-right))]
           (when op
             (not= state (swap! *state edit op nil)))))))
   

@@ -8,12 +8,12 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *text (atom {:text "Change me 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" :from 9 :to 9}))
+(defonce *text (atom {:text "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ " :from 9 :to 9}))
 
 (def ui
   (ui/valign 0.5
     (ui/halign 0.5
-      (ui/width #(/ (:width %) 2)
+      (ui/width #(- (:width %) 100)
         (ui/fill (paint/fill 0xFFFFFFFF)
           (ui/padding 10 10
             (ui/text-field *text)))))))

@@ -92,6 +92,11 @@
 (defn clamp [x from to]
   (min (max x from) to))
 
+(defn between? [x from to]
+  (and
+    (<= from x)
+    (< x to)))
+
 (defmacro for-vec [& body]
   `(vec (for ~@body)))
 

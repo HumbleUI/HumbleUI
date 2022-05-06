@@ -26,7 +26,17 @@
       (subs text (max from to)))))
 
 (defn- edit' [s cmd arg]
-  (serialize (edit (parse s) cmd arg)))
+  (-> s
+    (parse)
+    (edit cmd arg)
+    (serialize)))
+
+(defn- edit'' [s cmd arg]
+  (-> s
+    (parse)
+    (edit cmd arg)
+    (edit cmd arg)
+    (serialize)))
 
 (deftest insert-test
   (are [s res] (= (edit' s :insert "x") res)
@@ -64,8 +74,8 @@
     "abcd]ef[" "abcdxyz|"
     "]abcdef[" "xyz|"))
 
-(deftest move-left-test
-  (are [s res] (= (edit' s :move-left nil) res)
+(deftest move-char-left-test
+  (are [s res] (= (edit' s :move-char-left nil) res)
     "|"    "|"
     "|abc" "|abc"
     "a|bc" "|abc"
@@ -88,36 +98,21 @@
     "]ab[cdef" "|abcdef"
     "ab]cd[ef" "ab|cdef" 
     "abcd]ef[" "abcd|ef"
-    "]abcdef[" "|abcdef"))
-
-(deftest expand-left-test
-  (are [s res] (= (edit' s :expand-left nil) res)
-    "|"    "|"
-    "|abc" "|abc"
-    "a|bc" "]a[bc"
-    "ab|c" "a]b[c"
-    "abc|" "ab]c["
+    "]abcdef[" "|abcdef"
     
-    "[a]bcdef" "|abcdef"
-    "ab[c]def" "ab|cdef" 
-    "abcde[f]" "abcde|f"
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️")
+  
+  (are [s res] (= (edit'' s :move-char-left nil) res)
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️"))
 
-    "[ab]cdef" "[a]bcdef"
-    "ab[cd]ef" "ab[c]def" 
-    "abcd[ef]" "abcd[e]f"
-    "[abcdef]" "[abcde]f"
-    
-    "]a[bcdef" "]a[bcdef"
-    "abc]d[ef" "ab]cd[ef" 
-    "abcde]f[" "abcd]ef["
-    
-    "]ab[cdef" "]ab[cdef"
-    "ab]cd[ef" "a]bcd[ef" 
-    "abcd]ef[" "abc]def["
-    "]abcdef[" "]abcdef["))
-
-(deftest move-right-test
-  (are [s res] (= (edit' s :move-right nil) res)
+(deftest move-char-right-test
+  (are [s res] (= (edit' s :move-char-right nil) res)
     "|"    "|"
     "|abc" "a|bc"
     "a|bc" "ab|c"
@@ -140,36 +135,107 @@
     "]ab[cdef" "ab|cdef"
     "ab]cd[ef" "abcd|ef" 
     "abcd]ef[" "abcdef|"
-    "]abcdef[" "abcdef|"))
-
-(deftest expand-right-test
-  (are [s res] (= (edit' s :expand-right nil) res)
-    "|"    "|"
-    "|abc" "[a]bc"
-    "a|bc" "a[b]c"
-    "ab|c" "ab[c]"
-    "abc|" "abc|"
+    "]abcdef[" "abcdef|"
     
-    "[a]bcdef" "[ab]cdef"
-    "ab[c]def" "ab[cd]ef" 
-    "abcde[f]" "abcde[f]"
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️")
+  
+  (are [s res] (= (edit'' s :move-char-right nil) res)
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️"))
 
-    "[ab]cdef" "[abc]def"
-    "ab[cd]ef" "ab[cde]f" 
-    "abcd[ef]" "abcd[ef]"
-    "[abcdef]" "[abcdef]"
+(deftest move-word-left-test
+  (are [s res] (= (edit' s :move-word-left nil) res)
+    "word (word, 1word), word1 wo2rd wo-rd  word?!|" "word (word, 1word), word1 wo2rd wo-rd  |word?!"
+    "word (word, 1word), word1 wo2rd wo-rd  word?|!" "word (word, 1word), word1 wo2rd wo-rd  |word?!"
+    "word (word, 1word), word1 wo2rd wo-rd  word|?!" "word (word, 1word), word1 wo2rd wo-rd  |word?!"
+    "word (word, 1word), word1 wo2rd wo-rd  wor|d?!" "word (word, 1word), word1 wo2rd wo-rd  |word?!"
+    "word (word, 1word), word1 wo2rd wo-rd  |word?!" "word (word, 1word), word1 wo2rd wo-|rd  word?!"
+    "word (word, 1word), word1 wo2rd wo-rd | word?!" "word (word, 1word), word1 wo2rd wo-|rd  word?!"
+    "word (word, 1word), word1 wo2rd wo-rd|  word?!" "word (word, 1word), word1 wo2rd wo-|rd  word?!"
+    "word (word, 1word), word1 wo2rd wo-r|d  word?!" "word (word, 1word), word1 wo2rd wo-|rd  word?!"
+    "word (word, 1word), word1 wo2rd wo-|rd  word?!" "word (word, 1word), word1 wo2rd |wo-rd  word?!"
+    "word (word, 1word), word1 wo2rd wo|-rd  word?!" "word (word, 1word), word1 wo2rd |wo-rd  word?!"
+    "word (word, 1word), word1 wo2rd w|o-rd  word?!" "word (word, 1word), word1 wo2rd |wo-rd  word?!"
+    "word (word, 1word), word1 wo2rd |wo-rd  word?!" "word (word, 1word), word1 |wo2rd wo-rd  word?!"
+    "word (word, 1word), word1 wo2rd| wo-rd  word?!" "word (word, 1word), word1 |wo2rd wo-rd  word?!"
+    "word (word, 1word), |word1 wo2rd wo-rd  word?!" "word (word, |1word), word1 wo2rd wo-rd  word?!"
+    "word (word, 1word),| word1 wo2rd wo-rd  word?!" "word (word, |1word), word1 wo2rd wo-rd  word?!"
+    "word (word, 1word)|, word1 wo2rd wo-rd  word?!" "word (word, |1word), word1 wo2rd wo-rd  word?!"
+    "word (word, 1word|), word1 wo2rd wo-rd  word?!" "word (word, |1word), word1 wo2rd wo-rd  word?!"
+    "word (|word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "word |(word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "word| (word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "wor|d (word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "wo|rd (word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "w|ord (word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
+    "|word (word, 1word), word1 wo2rd wo-rd  word?!" "|word (word, 1word), word1 wo2rd wo-rd  word?!"
     
-    "]a[bcdef" "a|bcdef"
-    "abc]d[ef" "abcd|ef" 
-    "abcde]f[" "abcdef|"
+    "  word  |" "  |word  "
+    "  word|  " "  |word  "
+    "  wo|rd  " "  |word  "
+    "  |word  " "|  word  "
+    "|  word  " "|  word  "
     
-    "]ab[cdef" "a]b[cdef"
-    "ab]cd[ef" "abc]d[ef" 
-    "abcd]ef[" "abcde]f["
-    "]abcdef[" "a]bcdef["))
+    "word 😀🚵🏻‍♀️🥸 word|" "word 😀🚵🏻‍♀️🥸 |word"
+    "word 😀🚵🏻‍♀️🥸 |word" "|word 😀🚵🏻‍♀️🥸 word")
+  
+  (are [s res] (= (edit'' s :move-word-left nil) res)
+    "word word word word|" "word word |word word"
+    "word word word| word" "word |word word word"
+    "word word |word word" "|word word word word"
+    "word| word word word" "|word word word word"
+    "|word word word word" "|word word word word"))
 
-(deftest move-beginning-test
-  (are [s res] (= (edit' s :move-beginning nil) res)
+(deftest move-word-right-test
+  (are [s res] (= (edit' s :move-word-right nil) res)
+    "word (word, 1word), word1 wo2rd wo-rd  word?!|" "word (word, 1word), word1 wo2rd wo-rd  word?!|"
+    "word (word, 1word), word1 wo2rd wo-rd  word?|!" "word (word, 1word), word1 wo2rd wo-rd  word?!|"
+    "word (word, 1word), word1 wo2rd wo-rd  word|?!" "word (word, 1word), word1 wo2rd wo-rd  word?!|"
+    "word (word, 1word), word1 wo2rd wo-rd  wor|d?!" "word (word, 1word), word1 wo2rd wo-rd  word|?!"
+    "word (word, 1word), word1 wo2rd wo-rd  |word?!" "word (word, 1word), word1 wo2rd wo-rd  word|?!"
+    "word (word, 1word), word1 wo2rd wo-rd | word?!" "word (word, 1word), word1 wo2rd wo-rd  word|?!"
+    "word (word, 1word), word1 wo2rd wo-rd|  word?!" "word (word, 1word), word1 wo2rd wo-rd  word|?!"
+    "word (word, 1word), word1 wo2rd wo-r|d  word?!" "word (word, 1word), word1 wo2rd wo-rd|  word?!"
+    "word (word, 1word), word1 wo2rd wo-|rd  word?!" "word (word, 1word), word1 wo2rd wo-rd|  word?!"
+    "word (word, 1word), word1 wo2rd wo|-rd  word?!" "word (word, 1word), word1 wo2rd wo-rd|  word?!"
+    "word (word, 1word), word1 wo2rd w|o-rd  word?!" "word (word, 1word), word1 wo2rd wo|-rd  word?!"
+    "word (word, 1word), word1 wo2rd |wo-rd  word?!" "word (word, 1word), word1 wo2rd wo|-rd  word?!"
+    "word (word, 1word), word1 wo2rd| wo-rd  word?!" "word (word, 1word), word1 wo2rd wo|-rd  word?!"
+    "word (word, 1word), |word1 wo2rd wo-rd  word?!" "word (word, 1word), word1| wo2rd wo-rd  word?!"
+    "word (word, 1word),| word1 wo2rd wo-rd  word?!" "word (word, 1word), word1| wo2rd wo-rd  word?!"
+    "word (word, 1word)|, word1 wo2rd wo-rd  word?!" "word (word, 1word), word1| wo2rd wo-rd  word?!"
+    "word (word, 1word|), word1 wo2rd wo-rd  word?!" "word (word, 1word), word1| wo2rd wo-rd  word?!"
+    "word (|word, 1word), word1 wo2rd wo-rd  word?!" "word (word|, 1word), word1 wo2rd wo-rd  word?!"
+    "word |(word, 1word), word1 wo2rd wo-rd  word?!" "word (word|, 1word), word1 wo2rd wo-rd  word?!"
+    "word| (word, 1word), word1 wo2rd wo-rd  word?!" "word (word|, 1word), word1 wo2rd wo-rd  word?!"
+    "wor|d (word, 1word), word1 wo2rd wo-rd  word?!" "word| (word, 1word), word1 wo2rd wo-rd  word?!"
+    "wo|rd (word, 1word), word1 wo2rd wo-rd  word?!" "word| (word, 1word), word1 wo2rd wo-rd  word?!"
+    "w|ord (word, 1word), word1 wo2rd wo-rd  word?!" "word| (word, 1word), word1 wo2rd wo-rd  word?!"
+    "|word (word, 1word), word1 wo2rd wo-rd  word?!" "word| (word, 1word), word1 wo2rd wo-rd  word?!"
+
+    "  word  |" "  word  |"
+    "  word|  " "  word  |"
+    "  wo|rd  " "  word|  "
+    "  |word  " "  word|  "
+    "|  word  " "  word|  "
+
+    "|word 😀🚵🏻‍♀️🥸 word" "word| 😀🚵🏻‍♀️🥸 word"
+    "word| 😀🚵🏻‍♀️🥸 word" "word 😀🚵🏻‍♀️🥸 word|")
+  
+  (are [s res] (= (edit'' s :move-word-right nil) res)
+    "word word word word|" "word word word word|"
+    "word word word| word" "word word word word|"
+    "word word |word word" "word word word word|"
+    "word| word word word" "word word word| word"
+    "|word word word word" "word word| word word"))
+
+(deftest move-doc-start-test
+  (are [s res] (= (edit' s :move-doc-start nil) res)
     "|"    "|"
     "|abc" "|abc"
     "a|bc" "|abc"
@@ -194,34 +260,8 @@
     "abcd]ef[" "|abcdef"
     "]abcdef[" "|abcdef"))
 
-(deftest expand-beginning-test
-  (are [s res] (= (edit' s :expand-beginning nil) res)
-    "|"    "|"
-    "|abc" "|abc"
-    "a|bc" "]a[bc"
-    "ab|c" "]ab[c"
-    "abc|" "]abc["
-    
-    "[a]bcdef" "|abcdef"
-    "ab[c]def" "]abc[def" 
-    "abcde[f]" "]abcdef["
-
-    "[ab]cdef" "|abcdef"
-    "ab[cd]ef" "]abcd[ef" 
-    "abcd[ef]" "]abcdef["
-    "[abcdef]" "|abcdef"
-    
-    "]a[bcdef" "]a[bcdef"
-    "abc]d[ef" "]abcd[ef" 
-    "abcde]f[" "]abcdef["
-    
-    "]ab[cdef" "]ab[cdef"
-    "ab]cd[ef" "]abcd[ef" 
-    "abcd]ef[" "]abcdef["
-    "]abcdef[" "]abcdef["))
-
-(deftest move-end-test
-  (are [s res] (= (edit' s :move-end nil) res)
+(deftest move-doc-end-test
+  (are [s res] (= (edit' s :move-doc-end nil) res)
     "|"    "|"
     "|abc" "abc|"
     "a|bc" "abc|"
@@ -246,8 +286,137 @@
     "abcd]ef[" "abcdef|"
     "]abcdef[" "abcdef|"))
 
-(deftest expand-end-test
-  (are [s res] (= (edit' s :expand-end nil) res)
+(deftest expand-char-left-test
+  (are [s res] (= (edit' s :expand-char-left nil) res)
+    "|"    "|"
+    "|abc" "|abc"
+    "a|bc" "]a[bc"
+    "ab|c" "a]b[c"
+    "abc|" "ab]c["
+    
+    "[a]bcdef" "|abcdef"
+    "ab[c]def" "ab|cdef" 
+    "abcde[f]" "abcde|f"
+
+    "[ab]cdef" "[a]bcdef"
+    "ab[cd]ef" "ab[c]def" 
+    "abcd[ef]" "abcd[e]f"
+    "[abcdef]" "[abcde]f"
+    
+    "]a[bcdef" "]a[bcdef"
+    "abc]d[ef" "ab]cd[ef" 
+    "abcde]f[" "abcd]ef["
+    
+    "]ab[cdef" "]ab[cdef"
+    "ab]cd[ef" "a]bcd[ef" 
+    "abcd]ef[" "abc]def["
+    "]abcdef[" "]abcdef["
+    
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️]🚵🏻‍♀️["
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️]🚵🏻‍♀️[🚵🏻‍♀️"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "]🚵🏻‍♀️[🚵🏻‍♀️🚵🏻‍♀️")
+  
+  (are [s res] (= (edit'' s :expand-char-left nil) res)
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️]🚵🏻‍♀️🚵🏻‍♀️["
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "]🚵🏻‍♀️🚵🏻‍♀️[🚵🏻‍♀️"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "]🚵🏻‍♀️[🚵🏻‍♀️🚵🏻‍♀️"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️"))
+
+(deftest expand-char-right-test
+  (are [s res] (= (edit' s :expand-char-right nil) res)
+    "|"    "|"
+    "|abc" "[a]bc"
+    "a|bc" "a[b]c"
+    "ab|c" "ab[c]"
+    "abc|" "abc|"
+    
+    "[a]bcdef" "[ab]cdef"
+    "ab[c]def" "ab[cd]ef" 
+    "abcde[f]" "abcde[f]"
+
+    "[ab]cdef" "[abc]def"
+    "ab[cd]ef" "ab[cde]f" 
+    "abcd[ef]" "abcd[ef]"
+    "[abcdef]" "[abcdef]"
+    
+    "]a[bcdef" "a|bcdef"
+    "abc]d[ef" "abcd|ef" 
+    "abcde]f[" "abcdef|"
+    
+    "]ab[cdef" "a]b[cdef"
+    "ab]cd[ef" "abc]d[ef" 
+    "abcd]ef[" "abcde]f["
+    "]abcdef[" "a]bcdef["
+    
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️[🚵🏻‍♀️]"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️[🚵🏻‍♀️]🚵🏻‍♀️"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "[🚵🏻‍♀️]🚵🏻‍♀️🚵🏻‍♀️")
+  
+  (are [s res] (= (edit'' s :expand-char-right nil) res)
+    "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|" "🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️|"
+    "🚵🏻‍♀️🚵🏻‍♀️|🚵🏻‍♀️" "🚵🏻‍♀️🚵🏻‍♀️[🚵🏻‍♀️]"
+    "🚵🏻‍♀️|🚵🏻‍♀️🚵🏻‍♀️" "🚵🏻‍♀️[🚵🏻‍♀️🚵🏻‍♀️]"
+    "|🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️" "[🚵🏻‍♀️🚵🏻‍♀️]🚵🏻‍♀️"))
+
+(deftest expand-word-left-test
+  (are [s res] (= (edit' s :expand-word-left nil) res)
+    "word word word|" "word word ]word["
+    "word word wor|d" "word word ]wor[d"
+    "word word wo|rd" "word word ]wo[rd"
+    "word word w|ord" "word word ]w[ord"
+    "word word |word" "word ]word [word"
+    "wo|rd word word" "]wo[rd word word"
+    "|word word word" "|word word word"
+    
+    "word word [word]" "word word |word"
+    "word wo[rd word]" "word wo[rd ]word"
+    "word word ]word[" "word ]word word["
+    "word wo]rd word[" "word ]word word["))
+
+(deftest expand-word-right-test
+  (are [s res] (= (edit' s :expand-word-right nil) res)
+    "|word word word" "[word] word word"
+    "w|ord word word" "w[ord] word word"
+    "wo|rd word word" "wo[rd] word word"
+    "wor|d word word" "wor[d] word word"
+    "word| word word" "word[ word] word"
+    "word word wo|rd" "word word wo[rd]"
+    "word word word|" "word word word|"
+    
+    "[word] word word" "[word word] word"
+    "[word wo]rd word" "[word word] word"
+    "]word[ word word" "word| word word"
+    "]word wo[rd word" "word] wo[rd word"))
+
+(deftest expand-doc-start-test
+  (are [s res] (= (edit' s :expand-doc-start nil) res)
+    "|"    "|"
+    "|abc" "|abc"
+    "a|bc" "]a[bc"
+    "ab|c" "]ab[c"
+    "abc|" "]abc["
+    
+    "[a]bcdef" "|abcdef"
+    "ab[c]def" "]abc[def" 
+    "abcde[f]" "]abcdef["
+
+    "[ab]cdef" "|abcdef"
+    "ab[cd]ef" "]abcd[ef" 
+    "abcd[ef]" "]abcdef["
+    "[abcdef]" "|abcdef"
+    
+    "]a[bcdef" "]a[bcdef"
+    "abc]d[ef" "]abcd[ef" 
+    "abcde]f[" "]abcdef["
+    
+    "]ab[cdef" "]ab[cdef"
+    "ab]cd[ef" "]abcd[ef" 
+    "abcd]ef[" "]abcdef["
+    "]abcdef[" "]abcdef["))
+
+(deftest expand-doc-end-test
+  (are [s res] (= (edit' s :expand-doc-end nil) res)
     "|"    "|"
     "|abc" "[abc]"
     "a|bc" "a[bc]"
@@ -272,32 +441,70 @@
     "abcd]ef[" "abcdef|"
     "]abcdef[" "abcdef|"))
 
-(deftest delete-left-test
-  (are [s res] (= (edit' s :delete-left nil) res)
+(deftest delete-char-left-test
+  (are [s res] (= (edit' s :delete-char-left nil) res)
     "|"    "|"
     "|abc" "|abc"
     "a|bc" "|bc"
     "ab|c" "a|c"
-    "abc|" "ab|"))
+    "abc|" "ab|"
+    
+    "|🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱" "|🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱"
+    "🚵🏻‍♀️|🤵🏽👨‍🏭🇦🇱" "|🤵🏽👨‍🏭🇦🇱"
+    "🚵🏻‍♀️🤵🏽|👨‍🏭🇦🇱" "🚵🏻‍♀️|👨‍🏭🇦🇱"
+    "🚵🏻‍♀️🤵🏽👨‍🏭|🇦🇱" "🚵🏻‍♀️🤵🏽|🇦🇱"
+    "🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱|" "🚵🏻‍♀️🤵🏽👨‍🏭|"))
 
-(deftest delete-right-test
-  (are [s res] (= (edit' s :delete-right nil) res)
+(deftest delete-char-right-test
+  (are [s res] (= (edit' s :delete-char-right nil) res)
     "|"    "|"
     "|abc" "|bc"
     "a|bc" "a|c"
     "ab|c" "ab|"
-    "abc|" "abc|"))
+    "abc|" "abc|"
+    
+    "|🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱" "|🤵🏽👨‍🏭🇦🇱"
+    "🚵🏻‍♀️|🤵🏽👨‍🏭🇦🇱" "🚵🏻‍♀️|👨‍🏭🇦🇱"
+    "🚵🏻‍♀️🤵🏽|👨‍🏭🇦🇱" "🚵🏻‍♀️🤵🏽|🇦🇱"
+    "🚵🏻‍♀️🤵🏽👨‍🏭|🇦🇱" "🚵🏻‍♀️🤵🏽👨‍🏭|"
+    "🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱|" "🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱|"))
 
-(deftest delete-beginning-test
-  (are [s res] (= (edit' s :delete-beginning nil) res)
+(deftest delete-word-left-test
+  (are [s res] (= (edit' s :delete-word-left nil) res)
+    "word word|" "word |"
+    "word wor|d" "word |d"
+    "word wo|rd" "word |rd"
+    "word w|ord" "word |ord"
+    "word |word" "|word"
+    "word| word" "| word"
+    "wor|d word" "|d word"
+    "wo|rd word" "|rd word"
+    "w|ord word" "|ord word"
+    "|word word" "|word word"))
+
+(deftest delete-word-right-test
+  (are [s res] (= (edit' s :delete-word-right nil) res)
+    "word word|" "word word|"
+    "word wor|d" "word wor|"
+    "word wo|rd" "word wo|"
+    "word w|ord" "word w|"
+    "word |word" "word |"
+    "word| word" "word|"
+    "wor|d word" "wor| word"
+    "wo|rd word" "wo| word"
+    "w|ord word" "w| word"
+    "|word word" "| word"))
+
+(deftest delete-doc-start-test
+  (are [s res] (= (edit' s :delete-doc-start nil) res)
     "|"    "|"
     "|abc" "|abc"
     "a|bc" "|bc"
     "ab|c" "|c"
     "abc|" "|"))
 
-(deftest delete-end-test
-  (are [s res] (= (edit' s :delete-end nil) res)
+(deftest delete-doc-end-test
+  (are [s res] (= (edit' s :delete-doc-end nil) res)
     "|"    "|"
     "|abc" "|"
     "a|bc" "a|"
@@ -332,7 +539,13 @@
     "12|345" "132|45"
     "123|45" "1243|5"
     "1234|5" "12354|"
-    "12345|" "12354|"))
+    "12345|" "12354|"
+    
+    "|🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱" "|🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱"
+    "🚵🏻‍♀️|🤵🏽👨‍🏭🇦🇱" "🤵🏽🚵🏻‍♀️|👨‍🏭🇦🇱"
+    "🚵🏻‍♀️🤵🏽|👨‍🏭🇦🇱" "🚵🏻‍♀️👨‍🏭🤵🏽|🇦🇱"
+    "🚵🏻‍♀️🤵🏽👨‍🏭|🇦🇱" "🚵🏻‍♀️🤵🏽🇦🇱👨‍🏭|"
+    "🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱|" "🚵🏻‍♀️🤵🏽🇦🇱👨‍🏭|"))
 
 (deftest select-all-test
   (are [s res] (= (edit' s :select-all nil) res)
