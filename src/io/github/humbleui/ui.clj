@@ -866,6 +866,65 @@
 (def ^{:arglists '([*state] [*state opts])} text-field
   text-field/text-field)
 
+;; tooltip
+(core/deftype+ RelativeRect [relative child opts ^:mut rel-rect ^:mut child-rect]
+  protocols/IComponent
+  (-measure [_ ctx cs]
+    (core/measure child ctx cs))
+
+  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (let [{:keys [left up anchor shackle]
+           :or {left 0 up 0
+                anchor :top-left shackle :top-right}} opts
+          child-size (core/measure child ctx (IPoint. (:width rect) (:height rect)))
+          child-rect' (IRect/makeXYWH (:x rect) (:y rect) (:width child-size) (:height child-size))
+          rel-cs (core/measure relative ctx (IPoint. 0 0))
+          rel-cs-width (:width rel-cs) rel-cs-height (:height rel-cs)
+          rel-rect' (condp = [anchor shackle]
+                      [:top-left :top-left]         (IRect/makeXYWH (- (:x child-rect') left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:top-right :top-left]        (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:bottom-right :top-left]     (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:bottom-left :top-left]      (IRect/makeXYWH (- (:x child-rect') left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:top-left :top-right]        (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:top-right :top-right]       (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:bottom-left :top-right]     (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:bottom-right :top-right]    (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:top-left :bottom-right]     (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:top-right :bottom-right]    (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:bottom-right :bottom-right] (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:bottom-left :bottom-right]  (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:top-left :bottom-left]      (IRect/makeXYWH (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:top-right :bottom-left]     (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:bottom-left :bottom-left]   (IRect/makeXYWH (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:bottom-right :bottom-left]  (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height))]
+      (set! child-rect child-rect')
+      (set! rel-rect rel-rect')
+      (core/draw-child child ctx child-rect canvas)
+      (core/draw-child relative ctx rel-rect canvas)))
+
+  (-event [_ event]
+    (core/event-child child event))
+
+  AutoCloseable
+  (close [_]
+    (core/child-close child)))
+
+(defn relative-rect
+  ([relative child] (relative-rect {} relative child))
+  ([opts relative child]
+   (->RelativeRect relative child opts nil nil)))
+
+(defn tooltip
+  ([tip child] (tooltip {} tip child))
+  ([opts tip child]
+   (hoverable
+     (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
+       (let [tip' (cond
+                    active?  tip
+                    hovered? tip
+                    :else    (gap 0 0))]
+         (relative-rect opts tip' child))))))
+
 
 ; (require 'user :reload)
 
