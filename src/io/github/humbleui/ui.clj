@@ -917,13 +917,15 @@
 (defn tooltip
   ([tip child] (tooltip {} tip child))
   ([opts tip child]
-   (hoverable
-     (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
-       (let [tip' (cond
-                    active?  tip
-                    hovered? tip
-                    :else    (gap 0 0))]
-         (relative-rect opts tip' child))))))
+   (valign 0
+     (halign 0
+       (hoverable
+         (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
+           (let [tip' (cond
+                        active?  tip
+                        hovered? tip
+                        :else    (gap 0 0))]
+             (relative-rect opts tip' child))))))))
 
 
 ; (require 'user :reload)
