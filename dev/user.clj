@@ -42,10 +42,11 @@
    "scroll"
    "svg"
    "text-field"
+   "tooltip"
    "tree"
    "wordle"])
 
-(defonce *example (atom "text-field"))
+(defonce *example (atom "tooltip"))
 
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]

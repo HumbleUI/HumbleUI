@@ -1,8 +1,7 @@
 (ns examples.label
   (:require
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.ui :as ui]))
 
 (set! *warn-on-reflection* true)
 
