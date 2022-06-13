@@ -10,6 +10,8 @@
 
 (defonce *clicks (atom 0))
 
+(defonce *selected (atom nil))
+
 (def ui
   (ui/valign 0.5
     (ui/halign 0.5
@@ -52,6 +54,22 @@
           
           (ui/halign 0
             (ui/button #(reset! *clicks 0)
-              (ui/label "Reset"))))))))
+              (ui/label "Reset")))
+          
+          (ui/gap 0 leading)
+          
+          (ui/dynamic _ [selected @*selected]
+            (ui/row
+              (ui/with-context
+                {:hui/active? (= selected :first)}
+                (ui/button #(reset! *selected :first) (ui/label "First")))
+              (ui/gap 10 0)
+              (ui/with-context
+                {:hui/active? (= selected :second)}
+                (ui/button #(reset! *selected :second) (ui/label "Second")))
+              (ui/gap 10 0)
+              (ui/with-context
+                {:hui/active? (= selected :third)}
+                (ui/button #(reset! *selected :third) (ui/label "Third"))))))))))
 
-; (reset! user/*example "button")
+(reset! user/*example "button")

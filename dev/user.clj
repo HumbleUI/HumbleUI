@@ -37,6 +37,7 @@
    "canvas"
    "checkbox"
    "container"
+   "errors"
    "event-bubbling"
    "label"
    "scroll"
@@ -46,7 +47,7 @@
    "tree"
    "wordle"])
 
-(defonce *example (atom "tooltip"))
+(defonce *example (atom "errors"))
 
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]
