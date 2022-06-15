@@ -47,7 +47,7 @@
    "tree"
    "wordle"])
 
-(defonce *example (atom "errors"))
+(defonce *example (atom "text-field"))
 
 (def app
   (ui/dynamic ctx [scale (:scale ctx)]

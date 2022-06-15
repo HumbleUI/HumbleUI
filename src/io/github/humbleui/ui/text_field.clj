@@ -221,11 +221,9 @@
   (if (> to 0)
     (let [char-iter (char-iter state)
           to'       (.preceding char-iter to)]
-      (assoc state
-        :char-iter char-iter
-        :text      (str (subs text 0 to') (subs text to))
-        :from      to'
-        :to        to'))
+      {:text      (str (subs text 0 to') (subs text to))
+       :from      to'
+       :to        to'})
     state))
 
 (defmethod edit :delete-char-right [{:keys [text from to] :as state} _ _]
@@ -233,11 +231,9 @@
   (if (< to (count text))
     (let [char-iter (char-iter state)
           to'       (.following char-iter to)]
-      (assoc state
-        :char-iter char-iter
-        :text (str (subs text 0 to) (subs text to'))
-        :from to
-        :to   to))
+      {:text (str (subs text 0 to) (subs text to'))
+       :from to
+       :to   to})
     state))
 
 (defmethod edit :delete-word-left [{:keys [text from to] :as state} _ _]
