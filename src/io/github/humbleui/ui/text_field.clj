@@ -324,6 +324,15 @@
      :from (+ to (count paste))
      :to   (+ to (count paste))}))
 
+(defn- recalc-line! [text-field]
+  (let [{:keys [*state font features line-text line]} text-field
+        {:keys [text]} @*state]
+    (when (not= text line-text)
+      (some-> ^AutoCloseable line .close)
+      (core/-set! text-field :line-text text)
+      (core/-set! text-field :line (.shapeLine core/shaper text font features))))
+  text-field)
+
 (core/deftype+ TextField [*state
                           ^Font font
                           ^FontMetrics metrics
@@ -331,45 +340,47 @@
                           ^Paint fill-text
                           ^Paint fill-cursor
                           ^Paint fill-selection
+                          cursor-w
                           padding-h
                           ^:mut offset
                           ^String ^:mut line-text
                           ^TextLine ^:mut line]
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (IPoint. (:width cs) (Math/ceil (.getCapHeight metrics))))
+  (-measure [this ctx cs]
+    (recalc-line! this)
+    (IPoint.
+      (min
+        (:width cs)
+        (+ (.getWidth line) cursor-w (* 2 padding-h)))
+      (Math/ceil (.getCapHeight metrics))))
   
-  ;       coord-to                       
-  ; ├──────────────────┤                 
-  ;          ┌───────────────────┐       
-  ; ┌────────┼───────────────────┼──────┐
-  ; │        │         │         │      │
-  ; └────────┼───────────────────┼──────┘
-  ;          └───────────────────┘       
-  ; ├────────┼───────────────────┤       
-  ;   offset     (:width rect)           
-  ;                                      
-  ; ├───────────────────────────────────┤
-  ;             (.getWidth line)         
-  (-draw [_ ctx rect ^Canvas canvas]
+  ;       coord-to                        
+  ; ├──────────────────┤                  
+  ;          ┌───────────────────┐        
+  ; ┌────────┼───────────────────┼───────┐
+  ; │        │         │         │       │
+  ; └────────┼───────────────────┼───────┘
+  ;          └───────────────────┘        
+  ; ├────────┼───────────────────┤        
+  ;   offset     (:width rect)            
+  ;                                       
+  ; ├────────────────────────────────────┤
+  ;            (.getWidth line)           
+  (-draw [this ctx rect ^Canvas canvas]
     (let [{:keys [text from to]} @*state
           baseline     (Math/ceil (.getCapHeight metrics))
           ascent       (- (+ baseline (Math/ceil (.getAscent metrics))))
           descent      (Math/ceil (.getDescent metrics))
           selection?   (not= from to)
-          _            (when (not= text line-text)
-                         (some-> line .close)
-                         (set! line-text text)
-                         (set! line (.shapeLine core/shaper text font features)))
+          _            (recalc-line! this)
           coord-from   (.getCoordAtOffset line from)
           coord-to     (if (= from to)
                          coord-from
                          (.getCoordAtOffset line to))
           line-width   (.getWidth line)
-          cursor-width (* 1 (:scale ctx))
           min-offset   (- padding-h)
           max-offset   (-> line-width
-                         (+ cursor-width)
+                         (+ cursor-w)
                          (+ padding-h)
                          (- (:width rect))
                          (max min-offset))]
@@ -402,7 +413,7 @@
             (Rect/makeLTRB
               (+ (:x rect) (- offset) coord-to)
               (- (:y rect) ascent)
-              (+ (:x rect) (- offset) coord-to cursor-width)
+              (+ (:x rect) (- offset) coord-to cursor-w)
               (+ (:y rect) baseline descent))
             fill-cursor)))))
         
@@ -523,7 +534,8 @@
   ([*state]
    (text-field *state nil))
   ([*state opts]
-   (dynamic/dynamic ctx [padding-h      (* (or (:padding-h opts) 0) (:scale ctx))
+   (dynamic/dynamic ctx [cursor-w       (* 1 (:scale ctx))
+                         padding-h      (* (or (:padding-h opts) 0) (:scale ctx))
                          font           ^Font  (or (:font opts) (:font-ui ctx))
                          fill-text      ^Paint (or (:fill-text opts) (:fill-text ctx))
                          fill-cursor    ^Paint (or (:fill-cursor opts) (:fill-cursor ctx))
@@ -537,9 +549,10 @@
          fill-text
          fill-cursor
          fill-selection
+         cursor-w
          padding-h
          (- padding-h)
-         nil 
+         nil
          nil)))))
 
 (comment
