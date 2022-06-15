@@ -331,40 +331,78 @@
                           ^Paint fill-text
                           ^Paint fill-cursor
                           ^Paint fill-selection
+                          padding-h
+                          ^:mut offset
                           ^String ^:mut line-text
                           ^TextLine ^:mut line]
   protocols/IComponent
   (-measure [_ ctx cs]
     (IPoint. (:width cs) (Math/ceil (.getCapHeight metrics))))
   
+  ;       coord-to                       
+  ; ├──────────────────┤                 
+  ;          ┌───────────────────┐       
+  ; ┌────────┼───────────────────┼──────┐
+  ; │        │         │         │      │
+  ; └────────┼───────────────────┼──────┘
+  ;          └───────────────────┘       
+  ; ├────────┼───────────────────┤       
+  ;   offset     (:width rect)           
+  ;                                      
+  ; ├───────────────────────────────────┤
+  ;             (.getWidth line)         
   (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [text from to]} @*state
-          baseline   (Math/ceil (.getCapHeight metrics))
-          ascent     (- (+ baseline (Math/ceil (.getAscent metrics))))
-          descent    (Math/ceil (.getDescent metrics))
-          selection? (not= from to)]
-      (when (not= text line-text)
-        (some-> line .close)
-        (set! line-text text)
-        (set! line (.shapeLine core/shaper text font features)))
+          baseline     (Math/ceil (.getCapHeight metrics))
+          ascent       (- (+ baseline (Math/ceil (.getAscent metrics))))
+          descent      (Math/ceil (.getDescent metrics))
+          selection?   (not= from to)
+          _            (when (not= text line-text)
+                         (some-> line .close)
+                         (set! line-text text)
+                         (set! line (.shapeLine core/shaper text font features)))
+          coord-from   (.getCoordAtOffset line from)
+          coord-to     (if (= from to)
+                         coord-from
+                         (.getCoordAtOffset line to))
+          line-width   (.getWidth line)
+          cursor-width (* 1 (:scale ctx))
+          min-offset   (- padding-h)
+          max-offset   (-> line-width
+                         (+ cursor-width)
+                         (+ padding-h)
+                         (- (:width rect))
+                         (max min-offset))]
+      (when (or
+              (< (- coord-to offset) 0)             ;; cursor overflow left
+              (> (- coord-to offset) (:width rect)) ;; cursor overflow right
+              (< offset min-offset)
+              (> offset max-offset))                ;; hanging right boundary
+        (set! offset (-> (- coord-to (/ (:width rect) 2))
+                       (core/clamp min-offset max-offset)
+                       (math/round))))
       (canvas/with-canvas canvas
-        ;; TODO do not clip vertically
-        (canvas/clip-rect canvas (Rect/makeXYWH (:x rect) (- (:y rect) ascent) (:width rect) (+ ascent baseline descent)))
+        (canvas/clip-rect canvas
+          (Rect/makeXYWH
+            (:x rect)
+            (- (:y rect) ascent)
+            (:width rect)
+            (+ ascent baseline descent)))
         (when selection?
           (canvas/draw-rect canvas
             (Rect/makeLTRB
-              (+ (:x rect) (.getCoordAtOffset line (min from to)))
+              (+ (:x rect) (- offset) (min coord-from coord-to))
               (- (:y rect) ascent)
-              (+ (:x rect) (.getCoordAtOffset line (max from to)))
+              (+ (:x rect) (- offset) (max coord-from coord-to))
               (+ (:y rect) baseline descent))
             fill-selection))
-        (.drawTextLine canvas line (:x rect) (+ (:y rect) baseline) fill-text)
+        (.drawTextLine canvas line (+ (:x rect) (- offset)) (+ (:y rect) baseline) fill-text)
         (when-not selection?
           (canvas/draw-rect canvas
             (Rect/makeLTRB
-              (+ (:x rect) (.getCoordAtOffset line to))
+              (+ (:x rect) (- offset) coord-to)
               (- (:y rect) ascent)
-              (+ (:x rect) (.getCoordAtOffset line to) (* 1 (:scale ctx)))
+              (+ (:x rect) (- offset) coord-to cursor-width)
               (+ (:y rect) baseline descent))
             fill-cursor)))))
         
@@ -485,12 +523,24 @@
   ([*state]
    (text-field *state nil))
   ([*state opts]
-   (dynamic/dynamic ctx [font           ^Font  (or (:font opts) (:font-ui ctx))
+   (dynamic/dynamic ctx [padding-h      (* (or (:padding-h opts) 0) (:scale ctx))
+                         font           ^Font  (or (:font opts) (:font-ui ctx))
                          fill-text      ^Paint (or (:fill-text opts) (:fill-text ctx))
                          fill-cursor    ^Paint (or (:fill-cursor opts) (:fill-cursor ctx))
                          fill-selection ^Paint (or (:fill-selection opts) (:fill-selection ctx))]
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))]
-       (->TextField *state font (.getMetrics ^Font font) features fill-text fill-cursor fill-selection nil nil)))))
+       (->TextField
+         *state
+         font
+         (.getMetrics ^Font font)
+         features
+         fill-text
+         fill-cursor
+         fill-selection
+         padding-h
+         (- padding-h)
+         nil 
+         nil)))))
 
 (comment
   (require 'examples.text-field :reload)
