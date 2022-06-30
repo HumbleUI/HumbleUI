@@ -169,9 +169,6 @@
 
 ;; deftype+
 
-(defprotocol ISettable
-  (-set! [_ key value]))
-
 (defmacro deftype+
   "Same as deftype, but:
 
@@ -211,9 +208,10 @@
          (valAt [this# key#]
            (.valAt this# key# nil))
        
-         ISettable
+         protocols/ISettable
          (-set! [_# key# ~value-sym]
            (case key#
              ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) (filter #(:mut (meta %)) fields)))))
+       
        (defn ~(symbol (str '-> name)) ~fields
          (new ~name ~@fields nil)))))

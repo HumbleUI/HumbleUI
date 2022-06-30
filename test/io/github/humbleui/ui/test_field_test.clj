@@ -547,6 +547,53 @@
     "🚵🏻‍♀️🤵🏽👨‍🏭|🇦🇱" "🚵🏻‍♀️🤵🏽🇦🇱👨‍🏭|"
     "🚵🏻‍♀️🤵🏽👨‍🏭🇦🇱|" "🚵🏻‍♀️🤵🏽🇦🇱👨‍🏭|"))
 
+(deftest move-to-position-test
+  (are [s pos res] (= (edit' s :move-to-position pos) res)
+    "|"    0 "|"
+    "|abc" 0 "|abc"
+    "|abc" 1 "a|bc"
+    "|abc" 2 "ab|c"
+    "|abc" 3 "abc|"
+    
+    "[a]bc" 0 "|abc"
+    "[a]bc" 1 "a|bc"
+    "[a]bc" 2 "ab|c"
+    "[a]bc" 3 "abc|"
+    
+    "]a[bc" 0 "|abc"
+    "]a[bc" 1 "a|bc"
+    "]a[bc" 2 "ab|c"
+    "]a[bc" 3 "abc|"))
+
+(deftest select-word-test
+  (are [s pos res] (= (edit' s :select-word pos) res)
+    "|"    0 "|"
+    "|abc" 0 "[abc]"
+    "|abc" 1 "[abc]"
+    "|abc" 2 "[abc]"
+    "|abc" 3 "[abc]"
+    
+    "|abc d xy" 0 "[abc] d xy"
+    "|abc d xy" 1 "[abc] d xy"
+    "|abc d xy" 2 "[abc] d xy"
+    "|abc d xy" 3 "abc[ ]d xy"
+    "|abc d xy" 4 "abc [d] xy"
+    "|abc d xy" 5 "abc d[ ]xy"
+    "|abc d xy" 6 "abc d [xy]"
+    "|abc d xy" 7 "abc d [xy]"
+    "|abc d xy" 8 "abc d [xy]"
+    
+    "| abc,  def" 0 "[ ]abc,  def"
+    "| abc,  def" 1 " [abc],  def"
+    "| abc,  def" 2 " [abc],  def"
+    "| abc,  def" 3 " [abc],  def"
+    "| abc,  def" 4 " abc[,]  def"
+    "| abc,  def" 5 " abc,[  ]def"
+    "| abc,  def" 6 " abc,[  ]def"
+    "| abc,  def" 7 " abc,  [def]"
+    "| abc,  def" 8 " abc,  [def]"
+    "| abc,  def" 9 " abc,  [def]"))
+
 (deftest select-all-test
   (are [s res] (= (edit' s :select-all nil) res)
     "|"    "|"

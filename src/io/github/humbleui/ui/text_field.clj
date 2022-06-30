@@ -19,6 +19,8 @@
 
 (set! *warn-on-reflection* true)
 
+(def double-click-threshold-ms 500)
+
 (defn- ^BreakIterator char-iter [state]
   (or (:char-iter state)
     (doto (BreakIterator/makeCharacterInstance)
@@ -307,6 +309,32 @@
       (edit :move-char-left nil)
       (edit :transpose nil))))
 
+(defmethod edit :move-to-position [state _ pos']
+  (assert (<= 0 pos' (count (:text state))))
+  (assoc state
+    :from pos'
+    :to   pos'))
+
+(defmethod edit :select-word [{:keys [text] :as state} _ pos']
+  (assert (<= 0 pos' (count text)))
+  (let [word-iter (word-iter state)
+        last? (= pos' (count text))
+        from' (cond
+                last?
+                (.preceding word-iter pos')
+                
+                (.isBoundary word-iter pos')
+                pos'
+                
+                :else
+                (.preceding word-iter pos'))
+        to'   (if last?
+                pos'
+                (.following word-iter pos'))]
+    (assoc state
+      :from (if (= BreakIterator/DONE from') 0 from')
+      :to   (if (= BreakIterator/DONE to') (count text) to'))))
+
 (defmethod edit :select-all [{:keys [text from to] :as state} _ _]
   (assoc state
     :from 0
@@ -329,9 +357,33 @@
         {:keys [text]} @*state]
     (when (not= text line-text)
       (some-> ^AutoCloseable line .close)
-      (core/-set! text-field :line-text text)
-      (core/-set! text-field :line (.shapeLine core/shaper text font features))))
+      (protocols/-set! text-field :line-text text)
+      (protocols/-set! text-field :line (.shapeLine core/shaper text font features))))
   text-field)
+
+(defn- update-offset! [text-field]
+  (let [{:keys [*state cursor-w padding-h offset ^TextLine line my-rect]} text-field
+        {:keys [text from to]} @*state
+        coord-from   (.getCoordAtOffset line from)
+        coord-to     (if (= from to)
+                       coord-from
+                       (.getCoordAtOffset line to))
+        line-width   (.getWidth line)
+        min-offset   (- padding-h)
+        max-offset   (-> line-width
+                       (+ cursor-w)
+                       (+ padding-h)
+                       (- (:width my-rect))
+                       (max min-offset))]
+    (when (or
+            (< (- coord-to offset) 0)                ;; cursor overflow left
+            (> (- coord-to offset) (:width my-rect)) ;; cursor overflow right
+            (< offset min-offset)
+            (> offset max-offset))                   ;; hanging right boundary
+      (protocols/-set! text-field :offset
+        (-> (- coord-to (/ (:width my-rect) 2))
+          (core/clamp min-offset max-offset)
+          (math/round))))))
 
 (core/deftype+ TextField [*state
                           ^Font font
@@ -342,9 +394,14 @@
                           ^Paint fill-selection
                           cursor-w
                           padding-h
-                          ^:mut offset
-                          ^String ^:mut line-text
-                          ^TextLine ^:mut line]
+                          ^:mut           offset
+                          ^:mut ^String   line-text
+                          ^:mut ^TextLine line
+                          ^:mut ^IRect    my-rect
+                          ^:mut ^IPoint   mouse-pos
+                          ^:mut           mouse-down?
+                          ^:mut           clicks
+                          ^:mut           last-click]
   protocols/IComponent
   (-measure [this ctx cs]
     (recalc-line! this)
@@ -367,31 +424,17 @@
   ; ├────────────────────────────────────┤
   ;            (.getWidth line)           
   (-draw [this ctx rect ^Canvas canvas]
+    (set! my-rect rect)
+    (recalc-line! this)
     (let [{:keys [text from to]} @*state
           baseline     (Math/ceil (.getCapHeight metrics))
           ascent       (- (+ baseline (Math/ceil (.getAscent metrics))))
           descent      (Math/ceil (.getDescent metrics))
           selection?   (not= from to)
-          _            (recalc-line! this)
           coord-from   (.getCoordAtOffset line from)
           coord-to     (if (= from to)
                          coord-from
-                         (.getCoordAtOffset line to))
-          line-width   (.getWidth line)
-          min-offset   (- padding-h)
-          max-offset   (-> line-width
-                         (+ cursor-w)
-                         (+ padding-h)
-                         (- (:width rect))
-                         (max min-offset))]
-      (when (or
-              (< (- coord-to offset) 0)             ;; cursor overflow left
-              (> (- coord-to offset) (:width rect)) ;; cursor overflow right
-              (< offset min-offset)
-              (> offset max-offset))                ;; hanging right boundary
-        (set! offset (-> (- coord-to (/ (:width rect) 2))
-                       (core/clamp min-offset max-offset)
-                       (math/round))))
+                         (.getCoordAtOffset line to))]      
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas
           (Rect/makeXYWH
@@ -417,16 +460,79 @@
               (+ (:y rect) baseline descent))
             fill-cursor)))))
         
-  (-event [_ event]
+  (-event [this event]
     (let [state @*state
           {:keys [text from to]} state]
-      
-      (cond 
+      (when (= :mouse-move (:event event))
+        (set! mouse-pos (IPoint. (:x event) (:y event)))
+        (set! clicks 0))
+
+      (cond
+        ;; mouse down
+        (and
+          (= :mouse-button (:event event))
+          (= :primary (:button event))
+          (:pressed? event)
+          (.contains my-rect mouse-pos))
+        (let [x      (-> (:x mouse-pos)
+                       (- (:x my-rect))
+                       (+ offset))
+              offset (.getOffsetAtCoord line x)
+              now    (System/currentTimeMillis)]
+          (set! mouse-down? true)
+          (set! last-click now)
+          (if (<= (- now last-click) double-click-threshold-ms)
+            (do
+              (set! clicks (inc clicks))
+              (set! last-click now))
+            (set! clicks 1))
+          
+          (case (int clicks)
+            1
+            (swap! *state edit :move-to-position offset)
+            
+            2
+            (swap! *state edit :select-word offset)
+            
+            ; else
+            (swap! *state edit :select-all nil))
+          
+          (not= @*state state))
+        
+        ; mouse up
+        (and
+          (= :mouse-button (:event event))
+          (= :primary (:button event))
+          (not (:pressed? event)))
+        (do
+          (set! mouse-down? false)
+          false)
+        
+        ;; mouse move
+        (and
+          (= :mouse-move (:event event))
+          mouse-down?)
+        (let [x (-> (:x mouse-pos)
+                  (- (:x my-rect))
+                  (+ offset))]
+          (cond
+            (.contains my-rect mouse-pos)
+            (swap! *state assoc :to (.getOffsetAtCoord line x))
+            
+            (< (:y mouse-pos) (:y my-rect))
+            (swap! *state assoc :to 0)
+            
+            (>= (:y mouse-pos) (:bottom my-rect))
+            (swap! *state assoc :to (count (:text state))))
+          (not= @*state state))
+
+        ;; typing
         (= :text-input (:event event))
         (let [op     (if (= from to) :insert :replace)
               state' (swap! *state edit op (:text event))]
           (not= op state))
       
+        ;; command
         (and (= :key (:event event)) (:pressed? event))
         (let [key        (:key event)
               shift?     ((:modifiers event) :shift)
@@ -524,7 +630,9 @@
           (when (seq ops)
             (let [state' (swap! *state (fn [state]
                                          (reduce #(edit %1 %2 nil) state ops)))]
-              (not= state state')))))))
+              (when (not= state state')
+                (update-offset! this)
+                true)))))))
   
   AutoCloseable
   (close [_]
@@ -552,8 +660,14 @@
          cursor-w
          padding-h
          (- padding-h)
-         nil
-         nil)))))
+         nil      ; line-text
+         nil      ; line
+         nil      ; my-rect
+         (IPoint. 0 0) ; mouse-pos
+         false    ; mouse-down?
+         0        ; clicks
+         0        ; last-click
+         )))))
 
 (comment
   (require 'examples.text-field :reload)
