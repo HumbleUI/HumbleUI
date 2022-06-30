@@ -4,7 +4,7 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.event :as event])
   (:import
-    [io.github.humbleui.jwm App Platform Window ZOrder]
+    [io.github.humbleui.jwm App MouseCursor Platform Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
     [io.github.humbleui.skija Surface]
     [java.util.function Consumer]))
@@ -116,3 +116,22 @@
 (defn request-frame [^Window window]
   (.requestFrame window)
   window)
+
+(def cursors
+  {:arrow         MouseCursor/ARROW
+   :crosshair     MouseCursor/CROSSHAIR
+   :help          MouseCursor/HELP
+   :pointing-hand MouseCursor/POINTING_HAND
+   :ibeam         MouseCursor/IBEAM
+   :not-allowed   MouseCursor/NOT_ALLOWED
+   :wait          MouseCursor/WAIT
+   :win-uparrow   MouseCursor/WIN_UPARROW
+   :resize-ns     MouseCursor/RESIZE_NS
+   :resize-we     MouseCursor/RESIZE_WE
+   :resize-nesw   MouseCursor/RESIZE_NESW
+   :resize-nwse   MouseCursor/RESIZE_NWSE})
+
+(defn set-cursor [^Window window cursor]
+  (let [c (cursors cursor)]
+    (assert (some? c) (str "Unknown cursor " cursor))
+    (.setMouseCursor window c)))

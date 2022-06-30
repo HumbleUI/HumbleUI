@@ -362,26 +362,25 @@
   text-field)
 
 (defn- update-offset! [text-field]
+  (recalc-line! text-field)
   (let [{:keys [*state cursor-w padding-h offset ^TextLine line my-rect]} text-field
         {:keys [text from to]} @*state
-        coord-from   (.getCoordAtOffset line from)
-        coord-to     (if (= from to)
-                       coord-from
-                       (.getCoordAtOffset line to))
-        line-width   (.getWidth line)
-        min-offset   (- padding-h)
-        max-offset   (-> line-width
-                       (+ cursor-w)
-                       (+ padding-h)
-                       (- (:width my-rect))
-                       (max min-offset))]
+        coord-to    (.getCoordAtOffset line to)
+        line-width  (.getWidth line)
+        rect-width  (:width my-rect)
+        min-offset  (- padding-h)
+        max-offset  (-> line-width
+                      (+ cursor-w)
+                      (+ padding-h)
+                      (- rect-width)
+                      (max min-offset))]
     (when (or
-            (< (- coord-to offset) 0)                ;; cursor overflow left
-            (> (- coord-to offset) (:width my-rect)) ;; cursor overflow right
+            (< (- coord-to offset) 0)                        ;; cursor overflow left
+            (> (- coord-to offset) (- rect-width padding-h)) ;; cursor overflow right
             (< offset min-offset)
-            (> offset max-offset))                   ;; hanging right boundary
+            (> offset max-offset))                           ;; hanging right boundary
       (protocols/-set! text-field :offset
-        (-> (- coord-to (/ (:width my-rect) 2))
+        (-> (- coord-to (/ rect-width 2))
           (core/clamp min-offset max-offset)
           (math/round))))))
 
@@ -394,6 +393,8 @@
                           ^Paint fill-selection
                           cursor-w
                           padding-h
+                          padding-top
+                          padding-bottom
                           ^:mut           offset
                           ^:mut ^String   line-text
                           ^:mut ^TextLine line
@@ -408,8 +409,10 @@
     (IPoint.
       (min
         (:width cs)
-        (+ (.getWidth line) cursor-w (* 2 padding-h)))
-      (Math/ceil (.getCapHeight metrics))))
+        (+ padding-h (.getWidth line) cursor-w padding-h))
+      (+ (Math/ceil (.getCapHeight metrics))
+        padding-top
+        padding-bottom)))
   
   ;       coord-to                        
   ; ├──────────────────┤                  
@@ -427,26 +430,22 @@
     (set! my-rect rect)
     (recalc-line! this)
     (let [{:keys [text from to]} @*state
-          baseline     (Math/ceil (.getCapHeight metrics))
-          ascent       (- (+ baseline (Math/ceil (.getAscent metrics))))
+          cap-height   (Math/ceil (.getCapHeight metrics))
+          ascent       (Math/ceil (- (- (.getAscent metrics)) cap-height))
           descent      (Math/ceil (.getDescent metrics))
+          baseline     (+ padding-top cap-height)
           selection?   (not= from to)
           coord-from   (.getCoordAtOffset line from)
           coord-to     (if (= from to)
                          coord-from
                          (.getCoordAtOffset line to))]      
       (canvas/with-canvas canvas
-        (canvas/clip-rect canvas
-          (Rect/makeXYWH
-            (:x rect)
-            (- (:y rect) ascent)
-            (:width rect)
-            (+ ascent baseline descent)))
+        (canvas/clip-rect canvas (.toRect ^IRect rect))
         (when selection?
           (canvas/draw-rect canvas
             (Rect/makeLTRB
               (+ (:x rect) (- offset) (min coord-from coord-to))
-              (- (:y rect) ascent)
+              (+ (:y rect) padding-top (- ascent))
               (+ (:x rect) (- offset) (max coord-from coord-to))
               (+ (:y rect) baseline descent))
             fill-selection))
@@ -455,7 +454,7 @@
           (canvas/draw-rect canvas
             (Rect/makeLTRB
               (+ (:x rect) (- offset) coord-to)
-              (- (:y rect) ascent)
+              (+ (:y rect) padding-top (- ascent))
               (+ (:x rect) (- offset) coord-to cursor-w)
               (+ (:y rect) baseline descent))
             fill-cursor)))))
@@ -530,7 +529,9 @@
         (= :text-input (:event event))
         (let [op     (if (= from to) :insert :replace)
               state' (swap! *state edit op (:text event))]
-          (not= op state))
+          (when (not= state state')
+            (update-offset! this)
+            true))
       
         ;; command
         (and (= :key (:event event)) (:pressed? event))
@@ -642,9 +643,17 @@
   ([*state]
    (text-field *state nil))
   ([*state opts]
-   (dynamic/dynamic ctx [cursor-w       (* 1 (:scale ctx))
-                         padding-h      (* (or (:padding-h opts) 0) (:scale ctx))
-                         font           ^Font  (or (:font opts) (:font-ui ctx))
+   (dynamic/dynamic ctx [^Font font     (or (:font opts) (:font-ui ctx))
+                         metrics        (.getMetrics font)
+                         cursor-w       (* 1 (:scale ctx))
+                         padding-h      (Math/ceil (* (or (:padding-h opts) 0) (:scale ctx)))
+                         padding-v      (or
+                                          (some-> (:padding-v opts) (* (:scale ctx)))
+                                          (max
+                                            (- (- (.getAscent metrics)) (.getCapHeight metrics))
+                                            (.getDescent metrics)))
+                         padding-top    (Math/ceil (or (some-> (:padding-top opts) (* (:scale ctx))) padding-v))
+                         padding-bottom (Math/ceil (or (some-> (:padding-bottom opts) (* (:scale ctx))) padding-v))
                          fill-text      ^Paint (or (:fill-text opts) (:fill-text ctx))
                          fill-cursor    ^Paint (or (:fill-cursor opts) (:fill-cursor ctx))
                          fill-selection ^Paint (or (:fill-selection opts) (:fill-selection ctx))]
@@ -652,13 +661,15 @@
        (->TextField
          *state
          font
-         (.getMetrics ^Font font)
+         metrics
          features
          fill-text
          fill-cursor
          fill-selection
          cursor-w
          padding-h
+         padding-top
+         padding-bottom
          (- padding-h)
          nil      ; line-text
          nil      ; line

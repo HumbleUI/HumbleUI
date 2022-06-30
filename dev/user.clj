@@ -90,7 +90,8 @@
 (defn on-paint [window canvas]
   (canvas/clear canvas 0xFFF6F6F6)
   (let [bounds (window/content-rect window)
-        ctx    {:scale (window/scale window)}]
+        ctx    {:window window
+                :scale  (window/scale window)}]
     (profile/reset)
     ; (profile/measure "frame"
     (core/draw app ctx (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
