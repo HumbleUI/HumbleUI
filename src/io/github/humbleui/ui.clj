@@ -545,7 +545,7 @@
 
 ;; hoverable
 
-(core/deftype+ Hoverable [child ^:mut child-rect ^:mut hovered?]
+(core/deftype+ Hoverable [on-hover child ^:mut child-rect ^:mut hovered?]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
@@ -561,6 +561,7 @@
       (when (= :mouse-move (:event event))
         (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
           (when (not= hovered? hovered?')
+            (when on-hover (on-hover))
             (set! hovered? hovered?')
             true)))))
   
@@ -568,8 +569,11 @@
   (close [_]
     (core/child-close child)))
 
-(defn hoverable [child]
-  (->Hoverable child nil false))
+(defn hoverable
+  ([child]
+   (->Hoverable nil child nil false))
+  ([on-hover child]
+   (->Hoverable on-hover child nil false)))
 
 
 ;; clickable
