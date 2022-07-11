@@ -585,7 +585,7 @@
   :on-out callbacks in an options map as the first argument. The callback
   functions take no arguments and ignore their return value."
   ([child]
-   (->Hoverable nil child nil false))
+   (->Hoverable nil nil child nil false))
   ([{:keys [on-hover on-out]} child]
    (->Hoverable on-hover on-out child nil false)))
 
