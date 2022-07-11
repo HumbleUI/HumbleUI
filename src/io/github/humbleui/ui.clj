@@ -545,7 +545,7 @@
 
 ;; hoverable
 
-(core/deftype+ Hoverable [on-hover child ^:mut child-rect ^:mut hovered?]
+(core/deftype+ Hoverable [on-hover on-out child ^:mut child-rect ^:mut hovered?]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
@@ -561,8 +561,10 @@
       (when (= :mouse-move (:event event))
         (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
           (when (not= hovered? hovered?')
-            (when on-hover (on-hover))
             (set! hovered? hovered?')
+            (if hovered?'
+              (when on-hover (on-hover))
+              (when on-out (on-out)))
             true)))))
   
   AutoCloseable
@@ -570,10 +572,22 @@
     (core/child-close child)))
 
 (defn hoverable
+  "Enable the child element to respond to mouse hover events.
+
+  If no callback, the event can still effect rendering through use of dynamic
+  context as follows:
+
+    (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
+       # here we know the hover state of the object
+       ...)
+
+  You can also respond to hover events by providing optional :on-hover and/or
+  :on-out callbacks in an options map as the first argument. The callback
+  functions take no arguments and ignore their return value."
   ([child]
    (->Hoverable nil child nil false))
-  ([on-hover child]
-   (->Hoverable on-hover child nil false)))
+  ([{:keys [on-hover on-out]} child]
+   (->Hoverable on-hover on-out child nil false)))
 
 
 ;; clickable
