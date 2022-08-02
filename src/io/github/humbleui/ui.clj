@@ -662,16 +662,27 @@
       (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
         (when (not= hovered? hovered?')
           (set! hovered? hovered?'))))
-    (if (= :mouse-scroll (:event event))
-      (or
-        (core/event-child child event)
-        (when hovered?
+    (cond
+      (= :mouse-scroll (:event event))
+      (when hovered?
+        (or
+          (core/event-child child event)
           (let [offset' (-> offset
                           (+ (:delta-y event))
                           (core/clamp (- (:height self-rect) (:height child-size)) 0))]
             (when (not= offset offset')
               (set! offset offset')
               true))))
+      
+      (= :mouse-button (:event event))
+      (when hovered?
+        (core/event-child child event))
+      
+      (= :mouse-move (:event event))
+      (when hovered?
+        (core/event-child child event))
+      
+      :else
       (core/event-child child event)))
   
   AutoCloseable
