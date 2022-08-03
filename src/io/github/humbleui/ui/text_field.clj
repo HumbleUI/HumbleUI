@@ -21,6 +21,8 @@
 
 (def double-click-threshold-ms 500)
 
+(def undo-stack-depth 100)
+
 (defn- ^BreakIterator char-iter [state]
   (or (:char-iter state)
     (doto (BreakIterator/makeCharacterInstance)
@@ -57,23 +59,16 @@
       :else
       (recur word-iter text pos'))))
 
-(defmulti edit (fn [state command arg] command))
+(defmulti -edit (fn [state command arg] command))
 
-(defmethod edit :insert [{:keys [text from to]} _ text']
+(defmethod -edit :insert [{:keys [text from to] :as state} _ text']
   (assert (= from to))
-  {:text (str (subs text 0 to) text' (subs text to))
-   :from (+ to (count text'))
-   :to   (+ to (count text'))})
+  {:text         (str (subs text 0 to) text' (subs text to))
+   :from         (+ to (count text'))
+   :to           (+ to (count text'))
+   :last-changed (+ to (count text'))})
   
-(defmethod edit :replace [{:keys [text from to]} _ text']
-  (assert (not= from to))
-  (let [left  (min from to)
-        right (max from to)]
-    {:text (str (subs text 0 left) text' (subs text right))
-     :from (+ left (count text'))
-     :to   (+ left (count text'))}))
-
-(defmethod edit :move-char-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-char-left [{:keys [text from to] :as state} _ _]
   (cond
     (not= from to)
     (assoc state
@@ -91,7 +86,7 @@
         :from      to'
         :to        to'))))
 
-(defmethod edit :move-char-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-char-right [{:keys [text from to] :as state} _ _]
   (cond
     (not= from to)
     (assoc state
@@ -109,7 +104,7 @@
         :from      to'
         :to        to'))))
 
-(defmethod edit :move-word-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-word-left [{:keys [text from to] :as state} _ _]
   (cond
     (not= from to)
     (recur
@@ -129,7 +124,7 @@
         :from      to'
         :to        to'))))
 
-(defmethod edit :move-word-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-word-right [{:keys [text from to] :as state} _ _]
   (cond
     (not= from to)
     (recur
@@ -149,17 +144,17 @@
         :from      to'
         :to        to'))))
 
-(defmethod edit :move-doc-start [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-doc-start [{:keys [text from to] :as state} _ _]
   (assoc state
     :from 0
     :to   0))
 
-(defmethod edit :move-doc-end [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-doc-end [{:keys [text from to] :as state} _ _]
   (assoc state
     :from (count text)
     :to   (count text)))
 
-(defmethod edit :expand-char-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-char-left [{:keys [text from to] :as state} _ _]
   (cond
     (= to 0)
     state
@@ -171,7 +166,7 @@
         :char-iter char-iter
         :to        to'))))
 
-(defmethod edit :expand-char-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-char-right [{:keys [text from to] :as state} _ _]
   (cond
     (= (count text) to)
     state
@@ -183,7 +178,7 @@
         :char-iter char-iter
         :to  to'))))
 
-(defmethod edit :expand-word-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-word-left [{:keys [text from to] :as state} _ _]
   (cond
     (= to 0)
     state
@@ -195,7 +190,7 @@
         :word-iter word-iter
         :to        to'))))
 
-(defmethod edit :expand-word-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-word-right [{:keys [text from to] :as state} _ _]
   (cond
     (= (count text) to)
     state
@@ -207,38 +202,39 @@
         :word-iter word-iter
         :to  to'))))
 
-
-(defmethod edit :expand-doc-start [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-doc-start [{:keys [text from to] :as state} _ _]
   (assoc state
     :from (if (= 0 from) 0 (max from to))
     :to   0))
 
-(defmethod edit :expand-doc-end [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-doc-end [{:keys [text from to] :as state} _ _]
   (assoc state
     :from (if (= (count text) from) (count text) (min from to))
     :to   (count text)))
 
-(defmethod edit :delete-char-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-char-left [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (> to 0)
     (let [char-iter (char-iter state)
           to'       (.preceding char-iter to)]
-      {:text      (str (subs text 0 to') (subs text to))
-       :from      to'
-       :to        to'})
+      {:text (str (subs text 0 to') (subs text to))
+       :from         to'
+       :to           to'
+       :last-changed to'})
     state))
 
-(defmethod edit :delete-char-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-char-right [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (< to (count text))
     (let [char-iter (char-iter state)
           to'       (.following char-iter to)]
-      {:text (str (subs text 0 to) (subs text to'))
-       :from to
-       :to   to})
+      {:text         (str (subs text 0 to) (subs text to'))
+       :from         to
+       :to           to
+       :last-changed to})
     state))
 
-(defmethod edit :delete-word-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-word-left [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (cond
     (= 0 to)
@@ -251,7 +247,7 @@
        :from to'
        :to   to'})))
 
-(defmethod edit :delete-word-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-word-right [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (cond
     (= (count text) to)
@@ -264,7 +260,7 @@
        :from to
        :to   to})))
 
-(defmethod edit :delete-doc-start [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-doc-start [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (> to 0)
     {:text (subs text to)
@@ -272,7 +268,7 @@
      :to   0}
     state))
 
-(defmethod edit :delete-doc-end [{:keys [text from to] :as state} _ _]
+(defmethod -edit :delete-doc-end [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (< to (count text))
     {:text (subs text 0 to)
@@ -280,13 +276,13 @@
      :to   to}
     state))
 
-(defmethod edit :kill [{:keys [text from to] :as state} _ _]
+(defmethod -edit :kill [{:keys [text from to] :as state} _ _]
   (assert (not= from to))
   {:text (str (subs text 0 (min from to)) (subs text (max from to)))
    :from (min from to)
    :to   (min from to)})
 
-(defmethod edit :transpose [{:keys [text from to] :as state} _ _]
+(defmethod -edit :transpose [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (cond
     (= to 0)
@@ -306,16 +302,16 @@
     
     (= to (count text))
     (-> state
-      (edit :move-char-left nil)
-      (edit :transpose nil))))
+      (-edit :move-char-left nil)
+      (-edit :transpose nil))))
 
-(defmethod edit :move-to-position [state _ pos']
+(defmethod -edit :move-to-position [state _ pos']
   (assert (<= 0 pos' (count (:text state))))
   (assoc state
     :from pos'
     :to   pos'))
 
-(defmethod edit :select-word [{:keys [text] :as state} _ pos']
+(defmethod -edit :select-word [{:keys [text] :as state} _ pos']
   (assert (<= 0 pos' (count text)))
   (let [word-iter (word-iter state)
         last? (= pos' (count text))
@@ -335,22 +331,68 @@
       :from (if (= BreakIterator/DONE from') 0 from')
       :to   (if (= BreakIterator/DONE to') (count text) to'))))
 
-(defmethod edit :select-all [{:keys [text from to] :as state} _ _]
+(defmethod -edit :select-all [{:keys [text from to] :as state} _ _]
   (assoc state
     :from 0
     :to   (count text)))
 
-(defmethod edit :copy [{:keys [text from to] :as state} _ _]
+(defmethod -edit :copy [{:keys [text from to] :as state} _ _]
   (assert (not= from to))
   (clipboard/set {:format :text/plain :text (subs text (min from to) (max from to))})
   state)  
 
-(defmethod edit :paste [{:keys [text from to] :as state} _ _]
+(defmethod -edit :paste [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (when-some [{paste :text} (clipboard/get :text/plain)]
     {:text (str (subs text 0 to) paste (subs text to))
      :from (+ to (count paste))
      :to   (+ to (count paste))}))
+
+(defmethod -edit :undo [{:keys [undo redo] :as state} _ _]
+  (if (empty? undo)
+    state
+    (let [state' (peek undo)]
+      {:text (:text state')
+       :from (:from state')
+       :to   (:to state')
+       :undo (pop undo)
+       :redo (conj (or redo []) (select-keys state [:text :from :to]))})))
+
+(defmethod -edit :redo [{:keys [undo redo] :as state} _ _]
+  (if (empty? redo)
+    state
+    (let [state' (peek redo)]
+      {:text (:text state')
+       :from (:from state')
+       :to   (:to state')
+       :undo (conj (or undo []) (select-keys state [:text :from :to]))
+       :redo (pop redo)})))
+
+(defn edit [state command arg]
+  (let [state' (-edit state command arg)]
+    (cond
+      (= (:text state) (:text state'))
+      state'
+      
+      (#{:undo :redo} command)
+      state'
+      
+      (and
+        (#{:insert :delete-char-left :delete-char-right} command)
+        (= (:to state) (:last-changed state)))
+      (-> state'
+        (dissoc :redo)
+        (assoc :undo (:undo state)))
+
+      :else
+      (let [undo   (:undo state [])
+            undo'  (if (>= (count undo) undo-stack-depth)
+                     (vec (next undo))
+                     undo)
+            undo'' (conj undo' (select-keys state [:text :from :to]))]
+      (-> state'
+        (dissoc :redo)
+        (assoc :undo undo''))))))
 
 (defn- recalc-line! [text-field]
   (let [{:keys [*state font features line-text line]} text-field
@@ -527,8 +569,9 @@
 
         ;; typing
         (= :text-input (:event event))
-        (let [op     (if (= from to) :insert :replace)
-              state' (swap! *state edit op (:text event))]
+        (let [state' (if (= from to)
+                       (swap! *state edit :insert (:text event))
+                       (swap! *state #(-> % (edit :kill nil) (edit :insert (:text event)))))]
           (when (not= state state')
             (update-offset! this)
             true))
@@ -545,7 +588,8 @@
               ops        (or
                            (core/when-case (and macos? cmd? shift?) key
                              :left  [:expand-doc-start]
-                             :right [:expand-doc-end])
+                             :right [:expand-doc-end]
+                             :z     [:redo])
                            
                            (core/when-case (and macos? option? shift?) key
                              :left  [:expand-word-left]
@@ -574,7 +618,8 @@
                              :a         [:select-all]
                              :backspace [:delete-doc-start]
                              :delete    [:delete-doc-end]
-                             :v         [:paste])
+                             :v         [:paste]
+                             :z         [:undo])
                            
                            (core/when-case (and macos? option?) key
                              :left      [:move-word-left]
@@ -616,8 +661,12 @@
                            (core/when-case (and macos? ctrl? (not selection?)) key
                              :t [:transpose])
 
+                           (core/when-case (and (not macos?) shift? ctrl?) key
+                             :z [:redo])
+                           
                            (core/when-case (and (not macos?) ctrl?) key
-                             :a [:select-all])
+                             :a [:select-all]
+                             :z [:undo])
                            
                            (core/when-case true key
                              :left      [:move-char-left]
