@@ -17,7 +17,7 @@
           (core/child-close child)
           (set! child child')))
       (core/measure child ctx cs)
-      (catch Exception e
+      (catch Throwable e
         (.printStackTrace e)
         cs)))
   
@@ -29,7 +29,7 @@
           (set! child child')))
       (set! child-rect rect)
       (core/draw-child child ctx child-rect canvas)
-      (catch Exception e
+      (catch Throwable e
         (.drawRect canvas (.toRect rect) (paint/fill 0xFFCC3333))
         (.printStackTrace e))))
   
