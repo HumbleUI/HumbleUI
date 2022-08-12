@@ -3,10 +3,10 @@
  {org.clojure/clojure                  {:mvn/version "1.11.1"}
   io.github.humbleui/types$clojure     {:mvn/version "0.1.2"}
   io.github.humbleui/jwm               {:mvn/version "0.4.4"   :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-windows     {:mvn/version "0.102.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-linux       {:mvn/version "0.102.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-x64   {:mvn/version "0.102.0" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.102.0" :exclusions [io.github.humbleui/types]}}
+  io.github.humbleui/skija-windows     {:mvn/version "0.105.0" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-linux       {:mvn/version "0.105.0" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-x64   {:mvn/version "0.105.0" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.105.0" :exclusions [io.github.humbleui/types]}}
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
