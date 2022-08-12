@@ -21,7 +21,7 @@
   #_(.matchFamiliesStyle (FontMgr/getDefault) (into-array String [".SF NS", "Helvetica Neue", "Arial"]) FontStyle/NORMAL)
   (Typeface/makeFromFile "dev/fonts/Inter-Regular.ttf"))
 
-(defonce *floating (atom false))
+(defonce *floating (atom true))
 
 (add-watch *floating ::window
   (fn [_ _ _ floating]
@@ -109,16 +109,17 @@
 (redraw)
 
 (defn on-event [window event]
-  (when-let [changed? (core/event app event)]
-    (window/request-frame window)))
+  (when-let [result (core/event app event)]
+    (window/request-frame window)
+    result))
 
 (defn make-window []
   (let [screen (last (app/screens))
         scale  (:scale screen)
-        width  (* 600 scale)
+        width  (* 400 scale)
         height (* 400 scale)
         area   (:work-area screen)
-        x      (:x area)
+        x      (-> (:width area) (- width))
         y      (-> (:height area) (- height) (/ 2) (+ (:y area)))
         window (window/make
                  {:on-close #(reset! *window nil)

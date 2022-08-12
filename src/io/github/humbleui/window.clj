@@ -4,9 +4,10 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.event :as event])
   (:import
-    [io.github.humbleui.jwm App MouseCursor Platform Window ZOrder]
+    [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
     [io.github.humbleui.skija Surface]
+    [io.github.humbleui.types IRect]
     [java.util.function Consumer]))
 
 (set! *warn-on-reflection* true)
@@ -23,49 +24,59 @@
    :on-event         (fn [window event])"
   [{:keys [on-close-request on-close on-screen-change on-resize on-paint on-event]
     :or {on-close-request close}}]
-  (let [window   (App/makeWindow)
-        layer    (condp = Platform/CURRENT
-                   Platform/MACOS   (LayerMetalSkija.)
-                   Platform/WINDOWS (LayerD3D12Skija.)
-                   Platform/X11     (LayerGLSkija.))
-        listener (reify Consumer
-                   (accept [this jwm-event]
-                     (let [e (event/event->map jwm-event)]
-                       (when on-event
-                         (on-event window e))
-                       
-                       (case (:event e)
-                         :window-close-request
-                         (when on-close-request
-                           (on-close-request window))
-                         
-                         :window-close
-                         (when on-close
-                           (on-close))
-                         
-                         :window-screen-change
-                         (when on-screen-change
-                           (on-screen-change window))
-                         
-                         :window-resize
-                         (when on-resize
-                           (on-resize window))
-                         
-                         :frame-skija
-                         (when on-paint
-                           (let [canvas (.getCanvas ^Surface (:surface e))
-                                 layer  (.save canvas)]
-                             (try
-                               (on-paint window canvas)
-                               (catch Exception e
-                                 (.printStackTrace e)
-                                 (.clear canvas (unchecked-int 0xFFCC3333)))
-                               (finally
-                                 (.restoreToCount canvas layer)))))
-                         
-                         nil))))]
+  (let [window       (App/makeWindow)
+        layer        (condp = Platform/CURRENT
+                       Platform/MACOS   (LayerMetalSkija.)
+                       Platform/WINDOWS (LayerD3D12Skija.)
+                       Platform/X11     (LayerGLSkija.))
+        listener     (reify Consumer
+                       (accept [this jwm-event]
+                         (let [e (event/event->map jwm-event)]
+                           (when on-event
+                             (on-event window e))
+                           
+                           (case (:event e)
+                             :window-close-request
+                             (when on-close-request
+                               (on-close-request window))
+                             
+                             :window-close
+                             (when on-close
+                               (on-close))
+                             
+                             :window-screen-change
+                             (when on-screen-change
+                               (on-screen-change window))
+                             
+                             :window-resize
+                             (when on-resize
+                               (on-resize window))
+                             
+                             :frame-skija
+                             (when on-paint
+                               (let [canvas (.getCanvas ^Surface (:surface e))
+                                     layer  (.save canvas)]
+                                 (try
+                                   (on-paint window canvas)
+                                   (catch Exception e
+                                     (.printStackTrace e)
+                                     (.clear canvas (unchecked-int 0xFFCC3333)))
+                                   (finally
+                                     (.restoreToCount canvas layer)))))
+                             
+                             nil))))
+        input-client (reify TextInputClient
+                       (getRectForMarkedRange [this selection-start selection-end]
+                         (or
+                           (when on-event
+                             (on-event window {:event           :get-rect-for-marked-range
+                                               :selection-start selection-start
+                                               :selection-end   selection-end}))
+                           (IRect/makeXYWH 0 0 0 0))))]
     (.setLayer window layer)
     (.setEventListener window listener)
+    ; (.setTextInputEnabled window true)
+    (.setTextInputClient window input-client)
     window))
 
 (defn scale [^Window window]
