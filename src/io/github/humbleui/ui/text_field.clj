@@ -12,10 +12,10 @@
   (:import
     [java.lang AutoCloseable]
     [java.io File]
-    [io.github.humbleui.types IPoint IRect Point Rect RRect]
     [io.github.humbleui.skija BreakIterator Canvas Data Font FontMetrics Image Paint Surface TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
-    [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
+    [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]
+    [io.github.humbleui.types IPoint IRect Point Rect RRect]))
 
 (set! *warn-on-reflection* true)
 
@@ -643,19 +643,30 @@
         
         ;; rect for composing region
         (= :get-rect-for-marked-range (:event event))
-        (when (and marked-from marked-to)
-          (let [cap-height (Math/ceil (.getCapHeight metrics))
-                ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
-                descent    (Math/ceil (.getDescent metrics))
-                baseline   (+ padding-top cap-height)
-                left       (.getCoordAtOffset line marked-from)
-                right      (.getCoordAtOffset line marked-to)]
-            (IRect/makeLTRB
-              (+ (:x my-rect) (- offset) left)
-              (+ (:y my-rect) padding-top (- ascent))
-              (+ (:x my-rect) (- offset) right)
-              (+ (:y my-rect) baseline descent))))
-      
+        (let [cap-height (Math/ceil (.getCapHeight metrics))
+              ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
+              descent    (Math/ceil (.getDescent metrics))
+              baseline   (+ padding-top cap-height)
+              left       (.getCoordAtOffset line (or marked-from from))
+              right      (if (= (or marked-to to) (or marked-from from))
+                           left
+                           (.getCoordAtOffset line (or marked-to to)))]
+          (IRect/makeLTRB
+            (+ (:x my-rect) (- offset) left)
+            (+ (:y my-rect) padding-top (- ascent))
+            (+ (:x my-rect) (- offset) right)
+            (+ (:y my-rect) baseline descent)))
+        
+        ;; emoji popup macOS
+        (and
+          (= :macos app/platform)
+          (= :key (:event event))
+          (:pressed? event)
+          (= :space (:key event)) 
+          ((:modifiers event) :mac-command)
+          ((:modifiers event) :control))
+        (app/open-symbols-palette)
+        
         ;; postpone command if marked
         (and (= :key (:event event)) (:pressed? event) (:marked-from state))
         (swap! *state assoc :postponed event)

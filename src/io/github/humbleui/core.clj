@@ -9,11 +9,14 @@
     [io.github.humbleui.skija Canvas]
     [io.github.humbleui.skija.shaper Shaper]
     [io.github.humbleui.types IPoint IRect]
-    [java.lang AutoCloseable]))
+    [java.lang AutoCloseable]
+    [java.util Timer TimerTask]))
 
 ;; state
 
 (def ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
+
+(defonce ^Timer timer (Timer. true))
 
 ;; macros
 
@@ -215,3 +218,21 @@
        
        (defn ~(symbol (str '-> name)) ~fields
          (new ~name ~@fields nil)))))
+
+(defn- ^TimerTask timer-task [f]
+  (proxy [TimerTask] []
+    (run []
+      (try
+        (f)
+        (catch Throwable t
+          (.printStackTrace t))))))
+
+(defn schedule
+  ([f ^long delay]
+   (let [t (timer-task f)]
+     (.schedule timer t delay)
+     #(.cancel t)))
+  ([f ^long delay ^long period]
+   (let [t (timer-task f)]
+     (.scheduleAtFixedRate timer t delay period)
+     #(.cancel t))))

@@ -37,3 +37,6 @@
 
 (defn screens []
   (mapv screen->clj (App/getScreens)))
+
+(defn open-symbols-palette []
+  (App/openSymbolsPalette))

@@ -17,17 +17,20 @@ def deps():
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--jwm-dir', default=None)
-  parser.add_argument('--jwm-version', default="0.4.4")
+  parser.add_argument('--jwm-version', default="0.4.5")
   parser.add_argument('--skija-dir', default=None)
   parser.add_argument('--skija-version', default='0.105.0')
   (args, _) = parser.parse_known_args()
 
   if args.jwm_dir:
+    jwm_dir = args.jwm_dir
+    if not os.path.isabs(jwm_dir):
+      jwm_dir = build_utils.execdir + '/' + jwm_dir
     deps += [
-      build_utils.execdir + '/' + args.jwm_dir + '/windows/build',
-      build_utils.execdir + '/' + args.jwm_dir + '/linux/build',
-      build_utils.execdir + '/' + args.jwm_dir + '/macos/build',
-      build_utils.execdir + '/' + args.jwm_dir + '/target/classes',
+      jwm_dir + '/windows/build',
+      jwm_dir + '/linux/build',
+      jwm_dir + '/macos/build',
+      jwm_dir + '/target/classes',
     ]
   else:
     deps += [
