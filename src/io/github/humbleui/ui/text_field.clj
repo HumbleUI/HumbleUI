@@ -8,7 +8,8 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.dynamic :as dynamic])
+    [io.github.humbleui.ui.dynamic :as dynamic]
+    [io.github.humbleui.window :as window])
   (:import
     [java.lang AutoCloseable]
     [java.io File]
@@ -22,6 +23,8 @@
 (def double-click-threshold-ms 500)
 
 (def undo-stack-depth 100)
+
+(def cursor-blink-interval 500)
 
 (defn- ^BreakIterator char-iter [state]
   (or (:char-iter state)
@@ -435,39 +438,40 @@
 
 (defn- update-offset! [text-field]
   (recalc-line! text-field)
-  (let [{:keys [*state cursor-w padding-h offset ^TextLine line my-rect]} text-field
+  (let [{:keys [*state cursor-w padding offset ^TextLine line my-rect]} text-field
+        [padding-left _ padding-right _] padding
         {:keys [text from to]} @*state
         coord-to    (.getCoordAtOffset line to)
         line-width  (.getWidth line)
         rect-width  (:width my-rect)
-        min-offset  (- padding-h)
+        min-offset  (- padding-left)
         max-offset  (-> line-width
                       (+ cursor-w)
-                      (+ padding-h)
+                      (+ padding-right)
                       (- rect-width)
                       (max min-offset))]
     (when (or
-            (< (- coord-to offset) 0)                        ;; cursor overflow left
-            (> (- coord-to offset) (- rect-width padding-h)) ;; cursor overflow right
+            (< (- coord-to offset) 0)                            ;; cursor overflow left
+            (> (- coord-to offset) (- rect-width padding-right)) ;; cursor overflow right
             (< offset min-offset)
-            (> offset max-offset))                           ;; hanging right boundary
+            (> offset max-offset))                               ;; hanging right boundary
       (protocols/-set! text-field :offset
         (-> (- coord-to (/ rect-width 2))
           (core/clamp min-offset max-offset)
           (math/round))))))
 
 (core/deftype+ TextField [*state
+                          window
                           ^Font font
-                          ^FontMetrics metrics
                           ^ShapingOptions features
                           ^Paint fill-text
                           ^Paint fill-cursor
                           ^Paint fill-selection
                           scale
                           cursor-w
-                          padding-h
-                          padding-top
-                          padding-bottom
+                          padding
+                          ^:mut           cursor-blink-pivot
+                          ^:mut           closed
                           ^:mut           offset
                           ^:mut ^String   line-text
                           ^:mut ^TextLine line
@@ -478,14 +482,14 @@
                           ^:mut           last-click]
   protocols/IComponent
   (-measure [this ctx cs]
-    (recalc-line! this)
-    (IPoint.
-      (min
-        (:width cs)
-        (+ padding-h (.getWidth line) cursor-w padding-h))
-      (+ (Math/ceil (.getCapHeight metrics))
-        padding-top
-        padding-bottom)))
+    (let [[padding-left padding-top padding-right padding-bottom] padding
+          metrics ^FontMetrics (.getMetrics font)]
+      (recalc-line! this)
+      (IPoint.
+        (min
+          (:width cs)
+          (+ padding-left (.getWidth line) cursor-w padding-right))
+        (+ (Math/ceil (.getCapHeight metrics)) padding-top padding-bottom))))
   
   ;       coord-to                        
   ; ├──────────────────┤                  
@@ -503,6 +507,8 @@
     (set! my-rect rect)
     (recalc-line! this)
     (let [{:keys [text from to marked-from marked-to]} @*state
+          [padding-left padding-top padding-right padding-bottom] padding
+          metrics      ^FontMetrics (.getMetrics font)
           cap-height   (Math/ceil (.getCapHeight metrics))
           ascent       (Math/ceil (- (- (.getAscent metrics)) cap-height))
           descent      (Math/ceil (.getDescent metrics))
@@ -542,13 +548,23 @@
         
         ;; cursor
         (when-not selection?
-          (canvas/draw-rect canvas
-            (Rect/makeLTRB
-              (+ (:x rect) (- offset) coord-to)
-              (+ (:y rect) padding-top (- ascent))
-              (+ (:x rect) (- offset) coord-to cursor-w)
-              (+ (:y rect) baseline descent))
-            fill-cursor)))))
+          (let [now (core/now)]
+            (when (or
+                    (<= cursor-blink-interval 0)
+                    (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))
+              (canvas/draw-rect canvas
+                (Rect/makeLTRB
+                  (+ (:x rect) (- offset) coord-to)
+                  (+ (:y rect) padding-top (- ascent))
+                  (+ (:x rect) (- offset) coord-to cursor-w)
+                  (+ (:y rect) baseline descent))
+                fill-cursor))
+            (when (> cursor-blink-interval 0)
+            ; (println "Frame" (- (core/now) cursor-blink-pivot) dt (<= dt cursor-blink-interval))
+              (core/schedule
+                #(window/request-frame window)
+                (- cursor-blink-interval
+                  (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
         
   (-event [this event]
     ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move :mouse-button} (:event event))
@@ -570,7 +586,8 @@
                        (- (:x my-rect))
                        (+ offset))
               offset (.getOffsetAtCoord line x)
-              now    (System/currentTimeMillis)]
+              now    (core/now)]
+          (set! cursor-blink-pivot now)
           (set! mouse-down? true)
           (set! last-click now)
           (if (<= (- now last-click) double-click-threshold-ms)
@@ -628,6 +645,7 @@
                                          true             (edit :insert (:text event))))]
           (core/eager-or
             (when (not= state state')
+              (set! cursor-blink-pivot (core/now))
               (update-offset! this)
               true)
             (when postponed
@@ -643,7 +661,9 @@
         
         ;; rect for composing region
         (= :get-rect-for-marked-range (:event event))
-        (let [cap-height (Math/ceil (.getCapHeight metrics))
+        (let [[_ padding-top _ _] padding
+              metrics    ^FontMetrics (.getMetrics font)
+              cap-height (Math/ceil (.getCapHeight metrics))
               ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
               descent    (Math/ceil (.getDescent metrics))
               baseline   (+ padding-top cap-height)
@@ -773,6 +793,7 @@
                              :backspace [:kill-marked :delete-char-left]
                              :delete    [:kill-marked :delete-char-right]))]
           (when (seq ops)
+            (set! cursor-blink-pivot (core/now))
             (let [state' (swap! *state (fn [state]
                                          (reduce #(edit %1 %2 nil) state ops)))]
               (when (not= state state')
@@ -781,6 +802,7 @@
   
   AutoCloseable
   (close [this]
+    (set! closed true)
     #_(.close line))) ; TODO
   
 (defn text-field
@@ -788,42 +810,43 @@
    (text-field *state nil))
   ([*state opts]
    (dynamic/dynamic ctx [^Font font     (or (:font opts) (:font-ui ctx))
-                         metrics        (.getMetrics font)
+                         window         (:window ctx)
                          scale          (:scale ctx)
                          cursor-w       (* 1 (:scale ctx))
-                         padding-h      (Math/ceil (* (or (:padding-h opts) 0) (:scale ctx)))
+                         padding-left   (Math/ceil (* (or (:padding-left opts) (:padding-h opts) 0) scale))
+                         padding-right  (Math/ceil (* (or (:padding-right opts) (:padding-h opts) 0) scale))
                          padding-v      (or
-                                          (some-> (:padding-v opts) (* (:scale ctx)))
+                                          (some-> (:padding-v opts) (* scale))
                                           (max
-                                            (- (- (.getAscent metrics)) (.getCapHeight metrics))
-                                            (.getDescent metrics)))
-                         padding-top    (Math/ceil (or (some-> (:padding-top opts) (* (:scale ctx))) padding-v))
-                         padding-bottom (Math/ceil (or (some-> (:padding-bottom opts) (* (:scale ctx))) padding-v))
+                                            (- (- (.getAscent (.getMetrics font))) (.getCapHeight (.getMetrics font)))
+                                            (.getDescent (.getMetrics font))))
+                         padding-top    (Math/ceil (or (some-> (:padding-top opts) (* scale)) padding-v))
+                         padding-bottom (Math/ceil (or (some-> (:padding-bottom opts) (* scale)) padding-v))
                          fill-text      ^Paint (or (:fill-text opts) (:fill-text ctx))
                          fill-cursor    ^Paint (or (:fill-cursor opts) (:fill-cursor ctx))
                          fill-selection ^Paint (or (:fill-selection opts) (:fill-selection ctx))]
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))]
        (->TextField
          *state
+         window
          font
-         metrics
          features
          fill-text
          fill-cursor
          fill-selection
          scale
          cursor-w
-         padding-h
-         padding-top
-         padding-bottom
-         (- padding-h)
-         nil      ; line-text
-         nil      ; line
-         nil      ; my-rect
-         (IPoint. 0 0) ; mouse-pos
-         false    ; mouse-down?
-         0        ; clicks
-         0        ; last-click
+         [padding-left padding-top padding-right padding-bottom]
+         (core/now)       ; cursor-blink-pivot
+         false            ; closed
+         (- padding-left) ; offset
+         nil              ; line-text
+         nil              ; line
+         nil              ; my-rect
+         (IPoint. 0 0)    ; mouse-pos
+         false            ; mouse-down?
+         0                ; clicks
+         0                ; last-click
          )))))
 
 ; (require 'user :reload)

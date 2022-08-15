@@ -236,3 +236,6 @@
    (let [t (timer-task f)]
      (.scheduleAtFixedRate timer t delay period)
      #(.cancel t))))
+
+(defn now []
+  (System/currentTimeMillis))

@@ -15,6 +15,9 @@
 (defn close [^Window window]
   (.close window))
 
+(defn closed? [^Window window]
+  (.isClosed window))
+
 (defn make
   ":on-close-request (fn [window])
    :on-close         (fn [])

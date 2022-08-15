@@ -23,12 +23,15 @@
 
 (defonce *floating (atom true))
 
+(defn set-floating! [window floating]
+  (when window
+    (if floating
+      (window/set-z-order window :floating)
+      (window/set-z-order window :normal))))
+
 (add-watch *floating ::window
   (fn [_ _ _ floating]
-    (when-some [window @*window]
-      (if floating
-        (window/set-z-order window :floating)
-        (window/set-z-order window :normal)))))
+    (set-floating! @*window floating)))
 
 (def examples
   ["align"
@@ -125,6 +128,7 @@
                  {:on-close #(reset! *window nil)
                   :on-paint #'on-paint
                   :on-event #'on-event})]
+    (set-floating! window @*floating)
     (window/set-title window "Humble UI 👋")
     (when (= :macos app/platform)
       (window/set-icon window "dev/images/icon.icns"))

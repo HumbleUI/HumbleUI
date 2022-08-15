@@ -1,5 +1,6 @@
 (ns examples.tree
   (:require
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -28,7 +29,7 @@
         (ui/padding 0 10 0 0
           (ui/with-bounds ::bounds
             (ui/dynamic ctx [rows (quot (:height (::bounds ctx)) (+ 11 leading))
-                             time (quot (System/currentTimeMillis) 1000)]
+                             time (quot (core/now) 1000)]
               (ui/column
                 (interpose
                   (ui/gap 0 1)
