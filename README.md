@@ -65,6 +65,8 @@ Posts:
 
 - [Thoughts on Clojure UI framework](https://tonsky.me/blog/clojure-ui/)
 - [Humble Chronicles: Decomposition](https://tonsky.me/blog/humble-decomposition/)
+- [Humble Chronicles: The Layout](https://tonsky.me/blog/humble-layout/)
+- [Humble Chronicles: Developer Experience](https://tonsky.me/blog/humble-dx/)
 
 Videos:
 
