@@ -12,6 +12,10 @@
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
 
+;; constants
+
+(def double-click-threshold-ms 500)
+
 ;; state
 
 (def ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))

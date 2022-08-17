@@ -20,11 +20,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def double-click-threshold-ms 500)
-
 (def undo-stack-depth 100)
-
-(def cursor-blink-interval 500)
 
 (defn- ^BreakIterator char-iter [state]
   (or (:char-iter state)
@@ -436,25 +432,25 @@
       (protocols/-set! text-field :line (.shapeLine core/shaper text' font features))))
   text-field)
 
-(defn- update-offset! [text-field]
-  (recalc-line! text-field)
-  (let [{:keys [*state cursor-w padding offset ^TextLine line my-rect]} text-field
-        [padding-left _ padding-right _] padding
+(defn- update-offset! [ctx text-field]
+  (let [{:keys [*state offset ^TextLine line my-rect]} text-field
         {:keys [text from to]} @*state
+        {:keys [scale]
+         :hui.text-field/keys [cursor-width padding-left padding-right]} ctx
         coord-to    (.getCoordAtOffset line to)
         line-width  (.getWidth line)
         rect-width  (:width my-rect)
-        min-offset  (- padding-left)
+        min-offset  (- (* scale padding-left))
         max-offset  (-> line-width
-                      (+ cursor-w)
-                      (+ padding-right)
+                      (+ (* scale cursor-width))
+                      (+ (* scale padding-right))
                       (- rect-width)
                       (max min-offset))]
     (when (or
-            (< (- coord-to offset) 0)                            ;; cursor overflow left
-            (> (- coord-to offset) (- rect-width padding-right)) ;; cursor overflow right
+            (< (- coord-to offset) 0) ;; cursor overflow left
+            (> (- coord-to offset) (- rect-width (* scale padding-right))) ;; cursor overflow right
             (< offset min-offset)
-            (> offset max-offset))                               ;; hanging right boundary
+            (> offset max-offset)) ;; hanging right boundary
       (protocols/-set! text-field :offset
         (-> (- coord-to (/ rect-width 2))
           (core/clamp min-offset max-offset)
@@ -464,14 +460,9 @@
                           window
                           ^Font font
                           ^ShapingOptions features
-                          ^Paint fill-text
-                          ^Paint fill-cursor
-                          ^Paint fill-selection
-                          scale
-                          cursor-w
-                          padding
+                          ^:mut           dirty?
                           ^:mut           cursor-blink-pivot
-                          ^:mut           closed
+                          ^:mut           closed?
                           ^:mut           offset
                           ^:mut ^String   line-text
                           ^:mut ^TextLine line
@@ -482,14 +473,24 @@
                           ^:mut           last-click]
   protocols/IComponent
   (-measure [this ctx cs]
-    (let [[padding-left padding-top padding-right padding-bottom] padding
+    (let [{:keys                [scale]
+           :hui.text-field/keys [cursor-width
+                                 padding-left
+                                 padding-top
+                                 padding-right 
+                                 padding-bottom]} ctx
           metrics ^FontMetrics (.getMetrics font)]
       (recalc-line! this)
       (IPoint.
         (min
           (:width cs)
-          (+ padding-left (.getWidth line) cursor-w padding-right))
-        (+ (Math/ceil (.getCapHeight metrics)) padding-top padding-bottom))))
+          (+ (* scale padding-left)
+            (.getWidth line) 
+            (* scale cursor-width)
+            (* scale padding-right)))
+        (+ (Math/round (.getCapHeight metrics))
+          (* scale padding-top)
+          (* scale padding-bottom)))))
   
   ;       coord-to                        
   ; ├──────────────────┤                  
@@ -506,18 +507,22 @@
   (-draw [this ctx rect ^Canvas canvas]
     (set! my-rect rect)
     (recalc-line! this)
+    (when dirty?
+      (update-offset! ctx this)
+      (set! dirty? false))
     (let [{:keys [text from to marked-from marked-to]} @*state
-          [padding-left padding-top padding-right padding-bottom] padding
-          metrics      ^FontMetrics (.getMetrics font)
-          cap-height   (Math/ceil (.getCapHeight metrics))
-          ascent       (Math/ceil (- (- (.getAscent metrics)) cap-height))
-          descent      (Math/ceil (.getDescent metrics))
-          baseline     (+ padding-top cap-height)
-          selection?   (not= from to)
-          coord-from   (.getCoordAtOffset line from)
-          coord-to     (if (= from to)
-                         coord-from
-                         (.getCoordAtOffset line to))]      
+          {:keys [scale]
+           :hui.text-field/keys [padding-top]} ctx
+          metrics    ^FontMetrics (.getMetrics font)
+          cap-height (Math/round (.getCapHeight metrics))
+          ascent     (Math/ceil (- (- (.getAscent metrics)) (.getCapHeight metrics)))
+          descent    (Math/ceil (.getDescent metrics))
+          baseline   (+ (* scale padding-top) cap-height)
+          selection? (not= from to)
+          coord-from (Math/round (.getCoordAtOffset line from))
+          coord-to   (if (= from to)
+                       coord-from
+                       (Math/round (.getCoordAtOffset line to)))]
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas (.toRect ^IRect rect))
         
@@ -526,13 +531,16 @@
           (canvas/draw-rect canvas
             (Rect/makeLTRB
               (+ (:x rect) (- offset) (min coord-from coord-to))
-              (+ (:y rect) padding-top (- ascent))
+              (+ (:y rect) (* scale padding-top) (- ascent))
               (+ (:x rect) (- offset) (max coord-from coord-to))
               (+ (:y rect) baseline descent))
-            fill-selection))
+            (:hui.text-field/fill-selection ctx)))
         
         ;; text
-        (.drawTextLine canvas line (+ (:x rect) (- offset)) (+ (:y rect) baseline) fill-text)
+        (.drawTextLine canvas line
+          (+ (:x rect) (- offset))
+          (+ (:y rect) baseline)
+          (:hui.text-field/fill-text ctx))
         
         ;; composing region
         (when (and marked-from marked-to)
@@ -544,21 +552,25 @@
                 (+ (:y rect) baseline (* 1 scale))
                 (+ (:x rect) (- offset) right)
                 (+ (:y rect) baseline (* 2 scale)))
-              fill-cursor)))
+              (:hui.text-field/fill-text ctx))))
         
         ;; cursor
         (when-not selection?
-          (let [now (core/now)]
+          (let [now                   (core/now)
+                cursor-width          (* scale (:hui.text-field/cursor-width ctx))
+                cursor-left           (quot cursor-width 2)
+                cursor-right          (- cursor-width cursor-left)
+                cursor-blink-interval (:hui.text-field/cursor-blink-interval ctx)]
             (when (or
                     (<= cursor-blink-interval 0)
                     (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))
               (canvas/draw-rect canvas
                 (Rect/makeLTRB
-                  (+ (:x rect) (- offset) coord-to)
-                  (+ (:y rect) padding-top (- ascent))
-                  (+ (:x rect) (- offset) coord-to cursor-w)
+                  (+ (:x rect) (- offset) coord-to (- cursor-left))
+                  (+ (:y rect) (* scale padding-top) (- ascent))
+                  (+ (:x rect) (- offset) coord-to cursor-right)
                   (+ (:y rect) baseline descent))
-                fill-cursor))
+                (:hui.text-field/fill-cursor ctx)))
             (when (> cursor-blink-interval 0)
             ; (println "Frame" (- (core/now) cursor-blink-pivot) dt (<= dt cursor-blink-interval))
               (core/schedule
@@ -590,7 +602,7 @@
           (set! cursor-blink-pivot now)
           (set! mouse-down? true)
           (set! last-click now)
-          (if (<= (- now last-click) double-click-threshold-ms)
+          (if (<= (- now last-click) core/double-click-threshold-ms)
             (do
               (set! clicks (inc clicks))
               (set! last-click now))
@@ -646,7 +658,7 @@
           (core/eager-or
             (when (not= state state')
               (set! cursor-blink-pivot (core/now))
-              (update-offset! this)
+              (set! dirty? true)
               true)
             (when postponed
               (protocols/-event this postponed))))
@@ -661,7 +673,8 @@
         
         ;; rect for composing region
         (= :get-rect-for-marked-range (:event event))
-        (let [[_ padding-top _ _] padding
+        (let [; [_ padding-top _ _] padding
+              padding-top 0 ;; FIXME
               metrics    ^FontMetrics (.getMetrics font)
               cap-height (Math/ceil (.getCapHeight metrics))
               ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
@@ -797,49 +810,31 @@
             (let [state' (swap! *state (fn [state]
                                          (reduce #(edit %1 %2 nil) state ops)))]
               (when (not= state state')
-                (update-offset! this)
+                (set! dirty? true)
                 true)))))))
   
   AutoCloseable
   (close [this]
-    (set! closed true)
+    (set! closed? true)
     #_(.close line))) ; TODO
   
 (defn text-field
   ([*state]
    (text-field *state nil))
   ([*state opts]
-   (dynamic/dynamic ctx [^Font font     (or (:font opts) (:font-ui ctx))
-                         window         (:window ctx)
-                         scale          (:scale ctx)
-                         cursor-w       (* 1 (:scale ctx))
-                         padding-left   (Math/ceil (* (or (:padding-left opts) (:padding-h opts) 0) scale))
-                         padding-right  (Math/ceil (* (or (:padding-right opts) (:padding-h opts) 0) scale))
-                         padding-v      (or
-                                          (some-> (:padding-v opts) (* scale))
-                                          (max
-                                            (- (- (.getAscent (.getMetrics font))) (.getCapHeight (.getMetrics font)))
-                                            (.getDescent (.getMetrics font))))
-                         padding-top    (Math/ceil (or (some-> (:padding-top opts) (* scale)) padding-v))
-                         padding-bottom (Math/ceil (or (some-> (:padding-bottom opts) (* scale)) padding-v))
-                         fill-text      ^Paint (or (:fill-text opts) (:fill-text ctx))
-                         fill-cursor    ^Paint (or (:fill-cursor opts) (:fill-cursor ctx))
-                         fill-selection ^Paint (or (:fill-selection opts) (:fill-selection ctx))]
-     (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))]
+   (dynamic/dynamic ctx [^Font font (:hui.text-field/font ctx)
+                         window     (:window ctx)
+                         features   (:features opts)]
+     (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
        (->TextField
          *state
          window
          font
          features
-         fill-text
-         fill-cursor
-         fill-selection
-         scale
-         cursor-w
-         [padding-left padding-top padding-right padding-bottom]
+         true             ; dirty?
          (core/now)       ; cursor-blink-pivot
-         false            ; closed
-         (- padding-left) ; offset
+         false            ; closed?
+         0                ; offset
          nil              ; line-text
          nil              ; line
          nil              ; my-rect

@@ -2,7 +2,9 @@
   (:refer-clojure :exclude [key type])
   (:require
     [clojure.string :as str]
+    [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Font Paint Typeface]))
@@ -10,7 +12,7 @@
 (set! *warn-on-reflection* true)
 
 (def ^Typeface typeface
-  (Typeface/makeFromFile "dev/fonts/Inter-Bold.ttf"))
+  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
 
 (def padding 4)
 
@@ -173,12 +175,12 @@
   (ui/on-key-down #(type! (:key %))
     (ui/on-text-input #(type! (str/upper-case %))
       (ui/padding padding padding
-        (ui/dynamic ctx [{:keys [scale face-ui]} ctx]
-          (let [font-small (Font. typeface (float (* scale 13)))
-                fill-black (paint/fill 0xFF000000)
+        (ui/dynamic ctx [{:keys [scale]} ctx]
+          (let [font-small      (font/make-with-cap-height typeface (float (* scale 9)))
+                fill-black      (paint/fill 0xFF000000)
                 fill-light-gray (paint/fill 0xFFD4D6DA)]
             (ui/with-context
-              {:font-large      (Font. typeface (float (* scale 26)))
+              {:font-large      (font/make-with-cap-height typeface (float (* scale 18)))
                :font-small      font-small
                :fill-white      (paint/fill 0xFFFFFFFF)
                :fill-black      fill-black

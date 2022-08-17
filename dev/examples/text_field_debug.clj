@@ -31,7 +31,15 @@
     (ui/column
       (ui/with-cursor :ibeam
         (ui/fill (paint/fill 0xFFFFFFFF)
-          (ui/text-field *state {:padding-h 5 :padding-v 10})))
+          (ui/dynamic ctx [scale (:scale ctx)]
+            (ui/with-context
+              {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
+               :hui.text-field/cursor-width   2
+               :hui.text-field/padding-top    10
+               :hui.text-field/padding-bottom 10
+               :hui.text-field/padding-left   5
+               :hui.text-field/padding-right  5}
+              (ui/text-field *state )))))
       (ui/gap 0 10)
       (ui/vscrollbar
         (ui/vscroll

@@ -9,7 +9,9 @@
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.text-field :as text-field])
+    [io.github.humbleui.ui.text-field :as text-field]
+    [io.github.humbleui.ui.theme :as theme]
+    [io.github.humbleui.ui.with-context :as with-context])
   (:import
     [java.lang AutoCloseable]
     [java.io File]
@@ -25,26 +27,11 @@
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
 
+
 ;; with-context
 
-(core/deftype+ WithContext [data child ^:mut child-rect]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child (merge ctx data) cs))
-  
-  (-draw [_ ctx rect ^Canvas canvas]
-    (set! child-rect rect)
-    (core/draw-child child (merge ctx data) child-rect canvas))
-  
-  (-event [_ event]
-    (core/event-child child event))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn with-context [data child]
-  (->WithContext data child nil))
+(def ^{:arglists '([data child])} with-context  
+  with-context/with-context)
 
 
 ;; with-bounds
@@ -891,10 +878,17 @@
             label))))))
 
 
+;; theme
+
+(def ^{:arglists '([comp] [opts comp])} default-theme
+  theme/default-theme)
+
+
 ;; text field
 
 (def ^{:arglists '([*state] [*state opts])} text-field
   text-field/text-field)
+
 
 ;; tooltip
 (core/deftype+ RelativeRect [relative child opts ^:mut rel-rect ^:mut child-rect]
