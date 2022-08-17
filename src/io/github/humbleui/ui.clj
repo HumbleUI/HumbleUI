@@ -49,8 +49,8 @@
           height (-> (:height rect) (/ (:scale ctx)))]
       (core/draw-child child (assoc ctx key (IPoint. width height)) child-rect canvas)))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -72,7 +72,7 @@
   (-draw [_ ctx rect ^Canvas canvas]
     (.drawTextLine canvas line (:x rect) (+ (:y rect) (Math/ceil (.getCapHeight metrics))) paint))
   
-  (-event [_ event])
+  (-event [_ ctx event])
   
   AutoCloseable
   (close [_]
@@ -98,7 +98,7 @@
       (IPoint. (math/ceil (* scale width)) (math/ceil (* scale height))))) 
   (-draw [_ ctx rect canvas])
   
-  (-event [_ event]))
+  (-event [_ ctx event]))
 
 (defn gap [width height]
   (->Gap width height))
@@ -120,8 +120,8 @@
       (set! child-rect (IRect/makeXYWH left (:y rect) (:width child-size) (:height rect)))
       (core/draw-child child ctx child-rect canvas)))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -148,8 +148,8 @@
       (set! child-rect (IRect/makeXYWH (:x rect) top (:width rect) (:height child-size)))
       (core/draw-child child ctx child-rect canvas)))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -173,8 +173,8 @@
     (set! child-rect rect)
     (core/draw-child child ctx child-rect canvas))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -197,8 +197,8 @@
     (set! child-rect rect)
     (core/draw child ctx rect canvas))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -245,10 +245,10 @@
               (next children)))
           (set! child-rects rects)))))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (reduce
       (fn [acc [_ _ child]]
-        (core/eager-or acc (core/event-child child event)))
+        (core/eager-or acc (core/event-child child ctx event)))
       false
       children))
   
@@ -307,10 +307,10 @@
               (next children)))
           (set! child-rects rects)))))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (reduce
       (fn [acc [_ _ child]]
-        (core/eager-or acc (core/event-child child event) false))
+        (core/eager-or acc (core/event-child child ctx event) false))
       false
       children))
   
@@ -349,8 +349,8 @@
       (set! child-rect (IRect/makeXYWH (+ (:x rect) left') (+ (:y rect) top') (max 0 width') (max 0 height')))
       (core/draw-child child ctx child-rect canvas)))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -374,8 +374,8 @@
     (.drawRect canvas (.toRect rect) paint)
     (core/draw-child child ctx child-rect canvas))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -398,8 +398,8 @@
       (canvas/clip-rect canvas rect)
       (core/draw child ctx child-rect canvas)))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -419,7 +419,7 @@
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
     (.drawImageRect canvas img (.toRect rect)))
   
-  (-event [_ event])
+  (-event [_ ctx event])
   
   AutoCloseable
   (close [_]
@@ -457,7 +457,7 @@
       
       (.drawImageRect canvas image (.toRect rect))))
   
-  (-event [_ event])
+  (-event [_ ctx event])
   
   AutoCloseable
   (close [_]
@@ -519,8 +519,8 @@
         (finally
           (.restoreToCount canvas layer)))))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -542,9 +542,9 @@
     (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))]
       (core/draw-child child ctx' child-rect canvas)))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (core/eager-or
-      (core/event-child child event)
+      (core/event-child child ctx event)
       (when (= :mouse-move (:event event))
         (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
           (when (not= hovered? hovered?')
@@ -591,16 +591,16 @@
                  (and pressed? hovered?) (assoc :hui/active? true))]
       (core/draw-child child ctx' child-rect canvas)))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (core/eager-or
       (when (= :mouse-move (:event event))
         (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))
-      (if (= :mouse-button (:event event))
-        (or
-          (core/event-child child event)
+      (or
+        (core/event-child child ctx event)
+        (when (= :mouse-button (:event event))
           (let [pressed?' (if (:pressed? event)
                             hovered?
                             (do
@@ -609,8 +609,7 @@
                               false))]
             (when (not= pressed? pressed?')
               (set! pressed? pressed?')
-              true)))
-        (core/event-child child event))))
+              true))))))
   
   AutoCloseable
   (close [_]
@@ -644,7 +643,7 @@
         (finally
           (.restoreToCount canvas layer)))))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (when (= :mouse-move (:event event))
       (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
         (when (not= hovered? hovered?')
@@ -653,7 +652,7 @@
       (= :mouse-scroll (:event event))
       (when hovered?
         (or
-          (core/event-child child event)
+          (core/event-child child ctx event)
           (let [offset' (-> offset
                           (+ (:delta-y event))
                           (core/clamp (- (:height self-rect) (:height child-size)) 0))]
@@ -663,13 +662,13 @@
       
       (= :mouse-button (:event event))
       (when hovered?
-        (core/event-child child event))
+        (core/event-child child ctx event))
       
       (= :mouse-move (:event event))
-      (core/event-child child event)
+      (core/event-child child ctx event)
       
       :else
-      (core/event-child child event)))
+      (core/event-child child ctx event)))
   
   AutoCloseable
   (close [_]
@@ -714,8 +713,8 @@
         (.drawRRect canvas track fill-track)
         (.drawRRect canvas thumb fill-thumb))))
 
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]
@@ -747,7 +746,7 @@
           (finally
             (.restoreToCount canvas layer))))))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (when on-event
       (on-event event))))
 
@@ -766,13 +765,13 @@
     (set! child-rect rect)
     (core/draw-child child ctx rect canvas))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (core/eager-or
       (when (and
               (= :key (:event event))
               (= pressed (:pressed? event)))
         (callback event))
-      (core/event-child child event)))
+      (core/event-child child ctx event)))
   
   AutoCloseable
   (close [_]
@@ -796,11 +795,11 @@
     (set! child-rect rect)
     (core/draw-child child ctx rect canvas))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (core/eager-or
       (when (= :text-input (:event event))
         (callback (:text event)))
-      (core/event-child child event)))
+      (core/event-child child ctx event)))
   
   AutoCloseable
   (close [_]
@@ -925,8 +924,8 @@
       (core/draw-child child ctx child-rect canvas)
       (core/draw-child relative ctx rel-rect canvas)))
 
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
 
   AutoCloseable
   (close [_]
@@ -961,7 +960,7 @@
     (set! child-rect rect)
     (core/draw-child child ctx child-rect canvas))
   
-  (-event [_ event]
+  (-event [_ ctx event]
     (when (= :mouse-move (:event event))
       (let [was-inside? (.contains child-rect mouse-pos)
             mouse-pos'  (IPoint. (:x event) (:y event))
@@ -973,7 +972,7 @@
         (when (and was-inside? (not is-inside?))
           (window/set-cursor window :arrow))
         (set! mouse-pos mouse-pos')))
-    (core/event-child child event))
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]

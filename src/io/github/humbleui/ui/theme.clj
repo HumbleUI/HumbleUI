@@ -32,6 +32,7 @@
               :leading        leading
               :fill-text      fill-text
               :hui.text-field/font                  font-ui
+              :hui.text-field/font-features         []
               :hui.text-field/cursor-blink-interval 500
               :hui.text-field/fill-text             fill-text
               :hui.text-field/fill-cursor           fill-text

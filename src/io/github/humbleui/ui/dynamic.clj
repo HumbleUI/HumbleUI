@@ -33,8 +33,8 @@
         (.drawRect canvas (.toRect rect) (paint/fill 0xFFCC3333))
         (.printStackTrace e))))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
   
   AutoCloseable
   (close [_]

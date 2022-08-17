@@ -82,14 +82,16 @@
          (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
            ui))])))
 
+(defn ctx [window]
+  {:window window
+   :scale  (window/scale window)})
+
 (defn on-paint [window canvas]
   (canvas/clear canvas 0xFFF6F6F6)
-  (let [bounds (window/content-rect window)
-        ctx    {:window window
-                :scale  (window/scale window)}]
+  (let [bounds (window/content-rect window)]
     (profile/reset)
     ; (profile/measure "frame"
-    (core/draw app ctx (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
+    (core/draw app (ctx window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
     (profile/log)
     #_(window/request-frame window)))
 
@@ -103,24 +105,26 @@
 (redraw)
 
 (defn on-event [window event]
-  (when-let [result (core/event app event)]
+  (when-let [result (core/event app (ctx window) event)]
     (window/request-frame window)
     result))
 
 (defn make-window []
-  (let [screen (last (app/screens))
-        scale  (:scale screen)
-        width  (* 460 scale)
-        height (* 400 scale)
-        area   (:work-area screen)
-        x      (if (= 1 (count (app/screens)))
-                 (-> (:x area) (+ (:width area)) (- width))
-                 (-> (:x area)))
-        y      (-> (:y area) (+ (:height area)) (- height) (/ 2))
-        window (window/make
-                 {:on-close #(reset! *window nil)
-                  :on-paint #'on-paint
-                  :on-event #'on-event})]
+  (let [screens (app/screens)
+        multi?  (> (count screens) 1)
+        screen  (last screens)
+        scale   (:scale screen)
+        area    (:work-area screen)
+        width   (* (if multi? 600 460) scale)
+        height  (* 400 scale)
+        x       (if multi?
+                  (-> (:x area))
+                  (-> (:x area) (+ (:width area)) (- width)))
+        y       (-> (:y area) (+ (:height area)) (- height) (/ 2))
+        window  (window/make
+                  {:on-close #(reset! *window nil)
+                   :on-paint #'on-paint
+                   :on-event #'on-event})]
     (set-floating! window @*floating)
     (window/set-title window "Humble UI 👋")
     (when (= :macos app/platform)

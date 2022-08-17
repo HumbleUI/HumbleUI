@@ -457,7 +457,6 @@
           (math/round))))))
 
 (core/deftype+ TextField [*state
-                          window
                           ^Font font
                           ^ShapingOptions features
                           ^:mut           dirty?
@@ -574,11 +573,11 @@
             (when (> cursor-blink-interval 0)
             ; (println "Frame" (- (core/now) cursor-blink-pivot) dt (<= dt cursor-blink-interval))
               (core/schedule
-                #(window/request-frame window)
+                #(window/request-frame (:window ctx))
                 (- cursor-blink-interval
                   (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
         
-  (-event [this event]
+  (-event [this ctx event]
     ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move :mouse-button} (:event event))
     ;   (println event))
     (let [state @*state
@@ -661,7 +660,7 @@
               (set! dirty? true)
               true)
             (when postponed
-              (protocols/-event this postponed))))
+              (protocols/-event this ctx postponed))))
         
         ;; composing region
         (= :text-input-marked (:event event))
@@ -700,7 +699,8 @@
           ((:modifiers event) :control))
         (app/open-symbols-palette)
         
-        ;; postpone command if marked
+        ;; when exiting composing region with left/right/backspace/delete,
+        ;; key down comes before text input, and we need it after
         (and (= :key (:event event)) (:pressed? event) (:marked-from state))
         (swap! *state assoc :postponed event)
         
@@ -823,12 +823,10 @@
    (text-field *state nil))
   ([*state opts]
    (dynamic/dynamic ctx [^Font font (:hui.text-field/font ctx)
-                         window     (:window ctx)
-                         features   (:features opts)]
+                         features   (:hui.text-field/font-features ctx)]
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
        (->TextField
          *state
-         window
          font
          features
          true             ; dirty?

@@ -14,8 +14,8 @@
     (set! child-rect rect)
     (core/draw-child child (merge ctx data) child-rect canvas))
   
-  (-event [_ event]
-    (core/event-child child event))
+  (-event [_ ctx event]
+    (core/event-child child (merge ctx data) event))
   
   AutoCloseable
   (close [_]

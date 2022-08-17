@@ -151,12 +151,12 @@
         (finally
           (.restoreToCount canvas count))))))
 
-(defn event [comp event]
-  (protocols/-event comp event))
+(defn event [comp ctx event]
+  (protocols/-event comp ctx event))
 
-(defn event-child [comp event]
+(defn event-child [comp ctx event]
   (when comp
-    (protocols/-event comp event)))
+    (protocols/-event comp ctx event)))
 
 (defn child-close [child]
   (when (instance? AutoCloseable child)
