@@ -113,8 +113,10 @@
         width  (* 460 scale)
         height (* 400 scale)
         area   (:work-area screen)
-        x      (-> (:width area) (- width))
-        y      (-> (:height area) (- height) (/ 2) (+ (:y area)))
+        x      (if (= 1 (count (app/screens)))
+                 (-> (:x area) (+ (:width area)) (- width))
+                 (-> (:x area)))
+        y      (-> (:y area) (+ (:height area)) (- height) (/ 2))
         window (window/make
                  {:on-close #(reset! *window nil)
                   :on-paint #'on-paint

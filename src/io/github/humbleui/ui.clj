@@ -666,8 +666,7 @@
         (core/event-child child event))
       
       (= :mouse-move (:event event))
-      (when hovered?
-        (core/event-child child event))
+      (core/event-child child event)
       
       :else
       (core/event-child child event)))
