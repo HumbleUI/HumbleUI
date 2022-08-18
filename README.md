@@ -2,6 +2,10 @@
   <img src="./extras/logo.png" height="400">
 </p>
 
+> “When you design a new user interface, you have to start off humbly”
+
+_— Steve Jobs presenting Aqua_
+
 Humble UI is a desktop UI framework for Clojure. No Electron. No JavaScript. Only JVM and native code.
 
 ## Goal
