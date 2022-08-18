@@ -50,10 +50,11 @@
 (defonce *example (atom "text-field-debug"))
 
 (def app
-  (ui/default-theme {;; :font-size 16
-                     ;; :leading 100
-                     ;; :fill-text (paint/fill 0xFFCC3333)
-                     ;; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
+  (ui/default-theme {; :font-size 13
+                     ; :cap-height 10
+                     ; :leading 100
+                     ; :fill-text (paint/fill 0xFFCC3333)
+                     ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
                      }
     (ui/row
       (ui/column
@@ -116,7 +117,7 @@
         scale   (:scale screen)
         area    (:work-area screen)
         width   (* (if multi? 600 460) scale)
-        height  (* 400 scale)
+        height  (* (if multi? 800 400) scale)
         x       (if multi?
                   (-> (:x area))
                   (-> (:x area) (+ (:width area)) (- width)))

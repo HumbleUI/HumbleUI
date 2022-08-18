@@ -20,29 +20,26 @@
      (dynamic/dynamic ctx [scale (:scale ctx)]
        (let [font-ui    (if-some [size (:font-size opts)]
                           (font/make-with-size face-ui (* scale size))
-                          (font/make-with-cap-height face-ui (* scale (or (:cap-height opts) 9))))
+                          (font/make-with-cap-height face-ui (* scale (or (:cap-height opts) 10))))
              cap-height (:cap-height (font/metrics font-ui))
              font-size  (font/size font-ui)
              leading    (or (:leading opts) (-> cap-height Math/round (/ scale) float))
-             fill-text  (or (:fill-text opts) (paint/fill 0xFF000000))]
-         (with-context/with-context
-           (merge
-             {:face-ui        face-ui
-              :font-ui        font-ui
-              :leading        leading
-              :fill-text      fill-text
-              :hui.text-field/font                  font-ui
-              :hui.text-field/font-features         []
-              :hui.text-field/cursor-blink-interval 500
-              :hui.text-field/fill-text             fill-text
-              :hui.text-field/fill-cursor           fill-text
-              :hui.text-field/fill-selection        (paint/fill 0xFFB1D7FF)
-              :hui.text-field/cursor-width          (float 1)
-              :hui.text-field/padding-top           (-> cap-height (/ 3) Math/round (/ scale) float)
-              :hui.text-field/padding-bottom        (-> cap-height (/ 3) Math/round (/ scale) float)
-              :hui.text-field/padding-left          (float 0)
-              :hui.text-field/padding-right         (float 0)}
-             opts)
-           comp))))))
+             fill-text  (or (:fill-text opts) (paint/fill 0xFF000000))
+             theme      {:face-ui        face-ui
+                         :font-ui        font-ui
+                         :leading        leading
+                         :fill-text      fill-text
+                         :hui.text-field/font                  font-ui
+                         :hui.text-field/font-features         []
+                         :hui.text-field/cursor-blink-interval 500
+                         :hui.text-field/fill-text             fill-text
+                         :hui.text-field/fill-cursor           fill-text
+                         :hui.text-field/fill-selection        (paint/fill 0xFFB1D7FF)
+                         :hui.text-field/cursor-width          (float 1)
+                         :hui.text-field/padding-top           (-> cap-height (/ 3) Math/round (/ scale) float)
+                         :hui.text-field/padding-bottom        (-> cap-height (/ 3) Math/round (/ scale) float)
+                         :hui.text-field/padding-left          (float 0)
+                         :hui.text-field/padding-right         (float 0)}]
+         (with-context/with-context (core/merge-some theme opts) comp))))))
 
 ; (require 'user :reload)

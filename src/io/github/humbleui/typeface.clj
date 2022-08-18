@@ -5,6 +5,8 @@
     [java.io Writer]
     [io.github.humbleui.skija Data Typeface]))
 
+(set! *warn-on-reflection* true)
+
 (defn ^Typeface make-from-data
   ([^Data data]
    (Typeface/makeFromFile data 0))

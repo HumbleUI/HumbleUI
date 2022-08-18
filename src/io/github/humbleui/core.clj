@@ -12,6 +12,8 @@
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
 
+(set! *warn-on-reflection* true)
+
 ;; constants
 
 (def double-click-threshold-ms 500)
@@ -112,6 +114,14 @@
 
 (defn zip [& xs]
   (apply map vector xs))
+
+(defn conjv-limited [xs x limit]
+  (if (>= (count xs) limit)
+    (conj (vec (take (dec limit) xs)) x)
+    (conj (or xs []) x)))
+
+(defn merge-some [a b]
+  (merge-with #(or %2 %1) a b))
 
 (defn collect
   "Traverse `form` recursively, returnning a vector of elements that satisfy `pred`"

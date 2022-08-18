@@ -72,27 +72,29 @@
                   (<= to marked-from) to
                   (<= to marked-to)   marked-from
                   :else                 (- to (- marked-to marked-from)))]
-      {:text text'
-       :from from'   
-       :to   to'    
-       :last-changed to'})
+      (assoc state
+        :text        text'
+        :from        from'   
+        :to          to'
+        :marked-from nil
+        :marked-to   nil))
     state))
 
 (defmethod -edit :insert [{:keys [text from to marked-from marked-to] :as state} _ s]
   (assert (= from to))
-  {:text         (str (subs text 0 to) s (subs text to))
-   :from         (+ to (count s))
-   :to           (+ to (count s))
-   :last-changed (+ to (count s))})
+  (assoc state
+    :text (str (subs text 0 to) s (subs text to))
+    :from (+ to (count s))
+    :to   (+ to (count s))))
 
 (defmethod -edit :insert-marked [{:keys [text from to] :as state} _ {s :text left :selection-start right :selection-end}]
   (assert (= from to))
-  {:text         (str (subs text 0 to) s (subs text to))
-   :from         (+ to left)
-   :to           (+ to right)
-   :marked-from  to
-   :marked-to    (+ to (count s))
-   :last-changed (+ to (count s))})
+  (assoc state
+    :text        (str (subs text 0 to) s (subs text to))
+    :from        (+ to left)
+    :to          (+ to right)
+    :marked-from to
+    :marked-to   (+ to (count s))))
 
 (defmethod -edit :move-char-left [{:keys [text from to] :as state} _ _]
   (cond
@@ -108,9 +110,9 @@
     (let [char-iter (char-iter state)
           to'       (.preceding char-iter to)]
       (assoc state
-        :char-iter char-iter
         :from      to'
-        :to        to'))))
+        :to        to'
+        :char-iter char-iter))))
 
 (defmethod -edit :move-char-right [{:keys [text from to] :as state} _ _]
   (cond
@@ -126,9 +128,9 @@
     (let [char-iter (char-iter state)
           to'       (.following char-iter to)]
       (assoc state
-        :char-iter char-iter
         :from      to'
-        :to        to'))))
+        :to        to'
+        :char-iter char-iter))))
 
 (defmethod -edit :move-word-left [{:keys [text from to] :as state} _ _]
   (cond
@@ -146,9 +148,9 @@
     (let [word-iter (word-iter state)
           to'       (preceding-word word-iter text to)]
       (assoc state
-        :word-iter word-iter
         :from      to'
-        :to        to'))))
+        :to        to'
+        :word-iter word-iter))))
 
 (defmethod -edit :move-word-right [{:keys [text from to] :as state} _ _]
   (cond
@@ -166,9 +168,9 @@
     (let [word-iter (word-iter state)
           to'       (following-word word-iter text to)]
       (assoc state
-        :word-iter word-iter
         :from      to'
-        :to        to'))))
+        :to        to'
+        :word-iter word-iter))))
 
 (defmethod -edit :move-doc-start [{:keys [text from to] :as state} _ _]
   (assoc state
@@ -189,8 +191,8 @@
     (let [char-iter (char-iter state)
           to'       (.preceding char-iter to)]
       (assoc state
-        :char-iter char-iter
-        :to        to'))))
+        :to        to'
+        :char-iter char-iter))))
 
 (defmethod -edit :expand-char-right [{:keys [text from to] :as state} _ _]
   (cond
@@ -201,8 +203,8 @@
     (let [char-iter (char-iter state)
           to'       (.following char-iter to)]
       (assoc state
-        :char-iter char-iter
-        :to  to'))))
+        :to        to'
+        :char-iter char-iter))))
 
 (defmethod -edit :expand-word-left [{:keys [text from to] :as state} _ _]
   (cond
@@ -213,8 +215,8 @@
     (let [word-iter (word-iter state)
           to'       (preceding-word word-iter text to)]
       (assoc state
-        :word-iter word-iter
-        :to        to'))))
+        :to        to'
+        :word-iter word-iter))))
 
 (defmethod -edit :expand-word-right [{:keys [text from to] :as state} _ _]
   (cond
@@ -225,8 +227,8 @@
     (let [word-iter (word-iter state)
           to'       (following-word word-iter text to)]
       (assoc state
-        :word-iter word-iter
-        :to  to'))))
+        :to        to'
+        :word-iter word-iter))))
 
 (defmethod -edit :expand-doc-start [{:keys [text from to] :as state} _ _]
   (assoc state
@@ -243,10 +245,10 @@
   (if (> to 0)
     (let [char-iter (char-iter state)
           to'       (.preceding char-iter to)]
-      {:text (str (subs text 0 to') (subs text to))
-       :from         to'
-       :to           to'
-       :last-changed to'})
+      (assoc state
+        :text (str (subs text 0 to') (subs text to))
+        :from to'
+        :to   to'))
     state))
 
 (defmethod -edit :delete-char-right [{:keys [text from to] :as state} _ _]
@@ -254,10 +256,10 @@
   (if (< to (count text))
     (let [char-iter (char-iter state)
           to'       (.following char-iter to)]
-      {:text         (str (subs text 0 to) (subs text to'))
-       :from         to
-       :to           to
-       :last-changed to})
+      (assoc state
+        :text (str (subs text 0 to) (subs text to'))
+        :from to
+        :to   to))
     state))
 
 (defmethod -edit :delete-word-left [{:keys [text from to] :as state} _ _]
@@ -269,9 +271,10 @@
     :else
     (let [word-iter (word-iter state)
           to'       (preceding-word word-iter text to)]
-      {:text (str (subs text 0 to') (subs text to))
-       :from to'
-       :to   to'})))
+      (assoc state
+        :text (str (subs text 0 to') (subs text to))
+        :from to'
+        :to   to'))))
 
 (defmethod -edit :delete-word-right [{:keys [text from to] :as state} _ _]
   (assert (= from to))
@@ -282,31 +285,35 @@
     :else
     (let [word-iter (word-iter state)
           to'       (following-word word-iter text to)]
-      {:text (str (subs text 0 to) (subs text to'))
-       :from to
-       :to   to})))
+      (assoc state
+        :text (str (subs text 0 to) (subs text to'))
+        :from to
+        :to   to))))
 
 (defmethod -edit :delete-doc-start [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (> to 0)
-    {:text (subs text to)
-     :from 0
-     :to   0}
+    (assoc state
+      :text (subs text to)
+      :from 0
+      :to   0)
     state))
 
 (defmethod -edit :delete-doc-end [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (if (< to (count text))
-    {:text (subs text 0 to)
-     :from to
-     :to   to}
+    (assoc state
+      :text (subs text 0 to)
+      :from to
+      :to   to)
     state))
 
 (defmethod -edit :kill [{:keys [text from to] :as state} _ _]
   (assert (not= from to))
-  {:text (str (subs text 0 (min from to)) (subs text (max from to)))
-   :from (min from to)
-   :to   (min from to)})
+  (assoc state
+    :text (str (subs text 0 (min from to)) (subs text (max from to)))
+    :from (min from to)
+    :to   (min from to)))
 
 (defmethod -edit :transpose [{:keys [text from to] :as state} _ _]
   (assert (= from to))
@@ -318,13 +325,14 @@
     (let [char-iter (char-iter state)
           preceding (.preceding char-iter to)
           following (.following char-iter to)]
-      {:text (str
-               (subs text 0 preceding)
-               (subs text to following)
-               (subs text preceding to)
-               (subs text following))
-       :from following
-       :to   following})
+      (assoc state
+        :text (str
+                (subs text 0 preceding)
+                (subs text to following)
+                (subs text preceding to)
+                (subs text following))
+        :from following
+        :to   following))
     
     (= to (count text))
     (-> state
@@ -370,116 +378,134 @@
 (defmethod -edit :paste [{:keys [text from to] :as state} _ _]
   (assert (= from to))
   (when-some [{paste :text} (clipboard/get :text/plain)]
-    {:text (str (subs text 0 to) paste (subs text to))
-     :from (+ to (count paste))
-     :to   (+ to (count paste))}))
+    (assoc state
+      :text (str (subs text 0 to) paste (subs text to))
+      :from (+ to (count paste))
+      :to   (+ to (count paste)))))
 
 (defmethod -edit :undo [{:keys [undo redo] :as state} _ _]
-  (if (empty? undo)
-    state
-    (let [state' (peek undo)]
-      {:text (:text state')
-       :from (:from state')
-       :to   (:to state')
-       :undo (pop undo)
-       :redo (conj (or redo []) (select-keys state [:text :from :to]))})))
+  (if-some [state' (peek undo)]
+    (assoc state'
+      :undo (pop undo)
+      :redo (conj (or redo []) (select-keys state [:text :from :to :offset])))
+    state))
 
 (defmethod -edit :redo [{:keys [undo redo] :as state} _ _]
-  (if (empty? redo)
-    state
-    (let [state' (peek redo)]
-      {:text (:text state')
-       :from (:from state')
-       :to   (:to state')
-       :undo (conj (or undo []) (select-keys state [:text :from :to]))
-       :redo (pop redo)})))
+  (if-some [state' (peek redo)]
+    (assoc state'
+      :undo (conj (or undo []) (select-keys state [:text :from :to :offset]))
+      :redo (pop redo))
+    state))
 
 (defn edit [state command arg]
-  (let [state' (-edit state command arg)]
-    (cond
-      (= (:text state) (:text state'))
+  (let [state'  (-edit state command arg)
+        edited? (not= (:text state') (:text state))
+        state'  (cond-> state'
+                  (or edited? (not= (:to state') (:to state)))
+                  (assoc
+                    :coord-to           nil
+                    :cursor-blink-pivot (core/now)))]
+    (core/cond+
+      (not edited?)
       state'
       
       (#{:undo :redo} command)
       state'
+
+      :do
+      (when-some [line ^TextLine (:line state')]
+        (.close line))
       
-      (and
-        (#{:insert :delete-char-left :delete-char-right} command)
-        (= (:to state) (:last-changed state)))
-      (-> state'
-        (dissoc :redo)
-        (assoc :undo (:undo state)))
-
+      ;; kill anything that depends on text
+      :let [marked?    (#{:insert-marked :kill-marked} command)
+            skip-undo? (and
+                         (= (:last-change-to state) (:to state))
+                         (= (:last-change-cmd state) command))]
+      
       :else
-      (let [undo   (:undo state [])
-            undo'  (if (>= (count undo) undo-stack-depth)
-                     (vec (next undo))
-                     undo)
-            undo'' (conj undo' (select-keys state [:text :from :to]))]
-        (-> state'
-          (dissoc :redo)
-          (assoc :undo undo''))))))
+      (cond-> state'
+        true
+        (assoc
+          :line      nil
+          :word-iter nil
+          :char-iter nil
+          :redo      nil)
+        
+        (not marked?)
+        (assoc
+          :last-change-cmd command
+          :last-change-to  (:to state')
+          :marked-from     nil
+          :marked-to       nil)
+        
+        (and (not marked?) (not skip-undo?))
+        (update :undo core/conjv-limited (select-keys state [:text :from :to]) undo-stack-depth)))))
 
-(defn- recalc-line! [text-field]
-  (let [{:keys [*state font features line-text line]} text-field
-        {:keys [text marked-text marked-pos]} @*state
-        text' (if marked-text
-                (str (subs text 0 marked-pos) marked-text (subs text marked-pos))
-                text)]
-    (when (not= text' line-text)
-      (some-> ^AutoCloseable line .close)
-      (protocols/-set! text-field :line-text text')
-      (protocols/-set! text-field :line (.shapeLine core/shaper text' font features))))
-  text-field)
+(defn- ^TextLine text-line [text-field ctx]
+  (let [{:keys [*state]} text-field
+        {:keys [text line]} @*state]
+    (if (nil? line)
+      (let [line' (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field))]
+        (swap! *state assoc :line line')
+        line')
+      line)))
 
-(defn- update-offset! [ctx text-field]
-  (let [{:keys [*state offset ^TextLine line my-rect]} text-field
-        {:keys [text from to]} @*state
+(defn- coord-to [text-field ctx]
+  (let [{:keys [*state]} text-field
+        {:keys [to coord-to]} @*state]
+    (or coord-to
+      (let [line     (text-line text-field ctx)
+            coord-to (math/round (.getCoordAtOffset line to))]
+        (swap! *state assoc :coord-to coord-to)
+        coord-to))))
+
+(defn- correct-offset! [text-field ctx]
+  (let [{:keys [*state my-rect]} text-field
+        state  @*state
+        {:keys [offset]} state
         {:keys [scale]
          :hui.text-field/keys [cursor-width padding-left padding-right]} ctx
-        coord-to    (.getCoordAtOffset line to)
-        line-width  (.getWidth line)
-        rect-width  (:width my-rect)
-        min-offset  (- (* scale padding-left))
-        max-offset  (-> line-width
-                      (+ (* scale cursor-width))
-                      (+ (* scale padding-right))
-                      (- rect-width)
-                      (max min-offset))]
-    (when (or
-            (< (- coord-to offset) 0) ;; cursor overflow left
-            (> (- coord-to offset) (- rect-width (* scale padding-right))) ;; cursor overflow right
-            (< offset min-offset)
-            (> offset max-offset)) ;; hanging right boundary
-      (protocols/-set! text-field :offset
-        (-> (- coord-to (/ rect-width 2))
-          (core/clamp min-offset max-offset)
-          (math/round))))))
+        line          (text-line text-field ctx)
+        coord-to      (coord-to text-field ctx)
+        line-width    (.getWidth line)
+        rect-width    (:width my-rect)
+        padding-left  (* scale padding-left)
+        padding-right (* scale (+ cursor-width padding-right))
+        min-offset    (- padding-left)
+        max-offset    (-> line-width
+                        (+ padding-right)
+                        (- rect-width)
+                        (max min-offset))]
+    (if (or
+          (nil? offset)
+          (< (- coord-to offset) padding-left) ;; cursor overflow left
+          (> (- coord-to offset) (- rect-width padding-right)) ;; cursor overflow right
+          (< offset min-offset)
+          (> offset max-offset))
+      (-> *state
+        (swap! assoc
+          :offset (-> (- coord-to (/ rect-width 2))
+                    (core/clamp min-offset max-offset)
+                    (math/round)))
+        :offset)
+      offset)))
 
 (core/deftype+ TextField [*state
-                          ^Font font
                           ^ShapingOptions features
-                          ^:mut           dirty?
-                          ^:mut           cursor-blink-pivot
-                          ^:mut           closed?
-                          ^:mut           offset
-                          ^:mut ^String   line-text
-                          ^:mut ^TextLine line
                           ^:mut ^IRect    my-rect
-                          ^:mut ^IPoint   mouse-pos
-                          ^:mut           mouse-down?
-                          ^:mut           clicks
-                          ^:mut           last-click]
+                          ^:mut           mouse-down? ;; TODO use from event
+                          ^:mut ^IPoint   mouse-pos]  ;; TODO use from event
   protocols/IComponent
   (-measure [this ctx cs]
     (let [{:keys                [scale]
-           :hui.text-field/keys [cursor-width
+           :hui.text-field/keys [^Font font
+                                 cursor-width
                                  padding-left
                                  padding-top
                                  padding-right 
                                  padding-bottom]} ctx
-          metrics ^FontMetrics (.getMetrics font)]
-      (recalc-line! this)
+          metrics ^FontMetrics (.getMetrics font)
+          line    (text-line this ctx)]
       (IPoint.
         (min
           (:width cs)
@@ -505,23 +531,23 @@
   ;            (.getWidth line)           
   (-draw [this ctx rect ^Canvas canvas]
     (set! my-rect rect)
-    (recalc-line! this)
-    (when dirty?
-      (update-offset! ctx this)
-      (set! dirty? false))
-    (let [{:keys [text from to marked-from marked-to]} @*state
+    (correct-offset! this ctx)
+    (let [state @*state
+          {:keys [text from to marked-from marked-to offset]} state
           {:keys [scale]
-           :hui.text-field/keys [padding-top]} ctx
+           :hui.text-field/keys [^Font font
+                                 padding-top]} ctx
+          line        (text-line this ctx)
           metrics    ^FontMetrics (.getMetrics font)
           cap-height (Math/round (.getCapHeight metrics))
           ascent     (Math/ceil (- (- (.getAscent metrics)) (.getCapHeight metrics)))
           descent    (Math/ceil (.getDescent metrics))
           baseline   (+ (* scale padding-top) cap-height)
           selection? (not= from to)
-          coord-from (Math/round (.getCoordAtOffset line from))
-          coord-to   (if (= from to)
-                       coord-from
-                       (Math/round (.getCoordAtOffset line to)))]
+          coord-to   (coord-to this ctx)
+          coord-from (if (= from to)
+                       coord-to
+                       (Math/round (.getCoordAtOffset line from)))]
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas (.toRect ^IRect rect))
         
@@ -559,7 +585,8 @@
                 cursor-width          (* scale (:hui.text-field/cursor-width ctx))
                 cursor-left           (quot cursor-width 2)
                 cursor-right          (- cursor-width cursor-left)
-                cursor-blink-interval (:hui.text-field/cursor-blink-interval ctx)]
+                cursor-blink-interval (:hui.text-field/cursor-blink-interval ctx)
+                cursor-blink-pivot    (:cursor-blink-pivot state)]
             (when (or
                     (<= cursor-blink-interval 0)
                     (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))
@@ -571,7 +598,6 @@
                   (+ (:y rect) baseline descent))
                 (:hui.text-field/fill-cursor ctx)))
             (when (> cursor-blink-interval 0)
-            ; (println "Frame" (- (core/now) cursor-blink-pivot) dt (<= dt cursor-blink-interval))
               (core/schedule
                 #(window/request-frame (:window ctx))
                 (- cursor-blink-interval
@@ -581,10 +607,11 @@
     ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move :mouse-button} (:event event))
     ;   (println event))
     (let [state @*state
-          {:keys [text from to marked-from marked-to]} state]
+          {:keys [text from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
       (when (= :mouse-move (:event event))
-        (set! mouse-pos (IPoint. (:x event) (:y event)))
-        (set! clicks 0))
+        (set! mouse-pos (IPoint. (:x event) (:y event))) ;; TODO use coordinates from event
+        (swap! *state assoc
+          :mouse-clicks 0))
 
       (core/cond+
         ;; mouse down
@@ -592,32 +619,33 @@
           (= :mouse-button (:event event))
           (= :primary (:button event))
           (:pressed? event)
+          my-rect
+          mouse-pos
           (.contains my-rect mouse-pos))
-        (let [x      (-> (:x mouse-pos)
-                       (- (:x my-rect))
-                       (+ offset))
-              offset (.getOffsetAtCoord line x)
-              now    (core/now)]
-          (set! cursor-blink-pivot now)
+        (let [x             (-> (:x mouse-pos)
+                              (- (:x my-rect))
+                              (+ offset))
+              offset'       (.getOffsetAtCoord line x)
+              now           (core/now)
+              mouse-clicks' (if (<= (- now last-mouse-click) core/double-click-threshold-ms)
+                              (inc mouse-clicks)
+                              1)]
           (set! mouse-down? true)
-          (set! last-click now)
-          (if (<= (- now last-click) core/double-click-threshold-ms)
-            (do
-              (set! clicks (inc clicks))
-              (set! last-click now))
-            (set! clicks 1))
-          
-          (case (int clicks)
-            1
-            (swap! *state edit :move-to-position offset)
-            
-            2
-            (swap! *state edit :select-word offset)
-            
-            ; else
-            (swap! *state edit :select-all nil))
-          
-          (not= @*state state))
+          (swap! *state #(cond-> %
+                           true
+                           (assoc
+                             :last-mouse-click now
+                             :mouse-clicks     mouse-clicks')
+                       
+                           (= 1 mouse-clicks')
+                           (edit :move-to-position offset')
+                       
+                           (= 2 mouse-clicks')
+                           (edit :select-word offset')
+                        
+                           (< 2 mouse-clicks')
+                           (edit :select-all nil)))
+          true)
         
         ; mouse up
         (and
@@ -648,19 +676,15 @@
         
         ;; typing
         (= :text-input (:event event))
-        (let [postponed (:postponed state)
-              state'    (swap! *state #(cond-> %
-                                         true             (dissoc :postponed)
-                                         (:marked-from %) (edit :kill-marked nil)
-                                         (not= from to)   (edit :kill nil)
-                                         true             (edit :insert (:text event))))]
-          (core/eager-or
-            (when (not= state state')
-              (set! cursor-blink-pivot (core/now))
-              (set! dirty? true)
-              true)
-            (when postponed
-              (protocols/-event this ctx postponed))))
+        (do
+          (swap! *state #(cond-> %
+                           true             (dissoc :postponed)
+                           (:marked-from %) (edit :kill-marked nil)
+                           (not= from to)   (edit :kill nil)
+                           true             (edit :insert (:text event))))
+          (when-some [postponed (:postponed state)]
+            (protocols/-event this ctx postponed))
+          true)
         
         ;; composing region
         (= :text-input-marked (:event event))
@@ -672,8 +696,8 @@
         
         ;; rect for composing region
         (= :get-rect-for-marked-range (:event event))
-        (let [; [_ padding-top _ _] padding
-              padding-top 0 ;; FIXME
+        (let [{:hui.text-field/keys [^Font font
+                                     padding-top]} ctx
               metrics    ^FontMetrics (.getMetrics font)
               cap-height (Math/ceil (.getCapHeight metrics))
               ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
@@ -806,41 +830,39 @@
                              :backspace [:kill-marked :delete-char-left]
                              :delete    [:kill-marked :delete-char-right]))]
           (when (seq ops)
-            (set! cursor-blink-pivot (core/now))
-            (let [state' (swap! *state (fn [state]
-                                         (reduce #(edit %1 %2 nil) state ops)))]
-              (when (not= state state')
-                (set! dirty? true)
-                true)))))))
+            (swap! *state
+              (fn [state]
+                (reduce #(edit %1 %2 nil) state ops)))
+            true)))))
   
   AutoCloseable
   (close [this]
-    (set! closed? true)
     #_(.close line))) ; TODO
-  
-(defn text-field
-  ([*state]
-   (text-field *state nil))
-  ([*state opts]
-   (dynamic/dynamic ctx [^Font font (:hui.text-field/font ctx)
-                         features   (:hui.text-field/font-features ctx)]
-     (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
-       (->TextField
-         *state
-         font
-         features
-         true             ; dirty?
-         (core/now)       ; cursor-blink-pivot
-         false            ; closed?
-         0                ; offset
-         nil              ; line-text
-         nil              ; line
-         nil              ; my-rect
-         (IPoint. 0 0)    ; mouse-pos
-         false            ; mouse-down?
-         0                ; clicks
-         0                ; last-click
-         )))))
+
+(defn text-field [*state]
+  (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
+    (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
+      (swap! *state #(core/merge-some
+                       {:text               ""
+                        :from               0
+                        :to                 0
+                        :coord-to           nil
+                        :last-change-cmd    nil
+                        :last-change-to     nil
+                        :marked-from        nil
+                        :marked-to          nil
+                        :word-iter          nil
+                        :char-iter          nil
+                        :undo               nil
+                        :redo               nil
+                        :postponed          nil
+                        :cursor-blink-pivot (core/now)
+                        :offset             nil
+                        :line               nil
+                        :mouse-clicks       0
+                        :last-mouse-click   0}
+                       %))
+      (->TextField *state features nil false (IPoint. 0 0)))))
 
 ; (require 'user :reload)
 

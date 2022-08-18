@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def *state (atom {:text "" :from 0 :to 0}))
+(def *state (atom {:text ""}))
 
 (defn render-form [form]
   (cond
@@ -27,11 +27,11 @@
     (ui/label form)))
 
 (def ui
-  (ui/padding 10 10
-    (ui/column
-      (ui/with-cursor :ibeam
-        (ui/fill (paint/fill 0xFFFFFFFF)
-          (ui/dynamic ctx [scale (:scale ctx)]
+  (ui/dynamic _ [text (:text @*state)]
+    (ui/padding 10 10
+      (ui/column
+        (ui/with-cursor :ibeam
+          (ui/fill (paint/fill 0xFFFFFFFF)
             (ui/with-context
               {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
                :hui.text-field/cursor-width   2
@@ -39,11 +39,13 @@
                :hui.text-field/padding-bottom 10
                :hui.text-field/padding-left   5
                :hui.text-field/padding-right  5}
-              (ui/text-field *state )))))
-      (ui/gap 0 10)
-      (ui/vscrollbar
-        (ui/vscroll
-          (ui/dynamic ctx [state @*state]
-            (render-form state)))))))
+              (ui/text-field *state))))
+        (ui/gap 0 10)
+        (ui/label (str "\"" text "\""))
+        (ui/gap 0 10)
+        (ui/vscrollbar
+          (ui/vscroll
+            (ui/dynamic _ [state @*state]
+              (render-form state))))))))
 
-(reset! user/*example "text-field-debug")
+; (reset! user/*example "text-field-debug")

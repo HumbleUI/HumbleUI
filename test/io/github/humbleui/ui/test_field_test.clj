@@ -675,8 +675,10 @@
   
   (testing "all together"
     (are [s cmds res] (= (apply edit' s cmds) res)
-      "|" [[:insert "x"] [:insert "y"] [:insert "z"] :delete-char-left :delete-char-left :delete-char-left :undo] "|"
-      "|xyz" [[:insert "a"] [:insert "b"] [:insert "c"] :delete-char-right :delete-char-right :delete-char-right :undo] "|xyz"
+      "|" [[:insert "x"] [:insert "y"] [:insert "z"] :delete-char-left :delete-char-left :delete-char-left :undo] "xyz|"
+      "|" [[:insert "x"] [:insert "y"] [:insert "z"] :delete-char-left :delete-char-left :delete-char-left :undo :undo] "|"
+      "|xyz" [[:insert "a"] [:insert "b"] [:insert "c"] :delete-char-right :delete-char-right :delete-char-right :undo] "abc|xyz"
+      "|xyz" [[:insert "a"] [:insert "b"] [:insert "c"] :delete-char-right :delete-char-right :delete-char-right :undo :undo] "|xyz"
       ))
   )
 

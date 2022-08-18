@@ -9,7 +9,7 @@
 (set! *warn-on-reflection* true)
 
 (defn text-field [text & {:keys [from to cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom]
-                          :or {from 0, to 0, cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3}
+                          :or {cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3}
                           :as opts}]
   (ui/with-cursor :ibeam
     (ui/fill (paint/fill 0xFFFFFFFF)
@@ -24,15 +24,14 @@
           (atom
             {:text text
              :from from
-             :to   to})
-          (dissoc opts :from :to))))))
+             :to   to}))))))
 
 (def ui
   (ui/valign 0.5
     (ui/halign 0.5
       (ui/column
         (ui/width 300
-          (text-field "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ more more more" :from 9 :to 9))
+          (text-field "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ more more more" :from 13 :to 18))
         (ui/gap 0 10)
         (ui/width 300
           (text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :padding-h 5 :padding-v 10 :cursor-width 2 :cursor-blink-interval 100))
