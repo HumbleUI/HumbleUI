@@ -4,6 +4,6 @@
   (-set! [_ key value]))
 
 (defprotocol IComponent
-  (-measure [_ ctx cs])
-  (-draw    [_ ctx rect canvas])
+  (-measure ^IPoint [_ ctx ^IPoint cs])
+  (-draw    [_ ctx ^IRect rect canvas])
   (-event   [_ ctx event]))

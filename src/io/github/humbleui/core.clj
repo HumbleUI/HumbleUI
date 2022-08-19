@@ -3,6 +3,7 @@
     [clojure.java.io :as io]
     [clojure.math :as math]
     [clojure.set :as set]
+    [clojure.walk :as walk]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.jwm App Screen]
@@ -86,7 +87,68 @@
      (when (some? x#)
        (doto x# ~@forms))))
 
+(defn- loopr-rewrite-recurs [accs body]
+  (walk/prewalk
+    (fn [form]
+      (if (and (seq? form) (= 'recur (first form)))
+        `(do
+           ~@(map (fn [[vs s _] v] `(vreset! ~vs ~v)) accs (next form)))
+        form))
+    body))
 
+(defn- loopr-reduce [accs iters body]
+  (let [[sym val & rest] iters]
+    `(reduce
+       (fn [_# ~sym]
+         ~(if (seq rest)
+            (loopr-reduce accs rest body)
+            `(let ~(->> accs
+                     (mapcat (fn [[vs s _]] [s `(deref ~vs)]))
+                     vec)
+               ~(loopr-rewrite-recurs accs body))))
+       nil
+       ~val)))
+
+; Inspired by https://aphyr.com/posts/360-loopr-a-loop-reduction-macro-for-clojure
+(defmacro loopr
+  "loop + reduce + for-like nested iteration in one.
+   
+   Takes an initial binding vector for accumulator variables, (like `loop`);
+   then a binding vector of loop variables to collections (like `for`);
+   then a body form, then a final form.
+
+   Iterates over each element of the collections, like `for` would, and
+   evaluates body with that combination of elements bound.
+
+   Like `loop`, the body should generally contain one or more (recur ...) forms
+   with new values for each accumulator.
+
+   Example:
+
+   (loopr [count 0
+           sum   0]
+          [row [[1 2 3] [4 5 6] [7 8 9]]
+           x   row]
+     (recur (inc count) (+ sum x))
+     (/ sum count)) ; => 45/9 = 5"
+  [accs iters body & [final]]
+  (assert (even? (count accs)) (str "Exptected even number of accs, got " (count accs)))
+  (assert (even? (count iters)) (str "Exptected even number of iters, got " (count iters)))
+  (assert (<= 2 (count iters)) (str "Exptected at least one iterator"))
+  (let [accs'  (mapv (fn [[s v]] [(gensym (str s)) s v]) (partition 2 accs))
+        final' (cond
+                 (some? final)       final
+                 (= 1 (count accs')) (second (first accs'))
+                 :else               (mapv second accs'))]
+    `(let ~(->> accs'
+             (mapcat (fn [[vs s v]] [vs `(volatile! ~v) s `(deref ~vs)]))
+             vec)
+       ~(loopr-reduce accs' iters body)
+       (let ~(->> accs'
+               (mapcat (fn [[vs s v]] [s `(deref ~vs)]))
+               vec)
+         ~final'))))
+    
 ;; utilities
 
 (defn eager-or

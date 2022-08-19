@@ -221,10 +221,15 @@
       (keep #(nth % 2) children)))
   
   (-draw [_ ctx rect ^Canvas canvas]
-    (let [known   (for [[mode _ child] children]
-                    (when (= :hug mode)
-                      (core/measure child ctx (IPoint. (:width rect) (:height rect)))))
-          space   (- (:height rect) (transduce (keep :height) + 0 known))
+    (let [[known space] (core/loopr
+                          [known []
+                           space (:height rect)]
+                          [[mode _ child] children]
+                          (if (= :hug mode)
+                            (let [cs   (IPoint. (:width rect) space)
+                                  size (core/measure child ctx cs)]
+                              (recur (conj known size) (- space (:height size))))
+                            (recur (conj known nil) space)))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
       (loop [height   0
@@ -284,10 +289,15 @@
       (keep #(nth % 2) children)))
   
   (-draw [_ ctx rect ^Canvas canvas]
-    (let [known   (for [[mode _ child] children]
-                    (when (= :hug mode)
-                      (core/measure child ctx (IPoint. (:width rect) (:height rect)))))
-          space   (- (:width rect) (transduce (keep :width) + 0 known))
+    (let [[known space] (core/loopr
+                          [known []
+                           space (:width rect)]
+                          [[mode _ child] children]
+                          (if (= :hug mode)
+                            (let [cs   (IPoint. space (:height rect))
+                                  size (core/measure child ctx cs)]
+                              (recur (conj known size) (- space (:width size))))
+                            (recur (conj known nil) space)))
           stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
           layer   (.save canvas)]
       (loop [width    0

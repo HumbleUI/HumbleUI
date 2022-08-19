@@ -38,14 +38,16 @@
                :hui.text-field/padding-top    10
                :hui.text-field/padding-bottom 10
                :hui.text-field/padding-left   5
-               :hui.text-field/padding-right  5}
+               :hui.text-field/padding-right  5
+               }
               (ui/text-field *state))))
         (ui/gap 0 10)
         (ui/label (str "\"" text "\""))
         (ui/gap 0 10)
-        (ui/vscrollbar
-          (ui/vscroll
-            (ui/dynamic _ [state @*state]
-              (render-form state))))))))
+        [:stretch 1
+         (ui/vscrollbar
+           (ui/vscroll
+             (ui/dynamic _ [state @*state]
+               (render-form state))))]))))
 
 ; (reset! user/*example "text-field-debug")
