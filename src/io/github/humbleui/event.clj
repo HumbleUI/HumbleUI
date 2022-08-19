@@ -192,6 +192,8 @@
                   MouseButton/BACK      :back
                   MouseButton/FORWARD   :forward)
      :pressed?  (.isPressed e)
+     :x         (.getX e)
+     :y         (.getY e)
      :modifiers (modifiers->set (.-_modifiers e))}
     
     EventMouseMove
@@ -208,6 +210,8 @@
      :delta-chars (.getDeltaChars e)
      :delta-lines (.getDeltaLines e)
      :delta-pages (.getDeltaPages e)
+     :x           (.getX e)
+     :y           (.getY e)
      :modifiers   (modifiers->set (.-_modifiers e))}
 
     EventTextInput

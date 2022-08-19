@@ -182,6 +182,12 @@
     :from (count text)
     :to   (count text)))
 
+(defmethod -edit :move-to-position [state _ pos']
+  (assert (<= 0 pos' (count (:text state))))
+  (assoc state
+    :from pos'
+    :to   pos'))
+
 (defmethod -edit :expand-char-left [{:keys [text from to] :as state} _ _]
   (cond
     (= to 0)
@@ -239,6 +245,11 @@
   (assoc state
     :from (if (= (count text) from) (count text) (min from to))
     :to   (count text)))
+
+(defmethod -edit :expand-to-position [state _ pos']
+  (assert (<= 0 pos' (count (:text state))))
+  (assoc state
+    :to pos'))
 
 (defmethod -edit :delete-char-left [{:keys [text from to] :as state} _ _]
   (assert (= from to))
@@ -338,12 +349,6 @@
     (-> state
       (-edit :move-char-left nil)
       (-edit :transpose nil))))
-
-(defmethod -edit :move-to-position [state _ pos']
-  (assert (<= 0 pos' (count (:text state))))
-  (assoc state
-    :from pos'
-    :to   pos'))
 
 (defmethod -edit :select-word [{:keys [text] :as state} _ pos']
   (assert (<= 0 pos' (count text)))
@@ -492,9 +497,7 @@
 
 (core/deftype+ TextField [*state
                           ^ShapingOptions features
-                          ^:mut ^IRect    my-rect
-                          ^:mut           mouse-down? ;; TODO use from event
-                          ^:mut ^IPoint   mouse-pos]  ;; TODO use from event
+                          ^:mut ^IRect    my-rect]
   protocols/IComponent
   (-measure [this ctx cs]
     (let [{:keys                [scale]
@@ -609,7 +612,6 @@
     (let [state @*state
           {:keys [text from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
       (when (= :mouse-move (:event event))
-        (set! mouse-pos (IPoint. (:x event) (:y event))) ;; TODO use coordinates from event
         (swap! *state assoc
           :mouse-clicks 0))
 
@@ -620,9 +622,8 @@
           (= :primary (:button event))
           (:pressed? event)
           my-rect
-          mouse-pos
-          (.contains my-rect mouse-pos))
-        (let [x             (-> (:x mouse-pos)
+          (.contains my-rect (IPoint. (:x event) (:y event))))
+        (let [x             (-> (:x event)
                               (- (:x my-rect))
                               (+ offset))
               offset'       (.getOffsetAtCoord line x)
@@ -630,10 +631,10 @@
               mouse-clicks' (if (<= (- now last-mouse-click) core/double-click-threshold-ms)
                               (inc mouse-clicks)
                               1)]
-          (set! mouse-down? true)
           (swap! *state #(cond-> %
                            true
                            (assoc
+                             :selecting?       true
                              :last-mouse-click now
                              :mouse-clicks     mouse-clicks')
                        
@@ -653,26 +654,26 @@
           (= :primary (:button event))
           (not (:pressed? event)))
         (do
-          (set! mouse-down? false)
+          (swap! *state assoc :selecting? false)
           false)
         
         ;; mouse move
         (and
           (= :mouse-move (:event event))
-          mouse-down?)
-        (let [x (-> (:x mouse-pos)
+          (:selecting? state))
+        (let [x (-> (:x event)
                   (- (:x my-rect))
                   (+ offset))]
           (cond
-            (.contains my-rect mouse-pos)
-            (swap! *state assoc :to (.getOffsetAtCoord line x))
+            (.contains my-rect (IPoint. (:x event) (:y event)))
+            (swap! *state edit :expand-to-position (.getOffsetAtCoord line x))
             
-            (< (:y mouse-pos) (:y my-rect))
-            (swap! *state assoc :to 0)
+            (< (:y event) (:y my-rect))
+            (swap! *state edit :expand-to-position 0)
             
-            (>= (:y mouse-pos) (:bottom my-rect))
-            (swap! *state assoc :to (count (:text state))))
-          (not= @*state state))
+            (>= (:y event) (:bottom my-rect))
+            (swap! *state edit :expand-to-position (count (:text state))))
+          true)
         
         ;; typing
         (= :text-input (:event event))
@@ -688,11 +689,13 @@
         
         ;; composing region
         (= :text-input-marked (:event event))
-        (swap! *state
-          #(cond-> %
-             (:marked-from %) (edit :kill-marked nil)
-             (not= from to)   (edit :kill nil)
-             true             (edit :insert-marked event)))
+        (do
+          (swap! *state
+            #(cond-> %
+               (:marked-from %) (edit :kill-marked nil)
+               (not= from to)   (edit :kill nil)
+               true             (edit :insert-marked event)))
+          true)
         
         ;; rect for composing region
         (= :get-rect-for-marked-range (:event event))
@@ -721,12 +724,16 @@
           (= :space (:key event)) 
           ((:modifiers event) :mac-command)
           ((:modifiers event) :control))
-        (app/open-symbols-palette)
+        (do
+          (app/open-symbols-palette)
+          false)
         
         ;; when exiting composing region with left/right/backspace/delete,
         ;; key down comes before text input, and we need it after
         (and (= :key (:event event)) (:pressed? event) (:marked-from state))
-        (swap! *state assoc :postponed event)
+        (do
+          (swap! *state assoc :postponed event)
+          false)
         
         ;; command
         (and (= :key (:event event)) (:pressed? event))
@@ -859,10 +866,11 @@
                         :cursor-blink-pivot (core/now)
                         :offset             nil
                         :line               nil
+                        :selecting?         false
                         :mouse-clicks       0
                         :last-mouse-click   0}
                        %))
-      (->TextField *state features nil false (IPoint. 0 0)))))
+      (->TextField *state features nil))))
 
 ; (require 'user :reload)
 

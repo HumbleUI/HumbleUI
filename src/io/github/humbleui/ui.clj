@@ -631,7 +631,7 @@
 
 ;; vscroll
 
-(core/deftype+ VScroll [child ^:mut offset ^:mut self-rect ^:mut child-size ^:mut hovered?]
+(core/deftype+ VScroll [child ^:mut offset ^:mut ^IRect self-rect ^:mut child-size]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child-cs (assoc cs :height Integer/MAX_VALUE)]
@@ -654,13 +654,9 @@
           (.restoreToCount canvas layer)))))
   
   (-event [_ ctx event]
-    (when (= :mouse-move (:event event))
-      (let [hovered?' (.contains ^IRect self-rect (IPoint. (:x event) (:y event)))]
-        (when (not= hovered? hovered?')
-          (set! hovered? hovered?'))))
     (cond
       (= :mouse-scroll (:event event))
-      (when hovered?
+      (when (.contains self-rect (IPoint. (:x event) (:y event)))
         (or
           (core/event-child child ctx event)
           (let [offset' (-> offset
@@ -671,11 +667,8 @@
               true))))
       
       (= :mouse-button (:event event))
-      (when hovered?
+      (when (.contains self-rect (IPoint. (:x event) (:y event)))
         (core/event-child child ctx event))
-      
-      (= :mouse-move (:event event))
-      (core/event-child child ctx event)
       
       :else
       (core/event-child child ctx event)))
@@ -685,7 +678,7 @@
     (core/child-close child)))
 
 (defn vscroll [child]
-  (->VScroll child 0 nil nil nil))
+  (->VScroll child 0 nil nil))
 
 
 ;; vscrollbar
@@ -866,13 +859,12 @@
 (defn checkbox [*state label]
   (clickable
     #(swap! *state not)
-    (dynamic ctx [size    (-> (:leading ctx)
-                            (* (:scale ctx))
-                            (/ 4)
-                            (math/round)
-                            (* 2)
-                            (/ (:scale ctx))
-                            (+ (:leading ctx)))]
+    (dynamic ctx [size (let [cap-height (.getCapHeight (.getMetrics ^Font (:font-ui ctx)))]
+                         (-> cap-height
+                           (/ 6)
+                           (math/round)
+                           (* 9)
+                           (/ (:scale ctx))))]
       (row
         (valign 0.5
           (dynamic ctx [state  @*state

@@ -117,7 +117,7 @@
         scale   (:scale screen)
         area    (:work-area screen)
         width   (* (if multi? 600 460) scale)
-        height  (* (if multi? 800 400) scale)
+        height  (* (if multi? 400 400) scale)
         x       (if multi?
                   (-> (:x area))
                   (-> (:x area) (+ (:width area)) (- width)))
