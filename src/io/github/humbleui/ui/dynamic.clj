@@ -36,6 +36,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))

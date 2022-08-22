@@ -37,7 +37,7 @@
               
               (ui/height 130
                 (ui/padding 0 0 12 0
-                  (ui/fill (paint/stroke 0xFF000000 1)
+                  (ui/rect (paint/stroke 0xFF000000 1)
                     (ui/vscrollbar
                       (ui/vscroll
                         (ui/column

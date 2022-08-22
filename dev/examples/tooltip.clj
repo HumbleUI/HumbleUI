@@ -8,7 +8,7 @@
 (defn tooltip [opts text child]
   (ui/tooltip
     opts
-    (ui/fill (paint/fill 0xFFE9E9E9)
+    (ui/rect (paint/fill 0xFFE9E9E9)
       (ui/padding 10 10
         (ui/label text)))
     child))

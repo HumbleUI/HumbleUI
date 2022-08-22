@@ -8,10 +8,14 @@
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window]
+    [io.github.humbleui.ui.clickable :as clickable]
     [io.github.humbleui.ui.dynamic :as dynamic]
+    [io.github.humbleui.ui.focusable :as focusable]
+    [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.text-field :as text-field]
     [io.github.humbleui.ui.theme :as theme]
-    [io.github.humbleui.ui.with-context :as with-context])
+    [io.github.humbleui.ui.with-context :as with-context]
+    [io.github.humbleui.ui.with-cursor :as with-cursor])
   (:import
     [java.lang AutoCloseable]
     [java.io File]
@@ -22,10 +26,43 @@
 
 (set! *warn-on-reflection* true)
 
+;; clickable
+
+(def ^{:arglists '([opts child])} clickable
+  clickable/clickable)
+
+
 ;; dynamic
 
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
+
+
+;; focus
+
+(def ^{:arglists '([child] [opts child])} focusable
+  focusable/focusable)
+
+(def ^{:arglists '([child])} focus-controller
+  focusable/focus-controller)
+
+
+;; rect
+
+(def ^{:arglists '([paint child])} rect
+  rect/rect)
+
+
+;; theme
+
+(def ^{:arglists '([comp] [opts comp])} default-theme
+  theme/default-theme)
+
+
+;; text field
+
+(def ^{:arglists '([*state] [opts *state])} text-field
+  text-field/text-field)
 
 
 ;; with-context
@@ -34,23 +71,39 @@
   with-context/with-context)
 
 
+;; with-cursor
+
+(def ^{:arglists '([cursor child])} with-cursor
+  with-cursor/with-cursor)
+
+
 ;; with-bounds
 
 (core/deftype+ WithBounds [key child ^:mut child-rect]
+  protocols/IContext
+  (-context [_ ctx]
+    (let [scale  (:scale ctx)
+          width  (-> (:width child-rect) (/ scale))
+          height (-> (:height child-rect) (/ scale))]
+      (assoc ctx key (IPoint. width height))))
+  
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [width  (-> (:width cs) (/ (:scale ctx)))
           height (-> (:height cs) (/ (:scale ctx)))]
       (core/measure child (assoc ctx key (IPoint. width height)) cs)))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [this ctx rect ^Canvas canvas]
     (set! child-rect rect)
-    (let [width  (-> (:width rect) (/ (:scale ctx)))
-          height (-> (:height rect) (/ (:scale ctx)))]
-      (core/draw-child child (assoc ctx key (IPoint. width height)) child-rect canvas)))
+    (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
-  (-event [_ ctx event]
-    (core/event-child child ctx event))
+  (-event [this ctx event]
+    (core/event-child child (protocols/-context this ctx) event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child (protocols/-context this ctx) cb)))
   
   AutoCloseable
   (close [_]
@@ -73,6 +126,9 @@
     (.drawTextLine canvas line (:x rect) (+ (:y rect) (Math/ceil (.getCapHeight metrics))) paint))
   
   (-event [_ ctx event])
+  
+  (-iterate [this ctx cb]
+    (cb this))
   
   AutoCloseable
   (close [_]
@@ -98,7 +154,10 @@
       (IPoint. (math/ceil (* scale width)) (math/ceil (* scale height))))) 
   (-draw [_ ctx rect canvas])
   
-  (-event [_ ctx event]))
+  (-event [_ ctx event])
+  
+  (-iterate [this ctx cb]
+    (cb this)))
 
 (defn gap [width height]
   (->Gap width height))
@@ -122,6 +181,11 @@
   
   (-event [_ ctx event]
     (core/event-child child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
   
   AutoCloseable
   (close [_]
@@ -151,6 +215,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))
@@ -176,6 +245,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))
@@ -199,6 +273,11 @@
   
   (-event [_ ctx event]
     (core/event-child child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
   
   AutoCloseable
   (close [_]
@@ -256,6 +335,11 @@
         (core/eager-or acc (core/event-child child ctx event)))
       false
       children))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (some (fn [[_ _ child]] (protocols/-iterate child ctx cb)) children)))
   
   AutoCloseable
   (close [_]
@@ -324,6 +408,11 @@
       false
       children))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (some (fn [[_ _ child]] (protocols/-iterate child ctx cb)) children)))
+  
   AutoCloseable
   (close [_]
     (doseq [[_ _ child] children]
@@ -362,6 +451,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))
@@ -370,29 +464,6 @@
   ([p child] (->Padding p p p p child nil))
   ([w h child] (->Padding w h w h child nil))
   ([l t r b child] (->Padding l t r b child nil)))
-
-
-;; fill
-
-(core/deftype+ Fill [paint child ^:mut child-rect]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (set! child-rect rect)
-    (.drawRect canvas (.toRect rect) paint)
-    (core/draw-child child ctx child-rect canvas))
-  
-  (-event [_ ctx event]
-    (core/event-child child ctx event))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn fill [paint child]
-  (->Fill paint child nil))
 
 
 ;; clip
@@ -410,6 +481,11 @@
   
   (-event [_ ctx event]
     (core/event-child child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
   
   AutoCloseable
   (close [_]
@@ -430,6 +506,9 @@
     (.drawImageRect canvas img (.toRect rect)))
   
   (-event [_ ctx event])
+  
+  (-iterate [this ctx cb]
+    (cb this))
   
   AutoCloseable
   (close [_]
@@ -468,6 +547,9 @@
       (.drawImageRect canvas image (.toRect rect))))
   
   (-event [_ ctx event])
+  
+  (-iterate [this ctx cb]
+    (cb this))
   
   AutoCloseable
   (close [_]
@@ -532,6 +614,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))
@@ -543,18 +630,21 @@
 ;; hoverable
 
 (core/deftype+ Hoverable [on-hover on-out child ^:mut child-rect ^:mut hovered?]
+  protocols/IContext
+  (-context [_ ctx]
+    (cond-> ctx hovered? assoc :hui/hovered? true))
+
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
+  (-measure [this ctx cs]
+    (core/measure child (protocols/-context this ctx) cs))
   
-  (-draw [_ ctx rect canvas]
+  (-draw [this ctx rect canvas]
     (set! child-rect rect)
-    (let [ctx' (cond-> ctx hovered? (assoc :hui/hovered? true))]
-      (core/draw-child child ctx' child-rect canvas)))
+    (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
-  (-event [_ ctx event]
+  (-event [this ctx event]
     (core/eager-or
-      (core/event-child child ctx event)
+      (core/event-child child (protocols/-context this ctx) event)
       (when (= :mouse-move (:event event))
         (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
           (when (not= hovered? hovered?')
@@ -563,6 +653,11 @@
               (when on-hover (on-hover))
               (when on-out (on-out)))
             true)))))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child (protocols/-context this ctx) cb)))
   
   AutoCloseable
   (close [_]
@@ -585,48 +680,6 @@
    (->Hoverable nil nil child nil false))
   ([{:keys [on-hover on-out]} child]
    (->Hoverable on-hover on-out child nil false)))
-
-
-;; clickable
-
-(core/deftype+ Clickable [on-click child ^:mut child-rect ^:mut hovered? ^:mut pressed?]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx rect canvas]
-    (set! child-rect rect)
-    (let [ctx' (cond-> ctx
-                 hovered?                (assoc :hui/hovered? true)
-                 (and pressed? hovered?) (assoc :hui/active? true))]
-      (core/draw-child child ctx' child-rect canvas)))
-  
-  (-event [_ ctx event]
-    (core/eager-or
-      (when (= :mouse-move (:event event))
-        (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')
-            true)))
-      (or
-        (core/event-child child ctx event)
-        (when (= :mouse-button (:event event))
-          (let [pressed?' (if (:pressed? event)
-                            hovered?
-                            (do
-                              (when (and pressed? hovered? on-click)
-                                (on-click))
-                              false))]
-            (when (not= pressed? pressed?')
-              (set! pressed? pressed?')
-              true))))))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn clickable [on-click child]
-  (->Clickable on-click child nil false false))
 
 
 ;; vscroll
@@ -672,6 +725,11 @@
       
       :else
       (core/event-child child ctx event)))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
   
   AutoCloseable
   (close [_]
@@ -719,6 +777,11 @@
   (-event [_ ctx event]
     (core/event-child child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     ;; TODO causes crash
@@ -751,7 +814,10 @@
   
   (-event [_ ctx event]
     (when on-event
-      (on-event event))))
+      (on-event event)))
+  
+  (-iterate [this ctx cb]
+    (cb this)))
 
 (defn canvas [{:keys [on-paint on-event]}]
   (->ACanvas on-paint on-event))
@@ -775,6 +841,11 @@
               (= pressed (:pressed? event)))
         (callback event))
       (core/event-child child ctx event)))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
   
   AutoCloseable
   (close [_]
@@ -804,6 +875,11 @@
         (callback (:text event)))
       (core/event-child child ctx event)))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
   AutoCloseable
   (close [_]
     (core/child-close child)))
@@ -830,10 +906,10 @@
            padding-right  (or padding-right  p 20)
            padding-bottom (or padding-bottom p leading)]
        (clickable
-         on-click
+         {:on-click on-click}
          (clip-rrect border-radius
            (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
-             (fill
+             (rect
                (cond
                  active?  (paint/fill bg-active)
                  hovered? (paint/fill bg-hovered)
@@ -858,7 +934,7 @@
 
 (defn checkbox [*state label]
   (clickable
-    #(swap! *state not)
+    {:on-click #(swap! *state not)}
     (dynamic ctx [size (let [cap-height (.getCapHeight (.getMetrics ^Font (:font-ui ctx)))]
                          (-> cap-height
                            (/ 6)
@@ -876,18 +952,6 @@
         (valign 0.5
           (with-context {:hui/checked? true}
             label))))))
-
-
-;; theme
-
-(def ^{:arglists '([comp] [opts comp])} default-theme
-  theme/default-theme)
-
-
-;; text field
-
-(def ^{:arglists '([*state] [*state opts])} text-field
-  text-field/text-field)
 
 
 ;; tooltip
@@ -928,6 +992,11 @@
 
   (-event [_ ctx event]
     (core/event-child child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
 
   AutoCloseable
   (close [_]
@@ -950,40 +1019,6 @@
                         hovered? tip
                         :else    (gap 0 0))]
              (relative-rect opts tip' child))))))))
-
-;; with-cursor
-
-(core/deftype+ WithCursor [window cursor child ^:mut ^IPoint mouse-pos ^IRect ^:mut child-rect]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (set! child-rect rect)
-    (core/draw-child child ctx child-rect canvas))
-  
-  (-event [_ ctx event]
-    (when (= :mouse-move (:event event))
-      (let [was-inside? (.contains child-rect mouse-pos)
-            mouse-pos'  (IPoint. (:x event) (:y event))
-            is-inside?  (.contains child-rect mouse-pos')]
-        ;; mouse over
-        (when (and (not was-inside?) is-inside?)
-          (window/set-cursor window cursor))
-        ;; mouse out
-        (when (and was-inside? (not is-inside?))
-          (window/set-cursor window :arrow))
-        (set! mouse-pos mouse-pos')))
-    (core/event-child child ctx event))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn with-cursor [cursor child]
-  (dynamic ctx [window (:window ctx)]
-    (->WithCursor window cursor child (IPoint. 0 0) nil)))
-
 
 ; (require 'user :reload)
 

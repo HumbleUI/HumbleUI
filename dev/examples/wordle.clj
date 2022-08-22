@@ -91,7 +91,7 @@
             (ui/row
               (interpose (ui/gap padding 0)
                 (for [[letter idx] (map vector guess (range))]
-                  (ui/fill (fill letter idx)
+                  (ui/rect (fill letter idx)
                     (ui/width 50
                       (ui/halign 0.5
                         (ui/height 50
@@ -106,7 +106,7 @@
                   (for [idx (range 0 5)]
                     (if-some [letter (when (< idx (count typing))
                                        (str (nth typing idx)))]
-                      (ui/fill stroke-dark-gray
+                      (ui/rect stroke-dark-gray
                         (ui/width 50
                           (ui/halign 0.5
                             (ui/height 50
@@ -124,17 +124,17 @@
                                               :else
                                               fill-black)]
                                   (ui/label letter {:font font-large :paint color})))))))
-                      (ui/fill stroke-light-gray
+                      (ui/rect stroke-light-gray
                         (ui/gap 50 50)))))))))))))
 
 (defn key
   ([char] (key char {:width 25 :code char}))
   ([char {:keys [width code]}]
    (ui/clickable
-     #(type! code)
+     {:on-click #(type! code)}
      (ui/dynamic ctx [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ctx
                       color (get (:colors ctx) char)]
-       (ui/fill
+       (ui/rect
          (case color
            :green  fill-green
            :yellow fill-yellow
@@ -193,7 +193,7 @@
               (ui/column
                 (ui/halign 0.5
                   (ui/clickable
-                    #(reset! *state (empty-state))
+                    {:on-click #(reset! *state (empty-state))}
                     (ui/padding 10 10
                       (ui/label "↻ Reset" {:font font-small :paint fill-black}))))
                 (ui/gap 0 padding)

@@ -106,12 +106,12 @@
 
 (defn button [text color]
   (ui/clickable
-    #(on-click text)
+    {:on-click #(on-click text)}
     (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn]} ctx]
       (let [color' (if active?
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                      color)]
-        (ui/fill (paint/fill color')
+        (ui/rect (paint/fill color')
           (ui/halign 0.5
             (ui/valign 0.5
               (ui/label text {:font font-btn :features ["tnum"]}))))))))
@@ -141,10 +141,10 @@
           (ui/with-context {:font-btn     (Font. face-ui (float size'))
                             :font-display (Font. face-ui (float size''))
                             :fill-text    (paint/fill 0xFFEBEBEB)}
-            (ui/fill (paint/fill color-display)
+            (ui/rect (paint/fill color-display)
               (ui/padding padding padding
                 (ui/column
-                  [:stretch 3 (ui/fill (paint/fill 0xFF404040)
+                  [:stretch 3 (ui/rect (paint/fill 0xFF404040)
                                 (ui/padding #(/ (:height %) 3) 0
                                   (ui/halign 1
                                     (ui/valign 0.5

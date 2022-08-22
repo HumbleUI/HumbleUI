@@ -10,7 +10,7 @@
 
 (defn label [text]
   (ui/dynamic ctx [{:keys [leading]} ctx]
-    (ui/fill (paint/fill 0xFFB2D7FE)
+    (ui/rect (paint/fill 0xFFB2D7FE)
       (ui/halign 0.5
         (ui/valign 0.5
           (ui/padding 10 leading

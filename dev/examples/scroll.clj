@@ -21,7 +21,7 @@
                    (ui/hoverable
                      (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
                        (if hovered?
-                         (ui/fill (paint/fill 0xFFCFE8FC) label)
+                         (ui/rect (paint/fill 0xFFCFE8FC) label)
                          label))))
                 (range 0 100)))))
         
@@ -38,7 +38,7 @@
                      (ui/hoverable
                        (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
                          (if hovered?
-                           (ui/fill (paint/fill 0xFFCFE8FC) label)
+                           (ui/rect (paint/fill 0xFFCFE8FC) label)
                            label))))
                   (range 0 50))))))
         
@@ -54,7 +54,7 @@
                    (ui/hoverable
                      (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
                        (if hovered?
-                         (ui/fill (paint/fill 0xFFCFE8FC) label)
+                         (ui/rect (paint/fill 0xFFCFE8FC) label)
                          label))))
                 (range 0 10)))))
         
@@ -70,7 +70,7 @@
                    (ui/hoverable
                      (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
                        (if hovered?
-                         (ui/fill (paint/fill 0xFFCFE8FC) label)
+                         (ui/rect (paint/fill 0xFFCFE8FC) label)
                          label))))
                 (range 0 10)))))
         

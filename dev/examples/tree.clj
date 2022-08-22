@@ -40,10 +40,10 @@
                           (ui/gap 1 0)
                           (for [x (range (inc y))]
                             (if (= x y 0)
-                              (ui/fill (paint/fill 0xFFCC3333)
+                              (ui/rect (paint/fill 0xFFCC3333)
                                 (ui/padding 5 5
                                   (ui/label "★")))
-                              (ui/fill (paint/fill (random-green))
+                              (ui/rect (paint/fill (random-green))
                                 (ui/padding 5 5
                                   (let [idx (+ x (* y (+ y 1) 1/2) -1)]
                                     (ui/label (nth letters idx))))))))))))))))))))

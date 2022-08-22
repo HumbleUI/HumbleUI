@@ -6,16 +6,25 @@
     [java.lang AutoCloseable]))
 
 (core/deftype+ WithContext [data child ^:mut child-rect]
+  protocols/IContext
+  (-context [_ ctx]
+    (merge ctx data))
+  
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child (merge ctx data) cs))
+  (-measure [this ctx cs]
+    (core/measure child (protocols/-context this ctx) cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [this ctx rect ^Canvas canvas]
     (set! child-rect rect)
-    (core/draw-child child (merge ctx data) child-rect canvas))
+    (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
-  (-event [_ ctx event]
-    (core/event-child child (merge ctx data) event))
+  (-event [this ctx event]
+    (core/event-child child (protocols/-context this ctx) event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child (protocols/-context this ctx) cb)))
   
   AutoCloseable
   (close [_]

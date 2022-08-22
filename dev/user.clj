@@ -48,7 +48,7 @@
    "tree"
    "wordle"])
 
-(defonce *example (atom "text-field-debug"))
+(defonce *example (atom "text-field"))
 
 (def app
   (ui/default-theme {; :font-size 13
@@ -63,7 +63,7 @@
          (ui/column
            (for [name (sort examples)]
              (ui/clickable
-               #(reset! *example name)
+               {:on-click #(reset! *example name)}
                (ui/dynamic ctx [selected? (= name @*example)
                                 hovered?  (:hui/hovered? ctx)]
                  (let [label (ui/padding 20 10
@@ -72,8 +72,8 @@
                                            (->> (map str/capitalize)
                                              (str/join " ")))))]
                    (cond
-                     selected? (ui/fill (paint/fill 0xFFB2D7FE) label)
-                     hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
+                     selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                     hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
                      :else     label))))))))
       [:stretch 1
        (ui/clip
@@ -125,7 +125,7 @@
                    :on-event #'on-event})]
     (set-floating! window @settings/*floating)
     (reset! debug/*enabled? true)
-    (window/set-title window "Humble UI 👋")
+    (window/set-title window "Humble UI 🐝")
     (when (= :macos app/platform)
       (window/set-icon window "dev/images/icon.icns"))
     (window/set-window-size window width height)

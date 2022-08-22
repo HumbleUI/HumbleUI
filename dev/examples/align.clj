@@ -9,7 +9,7 @@
 (set! *warn-on-reflection* true)
 
 (defn label [text]
-  (ui/fill (paint/fill 0xFFB2D7FE)
+  (ui/rect (paint/fill 0xFFB2D7FE)
     (ui/halign 0.5
       (ui/valign 0.5
         (ui/padding 10 10
@@ -19,7 +19,7 @@
   (ui/valign 0.5
     (ui/row
       [:stretch 1 nil]
-      [:stretch 2 (ui/fill (paint/fill 0xFFE1EFFA)
+      [:stretch 2 (ui/rect (paint/fill 0xFFE1EFFA)
                     (ui/column
                       [:stretch 1 (ui/halign 1 0   (label "Right to left (1 0)"))]
                       (ui/gap 0 1)
@@ -43,7 +43,7 @@
                       (ui/gap 0 1)
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil]
-      [:stretch 2 (ui/fill (paint/fill 0xFFE1EFFA)
+      [:stretch 2 (ui/rect (paint/fill 0xFFE1EFFA)
                     (ui/row
                       [:stretch 1 (ui/valign 1 0   (label "Bottom to top"))]
                       (ui/gap 1 0)

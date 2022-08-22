@@ -10,7 +10,7 @@
 
 (defn svg [width height xpos ypos scale]
   (ui/clip
-    (ui/fill (paint/fill 0xFF90DC48)
+    (ui/rect (paint/fill 0xFF90DC48)
       (ui/width width
         (ui/height height
           (ui/svg "dev/images/ratio.svg" {:xpos xpos :ypos ypos :scale scale}))))))
@@ -52,7 +52,7 @@
               (svg (* 3 step) (* 7 step) :max :mid :slice))
             (ui/gap 0 step)
             (ui/clip
-              (ui/fill (paint/fill 0xFF90DC48)
+              (ui/rect (paint/fill 0xFF90DC48)
                 (ui/width (* 44 step)
                   (ui/height (* 7 step)
                     (ui/svg "dev/images/ratio.svg" {:preserve-aspect-ratio false})))))))))))
