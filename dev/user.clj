@@ -1,9 +1,11 @@
 (ns user
   (:require
     [clojure.string :as str]
+    [examples.settings :as settings]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
+    [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
@@ -17,15 +19,13 @@
 
 (defonce *window (atom nil))
 
-(defonce *floating (atom true))
-
 (defn set-floating! [window floating]
   (when window
     (if floating
       (window/set-z-order window :floating)
       (window/set-z-order window :normal))))
 
-(add-watch *floating ::window
+(add-watch settings/*floating ::window
   (fn [_ _ _ floating]
     (set-floating! @*window floating)))
 
@@ -40,6 +40,7 @@
    "event-bubbling"
    "label"
    "scroll"
+   "settings"
    "svg"
    "text-field"
    "text-field-debug"
@@ -57,27 +58,23 @@
                      ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
                      }
     (ui/row
-      (ui/column
-        [:stretch 1
-         (ui/vscrollbar
-           (ui/vscroll
-             (ui/column
-               (for [name (sort examples)]
-                 (ui/clickable
-                   #(reset! *example name)
-                   (ui/dynamic ctx [selected? (= name @*example)
-                                    hovered?  (:hui/hovered? ctx)]
-                     (let [label (ui/padding 20 10
-                                   (ui/label (-> name
-                                               (str/split #"-")
-                                               (->> (map str/capitalize)
-                                                 (str/join " ")))))]
-                       (cond
-                         selected? (ui/fill (paint/fill 0xFFB2D7FE) label)
-                         hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
-                         :else     label))))))))]
-        (ui/padding 10 10
-          (ui/checkbox *floating (ui/label "On top"))))
+     (ui/vscrollbar
+       (ui/vscroll
+         (ui/column
+           (for [name (sort examples)]
+             (ui/clickable
+               #(reset! *example name)
+               (ui/dynamic ctx [selected? (= name @*example)
+                                hovered?  (:hui/hovered? ctx)]
+                 (let [label (ui/padding 20 10
+                               (ui/label (-> name
+                                           (str/split #"-")
+                                           (->> (map str/capitalize)
+                                             (str/join " ")))))]
+                   (cond
+                     selected? (ui/fill (paint/fill 0xFFB2D7FE) label)
+                     hovered?  (ui/fill (paint/fill 0xFFE1EFFA) label)
+                     :else     label))))))))
       [:stretch 1
        (ui/clip
          (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
@@ -126,7 +123,8 @@
                   {:on-close #(reset! *window nil)
                    :on-paint #'on-paint
                    :on-event #'on-event})]
-    (set-floating! window @*floating)
+    (set-floating! window @settings/*floating)
+    (reset! debug/*enabled? true)
     (window/set-title window "Humble UI 👋")
     (when (= :macos app/platform)
       (window/set-icon window "dev/images/icon.icns"))
@@ -141,7 +139,7 @@
 (comment  
   (do
     (app/doui (some-> @*window window/close))
-    (reset! *floating false)
+    (reset! settings/*floating false)
     (reset! *window (app/doui (make-window))))
   
   (app/doui (window/set-z-order @*window :normal))

@@ -1,7 +1,9 @@
 (ns io.github.humbleui.window
   (:require
     [clojure.java.io :as io]
+    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
+    [io.github.humbleui.debug :as debug]
     [io.github.humbleui.event :as event])
   (:import
     [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
@@ -17,6 +19,15 @@
 
 (defn closed? [^Window window]
   (.isClosed window))
+
+(defn scale [^Window window]
+  (.getScale (.getScreen window)))
+
+(defn window-rect [^Window window]
+  (.getWindowRect window))
+
+(defn content-rect [^Window window]
+  (.getContentRect window))
 
 (defn make
   ":on-close-request (fn [window])
@@ -34,11 +45,15 @@
                        Platform/X11     (LayerGLSkija.))
         listener     (reify Consumer
                        (accept [this jwm-event]
-                         (let [e (event/event->map jwm-event)]
+                         (let [e    (event/event->map jwm-event)
+                               type (:event e)]
+                           (when (not= :frame-skija type)
+                             (debug/on-start :event))
+                           
                            (when on-event
                              (on-event window e))
                            
-                           (case (:event e)
+                           (case type
                              :window-close-request
                              (when on-close-request
                                (on-close-request window))
@@ -60,14 +75,29 @@
                                (let [canvas (.getCanvas ^Surface (:surface e))
                                      layer  (.save canvas)]
                                  (try
+                                   (debug/on-start :paint)
                                    (on-paint window canvas)
+                                   (debug/on-end :paint)
+                                   (when @debug/*enabled?
+                                     (canvas/with-canvas canvas
+                                       (let [scale (scale window)
+                                             rect  (content-rect window)]
+                                         (canvas/translate canvas
+                                           (- (:width rect) (* scale (+ debug/width 5 debug/width 10)))
+                                           (- (:height rect) (* scale (+ debug/height 10))))
+                                         (canvas/scale canvas scale)
+                                         (debug/draw canvas :paint)
+                                         (canvas/translate canvas (+ debug/width 10) 0)
+                                         (debug/draw canvas :event))))
                                    (catch Exception e
                                      (.printStackTrace e)
                                      (.clear canvas (unchecked-int 0xFFCC3333)))
                                    (finally
                                      (.restoreToCount canvas layer)))))
                              
-                             nil))))
+                             nil)
+                           (when (not= :frame-skija type)
+                             (debug/on-end :event)))))
         input-client (reify TextInputClient
                        (getRectForMarkedRange [this selection-start selection-end]
                          (or
@@ -82,9 +112,6 @@
     (.setTextInputClient window input-client)
     window))
 
-(defn scale [^Window window]
-  (.getScale (.getScreen window)))
-
 (defn set-title [^Window window ^String title]
   (.setTitle window title)
   window)
@@ -97,11 +124,6 @@
   (.setVisible window value)
   window)
 
-(defn window-rect [^Window window]
-  (.getWindowRect window))
-
-(defn content-rect [^Window window]
-  (.getContentRect window))
 
 (defn set-window-position [^Window window ^long x ^long y]
   (.setWindowPosition window x y)

@@ -7,6 +7,10 @@
 
 (set! *warn-on-reflection* true)
 
+(def *default
+  (delay
+    (Typeface/makeDefault)))
+  
 (defn ^Typeface make-from-data
   ([^Data data]
    (Typeface/makeFromFile data 0))
