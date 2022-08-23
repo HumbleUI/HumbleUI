@@ -51,24 +51,29 @@
                              (debug/on-start :event))
                            
                            (when on-event
-                             (on-event window e))
+                             (core/catch-and-log
+                               (on-event window e)))
                            
                            (case type
                              :window-close-request
                              (when on-close-request
-                               (on-close-request window))
+                               (core/catch-and-log
+                                 (on-close-request window)))
                              
                              :window-close
                              (when on-close
-                               (on-close))
+                               (core/catch-and-log
+                                 (on-close)))
                              
                              :window-screen-change
                              (when on-screen-change
-                               (on-screen-change window))
+                               (core/catch-and-log
+                                 (on-screen-change window)))
                              
                              :window-resize
                              (when on-resize
-                               (on-resize window))
+                               (core/catch-and-log
+                                 (on-resize window)))
                              
                              :frame-skija
                              (when on-paint
@@ -89,8 +94,8 @@
                                          (debug/draw canvas :paint)
                                          (canvas/translate canvas (+ debug/width 10) 0)
                                          (debug/draw canvas :event))))
-                                   (catch Exception e
-                                     (.printStackTrace e)
+                                   (catch Throwable e
+                                     (core/log-error e)
                                      (.clear canvas (unchecked-int 0xFFCC3333)))
                                    (finally
                                      (.restoreToCount canvas layer)))))
@@ -102,9 +107,10 @@
                        (getRectForMarkedRange [this selection-start selection-end]
                          (or
                            (when on-event
-                             (on-event window {:event           :get-rect-for-marked-range
-                                               :selection-start selection-start
-                                               :selection-end   selection-end}))
+                             (core/catch-and-log
+                               (on-event window {:event           :get-rect-for-marked-range
+                                                 :selection-start selection-start
+                                                 :selection-end   selection-end})))
                            (IRect/makeXYWH 0 0 0 0))))]
     (.setLayer window layer)
     (.setEventListener window listener)
@@ -123,7 +129,6 @@
 (defn set-visible [^Window window ^Boolean value]
   (.setVisible window value)
   window)
-
 
 (defn set-window-position [^Window window ^long x ^long y]
   (.setWindowPosition window x y)

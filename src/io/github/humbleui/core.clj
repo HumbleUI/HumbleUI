@@ -17,13 +17,25 @@
 
 ;; constants
 
-(def double-click-threshold-ms 500)
+(def double-click-threshold-ms
+  500)
 
 ;; state
 
-(def ^Shaper shaper (Shaper/makeShapeDontWrapOrReorder))
+(def ^Shaper shaper
+  (Shaper/makeShapeDontWrapOrReorder))
 
-(defonce ^Timer timer (Timer. true))
+(defonce ^Timer timer
+  (Timer. true))
+
+(defn log-error [^Throwable t]
+  (.printStackTrace t))
+
+(defmacro catch-and-log [& body]
+  `(try
+     ~@body
+     (catch Throwable t#
+       (log-error t#))))
 
 ;; macros
 
@@ -36,7 +48,11 @@
             value
             (when (instance? AutoCloseable value)
               (.close ^AutoCloseable value))))
-        (let [value' (apply ctor args')]
+        (let [value' (try
+                       (apply ctor args')
+                       (catch Throwable t
+                         (log-error t)
+                         t))]
           (vreset! *atom [args' value'])
           value')))))
 
@@ -301,7 +317,7 @@
       (try
         (f)
         (catch Throwable t
-          (.printStackTrace t))))))
+          (log-error t))))))
 
 (defn schedule
   ([f ^long delay]

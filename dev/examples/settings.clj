@@ -6,7 +6,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defonce *floating (atom true))
+(defonce *floating (atom false))
 
 (def ui
   (ui/valign 0.5

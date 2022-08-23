@@ -11,42 +11,46 @@
 (core/deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
-    (try
-      (let [child' (child-ctor ctx)]
-        (when-not (identical? child child')
-          (core/child-close child)
-          (set! child child')))
-      (core/measure child ctx cs)
-      (catch Throwable e
-        (.printStackTrace e)
-        cs)))
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (core/child-close child)
+        (set! child child')))
+    (if (instance? Throwable child)
+      cs
+      (core/measure child ctx cs)))
   
   (-draw [_ ctx rect canvas]
-    (try
-      (let [child' (child-ctor ctx)]
-        (when-not (identical? child child')
-          (core/child-close child)
-          (set! child child')))
-      (set! child-rect rect)
-      (core/draw-child child ctx child-rect canvas)
-      (catch Throwable e
-        (.drawRect canvas (.toRect rect) (paint/fill 0xFFCC3333))
-        (.printStackTrace e))))
+    (let [child' (child-ctor ctx)]
+      (when-not (identical? child child')
+        (core/child-close child)
+        (set! child child')))
+    (set! child-rect rect)
+    (if (instance? Throwable child)
+      (.drawRect canvas (.toRect rect) (paint/fill 0xFFCC3333))
+      (core/draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]
-    (core/event-child child ctx event))
+    (when-not (instance? Throwable child)
+      (core/event-child child ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (protocols/-iterate child ctx cb)))
+      (when-not (instance? Throwable child)
+        (protocols/-iterate child ctx cb))))
   
   AutoCloseable
   (close [_]
     (core/child-close child)))
 
 (defn contextual [child-ctor]
-  (->Contextual child-ctor nil nil))
+  (->Contextual
+    #(try
+       (child-ctor %)
+       (catch Throwable t
+         (core/log-error t)
+         t))
+    nil nil))
 
 (defn bindings->syms [bindings]
   (->> bindings

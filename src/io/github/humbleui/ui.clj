@@ -632,7 +632,8 @@
 (core/deftype+ Hoverable [on-hover on-out child ^:mut child-rect ^:mut hovered?]
   protocols/IContext
   (-context [_ ctx]
-    (cond-> ctx hovered? assoc :hui/hovered? true))
+    (cond-> ctx
+      hovered? (assoc :hui/hovered? true)))
 
   protocols/IComponent
   (-measure [this ctx cs]

@@ -10,12 +10,16 @@
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
-    [nrepl.cmdline :as nrepl])
+    [nrepl.cmdline :as nrepl]
+    [user.error :as error])
   (:import
     [io.github.humbleui.skija FontMgr FontStyle Typeface Font]
     [io.github.humbleui.types IRect]))
 
 (set! *warn-on-reflection* true)
+
+(alter-var-root #'core/log-error
+  (constantly error/log-error))
 
 (defonce *window (atom nil))
 
