@@ -29,21 +29,22 @@
                          :font-ui        font-ui
                          :leading        leading
                          :fill-text      fill-text
-                         :hui.text-field/font                  font-ui
-                         :hui.text-field/font-features         []
-                         :hui.text-field/cursor-blink-interval 500
-                         :hui.text-field/fill-text             fill-text
-                         :hui.text-field/fill-cursor           fill-text
-                         :hui.text-field/fill-selection        (paint/fill 0xFFB1D7FF)
-                         :hui.text-field/fill-bg-active        (paint/fill 0xFFFFFFFF)
-                         :hui.text-field/fill-bg-inactive      (paint/fill 0xFFF8F8F8)
-                         :hui.text-field/border-active         (paint/stroke 0xFF749EE4 (* 1 scale))
-                         :hui.text-field/border-inactive       (paint/stroke 0xFFCCCCCC (* 1 scale))
-                         :hui.text-field/cursor-width          (float 1)
-                         :hui.text-field/padding-top           (-> cap-height (/ 3) Math/round (/ scale) float)
-                         :hui.text-field/padding-bottom        (-> cap-height (/ 3) Math/round (/ scale) float)
-                         :hui.text-field/padding-left          (float 0)
-                         :hui.text-field/padding-right         (float 0)}]
+                         :hui.text-field/font                    font-ui
+                         :hui.text-field/font-features           []
+                         :hui.text-field/cursor-blink-interval   500
+                         :hui.text-field/fill-text               fill-text
+                         :hui.text-field/fill-cursor             fill-text
+                         :hui.text-field/fill-selection-active   (paint/fill 0xFFB1D7FF)
+                         :hui.text-field/fill-selection-inactive (paint/fill 0xFFDDDDDD)
+                         :hui.text-field/fill-bg-active          (paint/fill 0xFFFFFFFF)
+                         :hui.text-field/fill-bg-inactive        (paint/fill 0xFFF8F8F8)
+                         :hui.text-field/border-active           (paint/stroke 0xFF749EE4 (* 1 scale))
+                         :hui.text-field/border-inactive         (paint/stroke 0xFFCCCCCC (* 1 scale))
+                         :hui.text-field/cursor-width            (float 1)
+                         :hui.text-field/padding-top             (-> cap-height (/ 3) Math/round (/ scale) float)
+                         :hui.text-field/padding-bottom          (-> cap-height (/ 3) Math/round (/ scale) float)
+                         :hui.text-field/padding-left            (float 0)
+                         :hui.text-field/padding-right           (float 0)}]
          (with-context/with-context (core/merge-some theme opts) comp))))))
 
 ; (require 'user :reload)

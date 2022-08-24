@@ -566,7 +566,9 @@
               (+ (:y rect) (* scale padding-top) (- ascent))
               (+ (:x rect) (- offset) (max coord-from coord-to))
               (+ (:y rect) baseline descent))
-            (:hui.text-field/fill-selection ctx)))
+            (if focused?
+              (:hui.text-field/fill-selection-active ctx)
+              (:hui.text-field/fill-selection-inactive ctx))))
         
         ;; text
         (.drawTextLine canvas line
@@ -611,8 +613,8 @@
                   (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
         
   (-event [this ctx event]
-    ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move :mouse-button} (:event event))
-    ;   (println event))
+    ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move} (:event event))
+    ;   (println (:hui/focused? ctx) event))
     (when (:hui/focused? ctx)
       (let [state @*state
             {:keys [text from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
@@ -854,45 +856,48 @@
   (close [this]
     #_(.close line))) ; TODO
 
+(defn text-input [*state]
+  (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
+    (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
+      (swap! *state #(core/merge-some
+                       {:text               ""
+                        :from               0
+                        :to                 0
+                        :coord-to           nil
+                        :last-change-cmd    nil
+                        :last-change-to     nil
+                        :marked-from        nil
+                        :marked-to          nil
+                        :word-iter          nil
+                        :char-iter          nil
+                        :undo               nil
+                        :redo               nil
+                        :postponed          nil
+                        :cursor-blink-pivot (core/now)
+                        :offset             nil
+                        :line               nil
+                        :selecting?         false
+                        :mouse-clicks       0
+                        :last-mouse-click   0}
+                       %))
+      (->TextField *state features nil))))
+
 (defn text-field
   ([*state]
    (text-field nil *state))
   ([opts *state]
-    (focusable/focusable opts
-      (with-cursor/with-cursor :ibeam
-        (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)
-                              active?  (:hui/focused? ctx)
-                              stroke   (if active?
-                                         (:hui.text-field/border-active ctx)
-                                         (:hui.text-field/border-inactive ctx))
-                              bg       (if active?
-                                         (:hui.text-field/fill-bg-active ctx)
-                                         (:hui.text-field/fill-bg-inactive ctx))]
-          (rect/rect bg
-            (rect/rect stroke
-              (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
-                (swap! *state #(core/merge-some
-                                 {:text               ""
-                                  :from               0
-                                  :to                 0
-                                  :coord-to           nil
-                                  :last-change-cmd    nil
-                                  :last-change-to     nil
-                                  :marked-from        nil
-                                  :marked-to          nil
-                                  :word-iter          nil
-                                  :char-iter          nil
-                                  :undo               nil
-                                  :redo               nil
-                                  :postponed          nil
-                                  :cursor-blink-pivot (core/now)
-                                  :offset             nil
-                                  :line               nil
-                                  :selecting?         false
-                                  :mouse-clicks       0
-                                  :last-mouse-click   0}
-                                 %))
-                (->TextField *state features nil)))))))))
+   (focusable/focusable opts
+     (with-cursor/with-cursor :ibeam
+       (dynamic/dynamic ctx [active?  (:hui/focused? ctx)
+                             stroke   (if active?
+                                        (:hui.text-field/border-active ctx)
+                                        (:hui.text-field/border-inactive ctx))
+                             bg       (if active?
+                                        (:hui.text-field/fill-bg-active ctx)
+                                        (:hui.text-field/fill-bg-inactive ctx))]
+         (rect/rect bg
+           (rect/rect stroke
+             (text-input *state))))))))
 
 ; (require 'user :reload)
 

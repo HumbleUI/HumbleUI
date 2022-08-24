@@ -3,10 +3,10 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.clickable :as clickable]
     [io.github.humbleui.ui.key-listener :as key-listener])
   (:import
-    [java.lang AutoCloseable]))
+    [java.lang AutoCloseable]
+    [io.github.humbleui.types IPoint IRect]))
 
 (core/deftype+ Focusable [child ^:mut child-rect ^:mut focused?]
   protocols/IContext
@@ -23,7 +23,14 @@
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
   (-event [this ctx event]
-    (core/event-child child (protocols/-context this ctx) event))
+    (core/eager-or
+      (when (and
+              (= :mouse-button (:event event))
+              (:pressed? event)
+              (not focused?)
+              (.contains ^IRect child-rect (IPoint. (:x event) (:y event))))
+        (set! focused? true))
+      (core/event-child child (protocols/-context this ctx) event)))
   
   (-iterate [this ctx cb]
     (or
@@ -38,14 +45,18 @@
   ([child]
    (focusable child false))
   ([{:keys [focused?]} child]
-   (let [this (->Focusable child nil focused?)]
-     (clickable/clickable
-       {:on-click-capture
-        (fn [_]
-          (protocols/-set! this :focused? true))}
-       this))))
+   (->Focusable child nil focused?)))
 
-(core/deftype+ FocusController [child ^:mut child-rect ^:mut focused]
+(defn- focused [this]
+  (let [*acc (volatile! [])]
+    (protocols/-iterate this nil
+      (fn [comp]
+        (when (and (instance? Focusable comp) (:focused? comp))
+          (vswap! *acc conj comp)
+          false)))
+    @*acc))
+
+(core/deftype+ FocusController [child ^:mut child-rect]
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure child ctx cs))
@@ -55,7 +66,20 @@
     (core/draw-child child ctx child-rect canvas))
   
   (-event [this ctx event]
-    (core/event-child child ctx event))
+    (if (and
+          (= :mouse-button (:event event))
+          (:pressed? event)
+          (.contains ^IRect child-rect (IPoint. (:x event) (:y event))))
+      (let [focused-before (focused this)
+            res            (core/event-child child ctx event)
+            focused-after  (focused this)]
+        (when (< 1 (count focused-after))
+          (doseq [comp focused-before]
+            (protocols/-set! comp :focused? false)))
+        (or
+          res
+          (< 1 (count focused-after))))
+      (core/event-child child ctx event)))
   
   (-iterate [this ctx cb]
     (or
@@ -65,13 +89,6 @@
   AutoCloseable
   (close [_]
     (core/child-close child)))
-
-(defn on-click-capture [this]
-  (protocols/-iterate this nil
-    (fn [comp]
-      (when (and (instance? Focusable comp) (:focused? comp))
-        (protocols/-set! comp :focused? false)
-        true))))
 
 (defn focus-prev [this]
   (let [*prev    (volatile! nil)
@@ -115,17 +132,13 @@
       (protocols/-set! next :focused? true))))
 
 (defn focus-controller [child]
-  (let [this (->FocusController child nil nil)]
-    (clickable/clickable
-      {:on-click-capture
-       (fn [_]
-         (on-click-capture this))}
-      (key-listener/key-listener
-        {:on-key-down
-         (fn [e]
-           (when (= :tab (:key e))
-             (if (:shift (:modifiers e))
-               (focus-prev this)
-               (focus-next this))))}
-        this))))
+  (let [this (->FocusController child nil)]
+    (key-listener/key-listener
+      {:on-key-down
+       (fn [e]
+         (when (= :tab (:key e))
+           (if (:shift (:modifiers e))
+             (focus-prev this)
+             (focus-next this))))}
+      this)))
         
