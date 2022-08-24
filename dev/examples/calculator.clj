@@ -106,7 +106,7 @@
 
 (defn button [text color]
   (ui/clickable
-    {:on-click #(on-click text)}
+    {:on-click (fn [_] (on-click text))}
     (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn]} ctx]
       (let [color' (if active?
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))

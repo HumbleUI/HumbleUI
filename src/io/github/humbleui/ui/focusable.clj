@@ -3,7 +3,8 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.clickable :as clickable])
+    [io.github.humbleui.ui.clickable :as clickable]
+    [io.github.humbleui.ui.key-listener :as key-listener])
   (:import
     [java.lang AutoCloseable]))
 
@@ -39,7 +40,9 @@
   ([{:keys [focused?]} child]
    (let [this (->Focusable child nil focused?)]
      (clickable/clickable
-       {:on-click-capture #(protocols/-set! this :focused? true)}
+       {:on-click-capture
+        (fn [_]
+          (protocols/-set! this :focused? true))}
        this))))
 
 (core/deftype+ FocusController [child ^:mut child-rect ^:mut focused]
@@ -63,15 +66,66 @@
   (close [_]
     (core/child-close child)))
 
+(defn on-click-capture [this]
+  (protocols/-iterate this nil
+    (fn [comp]
+      (when (and (instance? Focusable comp) (:focused? comp))
+        (protocols/-set! comp :focused? false)
+        true))))
+
+(defn focus-prev [this]
+  (let [*prev    (volatile! nil)
+        *focused (volatile! nil)]
+    (protocols/-iterate this nil
+      (fn [comp]
+        (when (instance? Focusable comp)
+          (if (:focused? comp)
+            (do
+              (vreset! *focused comp)
+              (some? @*prev))
+            (do
+              (vreset! *prev comp)
+              false)))))
+    (when-some [focused @*focused]
+      (protocols/-set! focused :focused? false))
+    (when-some [prev @*prev]
+      (protocols/-set! prev :focused? true))))
+
+(defn focus-next [this]
+  (let [*first   (volatile! nil)
+        *focused (volatile! nil)
+        *next    (volatile! nil)]
+    (protocols/-iterate this nil
+      (fn [comp]
+        (when (instance? Focusable comp)
+          (when (nil? @*first)
+            (do
+              (vreset! *first comp)
+              false))
+          (if (:focused? comp)
+            (do
+              (vreset! *focused comp)
+              false)
+            (when @*focused
+              (vreset! *next comp)
+              true)))))
+    (when-some [focused @*focused]
+      (protocols/-set! focused :focused? false))
+    (when-some [next (or @*next @*first)]
+      (protocols/-set! next :focused? true))))
+
 (defn focus-controller [child]
   (let [this (->FocusController child nil nil)]
     (clickable/clickable
       {:on-click-capture
-       (fn []
-         (protocols/-iterate this nil
-           (fn [comp]
-             (when (and (instance? Focusable comp) (:focused? comp))
-               (protocols/-set! comp :focused? false)
-               true))))}
-      this)))
+       (fn [_]
+         (on-click-capture this))}
+      (key-listener/key-listener
+        {:on-key-down
+         (fn [e]
+           (when (= :tab (:key e))
+             (if (:shift (:modifiers e))
+               (focus-prev this)
+               (focus-next this))))}
+        this))))
         

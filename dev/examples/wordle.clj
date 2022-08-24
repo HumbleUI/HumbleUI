@@ -131,7 +131,7 @@
   ([char] (key char {:width 25 :code char}))
   ([char {:keys [width code]}]
    (ui/clickable
-     {:on-click #(type! code)}
+     {:on-click (fn [_] (type! code))}
      (ui/dynamic ctx [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ctx
                       color (get (:colors ctx) char)]
        (ui/rect
@@ -172,8 +172,8 @@
             (key "⌫" {:width (+ (* 2 25) padding), :code :backspace})))))))
 
 (def ui
-  (ui/on-key-down #(type! (:key %))
-    (ui/on-text-input #(type! (str/upper-case %))
+  (ui/key-listener {:on-key-down #(type! (:key %))}
+    (ui/text-listener {:on-input #(type! (str/upper-case %))}
       (ui/padding padding padding
         (ui/dynamic ctx [{:keys [scale]} ctx]
           (let [font-small      (font/make-with-cap-height typeface (float (* scale 9)))
@@ -193,7 +193,7 @@
               (ui/column
                 (ui/halign 0.5
                   (ui/clickable
-                    {:on-click #(reset! *state (empty-state))}
+                    {:on-click (fn [_] (reset! *state (empty-state)))}
                     (ui/padding 10 10
                       (ui/label "↻ Reset" {:font font-small :paint fill-black}))))
                 (ui/gap 0 padding)

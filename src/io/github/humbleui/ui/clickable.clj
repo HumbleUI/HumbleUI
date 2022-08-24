@@ -37,12 +37,12 @@
             clicked? (and pressed? (not pressed?') hovered?)]
         (core/eager-or
           (when (and clicked? on-click-capture)
-            (on-click-capture)
+            (on-click-capture event)
             false)
           (or
             (core/event-child child (protocols/-context this ctx) event)
             (when (and clicked? on-click)
-              (on-click)
+              (on-click event)
               false))
           (when (not= pressed? pressed?')
             (set! pressed? pressed?')

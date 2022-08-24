@@ -11,6 +11,7 @@
     [io.github.humbleui.ui.clickable :as clickable]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
+    [io.github.humbleui.ui.key-listener :as key-listener]
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.text-field :as text-field]
     [io.github.humbleui.ui.theme :as theme]
@@ -45,6 +46,12 @@
 
 (def ^{:arglists '([child])} focus-controller
   focusable/focus-controller)
+
+
+;; key-listener
+
+(def ^{:arglists '([opts child])} key-listener
+  key-listener/key-listener)
 
 
 ;; rect
@@ -823,45 +830,9 @@
 (defn canvas [{:keys [on-paint on-event]}]
   (->ACanvas on-paint on-event))
 
-
-;; on-key-down / on-key-up
-
-(core/deftype+ KeyListener [pressed callback child ^:mut child-rect]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx rect ^Canvas canvas]
-    (set! child-rect rect)
-    (core/draw-child child ctx rect canvas))
-  
-  (-event [_ ctx event]
-    (core/eager-or
-      (when (and
-              (= :key (:event event))
-              (= pressed (:pressed? event)))
-        (callback event))
-      (core/event-child child ctx event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child ctx cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn on-key-down [callback child]
-  (->KeyListener true callback child nil))
-
-(defn on-key-up [callback child]
-  (->KeyListener false callback child nil))
-
-
 ;; text-listener
 
-(core/deftype+ TextListener [callback child ^:mut child-rect]
+(core/deftype+ TextListener [on-input child ^:mut child-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
@@ -873,7 +844,7 @@
   (-event [_ ctx event]
     (core/eager-or
       (when (= :text-input (:event event))
-        (callback (:text event)))
+        (on-input (:text event)))
       (core/event-child child ctx event)))
   
   (-iterate [this ctx cb]
@@ -885,8 +856,8 @@
   (close [_]
     (core/child-close child)))
 
-(defn on-text-input [callback child]
-  (->TextListener callback child nil))
+(defn text-listener [{:keys [on-input]} child]
+  (->TextListener on-input child nil))
 
 
 ;; button
@@ -907,7 +878,8 @@
            padding-right  (or padding-right  p 20)
            padding-bottom (or padding-bottom p leading)]
        (clickable
-         {:on-click on-click}
+         {:on-click (when on-click
+                      (fn [_] (on-click)))}
          (clip-rrect border-radius
            (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
              (rect
@@ -935,7 +907,7 @@
 
 (defn checkbox [*state label]
   (clickable
-    {:on-click #(swap! *state not)}
+    {:on-click (fn [_] (swap! *state not))}
     (dynamic ctx [size (let [cap-height (.getCapHeight (.getMetrics ^Font (:font-ui ctx)))]
                          (-> cap-height
                            (/ 6)

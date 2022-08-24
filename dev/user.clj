@@ -67,7 +67,7 @@
          (ui/column
            (for [name (sort examples)]
              (ui/clickable
-               {:on-click #(reset! *example name)}
+               {:on-click (fn [_] (reset! *example name))}
                (ui/dynamic ctx [selected? (= name @*example)
                                 hovered?  (:hui/hovered? ctx)]
                  (let [label (ui/padding 20 10
