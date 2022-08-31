@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def *state (atom {:text ""}))
+(def *state (atom {:text "" :placeholder "Type here"}))
 
 (defn render-form [form]
   (cond
@@ -33,6 +33,7 @@
         (ui/column
           (ui/with-context
             {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
+             :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
              :hui.text-field/cursor-width   2
              :hui.text-field/padding-top    10
              :hui.text-field/padding-bottom 10

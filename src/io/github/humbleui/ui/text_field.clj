@@ -2,6 +2,7 @@
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]
+    [clojure.string :as str]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.clipboard :as clipboard]
@@ -452,11 +453,19 @@
 (defn- ^TextLine text-line [text-field ctx]
   (let [{:keys [*state]} text-field
         {:keys [text line]} @*state]
-    (if (nil? line)
-      (let [line' (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field))]
-        (swap! *state assoc :line line')
-        line')
-      line)))
+    (or
+      line
+      (:line
+        (swap! *state assoc :line (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field)))))))
+
+(defn- ^TextLine placeholder-line [text-field ctx]
+  (let [{:keys [*state]} text-field
+        {:keys [placeholder placeholder-line]} @*state]
+    (when-not (str/blank? placeholder)
+      (or
+        placeholder-line
+        (:placeholder-line
+          (swap! *state assoc :placeholder-line (.shapeLine core/shaper placeholder (:hui.text-field/font ctx) (:features text-field))))))))
 
 (defn- coord-to [text-field ctx]
   (let [{:keys [*state]} text-field
@@ -544,7 +553,7 @@
            :hui/keys            [focused?]
            :hui.text-field/keys [^Font font
                                  padding-top]} ctx
-          line        (text-line this ctx)
+          line       (text-line this ctx)
           metrics    ^FontMetrics (.getMetrics font)
           cap-height (Math/round (.getCapHeight metrics))
           ascent     (Math/ceil (- (- (.getAscent metrics)) (.getCapHeight metrics)))
@@ -571,10 +580,17 @@
               (:hui.text-field/fill-selection-inactive ctx))))
         
         ;; text
-        (.drawTextLine canvas line
-          (+ (:x rect) (- offset))
-          (+ (:y rect) baseline)
-          (:hui.text-field/fill-text ctx))
+        (let [placeholder? (= "" text)
+              line (if placeholder?
+                     (placeholder-line this ctx)
+                     line)
+              x    (+ (:x rect) (- offset))
+              y    (+ (:y rect) baseline)
+              fill (if placeholder?
+                     (:hui.text-field/fill-placeholder ctx)
+                     (:hui.text-field/fill-text ctx))]
+          (when line
+            (.drawTextLine canvas line x y fill)))
         
         ;; composing region
         (when (and marked-from marked-to)
@@ -589,7 +605,7 @@
               (:hui.text-field/fill-text ctx))))
         
         ;; cursor
-        (when (and focused? (not selection?))
+        (when focused?
           (let [now                   (core/now)
                 cursor-width          (* scale (:hui.text-field/cursor-width ctx))
                 cursor-left           (quot cursor-width 2)
@@ -856,31 +872,34 @@
   (close [this]
     #_(.close line))) ; TODO
 
-(defn text-input [*state]
-  (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
-    (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
-      (swap! *state #(core/merge-some
-                       {:text               ""
-                        :from               0
-                        :to                 0
-                        :coord-to           nil
-                        :last-change-cmd    nil
-                        :last-change-to     nil
-                        :marked-from        nil
-                        :marked-to          nil
-                        :word-iter          nil
-                        :char-iter          nil
-                        :undo               nil
-                        :redo               nil
-                        :postponed          nil
-                        :cursor-blink-pivot (core/now)
-                        :offset             nil
-                        :line               nil
-                        :selecting?         false
-                        :mouse-clicks       0
-                        :last-mouse-click   0}
-                       %))
-      (->TextField *state features nil))))
+(defn text-input
+  ([*state]
+   (text-input nil *state))
+  ([opts *state]
+   (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
+     (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
+       (swap! *state #(core/merge-some
+                        {:text               ""
+                         :from               0
+                         :to                 0
+                         :coord-to           nil
+                         :last-change-cmd    nil
+                         :last-change-to     nil
+                         :marked-from        nil
+                         :marked-to          nil
+                         :word-iter          nil
+                         :char-iter          nil
+                         :undo               nil
+                         :redo               nil
+                         :postponed          nil
+                         :cursor-blink-pivot (core/now)
+                         :offset             nil
+                         :line               nil
+                         :selecting?         false
+                         :mouse-clicks       0
+                         :last-mouse-click   0}
+                        %))
+       (->TextField *state features nil)))))
 
 (defn text-field
   ([*state]
@@ -888,16 +907,16 @@
   ([opts *state]
    (focusable/focusable opts
      (with-cursor/with-cursor :ibeam
-       (dynamic/dynamic ctx [active?  (:hui/focused? ctx)
-                             stroke   (if active?
-                                        (:hui.text-field/border-active ctx)
-                                        (:hui.text-field/border-inactive ctx))
-                             bg       (if active?
-                                        (:hui.text-field/fill-bg-active ctx)
-                                        (:hui.text-field/fill-bg-inactive ctx))]
+       (dynamic/dynamic ctx [active? (:hui/focused? ctx)
+                             stroke  (if active?
+                                       (:hui.text-field/border-active ctx)
+                                       (:hui.text-field/border-inactive ctx))
+                             bg      (if active?
+                                       (:hui.text-field/fill-bg-active ctx)
+                                       (:hui.text-field/fill-bg-inactive ctx))]
          (rect/rect bg
            (rect/rect stroke
-             (text-input *state))))))))
+             (text-input opts *state))))))))
 
 ; (require 'user :reload)
 

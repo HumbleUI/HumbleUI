@@ -68,7 +68,7 @@
 
 ;; text field
 
-(def ^{:arglists '([*state])} text-input
+(def ^{:arglists '([*state] [opts *state])} text-input
   text-field/text-input)
 
 (def ^{:arglists '([*state] [opts *state])} text-field
