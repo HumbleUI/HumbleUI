@@ -911,15 +911,16 @@
    [:indeterminate false] (core/lazy-resource "ui/checkbox/indeterminate.svg")
    [:indeterminate true]  (core/lazy-resource "ui/checkbox/indeterminate_active.svg")})
 
+(defn- checkbox-size [^Font font]
+  (let [cap-height (.getCapHeight (.getMetrics font))
+        extra      (-> cap-height (/ 8) math/ceil (* 4))] ;; half cap-height but increased so that it’s divisible by 4
+    (+ cap-height extra)))
+
 (defn checkbox [*state label]
   (clickable
     {:on-click (fn [_] (swap! *state not))}
-    (dynamic ctx [size (let [cap-height (.getCapHeight (.getMetrics ^Font (:font-ui ctx)))]
-                         (-> cap-height
-                           (/ 6)
-                           (math/round)
-                           (* 9)
-                           (/ (:scale ctx))))]
+    (dynamic ctx [size (/ (checkbox-size (:font-ui ctx))
+                         (:scale ctx))]
       (row
         (valign 0.5
           (dynamic ctx [state  @*state

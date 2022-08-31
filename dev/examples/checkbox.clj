@@ -1,6 +1,7 @@
 (ns examples.checkbox
   (:require
     [clojure.string :as str]
+    [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -43,9 +44,7 @@
       (ui/column
         (ui/dynamic ctx [{:keys [face-ui scale]} ctx]
           (ui/with-context
-            (let [font-ui (Font. ^Typeface face-ui (float (* 26 scale)))]
-              {:font-ui font-ui
-               :leading (-> font-ui .getMetrics .getCapHeight Math/ceil (/ scale))})
+            {:font-ui (font/make-with-cap-height face-ui (* 20 scale))}
             (ui/checkbox *state-group (ui/label "Group state"))))
         (ui/gap 0 10)
         (ui/checkbox *state-first (ui/label "First state"))

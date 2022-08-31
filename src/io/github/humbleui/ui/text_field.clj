@@ -461,7 +461,7 @@
         derived-cached)
       (let [derived (fn source state)]
         (when (instance? AutoCloseable derived-cached)
-          (.close derived-cached))
+          (.close ^AutoCloseable derived-cached))
         (swap! *state assoc
           key-source-cached source
           key-derived       derived)
