@@ -41,6 +41,7 @@
                          :hui.text-field/fill-selection-inactive (paint/fill 0xFFDDDDDD)
                          :hui.text-field/fill-bg-active          (paint/fill 0xFFFFFFFF)
                          :hui.text-field/fill-bg-inactive        (paint/fill 0xFFF8F8F8)
+                         :hui.text-field/border-radius           4
                          :hui.text-field/border-active           (paint/stroke 0xFF749EE4 (* 1 scale))
                          :hui.text-field/border-inactive         (paint/stroke 0xFFCCCCCC (* 1 scale))
                          :hui.text-field/cursor-width            (float 1)

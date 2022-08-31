@@ -21,7 +21,8 @@
 (alter-var-root #'core/log-error
   (constantly error/log-error))
 
-(defonce *window (atom nil))
+(defonce *window
+  (atom nil))
 
 (defn set-floating! [window floating]
   (when window
@@ -34,7 +35,8 @@
     (set-floating! @*window floating)))
 
 (def examples
-  ["align"
+  [["7guis-converter" "7 GUIs: Converter"]
+   "align"
    "button"
    "calculator"
    "canvas"
@@ -52,7 +54,14 @@
    "tree"
    "wordle"])
 
-(defonce *example (atom "text-field"))
+(defonce *example
+  (atom "7guis-converter"))
+
+(defn- capitalize [s]
+  (-> s
+    (str/split #"-")
+    (->> (map str/capitalize)
+      (str/join " "))))
 
 (def app
   (ui/default-theme {; :font-size 13
@@ -65,16 +74,14 @@
      (ui/vscrollbar
        (ui/vscroll
          (ui/column
-           (for [name (sort examples)]
+           (for [ns examples
+                 :let [[ns name] (if (vector? ns) ns [ns (capitalize ns)])]]
              (ui/clickable
-               {:on-click (fn [_] (reset! *example name))}
-               (ui/dynamic ctx [selected? (= name @*example)
+               {:on-click (fn [_] (reset! *example ns))}
+               (ui/dynamic ctx [selected? (= ns @*example)
                                 hovered?  (:hui/hovered? ctx)]
                  (let [label (ui/padding 20 10
-                               (ui/label (-> name
-                                           (str/split #"-")
-                                           (->> (map str/capitalize)
-                                             (str/join " ")))))]
+                               (ui/label name))]
                    (cond
                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)

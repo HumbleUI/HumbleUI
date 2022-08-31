@@ -8,16 +8,17 @@
 
 (set! *warn-on-reflection* true)
 
-(defn text-field [text & {:keys [from to placeholder cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom]
-                          :or {cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3}
+(defn text-field [text & {:keys [from to placeholder cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom border-radius]
+                          :or {cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3, border-radius 4}
                           :as opts}]
   (ui/with-context
     {:hui.text-field/cursor-blink-interval cursor-blink-interval
-     :hui.text-field/cursor-width   cursor-width
-     :hui.text-field/padding-top    (float (or padding-top padding-v))
-     :hui.text-field/padding-bottom (float (or padding-bottom padding-v))
-     :hui.text-field/padding-left   (float padding-h)
-     :hui.text-field/padding-right  (float padding-h)}
+     :hui.text-field/cursor-width          cursor-width
+     :hui.text-field/border-radius         border-radius
+     :hui.text-field/padding-top           (float (or padding-top padding-v))
+     :hui.text-field/padding-bottom        (float (or padding-bottom padding-v))
+     :hui.text-field/padding-left          (float padding-h)
+     :hui.text-field/padding-right         (float padding-h)}
     (ui/text-field opts
       (atom
         {:text        text
@@ -31,10 +32,10 @@
       (ui/halign 0.5
         (ui/column
           (ui/width 300
-            (text-field "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ more more more" :from 13 :to 18))
+            (text-field "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ more more more" :from 13 :to 18 :border-radius 0))
           (ui/gap 0 10)
           (ui/width 300
-            (text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :focused? true :padding-h 5 :padding-v 10 :cursor-width 2 :cursor-blink-interval 100))
+            (text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :focused? true :padding-h 5 :padding-v 10 :cursor-width 2 :cursor-blink-interval 100 :border-radius 100))
           (ui/gap 0 10)
           (ui/width 300
             (text-field "" :placeholder "Type here" :padding-h 5 :padding-v 10))

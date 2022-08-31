@@ -450,31 +450,38 @@
         (and (not marked?) (not skip-undo?))
         (update :undo core/conjv-limited (select-keys state [:text :from :to]) undo-stack-depth)))))
 
-(defn- ^TextLine text-line [text-field ctx]
+(defn- get-cached [text-field ctx key-source key-source-cached key-derived fn]
   (let [{:keys [*state]} text-field
-        {:keys [text line]} @*state]
+        state        @*state
+        source         (state key-source)
+        source-cached  (state key-source-cached)
+        derived-cached (state key-derived)]
     (or
-      line
-      (:line
-        (swap! *state assoc :line (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field)))))))
+      (when (= source source-cached)
+        derived-cached)
+      (let [derived (fn source state)]
+        (when (instance? AutoCloseable derived-cached)
+          (.close derived-cached))
+        (swap! *state assoc
+          key-source-cached source
+          key-derived       derived)
+        derived))))
+
+(defn- ^TextLine text-line [text-field ctx]
+  (get-cached text-field ctx :text :cached/text :line
+    (fn [text state]
+      (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field)))))
 
 (defn- ^TextLine placeholder-line [text-field ctx]
-  (let [{:keys [*state]} text-field
-        {:keys [placeholder placeholder-line]} @*state]
-    (when-not (str/blank? placeholder)
-      (or
-        placeholder-line
-        (:placeholder-line
-          (swap! *state assoc :placeholder-line (.shapeLine core/shaper placeholder (:hui.text-field/font ctx) (:features text-field))))))))
+  (get-cached text-field ctx :placeholder :cached/placeholder :line-placeholder
+    (fn [placeholder state]
+      (.shapeLine core/shaper placeholder (:hui.text-field/font ctx) (:features text-field)))))
 
 (defn- coord-to [text-field ctx]
-  (let [{:keys [*state]} text-field
-        {:keys [to coord-to]} @*state]
-    (or coord-to
-      (let [line     (text-line text-field ctx)
-            coord-to (math/round (.getCoordAtOffset line to))]
-        (swap! *state assoc :coord-to coord-to)
-        coord-to))))
+  (get-cached text-field ctx :to :cached/to :coord-to
+    (fn [to state]
+      (let [line (text-line text-field ctx)]
+        (math/round (.getCoordAtOffset line to))))))
 
 (defn- correct-offset! [text-field ctx]
   (let [{:keys [*state my-rect]} text-field
@@ -880,9 +887,18 @@
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
        (swap! *state #(core/merge-some
                         {:text               ""
+                         :cached/text        nil
+                         :line               nil
+                         
+                         :placeholder        ""
+                         :cached/placeholder nil
+                         :line-placeholder   nil
+                         
                          :from               0
                          :to                 0
+                         :cached/to          nil
                          :coord-to           nil
+                         
                          :last-change-cmd    nil
                          :last-change-to     nil
                          :marked-from        nil
@@ -894,7 +910,6 @@
                          :postponed          nil
                          :cursor-blink-pivot (core/now)
                          :offset             nil
-                         :line               nil
                          :selecting?         false
                          :mouse-clicks       0
                          :last-mouse-click   0}
@@ -913,9 +928,10 @@
                                        (:hui.text-field/border-inactive ctx))
                              bg      (if active?
                                        (:hui.text-field/fill-bg-active ctx)
-                                       (:hui.text-field/fill-bg-inactive ctx))]
-         (rect/rect bg
-           (rect/rect stroke
+                                       (:hui.text-field/fill-bg-inactive ctx))
+                             radius  (:hui.text-field/border-radius ctx)]
+         (rect/rounded-rect {:radius radius} bg
+           (rect/rounded-rect {:radius radius} stroke
              (text-input opts *state))))))))
 
 ; (require 'user :reload)

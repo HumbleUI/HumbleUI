@@ -59,6 +59,9 @@
 (def ^{:arglists '([paint child])} rect
   rect/rect)
 
+(def ^{:arglists '([opts paint child])} rounded-rect
+  rect/rounded-rect)
+
 
 ;; theme
 

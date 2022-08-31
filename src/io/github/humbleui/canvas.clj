@@ -1,6 +1,6 @@
 (ns io.github.humbleui.canvas
   (:import
-    [io.github.humbleui.types Rect IRect]
+    [io.github.humbleui.types IRect Rect RRect]
     [io.github.humbleui.skija Canvas Font Paint]))
 
 (defn draw-line
@@ -11,8 +11,9 @@
 
 (defn draw-rect [^Canvas canvas r ^Paint paint]
   (condp instance? r
-    Rect (.drawRect canvas r paint)
-    IRect (.drawRect canvas (.toRect ^IRect r) paint)))
+    IRect (.drawRect  canvas (.toRect ^IRect r) paint)
+    RRect (.drawRRect canvas r paint)
+    Rect  (.drawRect  canvas r paint)))
 
 (defn clear [^Canvas canvas color]
   (.clear canvas (unchecked-int color)))
