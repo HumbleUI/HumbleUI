@@ -85,8 +85,9 @@
            ui))])))
 
 (defn ctx [window]
-  {:window window
-   :scale  (window/scale window)})
+  (when-not (window/closed? window)
+    {:window window
+     :scale  (window/scale window)}))
 
 (defn on-paint [window canvas]
   (canvas/clear canvas 0xFFF6F6F6)

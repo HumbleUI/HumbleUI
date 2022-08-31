@@ -53,7 +53,7 @@
    (.restoreToCount canvas count)))
 
 (defmacro with-canvas [canvas & body]
-  `(let [canvas# ~canvas
+  `(let [^Canvas canvas# ~canvas
          count# (.save canvas#)]
      (try
        ~@body
