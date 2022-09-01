@@ -15,6 +15,9 @@
     RRect (.drawRRect canvas r paint)
     Rect  (.drawRect  canvas r paint)))
 
+(defn draw-circle [^Canvas canvas x y r ^Paint paint]
+  (.drawCircle canvas x y r paint))
+
 (defn clear [^Canvas canvas color]
   (.clear canvas (unchecked-int color)))
 

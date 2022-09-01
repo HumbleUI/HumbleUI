@@ -50,12 +50,13 @@
    "svg"
    "text-field"
    "text-field-debug"
+   "toggle"
    "tooltip"
    "tree"
    "wordle"])
 
 (defonce *example
-  (atom "7guis-converter"))
+  (atom "toggle"))
 
 (defn- capitalize [s]
   (-> s
@@ -127,9 +128,7 @@
         area    (:work-area screen)
         width   (* (if multi? 600 460) scale)
         height  (* (if multi? 400 400) scale)
-        x       (if multi?
-                  (-> (:x area))
-                  (-> (:x area) (+ (:width area)) (- width)))
+        x       (:x area)
         y       (-> (:y area) (+ (:height area)) (- height) (/ 2))
         window  (window/make
                   {:on-close #(reset! *window nil)

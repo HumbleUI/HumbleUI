@@ -31,6 +31,14 @@
                          :leading        leading
                          :fill-text      fill-text
                          :fill-gray      fill-gray
+                         
+                         :hui.toggle/fill-enabled         (paint/fill 0xFF0080FF)
+                         :hui.toggle/fill-disabled        (paint/fill 0xFFD9D9D9)
+                         :hui.toggle/fill-handle          (paint/fill 0xFFFFFFFF)
+                         :hui.toggle/fill-enabled-active  (paint/fill 0xFF0060E0)
+                         :hui.toggle/fill-disabled-active (paint/fill 0xFFBBBBBB)
+                         :hui.toggle/fill-handle-active   (paint/fill 0xFFE0E0E0)
+                         
                          :hui.text-field/font                    font-ui
                          :hui.text-field/font-features           []
                          :hui.text-field/cursor-blink-interval   500

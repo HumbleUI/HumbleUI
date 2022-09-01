@@ -93,6 +93,29 @@
        ~@clauses
        nil)))
 
+(defmacro match
+  "Similar to case/condp =, but supports wildcards
+
+   (match [a b (+ a b)]
+     [1 2 3] (println a)
+     [1 _ 3] (println b)
+     :else   (println (+ a b))))"
+  [e & clauses]
+  (let [es       (mapv #(gensym (if (symbol? %) (name %) "G__")) e)
+        gen-cond (fn [pattern]
+                   (if (vector? pattern)
+                     (list* `and
+                       (map (fn [sym val]
+                               (if (= val '_)
+                                 true
+                                 `(= ~sym ~val))) es pattern))
+                     pattern))]
+    `(let ~(vec (mapcat vector es e))
+       (cond
+         ~@(mapcat identity
+             (for [[pattern body] (partition 2 clauses)]
+               [(gen-cond pattern) body]))))))
+
 (defmacro spy [msg & body]
   `(let [ret# (do ~@body)]
      (println (str ~msg ":") ret#)

@@ -15,6 +15,7 @@
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.text-field :as text-field]
     [io.github.humbleui.ui.theme :as theme]
+    [io.github.humbleui.ui.toggle :as toggle]
     [io.github.humbleui.ui.with-context :as with-context]
     [io.github.humbleui.ui.with-cursor :as with-cursor])
   (:import
@@ -76,6 +77,12 @@
 
 (def ^{:arglists '([*state] [opts *state])} text-field
   text-field/text-field)
+
+
+;; toggle
+
+(def ^{:arglists '([*state] [opts *state])} toggle
+  toggle/toggle)
 
 
 ;; with-context
