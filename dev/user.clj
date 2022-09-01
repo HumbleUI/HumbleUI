@@ -35,7 +35,7 @@
     (set-floating! @*window floating)))
 
 (def examples
-  [["7guis-converter" "7 GUIs: Converter"]
+  ["7guis-converter"
    "align"
    "button"
    "calculator"
@@ -55,6 +55,9 @@
    "tree"
    "wordle"])
 
+(def example-names
+  {"7guis-converter" "7 GUIs: Converter"})
+
 (defonce *example
   (atom "toggle"))
 
@@ -64,6 +67,20 @@
     (->> (map str/capitalize)
       (str/join " "))))
 
+(defn next-example []
+  (let [example @*example]
+    (->>
+      (drop-while #(not= % example) examples)
+      (next)
+      (first))))
+
+(defn prev-example []
+  (let [example @*example]
+    (->>
+      (drop-while #(not= % example) (reverse examples))
+      (next)
+      (first))))
+
 (def app
   (ui/default-theme {; :font-size 13
                      ; :cap-height 10
@@ -72,21 +89,21 @@
                      ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
                      }
     (ui/row
-     (ui/vscrollbar
-       (ui/vscroll
-         (ui/column
-           (for [ns examples
-                 :let [[ns name] (if (vector? ns) ns [ns (capitalize ns)])]]
-             (ui/clickable
-               {:on-click (fn [_] (reset! *example ns))}
-               (ui/dynamic ctx [selected? (= ns @*example)
-                                hovered?  (:hui/hovered? ctx)]
-                 (let [label (ui/padding 20 10
-                               (ui/label name))]
-                   (cond
-                     selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
-                     hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
-                     :else     label))))))))
+      (ui/vscrollbar
+        (ui/vscroll
+          (ui/column
+            (for [ns examples
+                  :let [name (or (example-names ns) (capitalize ns))]]
+              (ui/clickable
+                {:on-click (fn [_] (reset! *example ns))}
+                (ui/dynamic ctx [selected? (= ns @*example)
+                                 hovered?  (:hui/hovered? ctx)]
+                  (let [label (ui/padding 20 10
+                                (ui/label name))]
+                    (cond
+                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
+                      :else     label))))))))
       [:stretch 1
        (ui/clip
          (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
