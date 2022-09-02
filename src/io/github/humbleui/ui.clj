@@ -13,6 +13,7 @@
     [io.github.humbleui.ui.focusable :as focusable]
     [io.github.humbleui.ui.key-listener :as key-listener]
     [io.github.humbleui.ui.rect :as rect]
+    [io.github.humbleui.ui.slider :as slider]
     [io.github.humbleui.ui.text-field :as text-field]
     [io.github.humbleui.ui.theme :as theme]
     [io.github.humbleui.ui.toggle :as toggle]
@@ -28,19 +29,11 @@
 
 (set! *warn-on-reflection* true)
 
-;; clickable
-
 (def ^{:arglists '([opts child])} clickable
   clickable/clickable)
 
-
-;; dynamic
-
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
-
-
-;; focus
 
 (def ^{:arglists '([child] [opts child])} focusable
   focusable/focusable)
@@ -48,14 +41,8 @@
 (def ^{:arglists '([child])} focus-controller
   focusable/focus-controller)
 
-
-;; key-listener
-
 (def ^{:arglists '([opts child])} key-listener
   key-listener/key-listener)
-
-
-;; rect
 
 (def ^{:arglists '([paint child])} rect
   rect/rect)
@@ -63,14 +50,11 @@
 (def ^{:arglists '([opts paint child])} rounded-rect
   rect/rounded-rect)
 
-
-;; theme
+(def ^{:arglists '([*state] [opts *state])} slider
+  slider/slider)
 
 (def ^{:arglists '([comp] [opts comp])} default-theme
   theme/default-theme)
-
-
-;; text field
 
 (def ^{:arglists '([*state] [opts *state])} text-input
   text-field/text-input)
@@ -78,24 +62,14 @@
 (def ^{:arglists '([*state] [opts *state])} text-field
   text-field/text-field)
 
-
-;; toggle
-
 (def ^{:arglists '([*state] [opts *state])} toggle
   toggle/toggle)
-
-
-;; with-context
 
 (def ^{:arglists '([data child])} with-context  
   with-context/with-context)
 
-
-;; with-cursor
-
 (def ^{:arglists '([cursor child])} with-cursor
   with-cursor/with-cursor)
-
 
 ;; with-bounds
 

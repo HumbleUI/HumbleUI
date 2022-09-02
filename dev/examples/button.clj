@@ -72,4 +72,4 @@
                 {:hui/active? (= selected :third)}
                 (ui/button #(reset! *selected :third) (ui/label "Third"))))))))))
 
-(reset! user/*example "button")
+; (reset! user/*example "button")

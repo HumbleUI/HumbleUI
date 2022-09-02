@@ -39,6 +39,15 @@
                          :hui.toggle/fill-disabled-active (paint/fill 0xFFBBBBBB)
                          :hui.toggle/fill-handle-active   (paint/fill 0xFFE0E0E0)
                          
+                         :hui.slider/handle-size          (* 16 scale)
+                         :hui.slider/shaft-height         (* 2 scale)
+                         :hui.slider/fill-in              (paint/fill 0xFF0080FF)
+                         :hui.slider/fill-out             (paint/fill 0xFFD9D9D9)
+                         :hui.slider/fill-handle          (paint/fill 0xFFFFFFFF)
+                         :hui.slider/stroke-handle        (paint/stroke 0xFF0080FF (* 2 scale))
+                         :hui.slider/fill-handle-active   (paint/fill 0xFFE0E0E0)
+                         :hui.slider/stroke-handle-active (paint/stroke 0xFF0060E0 (* 2 scale))
+                         
                          :hui.text-field/font                    font-ui
                          :hui.text-field/font-features           []
                          :hui.text-field/cursor-blink-interval   500

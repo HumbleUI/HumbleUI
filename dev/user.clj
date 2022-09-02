@@ -37,6 +37,7 @@
 (def examples
   ["7guis-converter"
    "align"
+   "bmi-calculator"
    "button"
    "calculator"
    "canvas"
@@ -47,6 +48,7 @@
    "label"
    "scroll"
    "settings"
+   "slider"
    "svg"
    "text-field"
    "text-field-debug"
@@ -56,10 +58,11 @@
    "wordle"])
 
 (def example-names
-  {"7guis-converter" "7 GUIs: Converter"})
+  {"7guis-converter" "7 GUIs: Converter"
+   "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "toggle"))
+  (atom "bmi-calculator"))
 
 (defn- capitalize [s]
   (-> s

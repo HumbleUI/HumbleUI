@@ -96,4 +96,4 @@
    (clickable/clickable
      {:on-click (fn [_]
                   (swap! *state not))}
-     (->Toggle *state 50 @*state (core/now) nil))))
+     (->Toggle *state 50 @*state 0 nil))))
