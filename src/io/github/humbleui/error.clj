@@ -1,4 +1,4 @@
-(ns user.error
+(ns io.github.humbleui.error
   (:require
     [clojure.java.io :as io]
     [clojure.stacktrace :as stacktrace]

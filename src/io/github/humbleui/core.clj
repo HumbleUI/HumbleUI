@@ -4,6 +4,7 @@
     [clojure.math :as math]
     [clojure.set :as set]
     [clojure.walk :as walk]
+    [io.github.humbleui.error :as error]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.jwm App Screen]
@@ -28,8 +29,8 @@
 (defonce ^Timer timer
   (Timer. true))
 
-(defn log-error [^Throwable t]
-  (.printStackTrace t))
+(def ^{:arglists '([^Throwable t])} log-error
+  error/log-error)
 
 (defmacro catch-and-log [& body]
   `(try
