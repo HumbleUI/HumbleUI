@@ -792,12 +792,13 @@
 
 ;; canvas
 
-(core/deftype+ ACanvas [on-paint on-event]
+(core/deftype+ ACanvas [on-paint on-event ^:mut my-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
     (IPoint. (:width cs) (:height cs)))
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
+    (set! my-rect rect)
     (when on-paint
       (let [layer (.save canvas)]
         (try
@@ -809,13 +810,18 @@
   
   (-event [_ ctx event]
     (when on-event
-      (on-event event)))
+      (let [event' (if (every? event [:x :y])
+                     (-> event
+                       (update :x - (:x my-rect))
+                       (update :y - (:y my-rect)))
+                     event)]
+        (on-event ctx event'))))
   
   (-iterate [this ctx cb]
     (cb this)))
 
 (defn canvas [{:keys [on-paint on-event]}]
-  (->ACanvas on-paint on-event))
+  (->ACanvas on-paint on-event nil))
 
 ;; text-listener
 
