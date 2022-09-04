@@ -30,7 +30,7 @@
 
 (def *last-event (atom nil))
 
-(defn on-event [e]
+(defn on-event [_ e]
   (when-not (#{:frame :frame-skija} (:event e))
     (reset! *last-event e)
     true))
