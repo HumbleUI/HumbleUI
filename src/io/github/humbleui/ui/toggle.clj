@@ -58,15 +58,15 @@
                              fill-enabled-active
                              fill-disabled-active
                              fill-handle-active]} ctx
-          fill         (core/match [enabled? animating? active?]
-                         [true  true  _]     (paint/fill
-                                               (Color/makeLerp (.getColor fill-enabled) (.getColor fill-disabled) ratio))
-                         [false true  _]     (paint/fill
-                                               (Color/makeLerp (.getColor fill-disabled) (.getColor fill-enabled) ratio))
-                         [true  false false] fill-enabled
-                         [false false false] fill-disabled
-                         [true  false true]  fill-enabled-active
-                         [false false true]  fill-disabled-active)
+          fill         (let [fill-enabled (if active? fill-enabled-active fill-enabled)
+                             fill-disabled (if active? fill-disabled-active fill-disabled)]
+                         (core/match [enabled? animating? active?]
+                           [true  true  _]     (paint/fill
+                                                 (Color/makeLerp (.getColor fill-enabled) (.getColor fill-disabled) ratio))
+                           [false true  _]     (paint/fill
+                                                 (Color/makeLerp (.getColor fill-disabled) (.getColor fill-enabled) ratio))
+                           [true  false _] fill-enabled
+                           [false false _] fill-disabled))
           padding      (/ h 16)
           handle-r     (-> h (- (* 2 padding)) (/ 2))
           handle-left  (-> x (+ padding) (+ handle-r))
