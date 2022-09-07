@@ -45,6 +45,7 @@
    "scroll"
    "settings"
    "slider"
+   "stack"
    "svg"
    "text-field"
    "text-field-debug"
@@ -58,7 +59,7 @@
    "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "bmi-calculator"))
+  (atom "stack"))
 
 (defn- capitalize [s]
   (-> s

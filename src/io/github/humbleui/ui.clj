@@ -14,6 +14,7 @@
     [io.github.humbleui.ui.key-listener :as key-listener]
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.slider :as slider]
+    [io.github.humbleui.ui.stack :as stack]
     [io.github.humbleui.ui.text-field :as text-field]
     [io.github.humbleui.ui.theme :as theme]
     [io.github.humbleui.ui.toggle :as toggle]
@@ -52,6 +53,9 @@
 
 (def ^{:arglists '([*state] [opts *state])} slider
   slider/slider)
+
+(def ^{:arglists '([*state] [opts *state])} stack
+  stack/stack)
 
 (def ^{:arglists '([comp] [opts comp])} default-theme
   theme/default-theme)
