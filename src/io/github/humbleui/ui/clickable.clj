@@ -24,8 +24,8 @@
   
   (-event [this ctx event]
     (core/eager-or
-      (when (= :mouse-move (:event event))
-        (let [hovered?' (.contains ^IRect child-rect (IPoint. (:x event) (:y event)))]
+      (core/when-every [{:keys [x y]} event]
+        (let [hovered?' (.contains ^IRect child-rect (IPoint. x y))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))

@@ -52,18 +52,8 @@
          t))
     nil nil))
 
-(defn bindings->syms [bindings]
-  (->> bindings
-    (partition 2)
-    (map first)
-    (core/collect symbol?)
-    (map name)
-    (map symbol)
-    (into #{})
-    (vec)))
-
 (defn dynamic-impl [ctx-sym bindings body]
-  (let [syms (bindings->syms bindings)]
+  (let [syms (core/bindings->syms bindings)]
     `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
        (contextual
          (fn [~ctx-sym]

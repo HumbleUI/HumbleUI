@@ -40,11 +40,40 @@
 
 ;; macros
 
+(defn collect
+  "Traverse `form` recursively, returnning a vector of elements that satisfy `pred`"
+  ([pred form] (collect [] pred form))
+  ([acc pred form]
+   (cond
+     (pred form)        (conj acc form)
+     (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
+     (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
+     :else              acc)))
+
+(defn bindings->syms
+  "Takes let-like bindings and returns all symbols on left sides, including
+   inside destructured forms"
+  [bindings]
+  (as-> bindings %
+    (partition 2 %)
+    (map first %)
+    (collect symbol? %)
+    (map name %)
+    (map symbol %)
+    (into #{} %)
+    (disj % '& '_)
+    (vec %)))
+
+(defmacro when-every [bindings & body]
+  `(let ~bindings
+     (when (every? some? ~(bindings->syms bindings))
+       ~@body)))
+
 (defn memoize-last [ctor]
-  (let [*atom (volatile! nil)]
+  (let [*state (volatile! nil)]
     (fn [& args']
       (or
-        (when-some [[args value] @*atom]
+        (when-some [[args value] @*state]
           (if (= args args')
             value
             (when (instance? AutoCloseable value)
@@ -54,7 +83,7 @@
                        (catch Throwable t
                          (log-error t)
                          t))]
-          (vreset! *atom [args' value'])
+          (vreset! *state [args' value'])
           value')))))
 
 (defmacro defn-memoize-last [name & body]
@@ -224,16 +253,6 @@
 
 (defn merge-some [a b]
   (merge-with #(or %2 %1) a b))
-
-(defn collect
-  "Traverse `form` recursively, returnning a vector of elements that satisfy `pred`"
-  ([pred form] (collect [] pred form))
-  ([acc pred form]
-   (cond
-     (pred form)        (conj acc form)
-     (sequential? form) (reduce (fn [acc el] (collect acc pred el)) acc form)
-     (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
-     :else              acc)))
 
 (defn ^bytes slurp-bytes [src]
   (if (bytes? src)
