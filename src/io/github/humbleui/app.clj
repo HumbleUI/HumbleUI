@@ -1,12 +1,16 @@
 (ns io.github.humbleui.app
   (:import
-    [io.github.humbleui.jwm App Platform Screen]))
+    [io.github.humbleui.jwm App Platform Screen]
+    [io.github.humbleui.jwm.impl Library]))
 
 (def platform
   (condp = Platform/CURRENT
     Platform/WINDOWS :windows
     Platform/X11     :x11
     Platform/MACOS   :macos))
+
+(defn init []
+  (Library/load))
 
 (defn start [^Runnable cb]
   (App/start cb))

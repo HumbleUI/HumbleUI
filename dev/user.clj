@@ -91,37 +91,25 @@
     (ui/row
       (ui/vscrollbar
         (ui/vscroll
-          (ui/column
-            (for [ns examples
-                  :let [name (or (example-names ns) (capitalize ns))]]
-              (ui/clickable
-                {:on-click (fn [_] (reset! *example ns))}
-                (ui/dynamic ctx [selected? (= ns @*example)
-                                 hovered?  (:hui/hovered? ctx)]
-                  (let [label (ui/padding 20 10
-                                (ui/label name))]
-                    (cond
-                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
-                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
-                      :else     label))))))))
+          (ui/dynamic _ [examples examples
+                         example-names example-names]
+            (ui/column
+              (for [ns examples
+                    :let [name (or (example-names ns) (capitalize ns))]]
+                (ui/clickable
+                  {:on-click (fn [_] (reset! *example ns))}
+                  (ui/dynamic ctx [selected? (= ns @*example)
+                                   hovered?  (:hui/hovered? ctx)]
+                    (let [label (ui/padding 20 10
+                                  (ui/label name))]
+                      (cond
+                        selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                        hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
+                        :else     label)))))))))
       [:stretch 1
        (ui/clip
          (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
            ui))])))
-
-(defn ctx [window]
-  (when-not (window/closed? window)
-    {:window window
-     :scale  (window/scale window)}))
-
-(defn on-paint [window canvas]
-  (canvas/clear canvas 0xFFF6F6F6)
-  (let [bounds (window/content-rect window)]
-    (profile/reset)
-    ; (profile/measure "frame"
-    (core/draw app (ctx window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)
-    (profile/log)
-    #_(window/request-frame window)))
 
 (defn redraw []
   (some-> @*window window/request-frame))
@@ -132,37 +120,23 @@
 
 (redraw)
 
-(defn on-event [window event]
-  (when-let [result (core/event app (ctx window) event)]
-    (window/request-frame window)
-    result))
-
-(defn make-window []
-  (let [screens (app/screens)
-        multi?  (> (count screens) 1)
-        screen  (last screens)
-        scale   (:scale screen)
-        area    (:work-area screen)
-        width   (* (if multi? 600 460) scale)
-        height  (* (if multi? 400 400) scale)
-        x       (:x area)
-        y       (-> (:y area) (+ (:height area)) (- height) (/ 2))
-        window  (window/make
-                  {:on-close #(reset! *window nil)
-                   :on-paint #'on-paint
-                   :on-event #'on-event})]
-    (set-floating! window @settings/*floating)
-    (reset! debug/*enabled? true)
-    (window/set-title window "Humble UI 🐝")
-    (when (= :macos app/platform)
-      (window/set-icon window "dev/images/icon.icns"))
-    (window/set-window-size window width height)
-    (window/set-window-position window x y)
-    (window/set-visible window true)))
-
 (defn -main [& args]
-  (future (apply nrepl/-main args))
-  (app/start #(reset! *window (make-window))))
+  (app/init)
+  (let [{:keys [scale work-area]} (app/primary-screen)
+        width (quot (:width work-area) 3)]
+    (reset! *window 
+      (ui/start-app!
+        {:title    "Humble 🐝 UI"
+         :mac-icon "dev/images/icon.icns"
+         :width    (/ width scale)
+         :height   400
+         :x        :left
+         :y        :center}
+        app))
+    (set-floating! @*window @settings/*floating)
+    (reset! debug/*enabled? true)
+    (redraw)
+    (apply nrepl/-main args)))
 
 (comment  
   (do

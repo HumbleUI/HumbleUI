@@ -374,3 +374,15 @@
 
 (defn now []
   (System/currentTimeMillis))
+
+(Thread/setDefaultUncaughtExceptionHandler
+  (reify Thread$UncaughtExceptionHandler
+    (uncaughtException [_ thread ex]
+      (log-error ^Throwable ex))))
+
+(defmacro thread [& body]
+  `(future
+     (try
+       ~@body
+       (catch Throwable t#
+         (log-error t#)))))
