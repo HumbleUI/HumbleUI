@@ -13,6 +13,7 @@
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
     [io.github.humbleui.ui.key-listener :as key-listener]
+    [io.github.humbleui.ui.mouse-listener :as mouse-listener]
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.slider :as slider]
     [io.github.humbleui.ui.stack :as stack]
@@ -45,6 +46,9 @@
 
 (def ^{:arglists '([opts child])} key-listener
   key-listener/key-listener)
+
+(def ^{:arglists '([opts child])} mouse-listener
+  mouse-listener/mouse-listener)
 
 (def ^{:arglists '([paint child])} rect
   rect/rect)
@@ -864,29 +868,20 @@
   ([on-click child]
    (button on-click nil child))
   ([on-click opts child]
-   (dynamic ctx [{:keys [leading]} ctx]
-     (let [{:keys [bg bg-active bg-hovered border-radius padding-left padding-top padding-right padding-bottom]
-            p :padding} opts
-           bg-active      (or bg-active bg-hovered bg 0xFFA2C7EE)
-           bg-hovered     (or bg-hovered bg 0xFFCFE8FC)
-           bg             (or bg 0xFFB2D7FE)
-           border-radius  (or border-radius 4)
-           padding-left   (or padding-left   p 20)
-           padding-top    (or padding-top    p leading)
-           padding-right  (or padding-right  p 20)
-           padding-bottom (or padding-bottom p leading)]
-       (clickable
-         {:on-click (when on-click
-                      (fn [_] (on-click)))}
-         (clip-rrect border-radius
-           (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
-             (rect
-               (cond
-                 active?  (paint/fill bg-active)
-                 hovered? (paint/fill bg-hovered)
-                 :else    (paint/fill bg))
-               (padding padding-left padding-top padding-right padding-bottom
-                 (halign 0.5
+   (dynamic ctx [{:hui.button/keys [bg bg-active bg-hovered border-radius padding-left padding-top padding-right padding-bottom]} ctx]
+     (clickable
+       {:on-click (when on-click
+                    (fn [_] (on-click)))}
+       (clip-rrect border-radius
+         (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
+           (rect
+             (cond
+               active?  bg-active
+               hovered? bg-hovered
+               :else    bg)
+             (padding padding-left padding-top padding-right padding-bottom
+               (halign 0.5
+                 (valign 0.5
                    (with-context
                      {:hui/active? false
                       :hui/hovered? false}
@@ -1003,21 +998,25 @@
                x        :center
                y        :center
                bg-color 0xFFF6F6F6}} opts
-         ctx-fn   (fn [window]
-                    (when-not (window/closed? window)
-                      {:window window
-                       :scale  (window/scale window)}))
-         paint-fn (fn [window canvas]
-                    (canvas/clear canvas bg-color)
-                    (let [bounds (window/content-rect window)
-                          app    (if (var? app) @app app)]
-                      (core/draw app (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
-         event-fn (fn [window event]
-                    (let [app (if (var? app) @app app)]
-                      (when-let [result (core/event app (ctx-fn window) event)]
-                        (window/request-frame window)
-                        result)))
-         *window  (promise)]
+         *mouse-pos (volatile! (IPoint. 0 0))
+         ctx-fn     (fn [window]
+                      (when-not (window/closed? window)
+                        {:window    window
+                         :scale     (window/scale window)
+                         :mouse-pos @*mouse-pos}))
+         paint-fn   (fn [window canvas]
+                      (canvas/clear canvas bg-color)
+                      (let [bounds (window/content-rect window)
+                            app    (if (var? app) @app app)]
+                        (core/draw app (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
+         event-fn   (fn [window event]
+                      (let [app (if (var? app) @app app)]
+                        (core/when-every [{:keys [x y]} event]
+                          (vreset! *mouse-pos (IPoint. x y)))
+                        (when-let [result (core/event app (ctx-fn window) event)]
+                          (window/request-frame window)
+                          result)))
+         *window    (promise)]
      (core/thread
        (app/start
          (fn []

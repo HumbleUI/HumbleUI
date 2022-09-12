@@ -32,6 +32,15 @@
                          :fill-text      fill-text
                          :fill-gray      fill-gray
                          
+                         :hui.button/bg-active      (paint/fill 0xFFA2C7EE)
+                         :hui.button/bg-hovered     (paint/fill 0xFFCFE8FC)
+                         :hui.button/bg             (paint/fill 0xFFB2D7FE)
+                         :hui.button/border-radius  4
+                         :hui.button/padding-left   (* 2 leading)
+                         :hui.button/padding-top    leading
+                         :hui.button/padding-right  (* 2 leading)
+                         :hui.button/padding-bottom leading
+                         
                          :hui.toggle/fill-enabled         (paint/fill 0xFF0080FF)
                          :hui.toggle/fill-disabled        (paint/fill 0xFFD9D9D9)
                          :hui.toggle/fill-handle          (paint/fill 0xFFFFFFFF)

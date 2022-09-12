@@ -7,7 +7,14 @@
     [java.lang AutoCloseable]
     [io.github.humbleui.types IPoint IRect]))
 
-(core/deftype+ Clickable [on-click on-click-capture child ^:mut child-rect ^:mut hovered? ^:mut pressed?]
+(set! *warn-on-reflection* true)
+
+(core/deftype+ Clickable [on-click
+                          on-click-capture
+                          child
+                          ^:mut ^IRect child-rect
+                          ^:mut hovered?
+                          ^:mut pressed?]
   protocols/IContext
   (-context [_ ctx]
     (cond-> ctx
@@ -20,6 +27,7 @@
   
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
+    (set! hovered? (.contains child-rect ^IPoint (:mouse-pos ctx)))
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
   (-event [this ctx event]

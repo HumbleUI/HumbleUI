@@ -1,9 +1,7 @@
 (ns io.github.humbleui.ui.key-listener
   (:require
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.clickable :as clickable])
+    [io.github.humbleui.protocols :as protocols])
   (:import
     [java.lang AutoCloseable]))
 
