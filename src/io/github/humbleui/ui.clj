@@ -1009,12 +1009,14 @@
                        :scale  (window/scale window)}))
          paint-fn (fn [window canvas]
                     (canvas/clear canvas bg-color)
-                    (let [bounds (window/content-rect window)]
+                    (let [bounds (window/content-rect window)
+                          app    (if (var? app) @app app)]
                       (core/draw app (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
          event-fn (fn [window event]
-                    (when-let [result (core/event app (ctx-fn window) event)]
-                      (window/request-frame window)
-                      result))
+                    (let [app (if (var? app) @app app)]
+                      (when-let [result (core/event app (ctx-fn window) event)]
+                        (window/request-frame window)
+                        result)))
          *window  (promise)]
      (core/thread
        (app/start
