@@ -85,10 +85,10 @@
 (core/deftype+ WithBounds [key child ^:mut child-rect]
   protocols/IContext
   (-context [_ ctx]
-    (let [scale  (:scale ctx)
-          width  (-> (:width child-rect) (/ scale))
-          height (-> (:height child-rect) (/ scale))]
-      (assoc ctx key (IPoint. width height))))
+    (when-some [scale (:scale ctx)]
+      (when-some [width (:width child-rect)]
+        (when-some [height (:height child-rect)]
+          (assoc ctx key (IPoint. (/ width scale) (/ height scale)))))))
   
   protocols/IComponent
   (-measure [_ ctx cs]
@@ -98,15 +98,18 @@
   
   (-draw [this ctx rect ^Canvas canvas]
     (set! child-rect rect)
-    (core/draw-child child (protocols/-context this ctx) child-rect canvas))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/draw-child child ctx' child-rect canvas)))
   
   (-event [this ctx event]
-    (core/event-child child (protocols/-context this ctx) event))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/event-child child ctx' event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (protocols/-iterate child (protocols/-context this ctx) cb)))
+      (when-some [ctx' (protocols/-context this ctx)]
+        (protocols/-iterate child ctx' cb))))
   
   AutoCloseable
   (close [_]
@@ -1006,19 +1009,17 @@
                          :scale     (window/scale window)
                          :mouse-pos @*mouse-pos}))
          paint-fn   (fn [window canvas]
-                      (vreset! *drawn? true)
                       (canvas/clear canvas bg-color)
                       (let [bounds (window/content-rect window)
                             app    (if (var? app) @app app)]
                         (core/draw app (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
          event-fn   (fn [window event]
-                      (when @*drawn?
-                        (let [app (if (var? app) @app app)]
-                          (core/when-every [{:keys [x y]} event]
-                            (vreset! *mouse-pos (IPoint. x y)))
-                          (when-let [result (core/event app (ctx-fn window) event)]
-                            (window/request-frame window)
-                            result))))
+                      (let [app (if (var? app) @app app)]
+                        (core/when-every [{:keys [x y]} event]
+                          (vreset! *mouse-pos (IPoint. x y)))
+                        (when-let [result (core/event app (ctx-fn window) event)]
+                          (window/request-frame window)
+                          result)))
          *window    (promise)]
      (core/thread
        (app/start
