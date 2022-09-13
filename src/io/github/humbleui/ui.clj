@@ -999,23 +999,26 @@
                y        :center
                bg-color 0xFFF6F6F6}} opts
          *mouse-pos (volatile! (IPoint. 0 0))
+         *drawn?    (volatile! false)
          ctx-fn     (fn [window]
                       (when-not (window/closed? window)
                         {:window    window
                          :scale     (window/scale window)
                          :mouse-pos @*mouse-pos}))
          paint-fn   (fn [window canvas]
+                      (vreset! *drawn? true)
                       (canvas/clear canvas bg-color)
                       (let [bounds (window/content-rect window)
                             app    (if (var? app) @app app)]
                         (core/draw app (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
          event-fn   (fn [window event]
-                      (let [app (if (var? app) @app app)]
-                        (core/when-every [{:keys [x y]} event]
-                          (vreset! *mouse-pos (IPoint. x y)))
-                        (when-let [result (core/event app (ctx-fn window) event)]
-                          (window/request-frame window)
-                          result)))
+                      (when @*drawn?
+                        (let [app (if (var? app) @app app)]
+                          (core/when-every [{:keys [x y]} event]
+                            (vreset! *mouse-pos (IPoint. x y)))
+                          (when-let [result (core/event app (ctx-fn window) event)]
+                            (window/request-frame window)
+                            result))))
          *window    (promise)]
      (core/thread
        (app/start
