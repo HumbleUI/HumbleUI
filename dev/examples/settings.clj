@@ -7,7 +7,7 @@
 (set! *warn-on-reflection* true)
 
 (defonce *floating
-  (atom true))
+  (atom false))
 
 (def ui
   (ui/dynamic ctx [scale (:scale ctx)]

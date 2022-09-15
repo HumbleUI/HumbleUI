@@ -112,9 +112,8 @@
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                      color)]
         (ui/rect (paint/fill color')
-          (ui/halign 0.5
-            (ui/valign 0.5
-              (ui/label text {:font font-btn :features ["tnum"]}))))))))
+          (ui/center
+            (ui/label text {:font font-btn :features ["tnum"]})))))))
 
 (def color-digit   0xFF797979)
 (def color-op      0xFFFF9F0A)

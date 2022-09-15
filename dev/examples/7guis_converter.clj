@@ -48,28 +48,27 @@
               :from 0
               :to   0)))))))
 
-  ; C = (F - 32) * (5/9)
-  ; F = C * (9/5) + 32
+; C = (F - 32) * (5/9)
+; F = C * (9/5) + 32
 
-  (def ui
-    (ui/focus-controller
-      (ui/valign 0.5
-        (ui/halign 0.5
-          (ui/with-context
-            {:hui.text-field/padding-top    10
-             :hui.text-field/padding-bottom 10
-             :hui.text-field/padding-left   5
-             :hui.text-field/padding-right  5}
-            (ui/row
-              (ui/width 50
-                (ui/text-field {:focused? true} *celsius))
-              (ui/gap 5 0)
-              (ui/valign 0.5
-                (ui/label "Celsius = "))
-              (ui/width 50
-                (ui/text-field *fahrenheit))  
-              (ui/gap 5 0)
-              (ui/valign 0.5
-                (ui/label "Fahrenheit"))))))))
+(def ui
+  (ui/focus-controller
+    (ui/center
+      (ui/with-context
+        {:hui.text-field/padding-top    10
+         :hui.text-field/padding-bottom 10
+         :hui.text-field/padding-left   5
+         :hui.text-field/padding-right  5}
+        (ui/row
+          (ui/width 50
+            (ui/text-field {:focused? true} *celsius))
+          (ui/gap 5 0)
+          (ui/valign 0.5
+            (ui/label "Celsius = "))
+          (ui/width 50
+            (ui/text-field *fahrenheit))  
+          (ui/gap 5 0)
+          (ui/valign 0.5
+            (ui/label "Fahrenheit")))))))
 
-  (reset! user/*example "7guis-converter")
+(reset! user/*example "7guis-converter")

@@ -9,8 +9,7 @@
 (set! *warn-on-reflection* true)
 
 (def ui
-  (ui/valign 0.5
-    (ui/halign 0.5
-      (ui/column
-        (ui/dynamic ctx [{:keys [leading font-ui fill-text]} ctx]
-          (ui/label (/ 1 0)))))))
+  (ui/center
+    (ui/column
+      (ui/dynamic ctx [{:keys [leading font-ui fill-text]} ctx]
+        (ui/label (/ 1 0))))))

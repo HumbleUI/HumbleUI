@@ -9,7 +9,9 @@
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window]
+    [io.github.humbleui.ui.backdrop :as backdrop]
     [io.github.humbleui.ui.clickable :as clickable]
+    [io.github.humbleui.ui.draggable :as draggable]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
     [io.github.humbleui.ui.key-listener :as key-listener]
@@ -32,8 +34,14 @@
 
 (set! *warn-on-reflection* true)
 
+(def ^{:arglists '([filter child])} backdrop
+  backdrop/backdrop)
+
 (def ^{:arglists '([opts child])} clickable
   clickable/clickable)
+
+(def ^{:arglists '([child] [opts child])} draggable
+  draggable/draggable)
 
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
@@ -234,6 +242,10 @@
   ([coeff child] (valign coeff coeff child))
   ([child-coeff coeff child] (->VAlign child-coeff coeff child nil)))
 
+(defn center [child]
+  (halign 0.5
+    (valign 0.5
+      child)))
 
 ;; width
 
@@ -883,12 +895,11 @@
                hovered? bg-hovered
                :else    bg)
              (padding padding-left padding-top padding-right padding-bottom
-               (halign 0.5
-                 (valign 0.5
-                   (with-context
-                     {:hui/active? false
-                      :hui/hovered? false}
-                     child)))))))))))
+               (center
+                 (with-context
+                   {:hui/active? false
+                    :hui/hovered? false}
+                   child))))))))))
 
 
 ;; checkbox

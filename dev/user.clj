@@ -33,6 +33,7 @@
 (def examples
   ["7guis-converter"
    "align"
+   "backdrop"
    "bmi-calculator"
    "button"
    "calculator"
@@ -59,7 +60,7 @@
    "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "stack"))
+  (atom "backdrop"))
 
 (defn- capitalize [s]
   (-> s

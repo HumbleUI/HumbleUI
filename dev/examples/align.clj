@@ -10,10 +10,9 @@
 
 (defn label [text]
   (ui/rect (paint/fill 0xFFB2D7FE)
-    (ui/halign 0.5
-      (ui/valign 0.5
-        (ui/padding 10 10
-          (ui/label text))))))
+    (ui/center
+      (ui/padding 10 10
+        (ui/label text)))))
 
 (def ui
   (ui/valign 0.5

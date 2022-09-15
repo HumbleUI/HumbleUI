@@ -67,9 +67,8 @@
             (recur (+ y (* 2 leading scale)) (next kv))))))))
 
 (def ui
-  (ui/valign 0.5
-    (ui/halign 0.5
-      (ui/canvas {:on-paint on-paint
-                  :on-event on-event}))))
+  (ui/center
+    (ui/canvas {:on-paint on-paint
+                :on-event on-event})))
 
 ; (reset! user/*example "canvas")

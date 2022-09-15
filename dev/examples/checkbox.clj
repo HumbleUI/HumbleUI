@@ -39,16 +39,15 @@
           :else                               :indeterminate)))))
 
 (def ui
-  (ui/valign 0.5
-    (ui/halign 0.5
-      (ui/column
-        (ui/dynamic ctx [{:keys [face-ui scale]} ctx]
-          (ui/with-context
-            {:font-ui (font/make-with-cap-height face-ui (* 20 scale))}
-            (ui/checkbox *state-group (ui/label "Group state"))))
-        (ui/gap 0 10)
-        (ui/checkbox *state-first (ui/label "First state"))
-        (ui/gap 0 10)
-        (ui/checkbox *state-second (ui/label "Second state"))))))
+  (ui/center
+    (ui/column
+      (ui/dynamic ctx [{:keys [face-ui scale]} ctx]
+        (ui/with-context
+          {:font-ui (font/make-with-cap-height face-ui (* 20 scale))}
+          (ui/checkbox *state-group (ui/label "Group state"))))
+      (ui/gap 0 10)
+      (ui/checkbox *state-first (ui/label "First state"))
+      (ui/gap 0 10)
+      (ui/checkbox *state-second (ui/label "Second state")))))
 
 ; (reset! user/*example "checkbox")

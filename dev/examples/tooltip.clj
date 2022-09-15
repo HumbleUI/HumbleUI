@@ -14,27 +14,26 @@
     child))
 
 (def ui
-  (ui/valign 0.5
-    (ui/halign 0.5
-      (ui/row
-        (ui/column
-          (interpose
-            (ui/gap 0 20)
-            (for [align [:top-left
-                         :top-right
-                         :bottom-left
-                         :bottom-right]]
-              (tooltip {:shackle align :align :top-left} "top-left"
-                (ui/label (str align))))))
-        (ui/gap 20 0)
-        (ui/column
-          (interpose
-            (ui/gap 0 20)
-            (for [align [:top-left
-                         :top-right
-                         :bottom-left
-                         :bottom-right]]
-              (tooltip {:shackle :top-right :anchor align} (str align)
-                (ui/label ":top-right")))))))))
+  (ui/center
+    (ui/row
+      (ui/column
+        (interpose
+          (ui/gap 0 20)
+          (for [align [:top-left
+                       :top-right
+                       :bottom-left
+                       :bottom-right]]
+            (tooltip {:shackle align :align :top-left} "top-left"
+              (ui/label (str align))))))
+      (ui/gap 20 0)
+      (ui/column
+        (interpose
+          (ui/gap 0 20)
+          (for [align [:top-left
+                       :top-right
+                       :bottom-left
+                       :bottom-right]]
+            (tooltip {:shackle :top-right :anchor align} (str align)
+              (ui/label ":top-right"))))))))
 
 ; (reset! user/*example "tooltip")
