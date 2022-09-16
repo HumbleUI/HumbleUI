@@ -305,6 +305,37 @@
   (->Height value child nil))
 
 
+;; max-width
+
+(core/deftype+ MaxWidth [probes child ^:mut child-rect]
+  protocols/IComponent
+  (-measure [_ ctx cs]
+    (let [width (->> probes
+                  (map #(:width (core/measure % ctx cs)))
+                  (reduce max 0))
+          child-size (core/measure child ctx cs)]
+      (assoc child-size :width width)))
+  
+  (-draw [_ ctx rect ^Canvas canvas]
+    (set! child-rect rect)
+    (core/draw-child child ctx child-rect canvas))
+  
+  (-event [_ ctx event]
+    (core/event-child child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (protocols/-iterate child ctx cb)))
+  
+  AutoCloseable
+  (close [_]
+    (core/child-close child)))
+
+(defn max-width [probes child]
+  (->MaxWidth probes child nil))
+
+
 ;; column
 
 (core/deftype+ Column [children ^:mut child-rects]
