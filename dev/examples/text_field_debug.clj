@@ -34,11 +34,7 @@
           (ui/with-context
             {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
              :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
-             :hui.text-field/cursor-width   2
-             :hui.text-field/padding-top    10
-             :hui.text-field/padding-bottom 10
-             :hui.text-field/padding-left   5
-             :hui.text-field/padding-right  5}
+             :hui.text-field/cursor-width   2}
             (ui/text-field {:focused? true} *state))
           (ui/gap 0 10)
           (ui/label (str "\"" text "\""))

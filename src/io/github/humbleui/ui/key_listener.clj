@@ -15,14 +15,14 @@
     (core/draw-child child ctx rect canvas))
   
   (-event [_ ctx event]
-    (core/eager-or
+    (or
+      (core/event-child child ctx event)
       (when (= :key (:event event))
         (if (:pressed? event)
           (when on-key-down
             (on-key-down event))
           (when on-key-up
-            (on-key-up event))))
-      (core/event-child child ctx event)))
+            (on-key-up event))))))
   
   (-iterate [this ctx cb]
     (or

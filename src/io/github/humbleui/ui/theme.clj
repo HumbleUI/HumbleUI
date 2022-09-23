@@ -71,10 +71,10 @@
                          :hui.text-field/border-active           (paint/stroke 0xFF749EE4 (* 1 scale))
                          :hui.text-field/border-inactive         (paint/stroke 0xFFCCCCCC (* 1 scale))
                          :hui.text-field/cursor-width            (float 1)
-                         :hui.text-field/padding-top             (-> cap-height (/ 3) Math/round (/ scale) float)
-                         :hui.text-field/padding-bottom          (-> cap-height (/ 3) Math/round (/ scale) float)
-                         :hui.text-field/padding-left            (float 0)
-                         :hui.text-field/padding-right           (float 0)}]
+                         :hui.text-field/padding-top             (-> cap-height Math/round (/ scale) float)
+                         :hui.text-field/padding-bottom          (-> cap-height Math/round (/ scale) float)
+                         :hui.text-field/padding-left            (-> cap-height (/ 2) Math/round (/ scale) float)
+                         :hui.text-field/padding-right           (-> cap-height (/ 2) Math/round (/ scale) float)}]
          (with-context/with-context (core/merge-some theme opts) comp))))))
 
 ; (require 'user :reload)

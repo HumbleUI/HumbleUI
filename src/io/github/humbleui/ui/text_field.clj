@@ -866,11 +866,16 @@
                                :end       [:move-doc-end]
                                :backspace [:kill-marked :delete-char-left]
                                :delete    [:kill-marked :delete-char-right]))]
-            (when (seq ops)
-              (swap! *state
-                (fn [state]
-                  (reduce #(edit %1 %2 nil) state ops)))
-              true))))))
+            (or
+              (when(seq ops)
+                (swap! *state
+                  (fn [state]
+                    (reduce #(edit %1 %2 nil) state ops)))
+                true)
+              (some #{:letter :digit :whitespace} (:key-types event))))
+          
+          (and (= :key (:event event)) (not (:pressed? event)))
+          (some #{:letter :digit :whitespace} (:key-types event))))))
   
   (-iterate [this ctx cb]
     (cb this))
