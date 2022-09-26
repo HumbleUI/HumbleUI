@@ -20,16 +20,16 @@
     (cond-> ctx
       hovered?                (assoc :hui/hovered? true)
       (and pressed? hovered?) (assoc :hui/active? true)))
-  
+
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure child (protocols/-context this ctx) cs))
-  
+
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
     (set! hovered? (.contains child-rect ^IPoint (:mouse-pos ctx)))
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
-  
+
   (-event [this ctx event]
     (core/eager-or
       (core/when-every [{:keys [x y]} event]
@@ -55,15 +55,18 @@
           (when (not= pressed? pressed?')
             (set! pressed? pressed?')
             true)))))
-  
+
   (-iterate [this ctx cb]
     (or
       (cb this)
       (protocols/-iterate child (protocols/-context this ctx) cb)))
-  
+
   AutoCloseable
   (close [_]
     (core/child-close child)))
 
-(defn clickable [{:keys [on-click on-click-capture]} child]
-  (->Clickable on-click on-click-capture child nil false false))
+(defn clickable [opts child]
+  (when-not (map? opts)
+    (throw (ex-info (str "Expected: map, got: " opts) {:arg opts})))
+  (let [{:keys [on-click on-click-capture]} opts]
+    (->Clickable on-click on-click-capture child nil false false)))
