@@ -142,6 +142,19 @@
   (.setContentSize window width height)
   window)
 
+(defn set-full-screen [^Window window value]
+  (.setFullScreen window value)
+  window)
+
+(defn full-screen? [^Window window]
+  (.isFullScreen window))
+
+(defn hide-mouse-cursor-until-moved
+  ([^Window window]
+   (.hideMouseCursorUntilMoved window))
+  ([^Window window value]
+   (.hideMouseCursorUntilMoved window value)))
+
 (defn set-z-order [^Window window order]
   (.setZOrder window
     (case order
