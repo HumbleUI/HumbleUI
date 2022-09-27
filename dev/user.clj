@@ -122,22 +122,22 @@
 (redraw)
 
 (defn -main [& args]
-  (app/init)
-  (let [{:keys [scale work-area]} (app/primary-screen)
-        width (quot (:width work-area) 3)]
-    (reset! *window 
-      (ui/start-app!
-        {:title    "Humble 🐝 UI"
-         :mac-icon "dev/images/icon.icns"
-         :width    (/ width scale)
-         :height   400
-         :x        :left
-         :y        :center}
-        app))
-    (set-floating! @*window @settings/*floating)
-    (reset! debug/*enabled? true)
-    (redraw)
-    (apply nrepl/-main args)))
+  (ui/start-app!
+    (let [{:keys [scale work-area]} (app/primary-screen)
+          width (quot (:width work-area) 3)]
+      (reset! *window 
+        (ui/window
+          {:title    "Humble 🐝 UI"
+           :mac-icon "dev/images/icon.icns"
+           :width    (/ width scale)
+           :height   400
+           :x        :left
+           :y        :center}
+          #'app))))
+  (set-floating! @*window @settings/*floating)
+  (reset! debug/*enabled? true)
+  (redraw)
+  (apply nrepl/-main args))
 
 (comment  
   (do
