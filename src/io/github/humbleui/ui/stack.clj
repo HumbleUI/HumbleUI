@@ -21,9 +21,11 @@
       (core/draw-child child ctx rect canvas)))
   
   (-event [_ ctx event]
-    (reduce core/eager-or false
-      (for [child children]
-        (core/event-child child ctx event))))
+    (reduce 
+      (fn [_ child]
+        (when-let [res (core/event-child child ctx event)]
+          (reduced res)))
+      nil (reverse children)))
   
   (-iterate [this ctx cb]
     (or
