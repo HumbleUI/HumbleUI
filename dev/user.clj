@@ -80,6 +80,12 @@
       (next)
       (first))))
 
+(def light-grey 0xffeeeeee)   
+
+(def border-line
+  (ui/rect (paint/fill light-grey)
+    (ui/gap 1 0)))
+      
 (def app
   (ui/default-theme {; :font-size 13
                      ; :cap-height 10
@@ -105,6 +111,7 @@
                         selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
                         hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
                         :else     label)))))))))
+      border-line
       [:stretch 1
        (ui/clip
          (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
