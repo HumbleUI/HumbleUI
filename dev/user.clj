@@ -60,7 +60,7 @@
    "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "slider"))
+  (atom "event-bubbling"))
 
 (defn- capitalize [s]
   (-> s

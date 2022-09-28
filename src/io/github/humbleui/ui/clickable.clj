@@ -6,8 +6,6 @@
   (:import
     [java.lang AutoCloseable]))
 
-(set! *warn-on-reflection* true)
-
 (core/deftype+ Clickable [on-click
                           on-click-capture
                           child
@@ -48,12 +46,13 @@
             false)
           (or
             (core/event-child child (protocols/-context this ctx) event)
-            (when (and clicked? on-click)
-              (on-click event)
-              false))
-          (when (not= pressed? pressed?')
-            (set! pressed? pressed?')
-            true)))))
+            (core/eager-or
+              (when (and clicked? on-click)
+                (on-click event)
+                true)
+              (when (not= pressed? pressed?')
+                (set! pressed? pressed?')
+                true)))))))
 
   (-iterate [this ctx cb]
     (or

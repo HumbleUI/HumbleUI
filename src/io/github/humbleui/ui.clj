@@ -919,7 +919,7 @@
        {:on-click (when on-click
                     (fn [_] (on-click)))}
        (clip-rrect border-radius
-         (dynamic ctx [{:keys [hui/active? hui/hovered?]} ctx]
+         (dynamic ctx [{:hui/keys [hovered? active?]} ctx]
            (rect
              (cond
                active?  bg-active
