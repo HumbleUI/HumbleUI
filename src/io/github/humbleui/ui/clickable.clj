@@ -4,15 +4,14 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols])
   (:import
-    [java.lang AutoCloseable]
-    [io.github.humbleui.types IPoint IRect]))
+    [java.lang AutoCloseable]))
 
 (set! *warn-on-reflection* true)
 
 (core/deftype+ Clickable [on-click
                           on-click-capture
                           child
-                          ^:mut ^IRect child-rect
+                          ^:mut child-rect
                           ^:mut hovered?
                           ^:mut pressed?]
   protocols/IContext
@@ -27,13 +26,13 @@
 
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
-    (set! hovered? (.contains child-rect ^IPoint (:mouse-pos ctx)))
+    (set! hovered? (core/rect-contains? child-rect (:mouse-pos ctx)))
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
 
   (-event [this ctx event]
     (core/eager-or
       (core/when-every [{:keys [x y]} event]
-        (let [hovered?' (.contains ^IRect child-rect (IPoint. x y))]
+        (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             true)))

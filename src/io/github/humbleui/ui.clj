@@ -696,7 +696,7 @@
     (core/eager-or
       (core/event-child child (protocols/-context this ctx) event)
       (core/when-every [{:keys [x y]} event]
-        (let [hovered?' (.contains ^IRect child-rect (IPoint. x y))]
+        (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
           (when (not= hovered? hovered?')
             (set! hovered? hovered?')
             (if hovered?'

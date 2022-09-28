@@ -9,13 +9,15 @@
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui.clickable :as clickable])
   (:import
-    [io.github.humbleui.types IPoint IRect RRect]
     [io.github.humbleui.skija Color Font]))
 
 (defn- value-at [slider x]
-  (let [{:keys [*state my-rect]}       slider
-        {:keys [min max step delta-x]} @*state
-        {left :x, width :width}        my-rect
+  (let [{:keys [*state thumb-size my-rect]} slider
+        {:keys [min max step delta-x]}      @*state
+        {thumb-w :width, thumb-h :heigth}   thumb-size
+        half-thumb-w (/ thumb-w 2)
+        left   (+ (:x my-rect) half-thumb-w)
+        width  (- (:width my-rect) thumb-w)
         ratio  (core/clamp (/ (- x delta-x left) width) 0 1)
         range  (- max min)]
     (-> ratio
@@ -24,38 +26,77 @@
       (* step)
       (+ min))))
 
+(core/deftype+ SliderThumb []
+  protocols/IComponent
+  (-measure [_ ctx cs]
+    (let [{:hui.slider/keys [thumb-size]} ctx]
+      (core/size thumb-size thumb-size)))
+
+  (-draw [this ctx rect ^Canvas canvas]
+    (let [{:hui.slider/keys [fill-thumb
+                             stroke-thumb
+                             fill-thumb-active
+                             stroke-thumb-active]
+           :hui/keys        [active?]} ctx
+          x (+ (:x rect) (/ (:width rect) 2))
+          y (+ (:y rect) (/ (:height rect) 2))
+          r (/ (:height rect) 2)]
+      (canvas/draw-circle canvas x y r (if active? fill-thumb-active fill-thumb))
+      (canvas/draw-circle canvas x y r (if active? stroke-thumb-active stroke-thumb))))
+  
+  (-event [this ctx event])
+
+  (-iterate [this ctx cb]))
+
+(core/deftype+ SliderTrack [fill-key]
+  protocols/IComponent
+  (-measure [_ ctx cs]
+    cs)
+
+  (-draw [this ctx ^IRect rect ^Canvas canvas]
+    (let [{:hui.slider/keys [track-height]} ctx
+          half-track-height (/ track-height 2)
+          x      (- (:x rect) half-track-height)
+          y      (+ (:y rect) (/ (:height rect) 2) (- half-track-height))
+          w      (+ (:width rect) track-height)
+          r      half-track-height
+          rect   (core/rrect-xywh x y w track-height r)]
+      (canvas/draw-rect canvas rect (ctx fill-key))))
+  
+  (-event [this ctx event])
+
+  (-iterate [this ctx cb]))
+
 (core/deftype+ Slider [*state
+                       track-active
+                       track-inactive
+                       thumb
+                       ^:mut thumb-size
                        ^:mut my-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
-    (assoc cs :height (:hui.slider/handle-size ctx)))
+    (assoc cs :height
+      (:height (core/measure thumb ctx cs))))
   
   (-draw [this ctx rect ^Canvas canvas]
     (set! my-rect rect)
+    (set! thumb-size (core/measure thumb ctx (core/size (:width rect) (:height rect))))
     (let [state @*state
           {:keys [value min max step dragging?]} state
           {x :x, y :y, w :width, h :height} my-rect
-          {:keys            [scale]
-           :hui.slider/keys [shaft-height
-                             fill-in
-                             fill-out
-                             fill-handle
-                             stroke-handle
-                             fill-handle-active
-                             stroke-handle-active]} ctx
-          range         (- max min)
-          ratio         (/ (- value min) range)
-          handle-x      (+ x (* ratio w))
-          handle-y      (+ y (/ h 2))
-          shaft-y       (- handle-y (/ shaft-height 2))]
-      (canvas/draw-rect canvas
-        (RRect/makeLTRB x shaft-y handle-x (+ shaft-y shaft-height) (/ shaft-height 2))
-        fill-in)
-      (canvas/draw-rect canvas
-        (RRect/makeLTRB handle-x shaft-y (+ x w) (+ shaft-y shaft-height) (/ shaft-height 2))
-        fill-out)
-      (canvas/draw-circle canvas handle-x handle-y (/ h 2) (if dragging? fill-handle-active fill-handle))
-      (canvas/draw-circle canvas handle-x handle-y (/ h 2) (if dragging? stroke-handle-active stroke-handle))))
+          {thumb-w :width, thumb-h :height} thumb-size
+          half-thumb-w (/ thumb-w 2)
+          {:hui.slider/keys [fill-left
+                             fill-right]} ctx
+          range   (- max min)
+          ratio   (/ (- value min) range)
+          thumb-x (+ x half-thumb-w (* ratio (- w thumb-w)))
+          thumb-y (+ y (/ h 2))
+          ctx'    (cond-> ctx
+                    dragging? (assoc :hui/active? true))]
+      (core/draw track-active   ctx' (core/irect-ltrb (+ x half-thumb-w)       y thumb-x                  (+ y thumb-h)) canvas)
+      (core/draw track-inactive ctx' (core/irect-ltrb thumb-x                  y (+ x w (- half-thumb-w)) (+ y thumb-h)) canvas)
+      (core/draw thumb          ctx' (core/irect-xywh (- thumb-x half-thumb-w) y thumb-w thumb-h) canvas)))
   
   (-event [this ctx event]
     (core/eager-or
@@ -65,21 +106,22 @@
               (:pressed? event))
         (let [{:keys [value min max step dragging?]} @*state
               {left :x, top :y, width :width, height :height} my-rect
-              {:hui.slider/keys [handle-size]} ctx
-              range         (- max min)
-              ratio         (/ (- value min) range)
-              handle-x      (+ left (* ratio width))
-              handle-rect   (IRect/makeXYWH (- handle-x (/ height 2)) top height height)
-              point         (IPoint. (:x event) (:y event))]
+              {thumb-w :width, thumb-h :height} thumb-size
+              half-thumb-w (/ thumb-w 2)
+              range        (- max min)
+              ratio        (/ (- value min) range)
+              thumb-x      (+ left half-thumb-w (* ratio (- width thumb-w)))
+              thumb-rect   (core/irect-xywh (- thumb-x half-thumb-w) top thumb-w thumb-h)
+              point        (core/ipoint (:x event) (:y event))]
           (cond
-            (.contains handle-rect point)
+            (core/rect-contains? thumb-rect point)
             (do
               (swap! *state assoc
                 :dragging? true
-                :delta-x   (- (:x event) handle-x))
+                :delta-x   (- (:x event) thumb-x))
               true)
             
-            (.contains my-rect point)
+            (core/rect-contains? my-rect point)
             (do
               (swap! *state assoc
                 :dragging? true
@@ -110,16 +152,22 @@
   ([*state]
    (slider nil *state))
   ([opts *state]
-   (swap! *state
-     #(core/merge-some
-        {:value     (:min @*state 0)
-         :min       0
-         :max       100
-         :step      1
-         :dragging? false
-         :delta-x   0}
-        %))
-   (->Slider *state nil)))
+   (let [{:keys [track-active
+                 track-inactive
+                 thumb]
+          :or {track-active   (->SliderTrack :hui.slider/fill-track-active)
+               track-inactive (->SliderTrack :hui.slider/fill-track-inactive)
+               thumb          (->SliderThumb)}} opts]
+     (swap! *state
+       #(core/merge-some
+          {:value     (:min @*state 0)
+           :min       0
+           :max       100
+           :step      1
+           :dragging? false
+           :delta-x   0}
+          %))
+     (->Slider *state track-active track-inactive thumb nil nil))))
 
 (comment
   (do

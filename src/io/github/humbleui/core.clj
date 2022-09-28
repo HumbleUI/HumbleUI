@@ -10,7 +10,7 @@
     [io.github.humbleui.jwm App Screen]
     [io.github.humbleui.skija Canvas]
     [io.github.humbleui.skija.shaper Shaper]
-    [io.github.humbleui.types IPoint IRect]
+    [io.github.humbleui.types IPoint IRect Point Rect RRect]
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
 
@@ -264,6 +264,52 @@
   (delay
     (slurp-bytes
       (io/resource (str "io/github/humbleui/" path)))))
+
+(defn ^IPoint ipoint [^long x ^long y]
+  (IPoint. x y))
+
+(defn ^IPoint size [^long x ^long y]
+  (IPoint. x y))
+
+(defn ^Point point [x y]
+  (Point. x y))
+
+(defn ^IRect irect-xywh [^long x ^long y ^long w ^long h]
+  (IRect/makeXYWH x y w h))
+
+(defn ^IRect irect-ltrb [^long l ^long t ^long r ^long b]
+  (IRect/makeLTRB l t r b))
+
+(defn ^Rect rect-xywh [x y w h]
+  (Rect/makeXYWH x y w h))
+
+(defn ^Rect rect-ltrb [l t r b]
+  (Rect/makeLTRB l t r b))
+
+(defn ^RRect rrect-xywh
+  ([x y w h r]
+   (RRect/makeXYWH x y w h r))
+  ([x y w h xr yr]
+   (RRect/makeXYWH x y w h xr yr))
+  ([x y w h tr tl br bl]
+   (RRect/makeXYWH x y w h tr tl br bl)))
+
+(defn ^RRect rrect-ltrb
+  ([l t r b r]
+   (RRect/makeLTRB l t r b r))
+  ([l t r b xr yr]
+   (RRect/makeLTRB l t r b xr yr))
+  ([l t r b tr tl br bl]
+   (RRect/makeLTRB l t r b tr tl br bl)))
+
+(defn rect-contains? [rect point]
+  {:pre [(some? rect)
+         (some? point)]}
+  (and
+    (<= (:x rect) (:x point))
+    (< (:x point) (:right rect))
+    (<= (:y rect) (:y point))
+    (< (:y point) (:bottom rect))))
 
 (defn measure [comp ctx ^IPoint cs]
   {:pre  [(instance? IPoint cs)]
