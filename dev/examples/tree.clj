@@ -6,8 +6,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (defn random-green []
   (let [r (+ 32  (rand-int 32))
         g (+ 192 (rand-int 32))

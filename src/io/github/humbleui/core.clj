@@ -14,8 +14,6 @@
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
 
-(set! *warn-on-reflection* true)
-
 ;; constants
 
 (def double-click-threshold-ms

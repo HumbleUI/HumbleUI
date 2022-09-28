@@ -8,8 +8,6 @@
     [io.github.humbleui.skija Canvas]
     [java.lang AutoCloseable]))
 
-(set! *warn-on-reflection* true)
-
 (defn ^IRect child-rect [draggable]
   (let [{:keys [my-pos child-pos child-size]} draggable]
     (IRect/makeXYWH

@@ -6,8 +6,6 @@
     [java.io Writer]
     [io.github.humbleui.skija Data Font Typeface]))
 
-(set! *warn-on-reflection* true)
-
 (defn ^Font make-with-size [^Typeface typeface size]
   (Font. typeface (float size)))
 

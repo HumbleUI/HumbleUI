@@ -4,8 +4,6 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.ui :as ui]))
 
-(set! *warn-on-reflection* true)
-
 (def ^:dynamic *editing*
   false)
 

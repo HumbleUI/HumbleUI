@@ -8,8 +8,6 @@
   (:import
     [io.github.humbleui.skija Font FontVariation FontVariationAxis Typeface Paint]))
 
-(set! *warn-on-reflection* true)
-
 (def *state (atom {:b "0" :screen :b}))
 
 (defn stringify [n]

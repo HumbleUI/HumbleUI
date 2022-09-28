@@ -4,8 +4,6 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
-(set! *warn-on-reflection* true)
-
 (def *celsius
   (atom {:text "5"
          :from 1

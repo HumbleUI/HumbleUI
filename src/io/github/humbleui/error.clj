@@ -4,8 +4,6 @@
     [clojure.stacktrace :as stacktrace]
     [clojure.string :as str]))
 
-(set! *warn-on-reflection* true)
-
 (defn- root-cause [^Throwable t]
   (if-some [cause (some-> t .getCause)]
     (recur cause)

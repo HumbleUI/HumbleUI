@@ -12,8 +12,6 @@
     [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode Canvas ImageFilter Paint SaveLayerRec]
     [java.lang AutoCloseable]))
 
-(set! *warn-on-reflection* true)
-
 (defn blur [radius]
   (ImageFilter/makeBlur radius radius FilterTileMode/CLAMP))
 

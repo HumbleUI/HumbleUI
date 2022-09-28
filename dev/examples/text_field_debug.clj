@@ -7,8 +7,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (def *state (atom {:text "" :placeholder "Type here"}))
 
 (defn render-form [form]

@@ -12,8 +12,6 @@
     [io.github.humbleui.types IRect]
     [java.util.function Consumer]))
 
-(set! *warn-on-reflection* true)
-
 (defn close [^Window window]
   (.close window))
 

@@ -5,8 +5,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (def ui
   (ui/dynamic ctx [{:keys [font-ui leading fill-text]} ctx]
     (ui/halign 0.5

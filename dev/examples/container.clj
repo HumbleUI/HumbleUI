@@ -6,8 +6,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (defn label [text]
   (ui/dynamic ctx [{:keys [leading]} ctx]
     (ui/rect (paint/fill 0xFFB2D7FE)

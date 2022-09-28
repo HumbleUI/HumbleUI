@@ -6,8 +6,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (defonce *clicks (atom 0))
 
 (defonce *selected (atom nil))

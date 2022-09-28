@@ -6,8 +6,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (defn svg [width height xpos ypos scale]
   (ui/clip
     (ui/rect (paint/fill 0xFF90DC48)

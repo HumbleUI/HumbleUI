@@ -5,8 +5,6 @@
     [java.io Writer]
     [io.github.humbleui.skija Data Typeface]))
 
-(set! *warn-on-reflection* true)
-
 (def *default
   (delay
     (Typeface/makeDefault)))

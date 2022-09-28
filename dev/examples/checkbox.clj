@@ -7,8 +7,6 @@
   (:import
     [io.github.humbleui.skija Font Paint Typeface]))
 
-(set! *warn-on-reflection* true)
-
 (def *state-group  (atom false))
 (def *state-first  (atom false))
 (def *state-second (atom false))

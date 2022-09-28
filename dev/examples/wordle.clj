@@ -9,8 +9,6 @@
   (:import
     [io.github.humbleui.skija Font Paint Typeface]))
 
-(set! *warn-on-reflection* true)
-
 (def ^Typeface typeface
   (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
 

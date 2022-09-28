@@ -4,8 +4,6 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
-(set! *warn-on-reflection* true)
-
 (defonce *floating
   (atom false))
 

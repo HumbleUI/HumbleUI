@@ -6,8 +6,6 @@
   (:import
     [io.github.humbleui.skija Paint]))
 
-(set! *warn-on-reflection* true)
-
 (defn label [text]
   (ui/rect (paint/fill 0xFFB2D7FE)
     (ui/center

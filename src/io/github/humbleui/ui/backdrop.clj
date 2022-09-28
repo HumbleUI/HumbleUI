@@ -8,8 +8,6 @@
     [io.github.humbleui.skija Canvas ImageFilter SaveLayerRec]
     [java.lang AutoCloseable]))
 
-(set! *warn-on-reflection* true)
-
 (core/deftype+ Backdrop [^ImageFilter filter child ^:mut child-rect]
   protocols/IComponent
   (-measure [_ ctx cs]

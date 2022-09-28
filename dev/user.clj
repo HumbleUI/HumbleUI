@@ -15,8 +15,6 @@
     [io.github.humbleui.skija FontMgr FontStyle Typeface Font]
     [io.github.humbleui.types IRect]))
 
-(set! *warn-on-reflection* true)
-
 (defonce *window
   (atom nil))
 

@@ -9,8 +9,6 @@
     [io.github.humbleui.types IPoint]
     [io.github.humbleui.skija Canvas Paint]))
 
-(set! *warn-on-reflection* true)
-
 ;; https://en.wikipedia.org/wiki/Hilbert_curve
 ;; https://github.com/nextjournal/clerk-demo/blob/main/notebooks/logo.clj
 (defn hilbert-curve-impl

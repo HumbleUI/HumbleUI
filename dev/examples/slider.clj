@@ -8,8 +8,6 @@
   (:import
     [io.github.humbleui.types IRect]))
 
-(set! *warn-on-reflection* true)
-
 (def *state0
   (atom {:value 500
          :max   1000}))

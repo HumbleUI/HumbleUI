@@ -32,8 +32,6 @@
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
 
-(set! *warn-on-reflection* true)
-
 (def ^{:arglists '([filter child])} backdrop
   backdrop/backdrop)
 

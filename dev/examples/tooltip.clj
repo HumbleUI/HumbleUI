@@ -3,8 +3,6 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
-(set! *warn-on-reflection* true)
-
 (defn tooltip [opts text child]
   (ui/tooltip
     opts

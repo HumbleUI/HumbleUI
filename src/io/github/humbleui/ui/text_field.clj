@@ -22,8 +22,6 @@
     [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]))
 
-(set! *warn-on-reflection* true)
-
 (def undo-stack-depth 100)
 
 (defn- ^BreakIterator char-iter [state]
