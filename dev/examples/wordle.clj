@@ -94,7 +94,7 @@
                       (ui/halign 0.5
                         (ui/height 50
                           (ui/valign 0.5
-                            (ui/label letter {:font font-large :paint fill-white})))))))))))
+                            (ui/label {:font font-large :paint fill-white} letter)))))))))))
         (when-not (won? state)
           (let [colors (colors word guesses)]        
             (list
@@ -121,7 +121,7 @@
                                             
                                               :else
                                               fill-black)]
-                                  (ui/label letter {:font font-large :paint color})))))))
+                                  (ui/label {:font font-large :paint color} letter)))))))
                       (ui/rect stroke-light-gray
                         (ui/gap 50 50)))))))))))))
 
@@ -142,7 +142,7 @@
            (ui/halign 0.5
              (ui/height 35
                (ui/valign 0.5
-                 (ui/label char {:font font-small :paint (if (some? color) fill-white fill-black)}))))))))))
+                 (ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char))))))))))
   
 (def keyboard
   (ui/dynamic ctx [{:keys [font-small fill-light-gray fill-black]} ctx
@@ -193,7 +193,7 @@
                   (ui/clickable
                     {:on-click (fn [_] (reset! *state (empty-state)))}
                     (ui/padding 10 10
-                      (ui/label "↻ Reset" {:font font-small :paint fill-black}))))
+                      (ui/label {:font font-small :paint fill-black} "↻ Reset"))))
                 (ui/gap 0 padding)
                 [:stretch 1 nil]
                 (ui/halign 0.5 field)

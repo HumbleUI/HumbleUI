@@ -111,7 +111,7 @@
                      color)]
         (ui/rect (paint/fill color')
           (ui/center
-            (ui/label text {:font font-btn :features ["tnum"]})))))))
+            (ui/label {:font font-btn :features ["tnum"]} text)))))))
 
 (def color-digit   0xFF797979)
 (def color-op      0xFFFF9F0A)
@@ -147,7 +147,7 @@
                                     (ui/valign 0.5
                                       (ui/dynamic ctx [{:keys [font-display fill-text]} ctx
                                                        val (get @*state (:screen @*state))]
-                                        (ui/label val {:font font-display :features ["tnum"]}))))))]
+                                        (ui/label {:font font-display :features ["tnum"]} val))))))]
                   (ui/gap 0 padding)
                   [:stretch 2 (ui/row
                                 (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "C" color-clear))

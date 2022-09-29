@@ -148,8 +148,8 @@
 
 (defn label
   ([text]
-   (label text nil))
-  ([text opts]
+   (label nil text))
+  ([opts text]
    (dynamic ctx [font ^Font (or (:font opts) (:font-ui ctx))
                  paint ^Paint (or (:paint opts) (:fill-text ctx))]
      (let [text     (str text)
