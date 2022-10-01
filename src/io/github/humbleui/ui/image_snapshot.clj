@@ -9,17 +9,18 @@
     [io.github.humbleui.skija Canvas ColorAlphaType Image ImageInfo Surface]
     [java.lang AutoCloseable]))
 
-(core/deftype+ ImageSnapshot [child ^:mut ^Image image]
+(core/deftype+ ImageSnapshot [scale child ^:mut ^Image image]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
   (-draw [this ctx ^Rect rect ^Canvas canvas]
-    (let [m44 (.getLocalToDevice canvas)
-          sx  (nth (.getMat m44) 0)
-          sy  (nth (.getMat m44) 5)
-          w   (math/ceil (* (:width rect) sx))
-          h   (math/ceil (* (:height rect) sy))]
+    (let [[sx sy] (if (some? scale)
+                    ((juxt :x :y) scale)
+                    (let [m44 (.getMat (.getLocalToDevice canvas))]
+                      [(nth m44 0) (nth m44 5)]))
+          w (int (math/ceil (* (:width rect) sx)))
+          h (int (math/ceil (* (:height rect) sy)))]
       (when (and image
               (or 
                 (not= (.getWidth image) w)
@@ -43,5 +44,8 @@
   (close [_]
     (core/child-close child)))
 
-(defn image-snapshot [child]
-  (->ImageSnapshot child nil))
+(defn image-snapshot
+  ([child]
+   (image-snapshot {} child))
+  ([opts child]
+   (->ImageSnapshot (:scale opts) child nil)))
