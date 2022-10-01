@@ -40,6 +40,7 @@
    "container"
    "errors"
    "event-bubbling"
+   "image-snapshot"
    "label"
    "scroll"
    "settings"
@@ -58,7 +59,7 @@
    "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "event-bubbling"))
+  (atom "image-snapshot"))
 
 (defn- capitalize [s]
   (-> s

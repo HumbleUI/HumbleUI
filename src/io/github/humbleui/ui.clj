@@ -14,6 +14,7 @@
     [io.github.humbleui.ui.draggable :as draggable]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
+    [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     [io.github.humbleui.ui.key-listener :as key-listener]
     [io.github.humbleui.ui.mouse-listener :as mouse-listener]
     [io.github.humbleui.ui.rect :as rect]
@@ -49,6 +50,9 @@
 
 (def ^{:arglists '([child])} focus-controller
   focusable/focus-controller)
+
+(def ^{:arglists '([child])} image-snapshot
+  image-snapshot/image-snapshot)
 
 (def ^{:arglists '([opts child])} key-listener
   key-listener/key-listener)
@@ -568,30 +572,20 @@
 
 ;; svg
 
-(core/deftype+ SVG [^SVGDOM dom ^SVGPreserveAspectRatio scaling ^:mut ^Image image]
+(core/deftype+ SVG [^SVGDOM dom ^SVGPreserveAspectRatio scaling]
   protocols/IComponent
   (-measure [_ ctx cs]
     cs)
   
   (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (let [{:keys [x y width height]} rect]
-      (when (or (nil? image)
-              (not= (.getWidth image) (:width rect))
-              (not= (.getHeight image) (:height rect)))
-        (when image
-          (.close image))
-      
-        (set! image
-          (with-open [surface (Surface/makeRasterN32Premul width height)]
-            (let [image-canvas (.getCanvas surface)
-                  root (.getRoot dom)]
-              (.setWidth root (SVGLength. width))
-              (.setHeight root (SVGLength. height))
-              (.setPreserveAspectRatio root scaling)
-              (.render dom image-canvas)
-              (.makeImageSnapshot surface)))))
-      
-      (.drawImageRect canvas image (.toRect rect))))
+    (let [root (.getRoot dom)
+          {:keys [x y width height]} rect]
+      (.setWidth root (SVGLength. width))
+      (.setHeight root (SVGLength. height))
+      (.setPreserveAspectRatio root scaling)
+      (canvas/with-canvas canvas
+        (canvas/translate canvas x y)
+        (.render dom canvas))))
   
   (-event [_ ctx event])
   
@@ -631,12 +625,12 @@
       (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET))))
 
 (defn svg
-  ([src] (svg src nil))
-  ([src opts]
+  ([src] (svg nil src))
+  ([opts src]
    (let [dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
                (SVGDOM. data))
          scaling (svg-opts->scaling opts)]
-     (->SVG dom scaling nil))))
+     (->SVG dom scaling))))
 
 
 ;; clip-rrect

@@ -11,7 +11,7 @@
     (ui/rect (paint/fill 0xFF90DC48)
       (ui/width width
         (ui/height height
-          (ui/svg "dev/images/ratio.svg" {:xpos xpos :ypos ypos :scale scale}))))))
+          (ui/svg {:xpos xpos :ypos ypos :scale scale} "dev/images/ratio.svg"))))))
 
 (def ui
   (ui/with-bounds ::bounds
@@ -52,6 +52,6 @@
             (ui/rect (paint/fill 0xFF90DC48)
               (ui/width (* 44 step)
                 (ui/height (* 7 step)
-                  (ui/svg "dev/images/ratio.svg" {:preserve-aspect-ratio false}))))))))))
+                  (ui/svg {:preserve-aspect-ratio false} "dev/images/ratio.svg"))))))))))
 
 ; (reset! user/*example "svg")
