@@ -1,0 +1,24 @@
+(ns ^:no-doc hooks.loopr
+  "A clj-kondo hook to allow linting of humbleui `loopr` macro."
+  (:require [clj-kondo.hooks-api :as api]))
+
+
+(defn loopr-hook 
+  "`loopr` could be linted as (let [acc1 []
+                                    acc2 []
+                                    iter1 1
+                                    iter2 2]
+                                 ... final)"
+  [{:keys [:node]}]
+  (let [[accs iters body & [final]] (rest (:children node))
+        new-node (api/list-node
+                  (list*
+                   (api/token-node 'let)
+                   (api/list-node
+                    (concat (:children accs) (:children iters)))
+                   (api/list-node
+                    (list*
+                     (api/token-node 'do)
+                     body
+                     final))))]
+    {:node new-node}))
