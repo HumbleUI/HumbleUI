@@ -1,2 +1,1 @@
-{:config-paths ["../resources/clj_kondo.exports/io.github.humbleui/humbleui"]
- :linters {:type-mismatch {:level :warning}}}
+{:config-paths ["../resources/clj_kondo.exports/io.github.humbleui/humbleui"]}
