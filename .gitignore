@@ -3,3 +3,17 @@ hs_err_pid*.log
 .cpcache
 target
 *.diff
+
+# Calva specific
+
+.calva/
+.lsp/
+.portal/
+
+# clj-kondo specific
+
+.clj-kondo/.cache/
+
+# Python script
+
+**/__pycache__/
