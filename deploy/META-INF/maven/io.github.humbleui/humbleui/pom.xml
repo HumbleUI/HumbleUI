@@ -70,8 +70,8 @@
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
-            <artifactId>cloure</artifactId>
-            <version>1.11.0-alpha3</version>
+            <artifactId>clojure</artifactId>
+            <version>1.11.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -83,27 +83,27 @@
         <dependency>
             <groupId>io.github.humbleui</groupId>
             <artifactId>jwm</artifactId>
-            <version>0.3.1</version>
+            <version>0.4.10</version>
         </dependency>
         <dependency>
             <groupId>io.github.humbleui</groupId>
             <artifactId>skija-windows</artifactId>
-            <version>0.98.1</version>
+            <version>0.106.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.humbleui</groupId>
             <artifactId>skija-linux</artifactId>
-            <version>0.98.1</version>
+            <version>0.106.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.humbleui</groupId>
             <artifactId>skija-macos-x64</artifactId>
-            <version>0.98.1</version>
+            <version>0.106.0</version>
         </dependency>
         <dependency>
             <groupId>io.github.humbleui</groupId>
             <artifactId>skija-macos-arm64</artifactId>
-            <version>0.98.1</version>
+            <version>0.106.0</version>
         </dependency>
     </dependencies>
 </project>

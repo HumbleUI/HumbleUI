@@ -1,0 +1,17 @@
+(ns ^:no-doc hooks.dynamic
+  "A clj-kondo hook to allow linting of humbleui `dynamic` macro."
+  (:require [clj-kondo.hooks-api :as api]))
+
+
+(defn dynamic-hook [{:keys [:node]}]
+  (let [[ctx bindings & body] (rest (:children node))
+        new-node (api/list-node
+                  (list*
+                   (api/token-node 'let)
+                   (api/vector-node
+                    (concat 
+                     [ctx
+                      (api/token-node {})]
+                     (:children bindings)))
+                   body))]
+    {:node new-node}))

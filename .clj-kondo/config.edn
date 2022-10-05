@@ -1,0 +1,1 @@
+{:config-paths ["../resources/clj_kondo.exports/io.github.humbleui/humbleui"]}

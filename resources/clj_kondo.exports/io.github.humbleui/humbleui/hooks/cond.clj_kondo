@@ -1,0 +1,39 @@
+(ns ^:no-doc hooks.cond
+  "A clj-kondo hook to allow linting of humbleui `cond+` macro."
+  (:require [clj-kondo.hooks-api :as api]))
+
+
+(defn cond+-hook [{:keys [:node]}]
+  (let [[test expr & rest] (rest (:children node))
+        nested-cond+ (api/list-node
+                      (list*
+                       (api/token-node 'cond+)
+                       rest))
+        new-node (api/list-node
+                  (list*
+                   (api/token-node 'condp)
+                   (api/token-node '=)
+                   (case test
+                     :do (api/list-node
+                          (list*
+                           (api/token-node 'do)
+                           expr
+                           nested-cond+))
+                     :let (api/list-node
+                           (list*
+                            (api/token-node 'let)
+                            expr
+                            nested-cond+))
+                     :some (api/list-node
+                            (list*
+                             (api/token-node 'or)
+                             expr
+                             nested-cond+))
+                     (api/list-node
+                      (list*
+                       (api/token-node 'if)
+                       test
+                       expr
+                       nested-cond+))
+                     )))]
+    {:node new-node}))
