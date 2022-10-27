@@ -1,11 +1,11 @@
-(ns io.github.humbleui.ui.key-listener
+(ns io.github.humbleui.ui.event-listener
   (:require
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [java.lang AutoCloseable]))
 
-(core/deftype+ KeyListener [on-key-down on-key-up child]
+(core/deftype+ EventListener [listeners child]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
@@ -15,13 +15,13 @@
   
   (-event [_ ctx event]
     (or
+      (when (:capture? listeners)
+        (when-some [listener (listeners (:event event))]
+          (listener event)))
       (core/event-child child ctx event)
-      (when (= :key (:event event))
-        (if (:pressed? event)
-          (when on-key-down
-            (on-key-down event))
-          (when on-key-up
-            (on-key-up event))))))
+      (when-not (:capture? listeners)
+        (when-some [listener (listeners (:event event))]
+          (listener event)))))
   
   (-iterate [this ctx cb]
     (or
@@ -32,5 +32,5 @@
   (close [_]
     (core/child-close child)))
 
-(defn key-listener [{:keys [on-key-down on-key-up]} child]
-  (->KeyListener on-key-down on-key-up child))
+(defn event-listener [listeners child]
+  (->EventListener listeners child))

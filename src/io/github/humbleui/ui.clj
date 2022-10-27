@@ -13,6 +13,7 @@
     [io.github.humbleui.ui.clickable :as clickable]
     [io.github.humbleui.ui.draggable :as draggable]
     [io.github.humbleui.ui.dynamic :as dynamic]
+    [io.github.humbleui.ui.event-listener :as event-listener]
     [io.github.humbleui.ui.focusable :as focusable]
     [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     [io.github.humbleui.ui.key-listener :as key-listener]
@@ -44,6 +45,9 @@
 
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
+
+(def ^{:arglists '([listeners child])} event-listener
+  event-listener/event-listener)
 
 (def ^{:arglists '([child] [opts child])} focusable
   focusable/focusable)
@@ -447,7 +451,7 @@
             (core/draw-child child ctx child-rect canvas)
             (recur
               (+ width (long (:width child-size)))
-              (conj rects )
+              (conj rects)
               (next known)
               (next children)))
           (set! child-rects rects)))))
