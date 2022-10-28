@@ -47,7 +47,7 @@
   ([{:keys [focused?]} child]
    (->Focusable child nil focused?)))
 
-(defn- focused [this]
+(defn focused [this]
   (let [*acc (volatile! [])]
     (protocols/-iterate this nil
       (fn [comp]

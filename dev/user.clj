@@ -31,6 +31,7 @@
 (def examples
   ["7guis-converter"
    "align"
+   "animation"
    "backdrop"
    "bmi-calculator"
    "button"
@@ -59,7 +60,7 @@
    "bmi-calculator"  "BMI Calculator"})
 
 (defonce *example
-  (atom "image-snapshot"))
+  (atom "animation"))
 
 (defn- capitalize [s]
   (-> s
@@ -88,12 +89,12 @@
     (ui/gap 1 0)))
       
 (def app
-  (ui/default-theme {; :font-size 13
+  (ui/default-theme {}; :font-size 13
                      ; :cap-height 10
                      ; :leading 100
                      ; :fill-text (paint/fill 0xFFCC3333)
                      ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
-                     }
+                     
     (ui/row
       (ui/vscrollbar
         (ui/vscroll
@@ -152,5 +153,5 @@
     (reset! *window (app/doui (make-window))))
   
   (app/doui (window/set-z-order @*window :normal))
-  (app/doui (window/set-z-order @*window :floating))
-  )
+  (app/doui (window/set-z-order @*window :floating)))
+  

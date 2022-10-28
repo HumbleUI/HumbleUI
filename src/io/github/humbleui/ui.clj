@@ -9,6 +9,7 @@
     [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window]
+    [io.github.humbleui.ui.animation :as animation]
     [io.github.humbleui.ui.backdrop :as backdrop]
     [io.github.humbleui.ui.clickable :as clickable]
     [io.github.humbleui.ui.draggable :as draggable]
@@ -33,6 +34,9 @@
     [io.github.humbleui.skija Canvas Data Font FontMetrics Image Paint Surface TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
+
+(def ^{:arglists '([src])} animation
+  animation/animation)
 
 (def ^{:arglists '([filter child])} backdrop
   backdrop/backdrop)
