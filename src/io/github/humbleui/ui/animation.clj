@@ -22,6 +22,7 @@
                            (if (>= time offset)
                              (dec frame)
                              (recur (next durations) (+ time (first durations)) (inc frame))))
+          frame          (core/clamp frame 0 (dec (count durations)))
           next-offset    (reduce + 0 (take (inc frame) durations))]
       (.drawImageRect canvas (nth images frame) (.toRect rect))
       (core/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
