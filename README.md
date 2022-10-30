@@ -76,6 +76,17 @@ Videos:
 
 - [Wordle in Clojure with Humble UI](https://www.youtube.com/watch?v=qSswvHrVnvo)
 
+Sample apps:
+
+- [tonsky/humble-ants](https://github.com/tonsky/humble-ants)
+- [tonsky/humble-deck](https://github.com/tonsky/humble-deck)
+- [lilactown/humble-starter](https://github.com/lilactown/humble-starter)
+- [oakmac/humble-mondrian](https://github.com/oakmac/humble-mondrian)
+- [oakmac/humble-modal-example](https://github.com/oakmac/humble-modal-example)
+- [oakmac/humble-animations](https://github.com/oakmac/humble-animations)
+- [LuisThiamNye/humbleui-explorations](https://github.com/LuisThiamNye/humbleui-explorations)
+- [Folcon/FE-7drl-2022](https://github.com/Folcon/FE-7drl-2022)
+
 ## Development
 
 Run nREPL server:
