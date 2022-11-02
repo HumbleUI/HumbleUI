@@ -4,10 +4,21 @@
     [clojure.stacktrace :as stacktrace]
     [clojure.string :as str]))
 
+(defn- with-message [^Throwable t msg]
+  (doto (proxy [Throwable] [msg nil false true])
+    (.setStackTrace (.getStackTrace t))))
+
+;; CompilerException has location info, but its cause RuntimeException has the message ¯\_(ツ)_/¯
 (defn- root-cause [^Throwable t]
-  (if-some [cause (some-> t .getCause)]
-    (recur cause)
-    t))
+  (loop [t t
+         data nil]
+    (if (and (nil? data) (instance? clojure.lang.Compiler$CompilerException t))
+      (recur t (ex-data t))
+      (if-some [cause (some-> t .getCause)]
+        (recur cause data)
+        (if-some [{:clojure.error/keys [line column source]} data]
+          (with-message t (format "%s: %s (%s:%d:%d)" (.getName (class t)) (.getMessage t) source line column))
+          t)))))
 
 (defn print-root-trace [^Throwable t]
   (stacktrace/print-stack-trace (root-cause t)))
@@ -32,8 +43,7 @@
   (let [path (-> (.getClassName el)
                (str/split #"\$")
                (first)
-               (str/split #"\.")
-               )]
+               (str/split #"\."))]
     (some identity
       (for [base [(str/join "/" path)
                   (str/join "/" (butlast path))]
@@ -86,8 +96,9 @@
       (reverse)
       (as-table))
     "\n"
-    (.getSimpleName (class t))
-    ": "
+    (let [cls (.getSimpleName (class t))]
+      (when-not (re-matches #"Throwable\$[0-9a-f]+" cls)
+        (str cls ": ")))
     (.getMessage t)
     (when (instance? clojure.lang.Compiler$CompilerException t)
       (let [t      ^clojure.lang.Compiler$CompilerException t

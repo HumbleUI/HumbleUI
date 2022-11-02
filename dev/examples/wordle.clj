@@ -34,8 +34,8 @@
 (def *state
   (atom (empty-state)
     #_{:word    "QUART"
-     :guesses ["CRANE" "START"]
-     :typing  "SSRAT"}))
+       :guesses ["CRANE" "START"]
+       :typing  "SSRAT"}))
 
 (defn won? [{:keys [word guesses]}]
   (= (last guesses) word))
