@@ -2,11 +2,9 @@
   (:require
     [clojure.java.io :as io]
     [clojure.stacktrace :as stacktrace]
-    [clojure.string :as str]))
-
-(defn- with-message [^Throwable t msg]
-  (doto (proxy [Throwable] [msg nil false true])
-    (.setStackTrace (.getStackTrace t))))
+    [clojure.string :as str])
+  (:import
+    [clojure.lang ExceptionInfo]))
 
 ;; CompilerException has location info, but its cause RuntimeException has the message ¯\_(ツ)_/¯
 (defn- root-cause [^Throwable t]
@@ -16,8 +14,8 @@
       (recur t (ex-data t))
       (if-some [cause (some-> t .getCause)]
         (recur cause data)
-        (if-some [{:clojure.error/keys [line column source]} data]
-          (with-message t (format "%s: %s (%s:%d:%d)" (.getName (class t)) (.getMessage t) source line column))
+        (if data
+          (ExceptionInfo. "Wrapper to pass CompilerException ex-data" data t)
           t)))))
 
 (defn print-root-trace [^Throwable t]
@@ -86,28 +84,25 @@
       (str/join "\n"))))
 
 (defn- trace-str [^Throwable t]
-  (str
-    "\n"
-    (->> (.getStackTrace t)
-      (take-while #(not= "clojure.lang.Compiler" (.getClassName ^StackTraceElement %)))
-      (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"} (.getClassName ^StackTraceElement %)))
-      (clear-duplicates)
-      (map trace-element)
-      (reverse)
-      (as-table))
-    "\n"
-    (let [cls (.getSimpleName (class t))]
-      (when-not (re-matches #"Throwable\$[0-9a-f]+" cls)
-        (str cls ": ")))
-    (.getMessage t)
-    (when (instance? clojure.lang.Compiler$CompilerException t)
-      (let [t      ^clojure.lang.Compiler$CompilerException t
-            line   (or (.-line t) (:clojure.error/line (ex-data t)))
-            column (:clojure.error/column (ex-data t))
-            source (or (.-source t) (:clojure.error/source (ex-data t)))]
-        (str " (" source ":" line ":" column ")")))
-    (when-some [data (ex-data t)]
-      (str " " (pr-str data)))))
+  (let [{:clojure.error/keys [source line column]} (ex-data t)
+        cause (or (.getCause t) t)]
+    (str
+      "\n"
+      (->> (.getStackTrace cause)
+        (take-while #(not= "clojure.lang.Compiler" (.getClassName ^StackTraceElement %)))
+        (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"} (.getClassName ^StackTraceElement %)))
+        (clear-duplicates)
+        (map trace-element)
+        (reverse)
+        (as-table))
+      "\n"
+      (.getSimpleName (class cause))
+      ": "
+      (.getMessage t)
+      (when (or source line column)
+        (str " (" source ":" line ":" column ")"))
+      (when-some [data (ex-data cause)]
+        (str " " (pr-str data))))))
 
 (defn log-error [^Throwable throwable]
   (binding [*out* *err*]
