@@ -98,7 +98,7 @@
       "\n"
       (.getSimpleName (class cause))
       ": "
-      (.getMessage t)
+      (.getMessage cause)
       (when (or source line column)
         (str " (" source ":" line ":" column ")"))
       (when-some [data (ex-data cause)]
