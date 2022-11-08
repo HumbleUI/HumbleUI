@@ -10,7 +10,7 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (core/draw-child child ctx rect canvas))
   
   (-event [_ ctx event]

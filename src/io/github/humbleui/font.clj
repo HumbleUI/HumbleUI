@@ -1,22 +1,21 @@
 (ns io.github.humbleui.font
   (:require
-    [clojure.java.io :as io]
     [io.github.humbleui.typeface :as typeface])
   (:import
     [java.io Writer]
-    [io.github.humbleui.skija Data Font Typeface]))
+    [io.github.humbleui.skija Font Typeface]))
 
-(defn ^Font make-with-size [^Typeface typeface size]
+(defn make-with-size ^Font [^Typeface typeface size]
   (Font. typeface (float size)))
 
-(defn ^Font make-with-cap-height [^Typeface typeface cap-height]
+(defn make-with-cap-height ^Font [^Typeface typeface cap-height]
   (let [size    (float 100)
         font    (Font. typeface size)
         current (-> font .getMetrics .getCapHeight)
         size'   (-> size (/ current) (* cap-height))]
     (.setSize font size')))
 
-(defn ^Typeface typeface [^Font font]
+(defn typeface ^Typeface [^Font font]
   (.getTypeface font))
 
 (defn size [^Font font]

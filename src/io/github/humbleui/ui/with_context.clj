@@ -14,7 +14,7 @@
   (-measure [this ctx cs]
     (core/measure child (protocols/-context this ctx) cs))
   
-  (-draw [this ctx rect ^Canvas canvas]
+  (-draw [this ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   

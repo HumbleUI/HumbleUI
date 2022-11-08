@@ -84,6 +84,3 @@
         (slider "Weight" *weight "kg")
         (ui/gap 0 10)
         (slider "BMI" *bmi "")))))
-
-(comment
-  (reset! user/*example "bmi-calculator"))

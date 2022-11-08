@@ -2,11 +2,11 @@
   (:import
     [io.github.humbleui.skija Paint PaintMode]))
 
-(defn ^Paint fill [color]
+(defn fill ^Paint [color]
   (doto (Paint.)
     (.setColor (unchecked-int color))))
 
-(defn ^Paint stroke [color width]
+(defn stroke ^Paint [color width]
   (doto (Paint.)
     (.setColor (unchecked-int color))
     (.setMode PaintMode/STROKE)

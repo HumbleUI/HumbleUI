@@ -1,5 +1,6 @@
 (ns io.github.humbleui.ui.dynamic
   (:require
+    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols])
@@ -26,7 +27,7 @@
         (set! child child')))
     (set! child-rect rect)
     (if (instance? Throwable child)
-      (.drawRect canvas (.toRect rect) (paint/fill 0xFFCC3333))
+      (canvas/draw-rect canvas rect (paint/fill 0xFFCC3333))
       (core/draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]

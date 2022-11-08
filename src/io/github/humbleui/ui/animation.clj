@@ -1,6 +1,5 @@
 (ns io.github.humbleui.ui.animation
   (:require
-    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window])
@@ -10,7 +9,7 @@
 
 (core/deftype+ Animation [width height durations images start]
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure [_ _ctx _cs]
     (core/ipoint width height))
   
   (-draw [_ ctx rect ^Canvas canvas]
@@ -21,15 +20,15 @@
                                 frame     0]
                            (if (>= time offset)
                              (dec frame)
-                             (recur (next durations) (+ time (first durations)) (inc frame))))
+                             (recur (next durations) (long (+ time (first durations))) (inc frame))))
           frame          (core/clamp frame 0 (dec (count durations)))
           next-offset    (reduce + 0 (take (inc frame) durations))]
-      (.drawImageRect canvas (nth images frame) (.toRect rect))
+      (.drawImageRect canvas (nth images frame) (core/rect rect))
       (core/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
   
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this))
   
   AutoCloseable

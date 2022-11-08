@@ -1,12 +1,10 @@
 (ns io.github.humbleui.ui.focusable
   (:require
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui.key-listener :as key-listener])
   (:import
-    [java.lang AutoCloseable]
-    [io.github.humbleui.types IPoint IRect]))
+    [java.lang AutoCloseable]))
 
 (core/deftype+ Focusable [child ^:mut child-rect ^:mut focused?]
   protocols/IContext
@@ -18,7 +16,7 @@
   (-measure [this ctx cs]
     (core/measure child (protocols/-context this ctx) cs))
   
-  (-draw [this ctx ^IRect rect ^Canvas canvas]
+  (-draw [this ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
@@ -28,7 +26,7 @@
               (= :mouse-button (:event event))
               (:pressed? event)
               (not focused?)
-              (.contains ^IRect child-rect (IPoint. (:x event) (:y event))))
+              (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
         (set! focused? true))
       (core/event-child child (protocols/-context this ctx) event)))
   
@@ -58,10 +56,10 @@
 
 (core/deftype+ FocusController [child ^:mut child-rect]
   protocols/IComponent
-  (-measure [this ctx cs]
+  (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [this ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child child ctx child-rect canvas))
   
@@ -69,7 +67,7 @@
     (if (and
           (= :mouse-button (:event event))
           (:pressed? event)
-          (.contains ^IRect child-rect (IPoint. (:x event) (:y event))))
+          (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
       (let [focused-before (focused this)
             res            (core/event-child child ctx event)
             focused-after  (focused this)]
@@ -116,9 +114,8 @@
       (fn [comp]
         (when (instance? Focusable comp)
           (when (nil? @*first)
-            (do
-              (vreset! *first comp)
-              false))
+            (vreset! *first comp)
+            false)
           (if (:focused? comp)
             (do
               (vreset! *focused comp)

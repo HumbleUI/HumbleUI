@@ -1,15 +1,16 @@
 (ns examples.checkbox
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Font Paint Typeface]))
+    [io.github.humbleui.ui :as ui]))
 
-(def *state-group  (atom false))
-(def *state-first  (atom false))
-(def *state-second (atom false))
+(def *state-group
+  (atom false))
+
+(def *state-first
+  (atom false))
+
+(def *state-second
+  (atom false))
 
 (add-watch *state-group :watch
   (fn [_ _ old new]
@@ -47,5 +48,3 @@
       (ui/checkbox *state-first (ui/label "First state"))
       (ui/gap 0 10)
       (ui/checkbox *state-second (ui/label "Second state")))))
-
-; (reset! user/*example "checkbox")

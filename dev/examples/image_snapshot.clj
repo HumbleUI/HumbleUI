@@ -1,6 +1,5 @@
 (ns examples.image-snapshot
   (:require
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Paint Shader]))
@@ -8,7 +7,7 @@
 (def ui
   (ui/with-bounds ::bounds
     (ui/dynamic ctx [{:keys [scale] ::keys [bounds]} ctx
-                     {:keys [width height]} bounds] 
+                     {:keys [height]} bounds] 
       (let [shader (Shader/makeLinearGradient
                      (float 0)
                      (float 0)
@@ -29,5 +28,3 @@
                    (ui/image-snapshot
                      (ui/rect paint (ui/gap 0 0)))]
                   (ui/gap 10 0))))))))))
-
-  ; (reset! user/*example "image-snapshot")

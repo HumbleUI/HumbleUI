@@ -1,7 +1,6 @@
 (ns io.github.humbleui.ui.clickable
   (:require
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [java.lang AutoCloseable]))

@@ -1,4 +1,5 @@
-(ns io.github.humbleui.protocols)
+(ns ^{:clojure.tools.namespace.repl/load false}
+  io.github.humbleui.protocols)
 
 (defprotocol ISettable
   (-set! [_ key value]))

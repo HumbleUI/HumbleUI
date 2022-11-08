@@ -1,13 +1,12 @@
 (ns examples.canvas
   (:require
-    [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.types IPoint]
-    [io.github.humbleui.skija Canvas Paint]))
+    [io.github.humbleui.skija Canvas]))
 
 ;; https://en.wikipedia.org/wiki/Hilbert_curve
 ;; https://github.com/nextjournal/clerk-demo/blob/main/notebooks/logo.clj
@@ -28,7 +27,7 @@
 
 (def *last-event (atom nil))
 
-(defn on-event [ctx e]
+(defn on-event [_ctx e]
   (when-not (#{:frame :frame-skija} (:event e))
     (reset! *last-event e)
     true))
@@ -60,13 +59,10 @@
       (loop [y  (+ 10 (* 2 leading scale))
              kv (sort-by first event)]
         (when-some [[k v] (first kv)]
-          (do
-            (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui fill-text)
-            (recur (+ y (* 2 leading scale)) (next kv))))))))
+          (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui fill-text)
+          (recur (+ y (* 2 leading scale)) (next kv)))))))
 
 (def ui
   (ui/center
     (ui/canvas {:on-paint on-paint
                 :on-event on-event})))
-
-; (reset! user/*example "canvas")

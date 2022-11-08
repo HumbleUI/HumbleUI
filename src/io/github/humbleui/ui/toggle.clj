@@ -1,6 +1,5 @@
 (ns io.github.humbleui.ui.toggle
   (:require
-    [clojure.java.io :as io]
     [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
@@ -10,7 +9,7 @@
     [io.github.humbleui.ui.clickable :as clickable])
   (:import
     [io.github.humbleui.types IPoint RRect]
-    [io.github.humbleui.skija Color Font]))
+    [io.github.humbleui.skija Color Font Paint]))
 
 (defn- toggle-height [ctx]
   (let [font       ^Font (:font-ui ctx)
@@ -35,15 +34,14 @@
                        ^:mut animation-start
                        ^:mut child-rect]
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure [_ ctx _cs]
     (let [height (toggle-height ctx)
           width  (math/round (* height 1.61803))]
       (IPoint. width height)))
   
-  (-draw [this ctx rect ^Canvas canvas]
+  (-draw [this ctx rect canvas]
     (set! child-rect rect)
-    (let [scale    (:scale ctx)
-          {x :x, y :y, w :width, h :height} rect
+    (let [{x :x, y :y, w :width, h :height} rect
           enabled?     (boolean @*state)
           _            (when (not= enabled? state-cached)
                          (start-animation this)
@@ -52,12 +50,12 @@
           now          (core/now)
           ratio        (min 1 (/ (- now animation-start) animation-length))
           animating?   (< ratio 1)
-          {:hui.toggle/keys [fill-enabled
-                             fill-disabled
-                             fill-handle
-                             fill-enabled-active
-                             fill-disabled-active
-                             fill-handle-active]} ctx
+          {:hui.toggle/keys [^Paint fill-enabled
+                             ^Paint fill-disabled
+                             ^Paint fill-handle
+                             ^Paint fill-enabled-active
+                             ^Paint fill-disabled-active
+                             ^Paint fill-handle-active]} ctx
           fill         (let [fill-enabled (if active? fill-enabled-active fill-enabled)
                              fill-disabled (if active? fill-disabled-active fill-disabled)]
                          (core/match [enabled? animating? active?]
@@ -84,15 +82,15 @@
         (.close fill)
         (window/request-frame (:window ctx)))))
   
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this)))
 
 (defn toggle
   ([*state]
    (toggle nil *state))
-  ([opts *state]
+  ([_opts *state]
    (clickable/clickable
      {:on-click (fn [_]
                   (swap! *state not))}

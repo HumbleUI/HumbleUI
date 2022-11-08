@@ -1,13 +1,10 @@
 (ns io.github.humbleui.ui.text-field
   (:require
-    [clojure.java.io :as io]
     [clojure.math :as math]
-    [clojure.string :as str]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.clipboard :as clipboard]
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
@@ -16,20 +13,17 @@
     [io.github.humbleui.window :as window])
   (:import
     [java.lang AutoCloseable]
-    [java.io File]
-    [io.github.humbleui.skija BreakIterator Canvas Data Font FontMetrics Image Paint Surface TextLine]
-    [io.github.humbleui.skija.shaper Shaper ShapingOptions]
-    [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]
-    [io.github.humbleui.types IPoint IRect Point Rect RRect]))
+    [io.github.humbleui.skija BreakIterator Canvas Font FontMetrics TextLine]
+    [io.github.humbleui.skija.shaper ShapingOptions]))
 
 (def undo-stack-depth 100)
 
-(defn- ^BreakIterator char-iter [state]
+(defn- char-iter ^BreakIterator [state]
   (or (:char-iter state)
     (doto (BreakIterator/makeCharacterInstance)
       (.setText (:text state)))))
 
-(defn- ^BreakIterator word-iter [state]
+(defn- word-iter ^BreakIterator [state]
   (or (:word-iter state)
     (doto (BreakIterator/makeWordInstance)
       (.setText (:text state)))))
@@ -60,7 +54,9 @@
       :else
       (recur word-iter text pos'))))
 
-(defmulti -edit (fn [state command arg] command))
+(defmulti -edit
+  (fn [_state command _arg]
+    command))
 
 (defmethod -edit :kill-marked [{:keys [text from to marked-from marked-to] :as state} _ _]
   (if (and marked-from marked-to)
@@ -82,7 +78,7 @@
         :marked-to   nil))
     state))
 
-(defmethod -edit :insert [{:keys [text from to marked-from marked-to] :as state} _ s]
+(defmethod -edit :insert [{:keys [text from to] :as state} _ s]
   (assert (= from to))
   (assoc state
     :text (str (subs text 0 to) s (subs text to))
@@ -98,7 +94,7 @@
     :marked-from to
     :marked-to   (+ to (count s))))
 
-(defmethod -edit :move-char-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-char-left [{:keys [from to] :as state} _ _]
   (cond
     (not= from to)
     (assoc state
@@ -174,12 +170,12 @@
         :to        to'
         :word-iter word-iter))))
 
-(defmethod -edit :move-doc-start [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-doc-start [state _ _]
   (assoc state
     :from 0
     :to   0))
 
-(defmethod -edit :move-doc-end [{:keys [text from to] :as state} _ _]
+(defmethod -edit :move-doc-end [{:keys [text] :as state} _ _]
   (assoc state
     :from (count text)
     :to   (count text)))
@@ -190,7 +186,7 @@
     :from pos'
     :to   pos'))
 
-(defmethod -edit :expand-char-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-char-left [{:keys [from to] :as state} _ _]
   (cond
     (= to 0)
     state
@@ -202,7 +198,7 @@
         :to        to'
         :char-iter char-iter))))
 
-(defmethod -edit :expand-char-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-char-right [{:keys [text to] :as state} _ _]
   (cond
     (= (count text) to)
     state
@@ -214,7 +210,7 @@
         :to        to'
         :char-iter char-iter))))
 
-(defmethod -edit :expand-word-left [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-word-left [{:keys [text to] :as state} _ _]
   (cond
     (= to 0)
     state
@@ -226,7 +222,7 @@
         :to        to'
         :word-iter word-iter))))
 
-(defmethod -edit :expand-word-right [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-word-right [{:keys [text to] :as state} _ _]
   (cond
     (= (count text) to)
     state
@@ -238,7 +234,7 @@
         :to        to'
         :word-iter word-iter))))
 
-(defmethod -edit :expand-doc-start [{:keys [text from to] :as state} _ _]
+(defmethod -edit :expand-doc-start [{:keys [from to] :as state} _ _]
   (assoc state
     :from (if (= 0 from) 0 (max from to))
     :to   0))
@@ -372,7 +368,7 @@
       :from (if (= BreakIterator/DONE from') 0 from')
       :to   (if (= BreakIterator/DONE to') (count text) to'))))
 
-(defmethod -edit :select-all [{:keys [text from to] :as state} _ _]
+(defmethod -edit :select-all [{:keys [text] :as state} _ _]
   (assoc state
     :from 0
     :to   (count text)))
@@ -448,7 +444,7 @@
         (and (not marked?) (not skip-undo?))
         (update :undo core/conjv-limited (select-keys state [:text :from :to]) undo-stack-depth)))))
 
-(defn- get-cached [text-field ctx key-source key-source-cached key-derived fn]
+(defn- get-cached [text-field _ctx key-source key-source-cached key-derived fn]
   (let [{:keys [*state]} text-field
         state        @*state
         source         (state key-source)
@@ -465,19 +461,19 @@
           key-derived       derived)
         derived))))
 
-(defn- ^TextLine text-line [text-field ctx]
+(defn- text-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :text :cached/text :line
-    (fn [text state]
+    (fn [text _state]
       (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field)))))
 
-(defn- ^TextLine placeholder-line [text-field ctx]
+(defn- placeholder-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :placeholder :cached/placeholder :line-placeholder
-    (fn [placeholder state]
+    (fn [placeholder _state]
       (.shapeLine core/shaper placeholder (:hui.text-field/font ctx) (:features text-field)))))
 
 (defn- coord-to [text-field ctx]
   (get-cached text-field ctx :to :cached/to :coord-to
-    (fn [to state]
+    (fn [to _state]
       (let [line (text-line text-field ctx)]
         (math/round (.getCoordAtOffset line to))))))
 
@@ -514,7 +510,7 @@
 
 (core/deftype+ TextField [*state
                           ^ShapingOptions features
-                          ^:mut ^IRect    my-rect]
+                          ^:mut           my-rect]
   protocols/IComponent
   (-measure [this ctx cs]
     (let [{:keys                [scale]
@@ -526,7 +522,7 @@
                                  padding-bottom]} ctx
           metrics ^FontMetrics (.getMetrics font)
           line    (text-line this ctx)]
-      (IPoint.
+      (core/ipoint
         (min
           (:width cs)
           (+ (* scale padding-left)
@@ -570,12 +566,12 @@
                        coord-to
                        (Math/round (.getCoordAtOffset line from)))]
       (canvas/with-canvas canvas
-        (canvas/clip-rect canvas (.toRect ^IRect rect))
+        (canvas/clip-rect canvas (core/rect rect))
         
         ;; selection
         (when selection?
           (canvas/draw-rect canvas
-            (Rect/makeLTRB
+            (core/rect-ltrb
               (+ (:x rect) (- offset) (min coord-from coord-to))
               (+ (:y rect) (* scale padding-top) (- ascent))
               (+ (:x rect) (- offset) (max coord-from coord-to))
@@ -602,7 +598,7 @@
           (let [left  (.getCoordAtOffset line marked-from)
                 right (.getCoordAtOffset line marked-to)]
             (canvas/draw-rect canvas
-              (Rect/makeLTRB
+              (core/rect-ltrb
                 (+ (:x rect) (- offset) left)
                 (+ (:y rect) baseline (* 1 scale))
                 (+ (:x rect) (- offset) right)
@@ -621,7 +617,7 @@
                     (<= cursor-blink-interval 0)
                     (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))
               (canvas/draw-rect canvas
-                (Rect/makeLTRB
+                (core/rect-ltrb
                   (+ (:x rect) (- offset) coord-to (- cursor-left))
                   (+ (:y rect) (* scale padding-top) (- ascent))
                   (+ (:x rect) (- offset) coord-to cursor-right)
@@ -638,7 +634,7 @@
     ;   (println (:hui/focused? ctx) event))
     (when (:hui/focused? ctx)
       (let [state @*state
-            {:keys [text from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
+            {:keys [from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
         (when (= :mouse-move (:event event))
           (swap! *state assoc
             :mouse-clicks 0))
@@ -650,7 +646,7 @@
             (= :primary (:button event))
             (:pressed? event)
             my-rect
-            (.contains my-rect (IPoint. (:x event) (:y event))))
+            (core/rect-contains? my-rect (core/ipoint (:x event) (:y event))))
           (let [x             (-> (:x event)
                                 (- (:x my-rect))
                                 (+ offset))
@@ -693,7 +689,7 @@
                     (- (:x my-rect))
                     (+ offset))]
             (cond
-              (.contains my-rect (IPoint. (:x event) (:y event)))
+              (core/rect-contains? my-rect (core/ipoint (:x event) (:y event)))
               (swap! *state edit :expand-to-position (.getOffsetAtCoord line x))
               
               (< (:y event) (:y my-rect))
@@ -738,7 +734,7 @@
                 right      (if (= (or marked-to to) (or marked-from from))
                              left
                              (.getCoordAtOffset line (or marked-to to)))]
-            (IRect/makeLTRB
+            (core/irect-ltrb
               (+ (:x my-rect) (- offset) left)
               (+ (:y my-rect) padding-top (- ascent))
               (+ (:x my-rect) (- offset) right)
@@ -875,17 +871,17 @@
           (and (= :key (:event event)) (not (:pressed? event)))
           (some #{:letter :digit :whitespace} (:key-types event))))))
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this))
   
   AutoCloseable
-  (close [this]
+  (close [_]
     #_(.close line))) ; TODO
 
 (defn text-input
   ([*state]
    (text-input nil *state))
-  ([opts *state]
+  ([_opts *state]
    (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
        (swap! *state #(core/merge-some
@@ -936,9 +932,3 @@
          (rect/rounded-rect {:radius radius} bg
            (rect/rounded-rect {:radius radius} stroke
              (text-input opts *state))))))))
-
-; (require 'user :reload)
-
-(comment
-  (require 'examples.text-field :reload)
-  (reset! user/*example "text-field-debug"))

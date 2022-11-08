@@ -1,14 +1,14 @@
 (ns examples.toggle
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Font Paint Typeface]))
+    [io.github.humbleui.ui :as ui]))
 
-(def *state-first  (atom true))
-(def *state-second (atom false))
+(def *state-first
+  (atom true))
+
+(def *state-second
+  (atom false))
 
 (add-watch *state-first :watch
   (fn [_ _ old new]
@@ -43,6 +43,3 @@
                       (ui/label "Second state"))
                     [:stretch 1 nil]
                     (ui/toggle *state-second)))))))))))
-
-
-; (reset! user/*example "toggle")

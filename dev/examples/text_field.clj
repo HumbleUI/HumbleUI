@@ -1,10 +1,6 @@
 (ns examples.text-field
   (:require
-    [clojure.string :as str]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn text-field [text & {:keys [from to placeholder cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom border-radius]
                           :or {cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3, border-radius 4}
@@ -51,5 +47,3 @@
         (ui/width 300
           (ui/halign 1
             (text-field "Align right" :padding-h 5 :padding-v 10)))))))
-
-(reset! user/*example "text-field")

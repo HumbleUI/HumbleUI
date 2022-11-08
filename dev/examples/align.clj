@@ -1,10 +1,7 @@
 (ns examples.align
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn label [text]
   (ui/rect (paint/fill 0xFFB2D7FE)
@@ -62,5 +59,3 @@
                       (ui/gap 1 0)
                       [:stretch 1 (label "Stretch")]))]
       [:stretch 1 nil])))
-
-; (reset! user/*example "align")

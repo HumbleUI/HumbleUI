@@ -12,7 +12,7 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (canvas/draw-rect canvas rect paint)
     (core/draw-child child ctx child-rect canvas))
@@ -37,7 +37,7 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (canvas/draw-rect canvas (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx))) paint)
     (core/draw-child child ctx child-rect canvas))

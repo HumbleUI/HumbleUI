@@ -33,5 +33,3 @@
                        :bottom-right]]
             (tooltip {:shackle :top-right :anchor align} (str align)
               (ui/label ":top-right"))))))))
-
-; (reset! user/*example "tooltip")

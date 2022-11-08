@@ -1,16 +1,11 @@
 (ns examples.backdrop
   (:require
     [clojure.math :as math]
-    [clojure.string :as str]
-    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.types IPoint IRect]
-    [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode Canvas ImageFilter Paint SaveLayerRec]
-    [java.lang AutoCloseable]))
+    [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode ImageFilter]))
 
 (defn blur [radius]
   (ImageFilter/makeBlur radius radius FilterTileMode/CLAMP))
@@ -58,17 +53,13 @@
         (ui/halign 0.5
           (ui/checkbox (atom true)
             (ui/label "Toggle me")))))
-    (ui/draggable {:pos (IPoint. 10 10)}
+    (ui/draggable {:pos (core/ipoint 10 10)}
       (ui/with-context
         {:fill-text (paint/fill 0xFFFFFFFF)}
         (square "Blur: 5" (blur 5) 0x40000000)))
-    (ui/draggable {:pos (IPoint. 120 10)}
+    (ui/draggable {:pos (core/ipoint 120 10)}
       (square "Blur: 10" (blur 10) 0x80FFFFFF))
-    (ui/draggable {:pos (IPoint. 10 120)}
+    (ui/draggable {:pos (core/ipoint 10 120)}
       (square "Blur: 20" (blur 20) 0x40CC3333))
-    (ui/draggable {:pos (IPoint. 120 120)}
+    (ui/draggable {:pos (core/ipoint 120 120)}
       (square "Grayscale" grayscale 0x80FFFFFF))))
-
-(comment
-  (user/redraw)
-  (reset! user/*example "backdrop"))

@@ -1,10 +1,7 @@
 (ns io.github.humbleui.ui.stack
   (:require
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols])
-  (:import
-    [io.github.humbleui.types IPoint RRect]
-    [io.github.humbleui.skija Color Font]))
+    [io.github.humbleui.protocols :as protocols]))
 
 (core/deftype+ Stack [children ^:mut my-rect]
   protocols/IComponent
@@ -12,10 +9,10 @@
     (reduce
       (fn [size child]
         (let [{:keys [width height]} (core/measure child ctx cs)]
-          (IPoint. (max (:width size) width) (max (:height size) height))))
-      (IPoint. 0 0) children))
+          (core/ipoint (max (:width size) width) (max (:height size) height))))
+      (core/ipoint 0 0) children))
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! my-rect rect)
     (doseq [child children]
       (core/draw-child child ctx rect canvas)))

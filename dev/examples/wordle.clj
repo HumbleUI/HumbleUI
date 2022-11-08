@@ -7,7 +7,7 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Font Paint Typeface]))
+    [io.github.humbleui.skija Typeface]))
 
 (def ^Typeface typeface
   (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
@@ -43,7 +43,7 @@
 (defn type! [code]
   (let [{:keys [typing] :as state} @*state
         typed (count typing)]
-    (when-not (won? @*state)
+    (when-not (won? state)
       (cond
         (and (< typed 5) (string? code) (contains? (into #{} (map str) "ABCDEFGHIJKLMNOPQRSTUVWXYZ") code))
         (swap! *state update :typing str code)
@@ -52,7 +52,7 @@
         (swap! *state update :typing subs 0 (dec typed))
         
         (and (= 5 typed) (= :enter code))
-        (if (contains? dictionary typing)
+        (when (contains? dictionary typing)
           (swap! *state #(-> % (assoc :typing "") (update :guesses conj typing))))))))
 
 (defn color [word letter idx]
@@ -145,8 +145,7 @@
                  (ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char))))))))))
   
 (def keyboard
-  (ui/dynamic ctx [{:keys [font-small fill-light-gray fill-black]} ctx
-                   {:keys [word guesses]} @*state]
+  (ui/dynamic _ [{:keys [word guesses]} @*state]
     (ui/with-context {:colors (colors word guesses)}    
       (ui/column
         (ui/gap 0 padding)
@@ -200,5 +199,3 @@
                 [:stretch 1 nil]
                 (ui/gap 0 padding)
                 (ui/halign 0.5 keyboard)))))))))
-
-; (reset! user/*example "wordle")

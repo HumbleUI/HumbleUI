@@ -1,10 +1,6 @@
 (ns examples.button
   (:require
-    [clojure.string :as str]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (defonce *clicks (atom 0))
 
@@ -12,7 +8,7 @@
 
 (def ui
   (ui/center
-    (ui/dynamic ctx [{:keys [leading font-ui fill-text]} ctx]
+    (ui/dynamic ctx [{:keys [leading]} ctx]
       (ui/column
         (ui/halign 0
           (ui/button #(swap! *clicks inc)
@@ -68,5 +64,3 @@
             (ui/with-context
               {:hui/active? (= selected :third)}
               (ui/button #(reset! *selected :third) (ui/label "Third")))))))))
-
-; (reset! user/*example "button")

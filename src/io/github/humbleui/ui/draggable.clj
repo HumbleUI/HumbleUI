@@ -8,7 +8,7 @@
     [io.github.humbleui.skija Canvas]
     [java.lang AutoCloseable]))
 
-(defn ^IRect child-rect [draggable]
+(defn child-rect ^IRect [draggable]
   (let [{:keys [my-pos child-pos child-size]} draggable]
     (IRect/makeXYWH
       (+ (:x my-pos) (:x child-pos))
@@ -22,7 +22,7 @@
                           ^:mut ^IPoint child-size
                           ^:mut ^IPoint mouse-start]
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure [_ _ctx cs]
     cs)
   
   (-draw [this ctx ^IRect rect ^Canvas canvas]
@@ -35,7 +35,7 @@
             (= :mouse-button (:event event))
             (= :primary (:button event))
             (:pressed? event)
-            (.contains (child-rect this) (IPoint. (:x event) (:y event))))
+            (core/rect-contains? (child-rect this) (core/ipoint (:x event) (:y event))))
       (set! mouse-start
         (IPoint.
           (- (:x child-pos) (:x event))

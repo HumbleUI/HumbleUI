@@ -1,10 +1,7 @@
 (ns examples.svg
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn svg [width height xpos ypos scale]
   (ui/clip
@@ -53,5 +50,3 @@
               (ui/width (* 44 step)
                 (ui/height (* 7 step)
                   (ui/svg {:preserve-aspect-ratio false} "dev/images/ratio.svg"))))))))))
-
-; (reset! user/*example "svg")

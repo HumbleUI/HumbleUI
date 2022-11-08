@@ -1,7 +1,6 @@
 (ns examples.7guis-converter
   (:require
     [clojure.string :as str]
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
 (def *celsius
@@ -68,5 +67,3 @@
           (ui/gap 5 0)
           (ui/valign 0.5
             (ui/label "Fahrenheit")))))))
-
-(reset! user/*example "7guis-converter")

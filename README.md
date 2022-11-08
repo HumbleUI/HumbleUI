@@ -92,10 +92,14 @@ Sample apps:
 Run nREPL server:
 
 ```
-./script/run.py
+./script/nrepl.py
 ```
 
-See `(comment)` forms in [user.clj](https://github.com/HumbleUI/HumbleUI/tree/main/dev/user.clj).
+To reload demo app using `tools.namespace`, evaluate:
+
+```
+(examples.state/reload)
+```
 
 ## Examples
 
@@ -104,12 +108,14 @@ See `(comment)` forms in [user.clj](https://github.com/HumbleUI/HumbleUI/tree/ma
 |![](extras/screenshot_calculator.png)|![](extras/screenshot_wordle.png)|
 
 ```clj
-(ns examples.label
-  (:require
-    [io.github.humbleui.ui :as ui]))
+(require '[io.github.humbleui.ui :as ui])
 
 (def ui
-  (ui/valign 0.5
-    (ui/halign 0.5
-      (ui/label "Hello from Humble UI! 👋"))))
+  (ui/center
+    (ui/label "Hello from Humble UI! 👋")))
+
+(ui/start-app!
+  (ui/window
+    {:title "Humble 🐝 UI"}
+    #'ui))
 ```

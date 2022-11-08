@@ -10,5 +10,7 @@
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
-   :extra-deps  {nrepl/nrepl {:mvn/version "1.0.0"}}
-   :main-opts   ["-m" "user" "--interactive"]}}}
+   :extra-deps  {nrepl/nrepl {:mvn/version "1.0.0"}
+                 org.clojure/tools.namespace {:mvn/version "1.3.0"}}
+   :main-opts   ["-m" "user" "--interactive"]
+   :jvm-opts    ["-ea"]}}}

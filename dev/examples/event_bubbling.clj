@@ -1,13 +1,10 @@
 (ns examples.event-bubbling
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (def ui
-  (ui/dynamic ctx [{:keys [font-ui fill-text leading]} ctx]
+  (ui/dynamic ctx [{:keys [leading]} ctx]
     (ui/with-context
       {:hui.button/bg         (paint/fill 0x20000000)
        :hui.button/bg-hovered (paint/fill 0x40000000)
@@ -45,5 +42,3 @@
                 (for [i (range 6 12)]
                   (ui/padding 20 leading
                     (ui/label (str "Item " i))))))))))))
-
-; (reset! user/*example "event_bubbling")

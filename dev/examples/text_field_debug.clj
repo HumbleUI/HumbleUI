@@ -1,11 +1,7 @@
 (ns examples.text-field-debug
   (:require
-    [clojure.pprint :as pprint]
-    [clojure.string :as str]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (def *state (atom {:text "" :placeholder "Type here"}))
 
@@ -42,5 +38,3 @@
              (ui/vscroll
                (ui/dynamic _ [state @*state]
                  (render-form state))))])))))
-
-; (reset! user/*example "text-field-debug")

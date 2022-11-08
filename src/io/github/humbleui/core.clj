@@ -1,4 +1,5 @@
 (ns io.github.humbleui.core
+  (:refer-clojure :exclude [find])
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]
@@ -7,7 +8,6 @@
     [io.github.humbleui.error :as error]
     [io.github.humbleui.protocols :as protocols])
   (:import
-    [io.github.humbleui.jwm App Screen]
     [io.github.humbleui.skija Canvas]
     [io.github.humbleui.skija.shaper Shaper]
     [io.github.humbleui.types IPoint IRect Point Rect RRect]
@@ -159,7 +159,7 @@
     (fn [form]
       (if (and (seq? form) (= 'recur (first form)))
         `(do
-           ~@(map (fn [[vs s _] v] `(vreset! ~vs ~v)) accs (next form)))
+           ~@(map (fn [[vs _s _] v] `(vreset! ~vs ~v)) accs (next form)))
         form))
     body))
 
@@ -212,11 +212,20 @@
              vec)
        ~(loopr-reduce accs' iters body)
        (let ~(->> accs'
-               (mapcat (fn [[vs s v]] [s `(deref ~vs)]))
+               (mapcat (fn [[vs s _v]] [s `(deref ~vs)]))
                vec)
          ~final'))))
     
 ;; utilities
+
+(defn iround ^long [x]
+  (long (math/round x)))
+
+(defn iceil ^long [x]
+  (long (math/ceil x)))
+
+(defn ifloor ^long [x]
+  (long (math/floor x)))
 
 (defn eager-or
   "A version of `or` that always evaluates all its arguments first"
@@ -252,7 +261,13 @@
 (defn merge-some [a b]
   (merge-with #(or %2 %1) a b))
 
-(defn ^bytes slurp-bytes [src]
+(defn find [pred xs]
+  (reduce (fn [_ x] (when (pred x) (reduced x))) nil xs))
+
+(defn find-by [key-fn key xs]
+  (reduce (fn [_ x] (when (= key (key-fn x)) (reduced x))) nil xs))
+
+(defn slurp-bytes ^bytes [src]
   (if (bytes? src)
     src
     (with-open [is (io/input-stream src)]
@@ -263,42 +278,51 @@
     (slurp-bytes
       (io/resource (str "io/github/humbleui/" path)))))
 
-(defn ^IPoint ipoint [^long x ^long y]
+(defn ipoint ^IPoint [^long x ^long y]
   (IPoint. x y))
 
-(defn ^IPoint size [^long x ^long y]
+(defn isize ^IPoint [^long x ^long y]
   (IPoint. x y))
 
-(defn ^Point point [x y]
+(defn point ^Point [x y]
   (Point. x y))
 
-(defn ^IRect irect-xywh [^long x ^long y ^long w ^long h]
+(defn irect-xywh ^IRect [^long x ^long y ^long w ^long h]
   (IRect/makeXYWH x y w h))
 
-(defn ^IRect irect-ltrb [^long l ^long t ^long r ^long b]
+(defn irect-ltrb ^IRect [^long l ^long t ^long r ^long b]
   (IRect/makeLTRB l t r b))
 
-(defn ^Rect rect-xywh [x y w h]
+(defn rect-xywh ^Rect [x y w h]
   (Rect/makeXYWH x y w h))
 
-(defn ^Rect rect-ltrb [l t r b]
+(defn rect-ltrb ^Rect [l t r b]
   (Rect/makeLTRB l t r b))
 
-(defn ^RRect rrect-xywh
-  ([x y w h r]
+(defn rrect-xywh
+  (^RRect [x y w h r]
    (RRect/makeXYWH x y w h r))
-  ([x y w h xr yr]
+  (^RRect [x y w h xr yr]
    (RRect/makeXYWH x y w h xr yr))
-  ([x y w h tr tl br bl]
+  (^RRect [x y w h tr tl br bl]
    (RRect/makeXYWH x y w h tr tl br bl)))
 
-(defn ^RRect rrect-ltrb
-  ([l t r b r]
-   (RRect/makeLTRB l t r b r))
-  ([l t r b xr yr]
+(defn rrect-complex-xywh ^RRect [x y w h radii]
+  (RRect/makeComplexXYWH x y w h (into-array Float/TYPE radii)))
+
+(defn rrect-ltrb
+  (^RRect [l t r b radius]
+   (RRect/makeLTRB l t r b radius))
+  (^RRect [l t r b xr yr]
    (RRect/makeLTRB l t r b xr yr))
-  ([l t r b tr tl br bl]
+  (^RRect [l t r b tr tl br bl]
    (RRect/makeLTRB l t r b tr tl br bl)))
+
+(defn irect ^IRect [^Rect rect]
+  (.toIRect rect))
+
+(defn rect ^Rect [^IRect irect]
+  (.toRect irect))
 
 (defn rect-contains? [rect point]
   {:pre [(some? rect)
@@ -398,7 +422,7 @@
        (defn ~(symbol (str '-> name)) ~fields
          (new ~name ~@fields nil)))))
 
-(defn- ^TimerTask timer-task [f]
+(defn- timer-task ^TimerTask [f]
   (proxy [TimerTask] []
     (run []
       (try
@@ -421,7 +445,7 @@
 
 (Thread/setDefaultUncaughtExceptionHandler
   (reify Thread$UncaughtExceptionHandler
-    (uncaughtException [_ thread ex]
+    (uncaughtException [_ _ ex]
       (log-error ^Throwable ex))))
 
 (defmacro thread [& body]

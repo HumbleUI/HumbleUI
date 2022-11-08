@@ -6,7 +6,7 @@
 (defn- format->clj [^ClipboardFormat format]
   (keyword (.-_formatId format)))
 
-(defn- ^ClipboardFormat format->java [format]
+(defn- format->java ^ClipboardFormat [format]
   (let [id (if-some [ns (namespace format)]
              (str ns "/" (name format))
              (name format))]
@@ -22,7 +22,7 @@
         (#{:text/plain :text/rtf :text/html :text/url} format)
         (assoc :text (.getString entry))))))
 
-(defn- ^ClipboardEntry entry->java [{:keys [format data text] :as entry}]
+(defn- entry->java ^ClipboardEntry [{:keys [format data text] :as entry}]
   (when entry
     (if text
       (ClipboardEntry/makeString (format->java format) ^String text)

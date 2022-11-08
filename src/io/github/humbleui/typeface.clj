@@ -9,28 +9,28 @@
   (delay
     (Typeface/makeDefault)))
   
-(defn ^Typeface make-from-data
-  ([^Data data]
+(defn make-from-data
+  (^Typeface [^Data data]
    (Typeface/makeFromFile data 0))
-  ([^Data data index]
+  (^Typeface [^Data data index]
    (Typeface/makeFromFile data index)))
 
-(defn ^Typeface make-from-path
-  ([^String path]
+(defn make-from-path
+  (^Typeface [^String path]
    (Typeface/makeFromFile path 0))
-  ([^String path index]
+  (^Typeface [^String path index]
    (Typeface/makeFromFile path index)))
 
-(defn ^Typeface make-from-resource
-  ([res]
+(defn make-from-resource
+  (^Typeface [res]
    (make-from-resource res 0))
-  ([res index]
-    (with-open [is (io/input-stream (io/resource res))]
-      (let [bytes (.readAllBytes is)]
-        (with-open [data (Data/makeFromBytes bytes)]
-          (Typeface/makeFromData data index))))))
+  (^Typeface [res index]
+   (with-open [is (io/input-stream (io/resource res))]
+     (let [bytes (.readAllBytes is)]
+       (with-open [data (Data/makeFromBytes bytes)]
+         (Typeface/makeFromData data index))))))
 
-(defn ^String family-name [^Typeface typeface]
+(defn family-name ^String [^Typeface typeface]
   (.getFamilyName typeface))
 
 (defmethod print-method Typeface [o ^Writer w]

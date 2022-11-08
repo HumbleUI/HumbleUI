@@ -1,14 +1,12 @@
 (ns io.github.humbleui.ui.theme
   (:require
-    [clojure.java.io :as io]
+    [clojure.math :as math]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.with-context :as with-context])
-  (:import
-    [io.github.humbleui.skija Data Font Typeface]))
+    [io.github.humbleui.ui.with-context :as with-context]))
 
 (defn default-theme
   ([comp] (default-theme {} comp))
@@ -22,8 +20,7 @@
                           (font/make-with-size face-ui (* scale size))
                           (font/make-with-cap-height face-ui (* scale (or (:cap-height opts) 10))))
              cap-height (:cap-height (font/metrics font-ui))
-             font-size  (font/size font-ui)
-             leading    (or (:leading opts) (-> cap-height Math/round (/ scale) float))
+             leading    (or (:leading opts) (-> cap-height math/round (/ scale) float))
              fill-text  (or (:fill-text opts) (paint/fill 0xFF000000))
              fill-gray  (or (:fill-gray opts) (paint/fill 0xFF808080))
              theme      {:face-ui        face-ui
@@ -71,10 +68,10 @@
                          :hui.text-field/border-active           (paint/stroke 0xFF749EE4 (* 1 scale))
                          :hui.text-field/border-inactive         (paint/stroke 0xFFCCCCCC (* 1 scale))
                          :hui.text-field/cursor-width            (float 1)
-                         :hui.text-field/padding-top             (-> cap-height Math/round (/ scale) float)
-                         :hui.text-field/padding-bottom          (-> cap-height Math/round (/ scale) float)
-                         :hui.text-field/padding-left            (-> cap-height (/ 2) Math/round (/ scale) float)
-                         :hui.text-field/padding-right           (-> cap-height (/ 2) Math/round (/ scale) float)}]
+                         :hui.text-field/padding-top             (-> cap-height math/round (/ scale) float)
+                         :hui.text-field/padding-bottom          (-> cap-height math/round (/ scale) float)
+                         :hui.text-field/padding-left            (-> cap-height (/ 2) math/round (/ scale) float)
+                         :hui.text-field/padding-right           (-> cap-height (/ 2) math/round (/ scale) float)}]
          (with-context/with-context (core/merge-some theme opts) comp))))))
 
 ; (require 'user :reload)

@@ -1,10 +1,7 @@
 (ns examples.container
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn label [text]
   (ui/dynamic ctx [{:keys [leading]} ctx]
@@ -14,7 +11,7 @@
           (ui/label text))))))
 
 (def ui
-  (ui/dynamic ctx [{:keys [font-ui fill-text leading]} ctx]
+  (ui/dynamic ctx [{:keys [leading]} ctx]
     (ui/center
       (ui/column
         (ui/padding 0 leading
@@ -56,5 +53,3 @@
           (ui/gap 10 0)
           (ui/width #(* 0.4 (:width %)) (label "Abort request")))
         (ui/gap 0 leading)))))
-
-; (reset! user/*example "container")

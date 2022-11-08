@@ -42,7 +42,7 @@
                        Platform/WINDOWS (LayerD3D12Skija.)
                        Platform/X11     (LayerGLSkija.))
         listener     (reify Consumer
-                       (accept [this jwm-event]
+                       (accept [_ jwm-event]
                          (let [e    (event/event->map jwm-event)
                                type (:event e)]
                            (when (not= :frame-skija type)
@@ -102,7 +102,7 @@
                            (when (not= :frame-skija type)
                              (debug/on-end :event)))))
         input-client (reify TextInputClient
-                       (getRectForMarkedRange [this selection-start selection-end]
+                       (getRectForMarkedRange [_ selection-start selection-end]
                          (or
                            (when on-event
                              (core/catch-and-log

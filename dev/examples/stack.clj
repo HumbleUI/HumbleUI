@@ -15,5 +15,3 @@
       (ui/center
         (ui/rect (paint/fill 0x80CC3333)
           (ui/gap 300 100))))))
-
-; (reset! user/*example "stack")

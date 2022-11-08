@@ -3,7 +3,6 @@
     [io.github.humbleui.core :as core])
   (:import
     [io.github.humbleui.jwm
-     Event
      EventFrame
      EventKey
      EventMouseButton
@@ -16,15 +15,12 @@
      EventWindowFocusIn
      EventWindowFocusOut
      EventWindowMaximize
-     EventWindowMinimize
      EventWindowMove
      EventWindowResize
      EventWindowRestore
      EventWindowScreenChange
      Key
      KeyLocation
-     KeyModifier
-     KeyType
      MouseButton]
     [io.github.humbleui.jwm.skija
      EventFrameSkija]))

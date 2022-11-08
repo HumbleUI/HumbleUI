@@ -1,14 +1,15 @@
 (ns examples.calculator
   (:require
     [clojure.string :as str]
-    [clojure.test :as test :refer [is are deftest testing]]
-    [io.github.humbleui.core :refer [cond+]]
+    [clojure.test :as test :refer [are deftest]]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Font FontVariation FontVariationAxis Typeface Paint]))
+    [io.github.humbleui.skija Font Typeface]))
 
-(def *state (atom {:b "0" :screen :b}))
+(def *state
+  (atom {:b "0"
+         :screen :b}))
 
 (defn stringify [n]
   (let [s (str n)]
@@ -105,7 +106,7 @@
 (defn button [text color]
   (ui/clickable
     {:on-click (fn [_] (on-click text))}
-    (ui/dynamic ctx [{:keys [hui/active? hui/hovered? font-btn]} ctx]
+    (ui/dynamic ctx [{:keys [hui/active? font-btn]} ctx]
       (let [color' (if active?
                      (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                      color)]
@@ -145,7 +146,7 @@
                                 (ui/padding #(/ (:height %) 3) 0
                                   (ui/halign 1
                                     (ui/valign 0.5
-                                      (ui/dynamic ctx [{:keys [font-display fill-text]} ctx
+                                      (ui/dynamic ctx [{:keys [font-display]} ctx
                                                        val (get @*state (:screen @*state))]
                                         (ui/label {:font font-display :features ["tnum"]} val))))))]
                   (ui/gap 0 padding)
@@ -189,5 +190,3 @@
                                 [:stretch 1 (button "." color-digit)]
                                 (ui/gap padding 0)
                                 [:stretch 1 (button "=" color-op)])])))))))))
-
-; (reset! user/*example "calculator")

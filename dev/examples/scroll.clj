@@ -1,12 +1,10 @@
 (ns examples.scroll
   (:require
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Paint]))
+    [io.github.humbleui.ui :as ui]))
 
 (def ui
-  (ui/dynamic ctx [{:keys [font-ui leading fill-text]} ctx]
+  (ui/dynamic ctx [{:keys [leading]} ctx]
     (ui/halign 0.5
       (ui/row
         ;; 100 elements
@@ -70,8 +68,4 @@
                        (if hovered?
                          (ui/rect (paint/fill 0xFFCFE8FC) label)
                          label))))
-                (range 0 10)))))
-        
-        ))))
-
-; (reset! user/*example "scroll")
+                (range 0 10)))))))))

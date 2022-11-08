@@ -13,15 +13,15 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child child ctx child-rect canvas))
   
   (-event [_ ctx event]
     (when (= :mouse-move (:event event))
-      (let [was-inside? (.contains child-rect mouse-pos)
+      (let [was-inside? (core/rect-contains? child-rect mouse-pos)
             mouse-pos'  (IPoint. (:x event) (:y event))
-            is-inside?  (.contains child-rect mouse-pos')]
+            is-inside?  (core/rect-contains? child-rect mouse-pos')]
         ;; mouse over
         (when (and (not was-inside?) is-inside?)
           (window/set-cursor window cursor))

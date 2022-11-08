@@ -1,11 +1,9 @@
 (ns examples.settings
   (:require
+    [examples.state :as state]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
-
-(defonce *floating
-  (atom false))
 
 (def ui
   (ui/dynamic ctx [scale (:scale ctx)]
@@ -23,7 +21,7 @@
                     (ui/valign 0.5
                       (ui/label "On top"))
                     [:stretch 1 nil]
-                    (ui/toggle *floating))
+                    (ui/toggle state/*floating))
                   (ui/gap 0 padding-inner)
                   (ui/rect fill-delimiter
                     (ui/gap 0 1))
@@ -33,5 +31,3 @@
                       (ui/label "Debug"))
                     [:stretch 1 nil]
                     (ui/toggle debug/*enabled?)))))))))))
-
-; (reset! user/*example "settings")

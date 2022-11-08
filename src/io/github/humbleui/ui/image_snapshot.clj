@@ -1,7 +1,6 @@
 (ns io.github.humbleui.ui.image-snapshot
   (:require
     [clojure.math :as math]
-    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
   (:import
@@ -14,7 +13,7 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [this ctx ^Rect rect ^Canvas canvas]
+  (-draw [this ctx rect ^Canvas canvas]
     (let [[sx sy] (if (some? scale)
                     ((juxt :x :y) scale)
                     (let [m44 (.getMat (.getLocalToDevice canvas))]
@@ -31,9 +30,9 @@
         (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
           (core/draw child ctx (core/irect-xywh 0 0 w h) (.getCanvas surface))
           (protocols/-set! this :image (.makeImageSnapshot surface))))
-      (.drawImageRect canvas image (.toRect rect))))
+      (.drawImageRect canvas image (core/rect rect))))
 
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
   (-iterate [this ctx cb]
     (or

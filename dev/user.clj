@@ -1,22 +1,37 @@
 (ns user
   (:require
-    [clojure.string :as str]
-    [examples.settings :as settings]
+    [examples.7guis-converter]
+    [examples.align]
+    [examples.animation]
+    [examples.backdrop]
+    [examples.bmi-calculator]
+    [examples.button]
+    [examples.calculator]
+    [examples.canvas]
+    [examples.checkbox]
+    [examples.container]
+    [examples.errors]
+    [examples.event-bubbling]
+    [examples.image-snapshot]
+    [examples.label]
+    [examples.scroll]
+    [examples.settings]
+    [examples.state :as state]
+    [examples.slider]
+    [examples.stack]
+    [examples.svg]
+    [examples.text-field]
+    [examples.text-field-debug]
+    [examples.toggle]
+    [examples.tooltip]
+    [examples.tree]
+    [examples.wordle]
     [io.github.humbleui.app :as app]
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.profile :as profile]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]
-    [nrepl.cmdline :as nrepl])
-  (:import
-    [io.github.humbleui.skija FontMgr FontStyle Typeface Font]
-    [io.github.humbleui.types IRect]))
-
-(defonce *window
-  (atom nil))
+    [nrepl.cmdline :as nrepl]))
 
 (defn set-floating! [window floating]
   (when window
@@ -24,63 +39,37 @@
       (window/set-z-order window :floating)
       (window/set-z-order window :normal))))
 
-(add-watch settings/*floating ::window
+(add-watch state/*floating ::window
   (fn [_ _ _ floating]
-    (set-floating! @*window floating)))
+    (set-floating! @state/*window floating)))
 
 (def examples
-  ["7guis-converter"
-   "align"
-   "animation"
-   "backdrop"
-   "bmi-calculator"
-   "button"
-   "calculator"
-   "canvas"
-   "checkbox"
-   "container"
-   "errors"
-   "event-bubbling"
-   "image-snapshot"
-   "label"
-   "scroll"
-   "settings"
-   "slider"
-   "stack"
-   "svg"
-   "text-field"
-   "text-field-debug"
-   "toggle"
-   "tooltip"
-   "tree"
-   "wordle"])
-
-(def example-names
-  {"7guis-converter" "7 GUIs: Converter"
-   "bmi-calculator"  "BMI Calculator"})
-
-(defonce *example
-  (atom "animation"))
-
-(defn- capitalize [s]
-  (-> s
-    (str/split #"-")
-    (->> (map str/capitalize)
-      (str/join " "))))
-
-(defn next-example []
-  (let [example @*example]
-    (->>
-      (drop-while #(not= % example) examples)
-      (next)
-      (first))))
-
-(defn prev-example []
-  (let [example @*example]
-    (->>
-      (drop-while #(not= % example) (reverse examples))
-      (next)
-      (first))))
+  (sorted-map
+    "7 GUIs: Converter" examples.7guis-converter/ui
+    "Align" examples.align/ui
+    "Animation" examples.animation/ui
+    "Backdrop" examples.backdrop/ui
+    "BMI Calculator" examples.bmi-calculator/ui
+    "Button" examples.button/ui
+    "Calculator" examples.calculator/ui
+    "Canvas" examples.canvas/ui
+    "Checkbox" examples.checkbox/ui
+    "Container" examples.container/ui
+    "Errors" examples.errors/ui
+    "Event Bubbling" examples.event-bubbling/ui
+    "Image Snapshot" examples.image-snapshot/ui
+    "Label" examples.label/ui
+    "Scroll" examples.scroll/ui
+    "Settings" examples.settings/ui
+    "Slider" examples.slider/ui
+    "Stack" examples.stack/ui
+    "Svg" examples.svg/ui
+    "Text Field" examples.text-field/ui
+    "Text Field Debug" examples.text-field-debug/ui
+    "Toggle" examples.toggle/ui
+    "Tooltip" examples.tooltip/ui
+    "Tree" examples.tree/ui
+    "Wordle" examples.wordle/ui))
 
 (def light-grey 0xffeeeeee)   
 
@@ -90,39 +79,38 @@
       
 (def app
   (ui/default-theme {}; :font-size 13
-                     ; :cap-height 10
-                     ; :leading 100
-                     ; :fill-text (paint/fill 0xFFCC3333)
-                     ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
-                     
+    ; :cap-height 10
+    ; :leading 100
+    ; :fill-text (paint/fill 0xFFCC3333)
+    ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
     (ui/row
       (ui/vscrollbar
         (ui/vscroll
-          (ui/dynamic _ [examples examples
-                         example-names example-names]
-            (ui/column
-              (for [ns examples
-                    :let [name (or (example-names ns) (capitalize ns))]]
-                (ui/clickable
-                  {:on-click (fn [_] (reset! *example ns))}
-                  (ui/dynamic ctx [selected? (= ns @*example)
-                                   hovered?  (:hui/hovered? ctx)]
-                    (let [label (ui/padding 20 10
-                                  (ui/label name))]
-                      (cond
-                        selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
-                        hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
-                        :else     label)))))))))
+          (ui/column
+            (for [[name _] (sort-by first examples)]
+              (ui/clickable
+                {:on-click (fn [_] (reset! state/*example name))}
+                (ui/dynamic ctx [selected? (= name @state/*example)
+                                 hovered?  (:hui/hovered? ctx)]
+                  (let [label (ui/padding 20 10
+                                (ui/label name))]
+                    (cond
+                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
+                      :else     label))))))))
       border-line
       [:stretch 1
        (ui/clip
-         (ui/dynamic _ [ui @(requiring-resolve (symbol (str "examples." @*example) "ui"))]
-           ui))])))
+         (ui/dynamic _ [name @state/*example]
+           (examples name)))])))
+
+(reset! state/*app app)
 
 (defn redraw []
-  (some-> @*window window/request-frame))
+  (some-> @state/*window window/request-frame)
+  :redraw)
 
-(add-watch *example ::redraw
+(add-watch state/*example ::redraw
   (fn [_ _ _ _]
     (redraw)))
 
@@ -130,28 +118,18 @@
 
 (defn -main [& args]
   (ui/start-app!
-    (let [{:keys [scale work-area]} (app/primary-screen)
-          width (quot (:width work-area) 3)]
-      (reset! *window 
+    (let [screen (last (app/screens))]
+      (reset! state/*window 
         (ui/window
           {:title    "Humble 🐝 UI"
            :mac-icon "dev/images/icon.icns"
-           :width    (/ width scale)
+           :screen   (:id screen)
+           :width    600
            :height   400
-           :x        :left
+           :x        (if (= (:id screen) (:id (app/primary-screen))) :left :center)
            :y        :center}
-          #'app))))
-  (set-floating! @*window @settings/*floating)
+          state/*app))))
+  (set-floating! @state/*window @state/*floating)
   (reset! debug/*enabled? true)
   (redraw)
   (apply nrepl/-main args))
-
-(comment  
-  (do
-    (app/doui (some-> @*window window/close))
-    (reset! settings/*floating false)
-    (reset! *window (app/doui (make-window))))
-  
-  (app/doui (window/set-z-order @*window :normal))
-  (app/doui (window/set-z-order @*window :floating)))
-  

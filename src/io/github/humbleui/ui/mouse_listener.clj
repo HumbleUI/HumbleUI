@@ -3,7 +3,6 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
   (:import
-    [io.github.humbleui.types IPoint IRect]
     [java.lang AutoCloseable]))
 
 (core/deftype+ MouseListener [on-move
@@ -13,19 +12,19 @@
                               on-out
                               child
                               ^:mut over?
-                              ^:mut ^IRect child-rect]
+                              ^:mut child-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ ctx rect canvas]
     (set! child-rect rect)
-    (set! over? (.contains child-rect ^IPoint (:mouse-pos ctx)))
+    (set! over? (core/rect-contains? child-rect (:mouse-pos ctx)))
     (core/draw-child child ctx rect canvas))
   
   (-event [_ ctx event]
     (core/when-every [{:keys [x y]} event]
-      (let [over?' (.contains child-rect (IPoint. x y))]
+      (let [over?' (core/rect-contains? child-rect (core/ipoint x y))]
         (when (and (not over?) over?' on-over)
           (on-over event))
         (when (and over? (not over?') on-out)

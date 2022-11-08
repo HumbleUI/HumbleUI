@@ -1,12 +1,10 @@
 (ns io.github.humbleui.ui
   (:require
-    [clojure.java.io :as io]
     [clojure.math :as math]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.profile :as profile]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui.animation :as animation]
@@ -29,11 +27,9 @@
     [io.github.humbleui.ui.with-cursor :as with-cursor])
   (:import
     [java.lang AutoCloseable]
-    [java.io File]
-    [io.github.humbleui.types IPoint IRect Point Rect RRect]
-    [io.github.humbleui.skija Canvas Data Font FontMetrics Image Paint Surface TextLine]
-    [io.github.humbleui.skija.shaper Shaper ShapingOptions]
-    [io.github.humbleui.skija.svg SVGDOM SVGSVG SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
+    [io.github.humbleui.skija Canvas Data Font FontMetrics Image Paint TextLine]
+    [io.github.humbleui.skija.shaper ShapingOptions]
+    [io.github.humbleui.skija.svg SVGDOM SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
 
 (def ^{:arglists '([src])} animation
   animation/animation)
@@ -83,8 +79,8 @@
 (def ^{:arglists '([comp] [opts comp])} default-theme
   theme/default-theme)
 
-(def ^{:arglists '([*state] [opts *state])} text-input
-  text-field/text-input)
+; (def ^{:arglists '([*state] [opts *state])} text-input
+;   text-field/text-input)
 
 (def ^{:arglists '([*state] [opts *state])} text-field
   text-field/text-field)
@@ -106,13 +102,13 @@
     (when-some [scale (:scale ctx)]
       (when-some [width (:width child-rect)]
         (when-some [height (:height child-rect)]
-          (assoc ctx key (IPoint. (/ width scale) (/ height scale)))))))
+          (assoc ctx key (core/ipoint (/ width scale) (/ height scale)))))))
   
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [width  (-> (:width cs) (/ (:scale ctx)))
           height (-> (:height cs) (/ (:scale ctx)))]
-      (core/measure child (assoc ctx key (IPoint. width height)) cs)))
+      (core/measure child (assoc ctx key (core/ipoint width height)) cs)))
   
   (-draw [this ctx rect ^Canvas canvas]
     (set! child-rect rect)
@@ -141,17 +137,17 @@
 
 (core/deftype+ Label [^String text ^Font font ^Paint paint ^TextLine line ^FontMetrics metrics]
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (IPoint.
+  (-measure [_ _ctx _cs]
+    (core/ipoint
       (Math/ceil (.getWidth line))
       (Math/ceil (.getCapHeight metrics))))
   
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw [_ _ctx rect ^Canvas canvas]
     (.drawTextLine canvas line (:x rect) (+ (:y rect) (Math/ceil (.getCapHeight metrics))) paint))
   
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this))
   
   AutoCloseable
@@ -173,14 +169,15 @@
 
 (core/deftype+ Gap [width height]
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure [_ ctx _cs]
     (let [{:keys [scale]} ctx]
-      (IPoint. (math/ceil (* scale width)) (math/ceil (* scale height))))) 
-  (-draw [_ ctx rect canvas])
+      (core/ipoint (core/iceil (* scale width)) (core/iceil (* scale height)))))
   
-  (-event [_ ctx event])
+  (-draw [_ _ctx _rect _canvas])
   
-  (-iterate [this ctx cb]
+  (-event [_ _ctx _event])
+  
+  (-iterate [this _ctx cb]
     (cb this)))
 
 (defn gap [width height]
@@ -194,13 +191,12 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
-    (let [layer      (.save canvas)
-          child-size (core/measure child ctx (IPoint. (:width rect) (:height rect)))
+  (-draw [_ ctx rect canvas]
+    (let [child-size (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
           left       (+ (:x rect)
                        (* (:width rect) coeff)
                        (- (* (:width child-size) child-coeff)))]
-      (set! child-rect (IRect/makeXYWH left (:y rect) (:width child-size) (:height rect)))
+      (set! child-rect (core/irect-xywh left (:y rect) (:width child-size) (:height rect)))
       (core/draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]
@@ -227,13 +223,12 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx rect ^Canvas canvas]
-    (let [layer      (.save canvas)
-          child-size (core/measure child ctx (IPoint. (:width rect) (:height rect)))
+  (-draw [_ ctx rect canvas]
+    (let [child-size (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
           top        (+ (:y rect)
                        (* (:height rect) coeff)
                        (- (* (:height child-size) child-coeff)))]
-      (set! child-rect (IRect/makeXYWH (:x rect) top (:width rect) (:height child-size)))
+      (set! child-rect (core/irect-xywh (:x rect) top (:width rect) (:height child-size)))
       (core/draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]
@@ -354,8 +349,8 @@
     (reduce
       (fn [{:keys [width height]} child]
         (let [child-size (core/measure child ctx cs)]
-          (IPoint. (max width (:width child-size)) (+ height (:height child-size)))))
-      (IPoint. 0 0)
+          (core/ipoint (max width (:width child-size)) (+ height (:height child-size)))))
+      (core/ipoint 0 0)
       (keep #(nth % 2) children)))
   
   (-draw [_ ctx rect ^Canvas canvas]
@@ -364,12 +359,11 @@
                            space (:height rect)]
                           [[mode _ child] children]
                           (if (= :hug mode)
-                            (let [cs   (IPoint. (:width rect) space)
+                            (let [cs   (core/ipoint (:width rect) space)
                                   size (core/measure child ctx cs)]
                               (recur (conj known size) (- space (:height size))))
                             (recur (conj known nil) space)))
-          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
-          layer   (.save canvas)]
+          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)]
       (loop [height   0
              rects    []
              known    known
@@ -379,7 +373,7 @@
                                (case mode
                                  :hug     (:height (first known))
                                  :stretch (-> space (/ stretch) (* value) (math/round))))
-                child-rect (IRect/makeXYWH (:x rect) (+ (:y rect) height) (max 0 (:width rect)) (max 0 child-height))]
+                child-rect (core/irect-xywh (:x rect) (+ (:y rect) height) (max 0 (:width rect)) (max 0 child-height))]
             (core/draw-child child ctx child-rect canvas)
             (recur
               (+ height child-height)
@@ -427,8 +421,8 @@
     (reduce
       (fn [{:keys [width height]} child]
         (let [child-size (core/measure child ctx cs)]
-          (IPoint. (+ width (:width child-size)) (max height (:height child-size)))))
-      (IPoint. 0 0)
+          (core/ipoint (+ width (:width child-size)) (max height (:height child-size)))))
+      (core/ipoint 0 0)
       (keep #(nth % 2) children)))
   
   (-draw [_ ctx rect ^Canvas canvas]
@@ -437,12 +431,11 @@
                            space (:width rect)]
                           [[mode _ child] children]
                           (if (= :hug mode)
-                            (let [cs   (IPoint. space (:height rect))
+                            (let [cs   (core/ipoint space (:height rect))
                                   size (core/measure child ctx cs)]
                               (recur (conj known size) (- space (:width size))))
                             (recur (conj known nil) space)))
-          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)
-          layer   (.save canvas)]
+          stretch (transduce (keep (fn [[mode value _]] (when (= :stretch mode) value))) + 0 children)]
       (loop [width    0
              rects    []
              known    known
@@ -450,8 +443,8 @@
         (if-some [[mode value child] (first children)]
           (let [child-size (case mode
                              :hug     (first known)
-                             :stretch (IPoint. (-> space (/ stretch) (* value) (math/round)) (:height rect)))
-                child-rect (IRect/makeXYWH (+ (:x rect) width) (:y rect) (max 0 (:width child-size)) (max 0 (:height rect)))]
+                             :stretch (core/ipoint (-> space (/ stretch) (* value) (math/round)) (:height rect)))
+                child-rect (core/irect-xywh (+ (:x rect) width) (:y rect) (max 0 (:width child-size)) (max 0 (:height rect)))]
             (core/draw-child child ctx child-rect canvas)
             (recur
               (+ width (long (:width child-size)))
@@ -490,9 +483,9 @@
           right'     (core/dimension right cs ctx)
           top'       (core/dimension top cs ctx)
           bottom'    (core/dimension bottom cs ctx)
-          child-cs   (IPoint. (- (:width cs) left' right') (- (:height cs) top' bottom'))
+          child-cs   (core/ipoint (- (:width cs) left' right') (- (:height cs) top' bottom'))
           child-size (core/measure child ctx child-cs)]
-      (IPoint.
+      (core/ipoint
         (+ (:width child-size) left' right')
         (+ (:height child-size) top' bottom'))))
   
@@ -501,10 +494,9 @@
           right'   (core/dimension right rect ctx)
           top'     (core/dimension top rect ctx)
           bottom'  (core/dimension bottom rect ctx)
-          layer    (.save canvas)
           width'   (- (:width rect) left' right')
           height'  (- (:height rect) top' bottom')]
-      (set! child-rect (IRect/makeXYWH (+ (:x rect) left') (+ (:y rect) top') (max 0 width') (max 0 height')))
+      (set! child-rect (core/irect-xywh (+ (:x rect) left') (+ (:y rect) top') (max 0 width') (max 0 height')))
       (core/draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]
@@ -532,7 +524,7 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (canvas/with-canvas canvas
       (set! child-rect rect)
       (canvas/clip-rect canvas rect)
@@ -558,15 +550,15 @@
 
 (core/deftype+ AnImage [^Image img]
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (IPoint. (.getWidth img) (.getHeight img)))
+  (-measure [_ _ctx _cs]
+    (core/ipoint (.getWidth img) (.getHeight img)))
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
-    (.drawImageRect canvas img (.toRect rect)))
+  (-draw [_ _ctx rect ^Canvas canvas]
+    (.drawImageRect canvas img (core/rect rect)))
   
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this))
   
   AutoCloseable
@@ -582,10 +574,10 @@
 
 (core/deftype+ SVG [^SVGDOM dom ^SVGPreserveAspectRatio scaling]
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure [_ _ctx cs]
     cs)
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ _ctx rect ^Canvas canvas]
     (let [root (.getRoot dom)
           {:keys [x y width height]} rect]
       (.setWidth root (SVGLength. width))
@@ -595,9 +587,9 @@
         (canvas/translate canvas x y)
         (.render dom canvas))))
   
-  (-event [_ ctx event])
+  (-event [_ _ctx _event])
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this))
   
   AutoCloseable
@@ -650,15 +642,11 @@
   
   (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [scale]} ctx
-          radii' (into-array Float/TYPE (map #(* scale %) radii))
-          rrect  (RRect/makeComplexXYWH (:x rect) (:y rect) (:width rect) (:height rect) radii')
-          layer  (.save canvas)]
-      (try
+          rrect  (core/rrect-complex-xywh (:x rect) (:y rect) (:width rect) (:height rect) (map #(* scale %) radii))]
+      (canvas/with-canvas canvas
         (set! child-rect rect)
         (.clipRRect canvas rrect true)
-        (core/draw child ctx child-rect canvas)
-        (finally
-          (.restoreToCount canvas layer)))))
+        (core/draw child ctx child-rect canvas))))
   
   (-event [_ ctx event]
     (core/event-child child ctx event))
@@ -734,16 +722,16 @@
 
 ;; vscroll
 
-(core/deftype+ VScroll [child ^:mut offset ^:mut ^IRect self-rect ^:mut child-size]
+(core/deftype+ VScroll [child ^:mut offset ^:mut self-rect ^:mut child-size]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child-cs (assoc cs :height Integer/MAX_VALUE)]
       (set! child-size (protocols/-measure child ctx child-cs))
-      (IPoint. (:width child-size) (:height cs))))
+      (core/ipoint (:width child-size) (:height cs))))
   
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (when (nil? child-size)
-      (set! child-size (protocols/-measure child ctx (IPoint. (:width rect) Integer/MAX_VALUE))))
+      (set! child-size (protocols/-measure child ctx (core/ipoint (:width rect) Integer/MAX_VALUE))))
     (set! self-rect rect)
     (set! offset (core/clamp offset (- (:height rect) (:height child-size)) 0))
     (let [layer      (.save canvas)
@@ -751,7 +739,7 @@
                        (update :y + offset)
                        (assoc :height Integer/MAX_VALUE))]
       (try
-        (.clipRect canvas (.toRect rect))
+        (.clipRect canvas (core/rect rect))
         (core/draw child ctx child-rect canvas)
         (finally
           (.restoreToCount canvas layer)))))
@@ -759,7 +747,7 @@
   (-event [_ ctx event]
     (cond
       (= :mouse-scroll (:event event))
-      (when (.contains self-rect (IPoint. (:x event) (:y event)))
+      (when (core/rect-contains? self-rect (core/ipoint (:x event) (:y event)))
         (or
           (core/event-child child ctx event)
           (let [offset' (-> offset
@@ -770,7 +758,7 @@
               true))))
       
       (= :mouse-button (:event event))
-      (when (.contains self-rect (IPoint. (:x event) (:y event)))
+      (when (core/rect-contains? self-rect (core/ipoint (:x event) (:y event)))
         (core/event-child child ctx event))
       
       :else
@@ -805,14 +793,13 @@
             content-h (:height (:child-size child))
             scroll-y  (:y child-rect)
             scroll-h  (:height child-rect)
-            scroll-r  (:right child-rect)
             
             padding (* 4 scale)
             track-w (* 4 scale)
             track-x (+ (:x rect) (:width child-rect) (- track-w) (- padding))
             track-y (+ scroll-y padding)
             track-h (- scroll-h (* 2 padding))
-            track   (RRect/makeXYWH track-x track-y track-w track-h (* 2 scale))
+            track   (core/rrect-xywh track-x track-y track-w track-h (* 2 scale))
             
             thumb-w       (* 4 scale)
             min-thumb-h   (* 16 scale)
@@ -820,7 +807,7 @@
             thumb-y       (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ track-y))
             thumb-b-ratio (/ (+ content-y scroll-h) content-h)
             thumb-b       (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
-            thumb         (RRect/makeLTRB track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
+            thumb         (core/rrect-ltrb track-x thumb-y (+ track-x thumb-w) thumb-b (* 2 scale))]
         (.drawRRect canvas track fill-track)
         (.drawRRect canvas thumb fill-thumb))))
 
@@ -849,19 +836,16 @@
 
 (core/deftype+ ACanvas [on-paint on-event ^:mut my-rect]
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (IPoint. (:width cs) (:height cs)))
-  
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-measure [_ _ctx cs]
+    (core/ipoint (:width cs) (:height cs)))
+
+  (-draw [_ ctx rect ^Canvas canvas]
     (set! my-rect rect)
     (when on-paint
-      (let [layer (.save canvas)]
-        (try
-          (.clipRect canvas (.toRect rect))
-          (.translate canvas (:x rect) (:y rect))
-          (on-paint ctx canvas (IPoint. (:width rect) (:height rect)))
-          (finally
-            (.restoreToCount canvas layer))))))
+      (canvas/with-canvas canvas
+        (.clipRect canvas (core/rect rect))
+        (.translate canvas (:x rect) (:y rect))
+        (on-paint ctx canvas (core/ipoint (:width rect) (:height rect))))))
   
   (-event [_ ctx event]
     (when on-event
@@ -872,11 +856,12 @@
                      event)]
         (on-event ctx event'))))
   
-  (-iterate [this ctx cb]
+  (-iterate [this _ctx cb]
     (cb this)))
 
 (defn canvas [{:keys [on-paint on-event]}]
   (->ACanvas on-paint on-event nil))
+
 
 ;; text-listener
 
@@ -913,7 +898,7 @@
 (defn button
   ([on-click child]
    (button on-click nil child))
-  ([on-click opts child]
+  ([on-click _opts child]
    (dynamic ctx [{:hui.button/keys [bg bg-active bg-hovered border-radius padding-left padding-top padding-right padding-bottom]} ctx]
      (clickable
        {:on-click (when on-click
@@ -972,31 +957,31 @@
   (-measure [_ ctx cs]
     (core/measure child ctx cs))
 
-  (-draw [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw [_ ctx rect ^Canvas canvas]
     (let [{:keys [left up anchor shackle]
            :or {left 0 up 0
                 anchor :top-left shackle :top-right}} opts
-          child-size (core/measure child ctx (IPoint. (:width rect) (:height rect)))
-          child-rect' (IRect/makeXYWH (:x rect) (:y rect) (:width child-size) (:height child-size))
-          rel-cs (core/measure relative ctx (IPoint. 0 0))
+          child-size (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
+          child-rect' (core/irect-xywh (:x rect) (:y rect) (:width child-size) (:height child-size))
+          rel-cs (core/measure relative ctx (core/ipoint 0 0))
           rel-cs-width (:width rel-cs) rel-cs-height (:height rel-cs)
           rel-rect' (condp = [anchor shackle]
-                      [:top-left :top-left]         (IRect/makeXYWH (- (:x child-rect') left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
-                      [:top-right :top-left]        (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
-                      [:bottom-right :top-left]     (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
-                      [:bottom-left :top-left]      (IRect/makeXYWH (- (:x child-rect') left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
-                      [:top-left :top-right]        (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
-                      [:top-right :top-right]       (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
-                      [:bottom-left :top-right]     (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
-                      [:bottom-right :top-right]    (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
-                      [:top-left :bottom-right]     (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
-                      [:top-right :bottom-right]    (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
-                      [:bottom-right :bottom-right] (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
-                      [:bottom-left :bottom-right]  (IRect/makeXYWH (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
-                      [:top-left :bottom-left]      (IRect/makeXYWH (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
-                      [:top-right :bottom-left]     (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
-                      [:bottom-left :bottom-left]   (IRect/makeXYWH (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
-                      [:bottom-right :bottom-left]  (IRect/makeXYWH (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height))]
+                      [:top-left :top-left]         (core/irect-xywh (- (:x child-rect') left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:top-right :top-left]        (core/irect-xywh (- (:x child-rect') rel-cs-width left) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:bottom-right :top-left]     (core/irect-xywh (- (:x child-rect') rel-cs-width left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:bottom-left :top-left]      (core/irect-xywh (- (:x child-rect') left) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:top-left :top-right]        (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:top-right :top-right]       (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') up) rel-cs-width rel-cs-height)
+                      [:bottom-left :top-right]     (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:bottom-right :top-right]    (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (- (:y child-rect') rel-cs-height up) rel-cs-width rel-cs-height)
+                      [:top-left :bottom-right]     (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:top-right :bottom-right]    (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:bottom-right :bottom-right] (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') rel-cs-width left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:bottom-left :bottom-right]  (core/irect-xywh (+ (:x child-rect') (- (:width child-rect') left)) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:top-left :bottom-left]      (core/irect-xywh (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:top-right :bottom-left]     (core/irect-xywh (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') up)) rel-cs-width rel-cs-height)
+                      [:bottom-left :bottom-left]   (core/irect-xywh (- (:x child-rect') left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height)
+                      [:bottom-right :bottom-left]  (core/irect-xywh (- (:x child-rect') rel-cs-width left) (+ (:y child-rect') (- (:height child-rect') rel-cs-height up)) rel-cs-width rel-cs-height))]
       (set! child-rect child-rect')
       (set! rel-rect rel-rect')
       (core/draw-child child ctx child-rect canvas)
@@ -1035,7 +1020,7 @@
 (defn window
   ([app] (window {} app))
   ([opts app]
-   (let [{:keys [exit-on-close? title mac-icon width height x y bg-color]
+   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color]
           :or {exit-on-close? true
                title    "Humble 🐝 UI"
                width    800
@@ -1043,8 +1028,7 @@
                x        :center
                y        :center
                bg-color 0xFFF6F6F6}} opts
-         *mouse-pos (volatile! (IPoint. 0 0))
-         *drawn?    (volatile! false)
+         *mouse-pos (volatile! (core/ipoint 0 0))
          app-fn     (fn []
                       (cond
                         (instance? clojure.lang.IDeref app) @app
@@ -1058,10 +1042,10 @@
          paint-fn   (fn [window canvas]
                       (canvas/clear canvas bg-color)
                       (let [bounds (window/content-rect window)]
-                        (core/draw (app-fn) (ctx-fn window) (IRect/makeXYWH 0 0 (:width bounds) (:height bounds)) canvas)))
+                        (core/draw (app-fn) (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas)))
          event-fn   (fn [window event]
                       (core/when-every [{:keys [x y]} event]
-                        (vreset! *mouse-pos (IPoint. x y)))
+                        (vreset! *mouse-pos (core/ipoint x y)))
                       (when-let [result (core/event (app-fn) (ctx-fn window) event)]
                         (window/request-frame window)
                         result))
@@ -1070,7 +1054,10 @@
                                    #(System/exit 0))
                        :on-paint paint-fn
                        :on-event event-fn})
-         {:keys [scale work-area]} (app/primary-screen)
+         screen     (if screen
+                      (core/find-by :id screen (app/screens))
+                      (app/primary-screen))
+         {:keys [scale work-area]} screen
          x          (cond
                       (= :left x)   0
                       (= :center x) (-> (:width work-area) (- (* width scale)) (quot 2))
