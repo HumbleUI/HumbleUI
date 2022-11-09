@@ -8,7 +8,8 @@ def main():
     build_utils.fetch_maven("nrepl", "nrepl", "1.0.0", repo = common.clojars),
     build_utils.fetch_maven("org.clojure", "tools.namespace", "1.3.0", repo = common.clojars),
     build_utils.fetch_maven("org.clojure", "java.classpath", "1.0.0", repo = common.clojars),
-    build_utils.fetch_maven("org.clojure", "tools.reader", "1.3.6", repo = common.clojars)
+    build_utils.fetch_maven("org.clojure", "tools.reader", "1.3.6", repo = common.clojars),
+    build_utils.fetch_maven("criterium", "criterium", "0.4.6", repo = common.clojars)
   ]
   return subprocess.call(["java",
     "--class-path", build_utils.classpath_join(classpath),

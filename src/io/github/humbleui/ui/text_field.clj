@@ -186,7 +186,7 @@
     :from pos'
     :to   pos'))
 
-(defmethod -edit :expand-char-left [{:keys [from to] :as state} _ _]
+(defmethod -edit :expand-char-left [{:keys [to] :as state} _ _]
   (cond
     (= to 0)
     state

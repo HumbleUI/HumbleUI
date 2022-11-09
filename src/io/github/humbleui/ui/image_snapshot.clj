@@ -4,7 +4,6 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
   (:import
-    [io.github.humbleui.types Rect]
     [io.github.humbleui.skija Canvas ColorAlphaType Image ImageInfo Surface]
     [java.lang AutoCloseable]))
 
