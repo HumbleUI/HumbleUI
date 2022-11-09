@@ -30,8 +30,8 @@
       2000000 [:a] #{}))
 
   (testing "with very long keys set"
-    (let [million-keys (map #(-> % str keyword) (range 1000000))]
-      (is (= (mask->set 11 million-keys) #{:0 :1 :3})))))
+    (let [very-long-keys (mapv #(-> % str keyword) (range 100000))]
+      (is (= (mask->set 11 very-long-keys) #{:0 :1 :3})))))
 
 (comment 
   (test/test-ns *ns*))
