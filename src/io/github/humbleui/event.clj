@@ -25,13 +25,20 @@
     [io.github.humbleui.jwm.skija
      EventFrameSkija]))
 
-(defn- log2 [x]
- (/ (Math/log x) (Math/log 2)))
-
 (defn- mask->set [mask keys]
- (let [n (-> mask Long/highestOneBit log2 inc)
-       pred #(if (bit-test mask %1) %2 nil)]
-   (->> keys (take n) (keep-indexed pred) (into #{}))))
+  (let [n (bit-shift-right mask (count keys))]
+    (persistent!
+      (loop [acc (transient #{})
+             mask mask
+             keys keys]
+        (if (= mask n)
+          acc
+          (recur
+            (if (odd? mask)
+              (conj! acc (first keys))
+              acc)
+            (bit-shift-right mask 1)
+            (next keys)))))))
 
 (defn- modifiers->set [modifiers]
   (mask->set modifiers [:caps-lock :shift :control :alt :win-logo :linux-meta :linux-super :mac-command :mac-option :mac-fn]))
