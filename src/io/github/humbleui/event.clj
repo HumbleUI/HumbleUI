@@ -25,21 +25,22 @@
     [io.github.humbleui.jwm.skija
      EventFrameSkija]))
 
-(defn- mask->set [mask keys]
-  (if (= 0 mask)
-    #{}
-    (persistent!
-      (loop [acc  (transient #{})
-             bit  0
-             keys keys]
-        (if (empty? keys)
-          acc
-          (recur
-            (if (bit-test mask bit)
-              (conj! acc (first keys))
-              acc)
-            (inc bit)
-            (next keys)))))))
+(defn- mask->set [^long mask keys]
+  (loop [acc  (transient #{})
+         mask mask
+         keys keys]
+    (cond
+      (empty? keys)
+      (persistent! acc)
+      
+      (== 0 mask)
+      (persistent! acc)
+      
+      (== 0 (bit-and mask 1))
+      (recur acc (bit-shift-right mask 1) (next keys))
+      
+      :else
+      (recur (conj! acc (first keys)) (bit-shift-right mask 1) (next keys)))))
 
 (defn- modifiers->set [modifiers]
   (mask->set modifiers [:caps-lock :shift :control :alt :win-logo :linux-meta :linux-super :mac-command :mac-option :mac-fn]))
