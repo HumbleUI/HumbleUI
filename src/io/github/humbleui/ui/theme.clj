@@ -54,8 +54,9 @@
                          :hui.slider/fill-thumb-active    (paint/fill 0xFFE0E0E0)
                          :hui.slider/stroke-thumb-active  (paint/stroke 0xFF0060E0 (* 2 scale))
                          
-                         :hui.text-field/font                    font-ui
-                         :hui.text-field/font-features           []
+                         ; :hui.text-field/font                    nil
+                         ; :hui.text-field/font-placeholder        nil
+                         ; :hui.text-field/font-features           []
                          :hui.text-field/cursor-blink-interval   500
                          :hui.text-field/fill-text               fill-text
                          :hui.text-field/fill-placeholder        fill-gray

@@ -5,6 +5,7 @@
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.clipboard :as clipboard]
     [io.github.humbleui.core :as core]
+    [io.github.humbleui.font :as font]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
@@ -446,7 +447,7 @@
 
 (defn- get-cached [text-field _ctx key-source key-source-cached key-derived fn]
   (let [{:keys [*state]} text-field
-        state        @*state
+        state          @*state
         source         (state key-source)
         source-cached  (state key-source-cached)
         derived-cached (state key-derived)]
@@ -463,13 +464,16 @@
 
 (defn- text-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :text :cached/text :line
-    (fn [text _state]
-      (.shapeLine core/shaper text (:hui.text-field/font ctx) (:features text-field)))))
+    (fn [text state]
+      (.shapeLine core/shaper text (:font state) (:features text-field)))))
 
 (defn- placeholder-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :placeholder :cached/placeholder :line-placeholder
-    (fn [placeholder _state]
-      (.shapeLine core/shaper placeholder (:hui.text-field/font ctx) (:features text-field)))))
+    (fn [placeholder state]
+      (let [font (or 
+                   (:hui.text-field/font-placeholder ctx)
+                   (:font state))]
+        (.shapeLine core/shaper placeholder font (:features text-field))))))
 
 (defn- coord-to [text-field ctx]
   (get-cached text-field ctx :to :cached/to :coord-to
@@ -514,13 +518,12 @@
   protocols/IComponent
   (-measure [this ctx cs]
     (let [{:keys                [scale]
-           :hui.text-field/keys [^Font font
-                                 cursor-width
+           :hui.text-field/keys [cursor-width
                                  padding-left
                                  padding-top
                                  padding-right 
                                  padding-bottom]} ctx
-          metrics ^FontMetrics (.getMetrics font)
+          metrics (:metrics @*state)
           line    (text-line this ctx)]
       (core/ipoint
         (min
@@ -529,7 +532,7 @@
             (.getWidth line) 
             (* scale cursor-width)
             (* scale padding-right)))
-        (+ (Math/round (.getCapHeight metrics))
+        (+ (Math/round (:cap-height metrics))
           (* scale padding-top)
           (* scale padding-bottom)))))
   
@@ -549,16 +552,14 @@
     (set! my-rect rect)
     (correct-offset! this ctx)
     (let [state @*state
-          {:keys [text from to marked-from marked-to offset]} state
+          {:keys [text from to marked-from marked-to offset metrics]} state
           {:keys                [scale]
            :hui/keys            [focused?]
-           :hui.text-field/keys [^Font font
-                                 padding-top]} ctx
+           :hui.text-field/keys [padding-top]} ctx
           line       (text-line this ctx)
-          metrics    ^FontMetrics (.getMetrics font)
-          cap-height (Math/round (.getCapHeight metrics))
-          ascent     (Math/ceil (- (- (.getAscent metrics)) (.getCapHeight metrics)))
-          descent    (Math/ceil (.getDescent metrics))
+          cap-height (Math/round (:cap-height metrics))
+          ascent     (Math/ceil (- (- (:ascent metrics)) (:cap-height metrics)))
+          descent    (Math/ceil (:descent metrics))
           baseline   (+ (* scale padding-top) cap-height)
           selection? (not= from to)
           coord-to   (coord-to this ctx)
@@ -723,12 +724,11 @@
           
           ;; rect for composing region
           (= :get-rect-for-marked-range (:event event))
-          (let [{:hui.text-field/keys [^Font font
-                                       padding-top]} ctx
-                metrics    ^FontMetrics (.getMetrics font)
-                cap-height (Math/ceil (.getCapHeight metrics))
-                ascent     (Math/ceil (- (- (.getAscent metrics)) cap-height))
-                descent    (Math/ceil (.getDescent metrics))
+          (let [{:hui.text-field/keys [padding-top]} ctx
+                metrics    (:metrics @*state)
+                cap-height (Math/ceil (:cap-height metrics))
+                ascent     (Math/ceil (- (- (:ascent metrics)) cap-height))
+                descent    (Math/ceil (:descent metrics))
                 baseline   (+ padding-top cap-height)
                 left       (.getCoordAtOffset line (or marked-from from))
                 right      (if (= (or marked-to to) (or marked-from from))
@@ -882,10 +882,16 @@
   ([*state]
    (text-input nil *state))
   ([_opts *state]
-   (dynamic/dynamic ctx [features (:hui.text-field/font-features ctx)]
+   (dynamic/dynamic ctx [font     (or
+                                    (:hui.text-field/font ctx)
+                                    (:font-ui ctx))
+                         metrics  (font/metrics font)
+                         features (:hui.text-field/font-features ctx)]
      (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
        (swap! *state #(core/merge-some
                         {:text               ""
+                         :font               font
+                         :metrics            metrics
                          :cached/text        nil
                          :line               nil
                          

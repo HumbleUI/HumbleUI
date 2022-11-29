@@ -79,8 +79,8 @@
 (def ^{:arglists '([comp] [opts comp])} default-theme
   theme/default-theme)
 
-; (def ^{:arglists '([*state] [opts *state])} text-input
-;   text-field/text-input)
+(def ^{:arglists '([*state] [opts *state])} text-input
+  text-field/text-input)
 
 (def ^{:arglists '([*state] [opts *state])} text-field
   text-field/text-field)

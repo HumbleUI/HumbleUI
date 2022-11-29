@@ -19,6 +19,14 @@
 (def double-click-threshold-ms
   500)
 
+(defn radius->sigma [r]
+  (+ 0.5 (* r 0.57735)))
+
+(defn sigma->radius [s]
+  (-> s
+    (- 0.5)
+    (/ 0.57735)))
+
 ;; state
 
 (def ^Shaper shaper
@@ -235,6 +243,10 @@
   ([x y z] (or x y z))
   ([x y z & rest]
    (reduce #(or %1 %2) (or x y z) rest)))
+
+(defn invoke [f]
+  (when f
+    (f)))
 
 (defn clamp [x from to]
   (min (max x from) to))

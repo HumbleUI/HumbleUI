@@ -10,7 +10,20 @@
   (atom nil))
 
 (def *example
-  (atom "Animation"))
+  (atom "Todo MVC"))
+
+(def *todomvc-state
+  (atom
+    {:new-todo {:placeholder "What needs to be done?"}
+     :mode     :all
+     :next-id  3
+     :todos    (sorted-map
+                 0 {:label "first"
+                    :completed? false}
+                 1 {:label "second"
+                    :completed? true}
+                 2 {:label "third"
+                    :completed? false})}))
 
 (def *floating
   (atom false))

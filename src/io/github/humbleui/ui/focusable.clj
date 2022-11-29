@@ -6,7 +6,11 @@
   (:import
     [java.lang AutoCloseable]))
 
-(core/deftype+ Focusable [child ^:mut child-rect ^:mut focused?]
+(core/deftype+ Focusable [child
+                          on-focus
+                          on-blur
+                          ^:mut child-rect
+                          ^:mut focused?]
   protocols/IContext
   (-context [_ ctx]
     (cond-> ctx focused?
@@ -17,6 +21,8 @@
     (core/measure child (protocols/-context this ctx) cs))
   
   (-draw [this ctx rect canvas]
+    (some-> (::*focused ctx)
+      (vswap! conj this))
     (set! child-rect rect)
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
@@ -27,7 +33,10 @@
               (:pressed? event)
               (not focused?)
               (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
-        (set! focused? true))
+        (set! focused? true)
+        (when on-focus
+          (on-focus))
+        true)
       (core/event-child child (protocols/-context this ctx) event)))
   
   (-iterate [this ctx cb]
@@ -42,8 +51,8 @@
 (defn focusable
   ([child]
    (focusable child false))
-  ([{:keys [focused?]} child]
-   (->Focusable child nil focused?)))
+  ([{:keys [focused? on-focus on-blur]} child]
+   (->Focusable child on-focus on-blur nil focused?)))
 
 (defn focused [this]
   (let [*acc (volatile! [])]
@@ -61,7 +70,13 @@
   
   (-draw [_ ctx rect canvas]
     (set! child-rect rect)
-    (core/draw-child child ctx child-rect canvas))
+    (let [*focused (volatile! [])
+          ctx'     (assoc ctx ::*focused *focused)
+          res      (core/draw-child child ctx' child-rect canvas)]
+      (doseq [comp (butlast @*focused)]
+        (protocols/-set! comp :focused? false)
+        (core/invoke (:on-blur comp)))
+      res))
   
   (-event [this ctx event]
     (if (and
@@ -73,7 +88,8 @@
             focused-after  (focused this)]
         (when (< 1 (count focused-after))
           (doseq [comp focused-before]
-            (protocols/-set! comp :focused? false)))
+            (protocols/-set! comp :focused? false)
+            (core/invoke (:on-blur comp))))
         (or
           res
           (< 1 (count focused-after))))
@@ -102,9 +118,11 @@
               (vreset! *prev comp)
               false)))))
     (when-some [focused @*focused]
-      (protocols/-set! focused :focused? false))
+      (protocols/-set! focused :focused? false)
+      (core/invoke (:on-blur focused)))
     (when-some [prev @*prev]
-      (protocols/-set! prev :focused? true))))
+      (protocols/-set! prev :focused? true)
+      (core/invoke (:on-focus prev)))))
 
 (defn focus-next [this]
   (let [*first   (volatile! nil)
@@ -124,9 +142,11 @@
               (vreset! *next comp)
               true)))))
     (when-some [focused @*focused]
-      (protocols/-set! focused :focused? false))
+      (protocols/-set! focused :focused? false)
+      (core/invoke (:on-blur focused)))
     (when-some [next (or @*next @*first)]
-      (protocols/-set! next :focused? true))))
+      (protocols/-set! next :focused? true)
+      (core/invoke (:on-focus next)))))
 
 (defn focus-controller [child]
   (let [this (->FocusController child nil)]

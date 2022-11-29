@@ -22,6 +22,7 @@
     [examples.svg]
     [examples.text-field]
     [examples.text-field-debug]
+    [examples.todomvc]
     [examples.toggle]
     [examples.tooltip]
     [examples.tree]
@@ -66,12 +67,14 @@
     "Svg" examples.svg/ui
     "Text Field" examples.text-field/ui
     "Text Field Debug" examples.text-field-debug/ui
+    "Todo MVC" examples.todomvc/ui
     "Toggle" examples.toggle/ui
     "Tooltip" examples.tooltip/ui
     "Tree" examples.tree/ui
     "Wordle" examples.wordle/ui))
 
-(def light-grey 0xffeeeeee)   
+(def light-grey
+  0xffeeeeee)   
 
 (def border-line
   (ui/rect (paint/fill light-grey)
@@ -130,6 +133,6 @@
            :y        :center}
           state/*app))))
   (set-floating! @state/*window @state/*floating)
-  (reset! debug/*enabled? true)
+  ; (reset! debug/*enabled? true)
   (redraw)
   (apply nrepl/-main args))
