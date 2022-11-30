@@ -21,10 +21,10 @@ Humble UI is a desktop UI framework for Clojure. No Electron. No JavaScript. Onl
     - People prefer native apps to web apps
         - Normal shortcuts, icon, its own window, file system access, notifications, OS integrations
     - Developing real native apps is expensive
-    - JavaScript + Chrome is have a huge overhead, can be slow
+    - JavaScript + Chrome have huge overhead, can be slow
 - Java has “UI curse”
     - Previous attempts were cumbersome for user
-    - Mimicking native look and feel didn’t worked
+    - Mimicking native look and feel didn’t work
     - Looked bad
 - Time of declarative UIs is now
     - React
