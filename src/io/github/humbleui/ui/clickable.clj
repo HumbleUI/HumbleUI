@@ -10,7 +10,9 @@
                           child
                           ^:mut child-rect
                           ^:mut hovered?
-                          ^:mut pressed?]
+                          ^:mut pressed?
+                          ^:mut clicks
+                          ^:mut last-click]
   protocols/IContext
   (-context [_ ctx]
     (cond-> ctx
@@ -27,6 +29,10 @@
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
 
   (-event [this ctx event]
+    (when (= :mouse-move (:event event))
+      (set! clicks 0)
+      (set! last-click 0))
+          
     (core/eager-or
       (core/when-every [{:keys [x y]} event]
         (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
@@ -38,16 +44,24 @@
                           hovered?
                           false)
                         pressed?)
-            clicked? (and pressed? (not pressed?') hovered?)]
+            clicked? (and pressed? (not pressed?') hovered?)
+            now      (core/now)
+            _        (when clicked?
+                       (when (> (- now last-click) core/double-click-threshold-ms)
+                         (set! clicks 0))
+                       (set! clicks (inc clicks))
+                       (set! last-click now))
+            event'   (cond-> event
+                       clicked? (assoc :clicks clicks))]
         (core/eager-or
           (when (and clicked? on-click-capture)
-            (on-click-capture event)
+            (on-click-capture event')
             false)
           (or
-            (core/event-child child (protocols/-context this ctx) event)
+            (core/event-child child (protocols/-context this ctx) event')
             (core/eager-or
               (when (and clicked? on-click)
-                (on-click event)
+                (on-click event')
                 true)
               (when (not= pressed? pressed?')
                 (set! pressed? pressed?')
@@ -66,4 +80,4 @@
   (when-not (map? opts)
     (throw (ex-info (str "Expected: map, got: " opts) {:arg opts})))
   (let [{:keys [on-click on-click-capture]} opts]
-    (->Clickable on-click on-click-capture child nil false false)))
+    (->Clickable on-click on-click-capture child nil false false 0 0)))

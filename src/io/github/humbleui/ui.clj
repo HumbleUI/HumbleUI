@@ -46,7 +46,7 @@
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
 
-(def ^{:arglists '([listeners child])} event-listener
+(def ^{:arglists '([event-type callback child] [opts event-type callback child])} event-listener
   event-listener/event-listener)
 
 (def ^{:arglists '([child] [opts child])} focusable
@@ -730,8 +730,7 @@
       (core/ipoint (:width child-size) (:height cs))))
   
   (-draw [_ ctx rect ^Canvas canvas]
-    (when (nil? child-size)
-      (set! child-size (protocols/-measure child ctx (core/ipoint (:width rect) Integer/MAX_VALUE))))
+    (set! child-size (protocols/-measure child ctx (core/ipoint (:width rect) Integer/MAX_VALUE)))
     (set! self-rect rect)
     (set! offset (core/clamp offset (- (:height rect) (:height child-size)) 0))
     (let [layer      (.save canvas)
@@ -893,6 +892,18 @@
   (->TextListener on-input child nil))
 
 
+;; on-key-focused
+
+(defn on-key-focused [keymap child]
+  (event-listener {:capture? true} :key
+    (fn [e ctx]
+      (when (and (:hui/focused? ctx) (:pressed? e))
+        (when-some [callback (keymap (:key e))]
+          (callback)
+          true)))
+    child))
+
+
 ;; button
 
 (defn button
@@ -1020,7 +1031,8 @@
 (defn window
   ([app] (window {} app))
   ([opts app]
-   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color]
+   (let [; t0 (core/now)
+         {:keys [exit-on-close? title mac-icon screen width height x y bg-color]
           :or {exit-on-close? true
                title    "Humble 🐝 UI"
                width    800
@@ -1044,6 +1056,8 @@
                       (let [bounds (window/content-rect window)]
                         (core/draw (app-fn) (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas)))
          event-fn   (fn [window event]
+                      ; (when-not (#{:frame :frame-skija :mouse-move} (:event event))
+                      ;   (println (- (core/now) t0) (vals event)))
                       (core/when-every [{:keys [x y]} event]
                         (vreset! *mouse-pos (core/ipoint x y)))
                       (when-let [result (core/event (app-fn) (ctx-fn window) event)]

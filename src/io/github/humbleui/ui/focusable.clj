@@ -37,7 +37,9 @@
         (when on-focus
           (on-focus))
         true)
-      (core/event-child child (protocols/-context this ctx) event)))
+      (let [event' (cond-> event
+                     focused? (assoc :hui/focused? true))]
+        (core/event-child child (protocols/-context this ctx) event'))))
   
   (-iterate [this ctx cb]
     (or

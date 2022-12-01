@@ -512,6 +512,15 @@
         :offset)
       offset)))
 
+(defn- correct-ranges! [*state]
+  (let [state @*state
+        len   (count (:text state))]
+    (doseq [key [:from :to :marked-from :marked-to]
+            :let [v (key state)]
+            :when (some? v)]
+      (when (> (key state) len)
+        (swap! *state assoc key len)))))
+
 (core/deftype+ TextField [*state
                           ^ShapingOptions features
                           ^:mut           my-rect]
@@ -532,7 +541,7 @@
             (.getWidth line) 
             (* scale cursor-width)
             (* scale padding-right)))
-        (+ (Math/round (:cap-height metrics))
+        (+ (math/round (:cap-height metrics))
           (* scale padding-top)
           (* scale padding-bottom)))))
   
@@ -550,22 +559,24 @@
   ;            (.getWidth line)           
   (-draw [this ctx rect ^Canvas canvas]
     (set! my-rect rect)
+    (correct-ranges! *state)
     (correct-offset! this ctx)
+    
     (let [state @*state
           {:keys [text from to marked-from marked-to offset metrics]} state
           {:keys                [scale]
            :hui/keys            [focused?]
            :hui.text-field/keys [padding-top]} ctx
           line       (text-line this ctx)
-          cap-height (Math/round (:cap-height metrics))
-          ascent     (Math/ceil (- (- (:ascent metrics)) (:cap-height metrics)))
-          descent    (Math/ceil (:descent metrics))
+          cap-height (math/round (:cap-height metrics))
+          ascent     (math/ceil (- (- (:ascent metrics)) (:cap-height metrics)))
+          descent    (math/ceil (:descent metrics))
           baseline   (+ (* scale padding-top) cap-height)
           selection? (not= from to)
           coord-to   (coord-to this ctx)
           coord-from (if (= from to)
                        coord-to
-                       (Math/round (.getCoordAtOffset line from)))]
+                       (math/round (.getCoordAtOffset line from)))]
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas (core/rect rect))
         

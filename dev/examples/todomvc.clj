@@ -66,21 +66,20 @@
     (if (str/blank? text)
       state
       (-> state
-        (update :new-todo assoc :text "" :from 0 :to 0)
+        (update :new-todo assoc :text "")
         (update :next-id inc)
         (update :todos assoc (:next-id state)
           {:label text
            :completed? false})))))
 
 (defn save [state]
-  (let [state (add-todo state)]
-    (if-some [editing (:editing state)]
-      (let [{:keys [id text]} editing
-            state' (dissoc state :editing)]
-        (if (str/blank? text)
-          (update state' :todos dissoc id)
-          (assoc-in state' [:todos id :label] text)))
-      state)))
+  (if-some [editing (:editing state)]
+    (let [{:keys [id text]} editing
+          state' (dissoc state :editing)]
+      (if (str/blank? text)
+        (update state' :todos dissoc id)
+        (assoc-in state' [:todos id :label] text)))
+    state))
 
 (defn edit [state id]
   (let [state (save state)
@@ -135,20 +134,12 @@
       (ui/rect paint-fg
         child))))
 
-(defn event-handler [child]
-  (ui/event-listener
-    {:capture? true
-     :key
-     (fn [e]
-       (when (and (:pressed? e) (= :enter (:key e)))
-         (swap! *state save)
-         true))}
-    (ui/event-listener
-      {:mouse-button
-       (fn [e]
-         (when (:pressed? e)
-           (swap! *state save)))}
-      child)))
+(defn capture-clicks [child]
+  (ui/event-listener :mouse-button
+    (fn [e _]
+      (when (:pressed? e)
+        (swap! *state save)))
+    child))
 
 (defn completed-all? []
   (every? :completed? (-> *state deref :todos vals)))
@@ -185,10 +176,10 @@
             toggle-all)
           [:stretch 1
            (ui/valign 0.5
-             (ui/focusable {:on-focus #(swap! *state save)
-                            :on-blur  #(swap! *state add-todo)}
-               (ui/with-cursor :ibeam
-                 (ui/text-input {} *new-todo))))]))))) ;; FIXME reset from/to
+             (ui/focusable {:on-focus #(swap! *state save)}
+               (ui/on-key-focused {:enter #(swap! *state add-todo)}
+                 (ui/with-cursor :ibeam
+                   (ui/text-input {} *new-todo)))))]))))) ;; FIXME reset from/to
 
 (defn todo-toggle [*state]
   (ui/padding 5 10 0 10
@@ -231,10 +222,11 @@
         (ui/gap 10 0)
         [:stretch 1
          (ui/clickable
-           {:on-click ;; TODO double click
-            (fn [_]
-              (swap! *state edit id)
-              true)}
+           {:on-click
+            (fn [e]
+              (when (= 2 (:clicks e))
+                (swap! *state edit id)
+                true))}
            (ui/valign 0.5
              (ui/halign 0
                (ui/dynamic _ [{:keys [label completed?]} (get-in @*state [:todos id])]
@@ -252,14 +244,17 @@
         (ui/gap 45 0)
         [:stretch 1
          (ui/focusable {:focused? true}
-           (ui/with-cursor :ibeam
-             (ui/padding 0 0.5 1.5 0.5
-               (inset-shadow 0 -1 5 0x33000000
-                 (ui/rect (paint/stroke 0xFF999999 (* 1 scale))
-                   (ui/valign 0.5
-                     (ui/with-context
-                       {:hui.text-field/padding-left 10}
-                       (ui/text-input {} (cursor/cursor *state :editing)))))))))]))))
+           (ui/on-key-focused
+             {:enter #(swap! *state save)
+              :escape #(swap! *state dissoc :editing)}
+             (ui/with-cursor :ibeam
+               (ui/padding 0 0.5 1.5 0.5
+                 (inset-shadow 0 -1 5 0x33000000
+                   (ui/rect (paint/stroke 0xFF999999 (* 1 scale))
+                     (ui/valign 0.5
+                       (ui/with-context
+                         {:hui.text-field/padding-left 10}
+                         (ui/text-input {} (cursor/cursor *state :editing))))))))))]))))
 
 (def todos
   (ui/dynamic _ [ids (let [{:keys [mode todos]} @*state]
@@ -360,7 +355,7 @@
          :hui.text-field/font-placeholder (font/make-with-size typeface-300-italic (* 24 scale))
          :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
         (ui/rect paint-bg
-          (ui/vscrollbar ;; FIXME scroll doesn’t update when adding todos
+          (ui/vscrollbar
             (ui/vscroll
               (ui/halign 0.5
                 (ui/padding 0 30 0 30
@@ -368,7 +363,7 @@
                     (ui/column
                       title
                       (ui/gap 0 25)
-                      (event-handler
+                      (capture-clicks
                         (body
                           (ui/column
                             new-todo
