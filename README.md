@@ -111,8 +111,9 @@ To reload demo app using `tools.namespace`, evaluate:
 (require '[io.github.humbleui.ui :as ui])
 
 (def ui
-  (ui/center
-    (ui/label "Hello from Humble UI! 👋")))
+  (ui/default-theme {}
+    (ui/center
+      (ui/label "Hello from Humble UI! 👋"))))
 
 (ui/start-app!
   (ui/window
