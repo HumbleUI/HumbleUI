@@ -20,7 +20,10 @@
                           ^:mut ^IPoint my-pos
                           ^:mut ^IPoint child-pos
                           ^:mut ^IPoint child-size
-                          ^:mut ^IPoint mouse-start]
+                          ^:mut ^IPoint mouse-start
+                          ^:mut ^Boolean dragged
+                          on-dragging
+                          on-drop]
   protocols/IComponent
   (-measure [_ _ctx cs]
     cs)
@@ -45,16 +48,26 @@
             (= :mouse-button (:event event))
             (= :primary (:button event))
             (not (:pressed? event)))
+      (when (and
+             on-drop
+             mouse-start
+             dragged)
+        (on-drop (IPoint.
+                  (+ (:x mouse-start) (:x event))
+                  (+ (:y mouse-start) (:y event)))))
+      (set! dragged false)
       (set! mouse-start nil))
     
     (core/eager-or
       (when (and
               (= :mouse-move (:event event))
               mouse-start)
-        (set! child-pos
-          (IPoint.
-            (+ (:x mouse-start) (:x event))
-            (+ (:y mouse-start) (:y event))))
+        (let [p (IPoint.
+                 (+ (:x mouse-start) (:x event))
+                 (+ (:y mouse-start) (:y event)))]
+          (when on-dragging (on-dragging p))
+          (set! dragged true)
+          (set! child-pos p))
         true)
       (core/event-child child ctx event)))
   
@@ -76,4 +89,7 @@
        nil
        (or (some-> ^IPoint (:pos opts) (.scale scale)) IPoint/ZERO)
        nil
-       nil))))
+       nil
+       false
+       (:on-dragging opts)
+       (:on-drop opts)))))
