@@ -30,4 +30,4 @@
       (some #(protocols/-iterate % ctx cb) children))))
 
 (defn stack [& children]
-  (->Stack children nil))
+  (->Stack (->> children flatten (remove nil?) vec) nil))

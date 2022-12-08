@@ -10,7 +10,7 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Canvas FilterBlurMode FontMgr FontStyle ImageFilter MaskFilter Path PathDirection]))
+    [io.github.humbleui.skija Canvas FontMgr FontStyle]))
 
 (def *state
   state/*todomvc-state)
@@ -90,30 +90,6 @@
                 :from (count label)
                 :to   (count label)})))
 
-(defn inset-shadow [dx dy r color child]
-  (ui/stack
-    (ui/canvas
-      {:on-paint
-       (fn [ctx ^Canvas canvas size]
-         (let [{:keys [width height]} size
-               {:keys [scale]} ctx
-               r'     (* r scale)
-               inner  (core/rect-ltrb 0 0 width height)
-               extra  (+ r'
-                        (max
-                          (abs (* dx scale))
-                          (abs (* dy scale))))
-               outer  (core/rect-ltrb (- extra) (- extra) (+ width extra) (+ height extra))]
-           (with-open [paint  (paint/fill color)
-                       filter (MaskFilter/makeBlur FilterBlurMode/NORMAL (core/radius->sigma r'))
-                       path   (Path.)]
-             (.addRect path outer)
-             (.addRect path inner PathDirection/COUNTER_CLOCKWISE)
-             (paint/set-mask-filter paint filter)
-             (canvas/translate canvas (* dx scale) (* dy scale))
-             (.drawPath canvas path paint))))})
-    child))
-
 (def title
   (ui/halign 0.5
     (ui/dynamic ctx [{:keys [scale]} ctx]
@@ -122,17 +98,25 @@
          :paint (paint/fill 0x26AF2F2F)}
         "todos"))))
 
+
 (defn body [child]
-  (ui/dynamic ctx [{:keys [scale]} ctx]
-    (let [r1       (core/radius->sigma (* 4 scale))
-          shadow1  (ImageFilter/makeDropShadow 0 (* 2 scale) r1 r1 0x33000000)
-          r2       (core/radius->sigma (* 50 scale))
-          shadow2  (ImageFilter/makeDropShadow 0 (* 25 scale) r2 r2 0x20000000)
-          shadow   (ImageFilter/makeCompose shadow1 shadow2)
-          paint-fg (-> (paint/fill 0xFFFFFFFF)
-                     (paint/set-image-filter shadow))]
-      (ui/rect paint-fg
-        child))))
+  (ui/dynamic ctx [{:keys [scale]} ctx
+                   empty? (empty? (:todos @*state))]
+    (ui/stack
+      (ui/padding 0 0 0 10
+        (ui/shadow {:dy 2 :blur 4 :color 0x33000000}))
+      (ui/padding 0 0 0 10
+        (ui/shadow {:dy 25 :blur 50 :color 0x20000000}))
+      (when-not empty?
+        (ui/padding 10 10 10 0
+          (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
+      (when-not empty?
+        (ui/padding 5 5 5 5
+          (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
+      (ui/padding 0 0 0 10
+        (ui/shadow {:dy 1 :blur 1 :fill 0xFFFFFFFF :color 0x33000000}
+          (ui/rect (paint/fill 0xFFFFFFFF)
+            child))))))
 
 (defn capture-clicks [child]
   (ui/event-listener :mouse-button
@@ -152,17 +136,20 @@
 
 (def toggle-all
   (ui/padding 5 15 0 15
-    (ui/clickable
-      {:on-click
-       (fn [_]
-         (complete-all (not (completed-all?)))
-         true)}
-      (ui/width 40
-        (ui/height 40
-          (ui/dynamic _ [state (completed-all?)]
-            (if state
-              (ui/svg "dev/images/todomvc/uncheck-all.svg")
-              (ui/svg "dev/images/todomvc/check-all.svg"))))))))
+    (ui/dynamic _ [empty? (empty? (:todos @*state))]
+      (if empty?
+        (ui/gap 40 40)
+        (ui/clickable
+          {:on-click
+           (fn [_]
+             (complete-all (not (completed-all?)))
+             true)}
+          (ui/width 40
+            (ui/height 40
+              (ui/dynamic _ [state (completed-all?)]
+                (if state
+                  (ui/svg "dev/images/todomvc/uncheck-all.svg")
+                  (ui/svg "dev/images/todomvc/check-all.svg"))))))))))
 
 (def *new-todo
   (cursor/cursor *state :new-todo))
@@ -170,7 +157,7 @@
 (def new-todo
   (ui/rect (paint/fill 0xFFFEFEFE)
     (ui/height 66
-      (inset-shadow 0 -2 1 0x08000000
+      (ui/inset-shadow {:dy -2, :blur 1, :color 0x08000000}
         (ui/row
           (ui/valign 0.5
             toggle-all)
@@ -249,7 +236,7 @@
               :escape #(swap! *state dissoc :editing)}
              (ui/with-cursor :ibeam
                (ui/padding 0 0.5 1.5 0.5
-                 (inset-shadow 0 -1 5 0x33000000
+                 (ui/inset-shadow {:dy -1, :blur 5, :color 0x33000000}
                    (ui/rect (paint/stroke 0xFF999999 (* 1 scale))
                      (ui/valign 0.5
                        (ui/with-context
@@ -365,9 +352,12 @@
                       (ui/gap 0 25)
                       (capture-clicks
                         (body
-                          (ui/column
-                            new-todo
-                            divider
-                            todos
-                            divider
-                            footer))))))))))))))
+                          (ui/dynamic _ [empty? (empty? (:todos @*state))]
+                            (if empty?
+                              new-todo
+                              (ui/column
+                                new-todo
+                                divider
+                                todos
+                                divider
+                                footer))))))))))))))))
