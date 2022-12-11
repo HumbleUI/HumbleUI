@@ -109,16 +109,6 @@
 
 (reset! state/*app app)
 
-(defn redraw []
-  (some-> @state/*window window/request-frame)
-  :redraw)
-
-(add-watch state/*example ::redraw
-  (fn [_ _ _ _]
-    (redraw)))
-
-(redraw)
-
 (defn -main [& args]
   (ui/start-app!
     (let [screen (last (app/screens))]
@@ -134,5 +124,4 @@
           state/*app))))
   (set-floating! @state/*window @state/*floating)
   ; (reset! debug/*enabled? true)
-  (redraw)
   (apply nrepl/-main args))

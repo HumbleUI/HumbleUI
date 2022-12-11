@@ -910,17 +910,17 @@
   ([opts]
    (shadow opts (gap 0 0)))
   ([{:keys [dx dy blur color fill]
-               :or {dx 0, dy 0, blur 0, color 0x80000000}}
-              child]
-    (dynamic ctx [{:keys [scale]} ctx]
-      (let [r      (core/radius->sigma (* blur scale))
-            shadow (if fill
-                     (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
-                     (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
-            paint  (-> (paint/fill (or fill 0xFFFFFFFF))
-                     (paint/set-image-filter shadow))]
-        (rect paint
-          child)))))
+     :or {dx 0, dy 0, blur 0, color 0x80000000}}
+    child]
+   (dynamic ctx [{:keys [scale]} ctx]
+     (let [r      (core/radius->sigma (* blur scale))
+           shadow (if fill
+                    (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
+                    (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
+           paint  (-> (paint/fill (or fill 0xFFFFFFFF))
+                    (paint/set-image-filter shadow))]
+       (rect paint
+         child)))))
 
 (defn inset-shadow [{:keys [dx dy blur color]
                      :or {dx 0, dy 0, blur 0, color 0x80000000}} child]
@@ -1085,6 +1085,7 @@
                y        :center
                bg-color 0xFFF6F6F6}} opts
          *mouse-pos (volatile! (core/ipoint 0 0))
+         ref?       (instance? clojure.lang.IRef app)
          app-fn     (fn []
                       (cond
                         (instance? clojure.lang.IDeref app) @app
@@ -1108,8 +1109,12 @@
                         (window/request-frame window)
                         result))
          window     (window/make
-                      {:on-close (when exit-on-close?
-                                   #(System/exit 0))
+                      {:on-close (when (or ref? exit-on-close?)
+                                   #(do
+                                      (when ref?
+                                        (remove-watch app ::redraw))
+                                      (when exit-on-close?
+                                        (System/exit 0))))
                        :on-paint paint-fn
                        :on-event event-fn})
          screen     (if screen
@@ -1132,6 +1137,11 @@
      (when (and mac-icon (= :macos app/platform))
        (window/set-icon window mac-icon))
      (window/set-visible window true)
+     (when ref?
+       (add-watch app ::redraw
+         (fn [_ _ old new]
+           (when-not (identical? old new)
+             (window/request-frame window)))))
      window)))
 
 (defmacro start-app! [& body]
