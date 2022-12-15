@@ -11,7 +11,7 @@ def deps():
     build_utils.fetch_maven("org.clojure", "clojure", "1.11.1"),
     build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
     build_utils.fetch_maven("org.clojure", "spec.alpha", "0.3.218"),
-    build_utils.fetch_maven("io.github.humbleui", "types", "0.1.2", classifier="clojure"),
+    build_utils.fetch_maven("io.github.humbleui", "types", "0.2.0", classifier="clojure"),
     "src",
   ]
 
