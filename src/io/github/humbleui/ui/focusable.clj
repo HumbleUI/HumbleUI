@@ -22,7 +22,8 @@
   
   (-draw [this ctx rect canvas]
     (some-> (::*focused ctx)
-      (vswap! conj this))
+      (cond->
+        focused? (vswap! conj this)))
     (set! child-rect rect)
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
