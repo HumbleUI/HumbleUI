@@ -1,5 +1,5 @@
 {
-  description = "Clojure Desktop UI framework ";
+  description = "Clojure Desktop UI framework";
 
   inputs = {
     nixpkgs.url     = github:nixos/nixpkgs/release-22.05;
@@ -12,22 +12,10 @@
     };
   };
 
-  outputs = {
-    self,
-      nixpkgs,
-      flake-utils,
-      ...
-  } @ inputs: let
-    overlays = [
-      # Other overlays
-      (final: prev: {
-      })
-    ];
-
-  in
+  outputs = {self, nixpkgs, flake-utils, ...} @ inputs:
     flake-utils.lib.eachDefaultSystem (
       system: let
-        pkgs = import nixpkgs {inherit overlays system;};
+        pkgs = import nixpkgs {inherit system;};
       in rec {
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
@@ -36,13 +24,6 @@
           ];
 
           buildInputs = with pkgs; [
-            # TODO: `HumbleUI` currently uses XWayland; would love for it to be Wayland-native.
-            # This is probably an issue with the underlying C++ dependency, and explains the DPI issues -
-            # but not the lack of focus on the text box.
-            wayland
-            wayland-protocols
-            wlroots
-
             python3
             libGL
           ];
