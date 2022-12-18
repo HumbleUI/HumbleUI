@@ -230,7 +230,7 @@
       (ui/row
         (ui/gap 45 0)
         [:stretch 1
-         (ui/focusable {:focused? true}
+         (ui/focusable {:focused (core/now)}
            (ui/on-key-focused
              {:enter #(swap! *state save)
               :escape #(swap! *state dissoc :editing)}

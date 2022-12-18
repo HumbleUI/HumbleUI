@@ -3,7 +3,7 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]))
 
-(core/deftype+ Hoverable [on-hover on-out ^:mut hovered? ^:mut child-rect]
+(core/deftype+ Hoverable [on-hover on-out ^:mut hovered?]
   :extends core/AWrapper
   
   protocols/IContext

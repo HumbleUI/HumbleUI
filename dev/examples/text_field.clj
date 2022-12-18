@@ -1,5 +1,6 @@
 (ns examples.text-field
   (:require
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.ui :as ui]))
 
 (defn text-field [text & {:keys [from to placeholder cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom border-radius]
@@ -28,7 +29,7 @@
           (text-field "Change me ([{word1} word2] wo-rd3)  , word4 🚵🏻‍♀️🚵🏻‍♀️🚵🏻‍♀️ 🚵🏻‍♀️ more more more" :from 13 :to 18 :border-radius 0))
         (ui/gap 0 10)
         (ui/width 300
-          (text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :focused? true :padding-h 5 :padding-v 10 :cursor-width 2 :cursor-blink-interval 100 :border-radius 100))
+          (text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :focused (core/now) :padding-h 5 :padding-v 10 :cursor-width 2 :cursor-blink-interval 100 :border-radius 100))
         (ui/gap 0 10)
         (ui/width 300
           (text-field "" :placeholder "Type here" :padding-h 5 :padding-v 10))

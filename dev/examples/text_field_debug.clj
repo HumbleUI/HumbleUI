@@ -1,5 +1,6 @@
 (ns examples.text-field-debug
   (:require
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
@@ -29,7 +30,7 @@
             {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
              :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
              :hui.text-field/cursor-width   2}
-            (ui/text-field {:focused? true} *state))
+            (ui/text-field {:focused (core/now)} *state))
           (ui/gap 0 10)
           (ui/label (str "\"" text "\""))
           (ui/gap 0 10)

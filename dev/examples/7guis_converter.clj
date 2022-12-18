@@ -1,6 +1,7 @@
 (ns examples.7guis-converter
   (:require
     [clojure.string :as str]
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.ui :as ui]))
 
 (def *celsius
@@ -58,7 +59,7 @@
          :hui.text-field/padding-right  5}
         (ui/row
           (ui/width 50
-            (ui/text-field {:focused? true} *celsius))
+            (ui/text-field {:focused (core/now)} *celsius))
           (ui/gap 5 0)
           (ui/valign 0.5
             (ui/label "Celsius = "))

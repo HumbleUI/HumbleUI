@@ -595,7 +595,7 @@
 
 (defparent AWrapper
   "A component that has exactly one child"
-  [child]
+  [child ^:mut child-rect]
   protocols/IContext
   (-context [_ ctx]
     ctx)
@@ -607,6 +607,7 @@
   
   (-draw [this ctx rect canvas]
     (when-some [ctx' (protocols/-context this ctx)]
+      (set! child-rect rect)
       (core/draw-child child ctx' rect canvas)))
 
   (-event [this ctx event]

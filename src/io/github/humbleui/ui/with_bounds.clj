@@ -3,7 +3,7 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]))
 
-(core/deftype+ WithBounds [key ^:mut child-rect]
+(core/deftype+ WithBounds [key]
   :extends core/AWrapper
   protocols/IContext
   (-context [_ ctx]

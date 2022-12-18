@@ -10,7 +10,7 @@
   (atom nil))
 
 (def *example
-  (atom "Grid"))
+  (atom "Text Field"))
 
 (def *todomvc-state
   (atom

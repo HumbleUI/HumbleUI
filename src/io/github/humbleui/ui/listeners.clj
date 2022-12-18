@@ -64,8 +64,7 @@
                               on-button
                               on-over
                               on-out
-                              ^:mut over?
-                              ^:mut child-rect]
+                              ^:mut over?]
   :extends core/AWrapper
   
   protocols/IComponent

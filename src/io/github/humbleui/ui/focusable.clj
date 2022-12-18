@@ -6,24 +6,21 @@
   (:import
     [java.lang AutoCloseable]))
 
-(core/deftype+ Focusable [child
-                          on-focus
+(core/deftype+ Focusable [on-focus
                           on-blur
-                          ^:mut child-rect
-                          ^:mut focused?]
+                          ^:mut focused]
+  :extends core/AWrapper
+  
   protocols/IContext
   (-context [_ ctx]
-    (cond-> ctx focused?
-      (assoc :hui/focused? true)))
+    (cond-> ctx
+      focused (assoc :hui/focused? true)))
   
   protocols/IComponent
-  (-measure [this ctx cs]
-    (core/measure child (protocols/-context this ctx) cs))
-  
   (-draw [this ctx rect canvas]
     (some-> (::*focused ctx)
       (cond->
-        focused? (vswap! conj this)))
+        focused (vswap! conj this)))
     (set! child-rect rect)
     (core/draw-child child (protocols/-context this ctx) child-rect canvas))
   
@@ -32,52 +29,45 @@
       (when (and
               (= :mouse-button (:event event))
               (:pressed? event)
-              (not focused?)
+              (not focused)
               (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
-        (set! focused? true)
+        (set! focused (core/now))
         (when on-focus
           (on-focus))
         true)
       (let [event' (cond-> event
-                     focused? (assoc :hui/focused? true))]
-        (core/event-child child (protocols/-context this ctx) event'))))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child (protocols/-context this ctx) cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+                     focused (assoc :hui/focused? true))]
+        (core/event-child child (protocols/-context this ctx) event')))))
 
 (defn focusable
   ([child]
-   (focusable child false))
-  ([{:keys [focused? on-focus on-blur]} child]
-   (->Focusable child on-focus on-blur nil focused?)))
+   (map->Focusable
+     {:child child}))
+  ([{:keys [focused on-focus on-blur] :as opts} child]
+   (map->Focusable
+     (assoc opts :child child))))
 
-(defn focused [this]
+(defn focused [this ctx]
   (let [*acc (volatile! [])]
-    (protocols/-iterate this nil
+    (protocols/-iterate this ctx
       (fn [comp]
-        (when (and (instance? Focusable comp) (:focused? comp))
+        (when (and (instance? Focusable comp) (:focused comp))
           (vswap! *acc conj comp)
           false)))
     @*acc))
 
-(core/deftype+ FocusController [child ^:mut child-rect]
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
+(core/deftype+ FocusController []
+  :extends core/AWrapper
   
+  protocols/IComponent
   (-draw [_ ctx rect canvas]
     (set! child-rect rect)
     (let [*focused (volatile! [])
           ctx'     (assoc ctx ::*focused *focused)
-          res      (core/draw-child child ctx' child-rect canvas)]
-      (doseq [comp (butlast @*focused)]
-        (protocols/-set! comp :focused? false)
+          res      (core/draw-child child ctx' child-rect canvas)
+          focused  (sort-by :focused @*focused)]
+      (doseq [comp (butlast focused)]
+        (protocols/-set! comp :focused nil)
         (core/invoke (:on-blur comp)))
       res))
   
@@ -86,34 +76,25 @@
           (= :mouse-button (:event event))
           (:pressed? event)
           (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
-      (let [focused-before (focused this)
+      (let [focused-before (focused this ctx)
             res            (core/event-child child ctx event)
-            focused-after  (focused this)]
+            focused-after  (focused this ctx)]
         (when (< 1 (count focused-after))
           (doseq [comp focused-before]
-            (protocols/-set! comp :focused? false)
+            (protocols/-set! comp :focused nil)
             (core/invoke (:on-blur comp))))
         (or
           res
           (< 1 (count focused-after))))
-      (core/event-child child ctx event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child ctx cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+      (core/event-child child ctx event))))
 
-(defn focus-prev [this]
+(defn focus-prev [this ctx]
   (let [*prev    (volatile! nil)
         *focused (volatile! nil)]
-    (protocols/-iterate this nil
+    (protocols/-iterate this ctx
       (fn [comp]
         (when (instance? Focusable comp)
-          (if (:focused? comp)
+          (if (:focused comp)
             (do
               (vreset! *focused comp)
               (some? @*prev))
@@ -121,23 +102,23 @@
               (vreset! *prev comp)
               false)))))
     (when-some [focused @*focused]
-      (protocols/-set! focused :focused? false)
+      (protocols/-set! focused :focused nil)
       (core/invoke (:on-blur focused)))
     (when-some [prev @*prev]
-      (protocols/-set! prev :focused? true)
+      (protocols/-set! prev :focused (core/now))
       (core/invoke (:on-focus prev)))))
 
-(defn focus-next [this]
+(defn focus-next [this ctx]
   (let [*first   (volatile! nil)
         *focused (volatile! nil)
         *next    (volatile! nil)]
-    (protocols/-iterate this nil
+    (protocols/-iterate this ctx
       (fn [comp]
         (when (instance? Focusable comp)
           (when (nil? @*first)
             (vreset! *first comp)
             false)
-          (if (:focused? comp)
+          (if (:focused comp)
             (do
               (vreset! *focused comp)
               false)
@@ -145,20 +126,22 @@
               (vreset! *next comp)
               true)))))
     (when-some [focused @*focused]
-      (protocols/-set! focused :focused? false)
+      (protocols/-set! focused :focused nil)
       (core/invoke (:on-blur focused)))
     (when-some [next (or @*next @*first)]
-      (protocols/-set! next :focused? true)
+      (protocols/-set! next :focused (core/now))
       (core/invoke (:on-focus next)))))
 
 (defn focus-controller [child]
-  (let [this (->FocusController child nil)]
-    (listeners/key-listener
-      {:on-key-down
-       (fn [e]
-         (when (= :tab (:key e))
-           (if (:shift (:modifiers e))
-             (focus-prev this)
-             (focus-next this))))}
+  (let [this (map->FocusController
+               {:child child})]
+    (listeners/event-listener {:capture? true} :key
+      (fn [e ctx]
+        (when (and
+                (:pressed? e)
+                (= :tab (:key e)))
+          (if (:shift (:modifiers e))
+            (focus-prev this ctx)
+            (focus-next this ctx))
+          true))
       this)))
-        
