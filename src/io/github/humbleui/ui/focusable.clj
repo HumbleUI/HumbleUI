@@ -2,7 +2,7 @@
   (:require
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.key-listener :as key-listener])
+    [io.github.humbleui.ui.listeners :as listeners])
   (:import
     [java.lang AutoCloseable]))
 
@@ -153,7 +153,7 @@
 
 (defn focus-controller [child]
   (let [this (->FocusController child nil)]
-    (key-listener/key-listener
+    (listeners/key-listener
       {:on-key-down
        (fn [e]
          (when (= :tab (:key e))

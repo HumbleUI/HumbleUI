@@ -56,6 +56,11 @@
      (map? form)        (reduce-kv (fn [acc k v] (-> acc (collect pred k) (collect pred v))) acc form)
      :else              acc)))
 
+(defn without-ns [sym]
+  (with-meta
+    (symbol (name sym))
+    (meta sym)))
+
 (defn bindings->syms
   "Takes let-like bindings and returns all symbols on left sides, including
    inside destructured forms"
@@ -64,8 +69,7 @@
     (partition 2 %)
     (map first %)
     (collect symbol? %)
-    (map name %)
-    (map symbol %)
+    (map without-ns %)
     (into #{} %)
     (disj % '& '_)
     (vec %)))
@@ -142,9 +146,9 @@
                    (if (vector? pattern)
                      (list* `and
                        (map (fn [sym val]
-                               (if (= val '_)
-                                 true
-                                 `(= ~sym ~val))) es pattern))
+                              (if (= val '_)
+                                true
+                                `(= ~sym ~val))) es pattern))
                      pattern))]
     `(let ~(vec (mapcat vector es e))
        (cond
@@ -262,6 +266,18 @@
 (defmacro for-map [& body]
   `(into {} (for ~@body)))
 
+(defn map-vals [f m]
+  (reduce-kv
+    (fn [m k v]
+      (assoc m k (f v)))
+    {} m))
+
+(defn map-by [f xs]
+  (reduce
+    (fn [m x]
+      (assoc m (f x) x))
+    {} xs))
+
 (defn zip [& xs]
   (apply map vector xs))
 
@@ -313,22 +329,22 @@
 
 (defn rrect-xywh
   (^RRect [x y w h r]
-   (RRect/makeXYWH x y w h r))
+    (RRect/makeXYWH x y w h r))
   (^RRect [x y w h xr yr]
-   (RRect/makeXYWH x y w h xr yr))
+    (RRect/makeXYWH x y w h xr yr))
   (^RRect [x y w h tr tl br bl]
-   (RRect/makeXYWH x y w h tr tl br bl)))
+    (RRect/makeXYWH x y w h tr tl br bl)))
 
 (defn rrect-complex-xywh ^RRect [x y w h radii]
   (RRect/makeComplexXYWH x y w h (into-array Float/TYPE radii)))
 
 (defn rrect-ltrb
   (^RRect [l t r b radius]
-   (RRect/makeLTRB l t r b radius))
+    (RRect/makeLTRB l t r b radius))
   (^RRect [l t r b xr yr]
-   (RRect/makeLTRB l t r b xr yr))
+    (RRect/makeLTRB l t r b xr yr))
   (^RRect [l t r b tr tl br bl]
-   (RRect/makeLTRB l t r b tr tl br bl)))
+    (RRect/makeLTRB l t r b tr tl br bl)))
 
 (defn irect ^IRect [^Rect rect]
   (.toIRect rect))
@@ -345,34 +361,6 @@
     (<= (:y rect) (:y point))
     (< (:y point) (:bottom rect))))
 
-(defn measure [comp ctx ^IPoint cs]
-  {:pre  [(instance? IPoint cs)]
-   :post [(instance? IPoint %)]}
-  (protocols/-measure comp ctx cs))
-
-(defn draw [comp ctx ^IRect rect ^Canvas canvas]
-  {:pre [(instance? IRect rect)]}
-  (protocols/-draw comp ctx rect canvas))
-
-(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
-  (when comp
-    (let [count (.getSaveCount canvas)]
-      (try
-        (draw comp ctx rect canvas)
-        (finally
-          (.restoreToCount canvas count))))))
-
-(defn event [comp ctx event]
-  (protocols/-event comp ctx event))
-
-(defn event-child [comp ctx event]
-  (when comp
-    (protocols/-event comp ctx event)))
-
-(defn child-close [child]
-  (when (instance? AutoCloseable child)
-    (.close ^AutoCloseable child)))
-
 (defn dimension ^long [size cs ctx]
   (let [scale (:scale ctx)]
     (->
@@ -384,55 +372,6 @@
         (* scale size))
       (math/round)
       (long))))
-
-;; deftype+
-
-(defmacro deftype+
-  "Same as deftype, but:
-
-   1. Uses ^:mut instead of ^:unsynchronized-mutable
-   2. Allows using type annotations in protocol arglist
-   3. Read mutable fields through ILookup: (:field instance)
-   4. Write to mutable fields from outside through ISettable: (-set! instance key value)
-   5. Allow with-meta"
-  [name fields & body]
-  (let [update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
-        remove-tag    #(vary-meta % dissoc :tag)
-        update-method (fn [[name args & body]]
-                        (list name
-                          (mapv remove-tag args)
-                          (list* 'clojure.core/let
-                            (vec (mapcat #(vector % (remove-tag %)) (filter #(:tag (meta %)) args)))
-                            body)))
-        value-sym     (gensym 'value)]
-    `(do
-       (deftype ~name
-         ~(mapv update-field (conj fields '__m))
-       
-         ~@(map #(if (list? %) (update-method %) %) body)
-       
-         clojure.lang.IMeta
-         (meta [_] ~'__m)
-       
-         clojure.lang.IObj
-         (withMeta [_ meta#]
-           (new ~name ~@fields meta#))
-       
-         clojure.lang.ILookup
-         (valAt [_# key# notFound#]
-           (case key#
-             ~@(mapcat #(vector (keyword %) %) fields)
-             notFound#))
-         (valAt [this# key#]
-           (.valAt this# key# nil))
-       
-         protocols/ISettable
-         (-set! [_# key# ~value-sym]
-           (case key#
-             ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) (filter #(:mut (meta %)) fields)))))
-       
-       (defn ~(symbol (str '-> name)) ~fields
-         (new ~name ~@fields nil)))))
 
 (defn- timer-task ^TimerTask [f]
   (proxy [TimerTask] []
@@ -466,3 +405,242 @@
        ~@body
        (catch Throwable t#
          (log-error t#)))))
+
+(defmacro import-vars
+  "Makes an “alias” in current namespace for var from external namespace.
+   Keeps :arglists meta"
+  [& aliases]
+  (list*
+    'do
+    (for [alias aliases
+          :let [var  (resolve alias)
+                meta {:arglists
+                      (list 'quote (:arglists (meta var)))}
+                sym' (with-meta (symbol (name alias)) meta)]]
+      (list 'def sym' alias))))
+
+;; deftype+
+
+(defn- signature [method]
+  (let [[sym args & _] method]
+    [sym (count args)]))
+
+(defn- qualify-symbol
+  "Converts symbol to fully-qualified form in current namespace via resolve"
+  [s]
+  (let [o (resolve s)]
+    (cond
+      (nil? o)   s
+      (class? o) (symbol (.getName ^Class o))
+      (var? o)   (symbol o)
+      :else      s)))
+
+(defn- update-method
+  "Fully qualifies all namespaced symbols in method bodies.
+   Converts typed argument lists to untyped ones + top-level let with tags"
+  [[name args & body]]
+  (let [remove-tag      #(vary-meta % dissoc :tag)
+        untyped-args    (mapv remove-tag args)
+        typed-args      (filter #(:tag (meta %)) args)
+        bindings        (vec (mapcat #(list % (remove-tag %)) typed-args))
+        qualified-body  (clojure.walk/postwalk
+                          (fn [x]
+                            (if (and (symbol? x) (namespace x))
+                              (qualify-symbol x)
+                              x))
+                          body)]
+    (if (empty? bindings)
+      (list* name untyped-args qualified-body)
+      (list
+        name untyped-args
+        (list* 'clojure.core/let bindings
+          qualified-body)))))
+
+(defn- group-protos
+  "Converts flat list of protocols and methods into a map
+   {protocol -> {signature -> body}}"
+  [body]
+  (loop [body  body
+         res   {}
+         proto nil]
+    (if (empty? body)
+      res
+      (let [[head & tail] body]
+        (if (symbol? head)
+          (let [proto (qualify-symbol head)]
+            (recur tail res proto))
+          (let [method (update-method head)
+                sig    (signature method)]
+            (recur tail (update res proto assoc sig method) proto)))))))
+
+(defmacro deftype+
+  "Same as deftype, but:
+
+   1. Can “inherit” default protocols/method impls from parent (:extends)
+   2. Uses ^:mut instead of ^:unsynchronized-mutable
+   3. Allows using type annotations in protocol arglist
+   4. Read mutable fields through ILookup: (:field instance)
+   5. Write to mutable fields from outside through ISettable: (-set! instance key value)
+   6. Allow with-meta"
+  [name fields & body]
+  (let [[parent body] (if (= :extends (first body))
+                        (let [[_ sym & body'] body]
+                          [(or (some-> sym resolve deref)
+                             (throw (ex-info (str "Can't resolve symbol: " sym) {:symbol symbol})))
+                           body'])
+                        [nil body])
+        update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
+        fields        (->> 
+                        (concat fields (:fields parent))
+                        (mapv update-field))
+        mut-fields    (filter #(:unsynchronized-mutable (meta %)) fields)
+        protos        (->>
+                        (merge-with merge
+                          (:protocols parent)
+                          (group-protos body))
+                        (map-vals vals))
+        value-sym     (gensym 'value)]
+    `(do
+       (deftype ~name
+         ~(conj fields '__m)
+         
+         ~@(for [[proto methods] protos
+                 form (cons proto methods)]
+             form)
+       
+         clojure.lang.IMeta
+         (meta [_] ~'__m)
+       
+         clojure.lang.IObj
+         (withMeta [_ meta#]
+           (new ~name ~@fields meta#))
+       
+         clojure.lang.ILookup
+         (valAt [_# key# notFound#]
+           (case key#
+             ~@(mapcat #(vector (keyword %) %) fields)
+             notFound#))
+         (valAt [this# key#]
+           (.valAt this# key# nil))
+       
+         protocols/ISettable
+         (-set! [_# key# ~value-sym]
+           (case key#
+             ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) mut-fields))))
+       
+       (defn ~(symbol (str '-> name)) ~fields
+         (new ~name ~@fields nil)) ;; __m
+       
+       (defn ~(symbol (str 'map-> name)) [m#]
+         (let [{:keys ~fields} m#]
+           (new ~name ~@fields nil))))))
+
+;; prototypes
+
+(defn measure [comp ctx ^IPoint cs]
+  {:pre  [(instance? IPoint cs)]
+   :post [(instance? IPoint %)]}
+  (protocols/-measure comp ctx cs))
+
+(defn draw [comp ctx ^IRect rect ^Canvas canvas]
+  {:pre [(instance? IRect rect)]}
+  (protocols/-draw comp ctx rect canvas))
+
+(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
+  (when comp
+    (let [count (.getSaveCount canvas)]
+      (try
+        (draw comp ctx rect canvas)
+        (finally
+          (.restoreToCount canvas count))))))
+
+(defn event [comp ctx event]
+  (protocols/-event comp ctx event))
+
+(defn event-child [comp ctx event]
+  (when comp
+    (protocols/-event comp ctx event)))
+
+(defn iterate-child [comp ctx cb]
+  (when comp
+    (protocols/-iterate comp ctx cb)))
+
+(defn child-close [child]
+  (when (instance? AutoCloseable child)
+    (.close ^AutoCloseable child)))
+
+(defmacro defparent
+  "Defines base “class” that deftype+ can extend from.
+   Supports extra field and protocols which deftype+ can partially override.
+   If calling external functions, use fully-qualified or namespaced symbol"
+  [sym doc fields & body]
+  (if (string? doc)
+    `(def ~sym
+       {:fields    (quote ~fields)
+        :protocols (quote ~(group-protos body))})
+    `(defparent ~sym "" ~fields ~@body)))
+
+(alias 'core 'io.github.humbleui.core)
+
+(defparent ATerminal
+  "Simple component that has no children"
+  [child]
+  protocols/IComponent
+  (-measure [_ _ cs]
+    cs)
+  (-draw [_ _ _ _])
+  (-event [_ _ _])
+  (-iterate [this _ cb]
+    (cb this)))
+
+(defparent AWrapper
+  "A component that has exactly one child"
+  [child]
+  protocols/IContext
+  (-context [_ ctx]
+    ctx)
+
+  protocols/IComponent
+  (-measure [this ctx cs]
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/measure child ctx' cs)))
+  
+  (-draw [this ctx rect canvas]
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/draw-child child ctx' rect canvas)))
+
+  (-event [this ctx event]
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/event-child child ctx' event)))
+
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (when-some [ctx' (protocols/-context this ctx)]
+        (core/iterate-child child ctx' cb))))
+  
+  AutoCloseable
+  (close [_]
+    (core/child-close child)))
+
+(defparent AContainer
+  "A component that has multiple children"
+  [children]
+  protocols/IComponent
+  (-event [this ctx event]
+    (reduce
+      (fn [acc child]
+        (core/eager-or acc
+          (core/event-child child ctx event)))
+      false
+      children))
+
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (some #(protocols/-iterate % ctx cb) children)))
+  
+  AutoCloseable
+  (close [_]
+    (doseq [child children]
+      (core/child-close child))))

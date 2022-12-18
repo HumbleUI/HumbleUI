@@ -23,22 +23,20 @@
           (ui/gap 20 0)
 
           (ui/vscrollbar
-            (ui/vscroll
-              (ui/column
-                (for [i (range 1 6)]
-                  (ui/padding 20 leading
-                    (ui/label (str "Item " i))))
+            (ui/column
+              (for [i (range 1 10)]
+                (ui/padding 20 leading
+                  (ui/label (str "Item " i))))
               
-                (ui/height 130
-                  (ui/padding 0 0 12 0
-                    (ui/rect (paint/stroke 0xFF000000 1)
-                      (ui/vscrollbar
-                        (ui/vscroll
-                          (ui/column
-                            (for [ch (map str "ABCDEFGHIJKLMN")]
-                              (ui/padding 20 leading
-                                (ui/label (str "Nested " ch))))))))))
+              (ui/height 130
+                (ui/padding 0 0 12 0
+                  (ui/rect (paint/stroke 0xFF000000 1)
+                    (ui/vscrollbar
+                      (ui/column
+                        (for [ch (map str "ABCDEFGHIJKLMN")]
+                          (ui/padding 20 leading
+                            (ui/label (str "Nested " ch)))))))))
 
-                (for [i (range 6 12)]
-                  (ui/padding 20 leading
-                    (ui/label (str "Item " i))))))))))))
+              (for [i (range 10 20)]
+                (ui/padding 20 leading
+                  (ui/label (str "Item " i)))))))))))

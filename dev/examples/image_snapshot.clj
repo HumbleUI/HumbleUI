@@ -17,14 +17,13 @@
                                  (unchecked-int 0xFFffba08)]))
             paint  (-> (Paint.) (.setShader shader))]
         (ui/vscrollbar
-          (ui/vscroll
-            (ui/valign 0
-              (ui/height (* height 2)
-                (ui/row
-                  (ui/gap 10 0)
-                  [:stretch 1 (ui/rect paint (ui/gap 0 0))]
-                  (ui/gap 10 0)
-                  [:stretch 1
-                   (ui/image-snapshot
-                     (ui/rect paint (ui/gap 0 0)))]
-                  (ui/gap 10 0))))))))))
+          (ui/valign 0
+            (ui/height (* height 2)
+              (ui/row
+                (ui/gap 10 0)
+                [:stretch 1 (ui/rect paint (ui/gap 0 0))]
+                (ui/gap 10 0)
+                [:stretch 1
+                 (ui/image-snapshot
+                   (ui/rect paint (ui/gap 0 0)))]
+                (ui/gap 10 0)))))))))

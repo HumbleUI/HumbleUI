@@ -157,7 +157,7 @@
 (def new-todo
   (ui/rect (paint/fill 0xFFFEFEFE)
     (ui/height 66
-      (ui/inset-shadow {:dy -2, :blur 1, :color 0x08000000}
+      (ui/shadow-inset {:dy -2, :blur 1, :color 0x08000000}
         (ui/row
           (ui/valign 0.5
             toggle-all)
@@ -236,7 +236,7 @@
               :escape #(swap! *state dissoc :editing)}
              (ui/with-cursor :ibeam
                (ui/padding 0 0.5 1.5 0.5
-                 (ui/inset-shadow {:dy -1, :blur 5, :color 0x33000000}
+                 (ui/shadow-inset {:dy -1, :blur 5, :color 0x33000000}
                    (ui/rect (paint/stroke 0xFF999999 (* 1 scale))
                      (ui/valign 0.5
                        (ui/with-context
@@ -343,21 +343,20 @@
          :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
         (ui/rect paint-bg
           (ui/vscrollbar
-            (ui/vscroll
-              (ui/halign 0.5
-                (ui/padding 0 30 0 30
-                  (ui/width #(core/clamp (:width %) 230 550)
-                    (ui/column
-                      title
-                      (ui/gap 0 25)
-                      (capture-clicks
-                        (body
-                          (ui/dynamic _ [empty? (empty? (:todos @*state))]
-                            (if empty?
+            (ui/halign 0.5
+              (ui/padding 0 30 0 30
+                (ui/width #(core/clamp (:width %) 230 550)
+                  (ui/column
+                    title
+                    (ui/gap 0 25)
+                    (capture-clicks
+                      (body
+                        (ui/dynamic _ [empty? (empty? (:todos @*state))]
+                          (if empty?
+                            new-todo
+                            (ui/column
                               new-todo
-                              (ui/column
-                                new-todo
-                                divider
-                                todos
-                                divider
-                                footer))))))))))))))))
+                              divider
+                              todos
+                              divider
+                              footer)))))))))))))))

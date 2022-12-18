@@ -35,6 +35,5 @@
           (ui/gap 0 10)
           [:stretch 1
            (ui/vscrollbar
-             (ui/vscroll
-               (ui/dynamic _ [state @*state]
-                 (render-form state))))])))))
+             (ui/dynamic _ [state @*state]
+               (render-form state)))])))))
