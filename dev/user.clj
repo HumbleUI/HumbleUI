@@ -12,6 +12,7 @@
     [examples.container]
     [examples.errors]
     [examples.event-bubbling]
+    [examples.grid]
     [examples.image-snapshot]
     [examples.label]
     [examples.scroll]
@@ -58,6 +59,7 @@
     "Container" examples.container/ui
     "Errors" examples.errors/ui
     "Event Bubbling" examples.event-bubbling/ui
+    "Grid" examples.grid/ui
     "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui
     "Scroll" examples.scroll/ui

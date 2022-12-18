@@ -27,4 +27,5 @@
                      event)]
         (on-event ctx event')))))
 
-(def canvas map->ACanvas)
+(def canvas
+  map->ACanvas)

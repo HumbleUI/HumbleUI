@@ -63,3 +63,7 @@
 
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic-impl ctx-sym bindings body))
+
+(defn with-scale-impl [sym body]
+  `(dynamic ctx# [~sym (:scale ctx#)]
+     ~@body))

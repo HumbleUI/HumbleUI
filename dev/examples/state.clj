@@ -10,7 +10,7 @@
   (atom nil))
 
 (def *example
-  (atom "Todo MVC"))
+  (atom "Grid"))
 
 (def *todomvc-state
   (atom

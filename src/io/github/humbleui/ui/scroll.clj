@@ -7,6 +7,7 @@
 
 (core/deftype+ VScroll [^:mut offset ^:mut self-rect ^:mut child-size]
   :extends core/AWrapper
+  
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child-cs   (assoc cs :height Integer/MAX_VALUE)]

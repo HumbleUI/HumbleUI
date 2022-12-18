@@ -16,6 +16,7 @@
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
     [io.github.humbleui.ui.gap :as gap]
+    [io.github.humbleui.ui.grid :as grid]
     [io.github.humbleui.ui.hoverable :as hoverable]
     [io.github.humbleui.ui.image :as image]
     [io.github.humbleui.ui.image-snapshot :as image-snapshot]
@@ -56,6 +57,7 @@
   focusable/focusable
   focusable/focus-controller
   gap/gap
+  grid/grid
   hoverable/hoverable
   image/image
   image-snapshot/image-snapshot
@@ -90,6 +92,9 @@
 
 (defmacro dynamic [ctx-sym bindings & body]
   (dynamic/dynamic-impl ctx-sym bindings body))
+
+(defmacro with-scale [sym & body]
+  (dynamic/with-scale-impl sym body))
 
 (defmacro start-app! [& body]
   `(core/thread
