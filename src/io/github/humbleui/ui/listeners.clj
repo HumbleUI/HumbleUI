@@ -35,7 +35,7 @@
   (event-listener {:capture? true} :key
     (fn [e ctx]
       (when (and (:hui/focused? ctx) (:pressed? e))
-        (when-some [callback (keymap (:key e))]
+        (when-some [callback (get keymap (:key e))]
           (callback)
           true)))
     child))

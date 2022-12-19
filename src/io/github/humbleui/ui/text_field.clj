@@ -9,6 +9,7 @@
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui.dynamic :as dynamic]
     [io.github.humbleui.ui.focusable :as focusable]
+    [io.github.humbleui.ui.listeners :as listeners]
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.with-cursor :as with-cursor]
     [io.github.humbleui.window :as window])
@@ -521,9 +522,11 @@
       (when (> (key state) len)
         (swap! *state assoc key len)))))
 
-(core/deftype+ TextField [*state
+(core/deftype+ TextInput [*state
                           ^ShapingOptions features
                           ^:mut           my-rect]
+  :extends core/ATerminal
+  
   protocols/IComponent
   (-measure [this ctx cs]
     (let [{:keys                [scale]
@@ -880,14 +883,7 @@
               (some #{:letter :digit :whitespace} (:key-types event))))
           
           (and (= :key (:event event)) (not (:pressed? event)))
-          (some #{:letter :digit :whitespace} (:key-types event))))))
-  
-  (-iterate [this _ctx cb]
-    (cb this))
-  
-  AutoCloseable
-  (close [_]
-    #_(.close line))) ; TODO
+          (some #{:letter :digit :whitespace} (:key-types event)))))))
 
 (defn text-input
   ([*state]
@@ -930,22 +926,26 @@
                          :mouse-clicks       0
                          :last-mouse-click   0}
                         %))
-       (->TextField *state features nil)))))
+       (map->TextInput
+         {:*state *state
+          :features features})))))
 
 (defn text-field
   ([*state]
    (text-field nil *state))
   ([opts *state]
    (focusable/focusable opts
-     (with-cursor/with-cursor :ibeam
-       (dynamic/dynamic ctx [active? (:hui/focused? ctx)
-                             stroke  (if active?
-                                       (:hui.text-field/border-active ctx)
-                                       (:hui.text-field/border-inactive ctx))
-                             bg      (if active?
-                                       (:hui.text-field/fill-bg-active ctx)
-                                       (:hui.text-field/fill-bg-inactive ctx))
-                             radius  (:hui.text-field/border-radius ctx)]
-         (rect/rounded-rect {:radius radius} bg
-           (rect/rounded-rect {:radius radius} stroke
-             (text-input opts *state))))))))
+     (listeners/on-key-focused
+       (:keymap opts)
+       (with-cursor/with-cursor :ibeam
+         (dynamic/dynamic ctx [active? (:hui/focused? ctx)
+                               stroke  (if active?
+                                         (:hui.text-field/border-active ctx)
+                                         (:hui.text-field/border-inactive ctx))
+                               bg      (if active?
+                                         (:hui.text-field/fill-bg-active ctx)
+                                         (:hui.text-field/fill-bg-inactive ctx))
+                               radius  (:hui.text-field/border-radius ctx)]
+           (rect/rounded-rect {:radius radius} bg
+             (rect/rounded-rect {:radius radius} stroke
+               (text-input opts *state)))))))))
