@@ -1,5 +1,9 @@
-{
+let
+  name = "HumbleUI";
   description = "Clojure Desktop UI framework";
+in
+{
+  inherit name description;
 
   inputs = {
     nixpkgs.url     = github:nixos/nixpkgs/release-22.05;
@@ -18,6 +22,7 @@
         pkgs = import nixpkgs {inherit system;};
       in rec {
         devShells.default = pkgs.mkShell {
+          inherit name description;
           nativeBuildInputs = with pkgs; [
             jdk11
             clojure
@@ -26,6 +31,8 @@
           buildInputs = with pkgs; [
             python3
             libGL
+
+            ninja
           ];
 
           LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath (with pkgs; [ libGL ])}:$LD_LIBRARY_PATH";
