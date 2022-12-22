@@ -57,15 +57,15 @@
                        (ui/with-context
                          {:font-ui font-bold}
                          (ui/max-width
-                           [(ui/label (str th " ▲"))
-                            (ui/label (str th " ▼"))]
+                           [(ui/label (str th " ⏶"))
+                            (ui/label (str th " ⏷"))]
                            (ui/halign 0
                              (ui/label
                                (str th
                                  (case (when (= i sort-col)
                                          sort-dir)
-                                   :asc  " ▲"
-                                   :desc " ▼"
+                                   :asc  " ⏶"
+                                   :desc " ⏷"
                                    nil   "")))))))))]
                 (for [row currencies]
                   (for [s row]

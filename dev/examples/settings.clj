@@ -6,7 +6,7 @@
     [io.github.humbleui.ui :as ui]))
 
 (def ui
-  (ui/dynamic ctx [scale (:scale ctx)]
+  (ui/with-scale scale
     (let [padding-inner  12
           fill-bg        (paint/fill 0xFFF2F2F2)
           stroke-bg      (paint/stroke 0xFFE0E0E0 (* 0.5 scale))

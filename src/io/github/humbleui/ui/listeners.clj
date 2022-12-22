@@ -100,7 +100,8 @@
 (defn mouse-listener [{:keys [on-move on-scroll on-button on-over on-out] :as opts} child]
   (map->MouseListener
     (assoc opts
-      :over? false)))
+      :over? false
+      :child child)))
 
 (core/deftype+ TextListener [on-input]
   :extends core/AWrapper

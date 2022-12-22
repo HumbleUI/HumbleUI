@@ -172,7 +172,7 @@
   (ui/key-listener {:on-key-down #(type! (:key %))}
     (ui/text-listener {:on-input #(type! (str/upper-case %))}
       (ui/padding padding padding
-        (ui/dynamic ctx [{:keys [scale]} ctx]
+        (ui/with-scale scale
           (let [font-small      (font/make-with-cap-height typeface (float (* scale 9)))
                 fill-black      (paint/fill 0xFF000000)
                 fill-light-gray (paint/fill 0xFFD4D6DA)]

@@ -92,7 +92,7 @@
 
 (def title
   (ui/halign 0.5
-    (ui/dynamic ctx [{:keys [scale]} ctx]
+    (ui/with-scale scale
       (ui/label
         {:font  (font/make-with-size typeface-100 (* 100 scale))
          :paint (paint/fill 0x26AF2F2F)}
@@ -100,23 +100,23 @@
 
 
 (defn body [child]
-  (ui/dynamic ctx [{:keys [scale]} ctx
-                   empty? (empty? (:todos @*state))]
-    (ui/stack
-      (ui/padding 0 0 0 10
-        (ui/shadow {:dy 2 :blur 4 :color 0x33000000}))
-      (ui/padding 0 0 0 10
-        (ui/shadow {:dy 25 :blur 50 :color 0x20000000}))
-      (when-not empty?
-        (ui/padding 10 10 10 0
-          (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
-      (when-not empty?
-        (ui/padding 5 5 5 5
-          (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
-      (ui/padding 0 0 0 10
-        (ui/shadow {:dy 1 :blur 1 :fill 0xFFFFFFFF :color 0x33000000}
-          (ui/rect (paint/fill 0xFFFFFFFF)
-            child))))))
+  (ui/with-scale scale
+    (ui/dynamic _ [empty? (empty? (:todos @*state))]
+      (ui/stack
+        (ui/padding 0 0 0 10
+          (ui/shadow {:dy 2 :blur 4 :color 0x33000000}))
+        (ui/padding 0 0 0 10
+          (ui/shadow {:dy 25 :blur 50 :color 0x20000000}))
+        (when-not empty?
+          (ui/padding 10 10 10 0
+            (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
+        (when-not empty?
+          (ui/padding 5 5 5 5
+            (ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000})))
+        (ui/padding 0 0 0 10
+          (ui/shadow {:dy 1 :blur 1 :fill 0xFFFFFFFF :color 0x33000000}
+            (ui/rect (paint/fill 0xFFFFFFFF)
+              child)))))))
 
 (defn capture-clicks [child]
   (ui/event-listener :mouse-button
@@ -225,7 +225,7 @@
         (todo-delete id)))))
 
 (defn todo-edit [id]
-  (ui/dynamic ctx [{:keys [scale]} ctx]
+  (ui/with-scale scale
     (ui/height 60
       (ui/row
         (ui/gap 45 0)
@@ -317,7 +317,7 @@
 
 (def footer
   (ui/height 40
-    (ui/dynamic ctx [{:keys [scale]} ctx]
+    (ui/with-scale scale
       (let [font-footer (font/make-with-size typeface-300 (* 14 scale))]
         (ui/with-context
           {:font-ui   font-footer
@@ -336,7 +336,7 @@
 
 (def ui
   (ui/focus-controller
-    (ui/dynamic ctx [{:keys [scale]} ctx]
+    (ui/with-scale scale
       (ui/with-context
         {:font-ui (font/make-with-size typeface-300 (* 24 scale))
          :hui.text-field/font-placeholder (font/make-with-size typeface-300-italic (* 24 scale))
