@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import argparse, build_utils, functools, os
+import argparse, build_utils, functools, os, re
 
 basedir = os.path.abspath(os.path.dirname(__file__) + '/..')
 version = build_utils.get_arg("version") or build_utils.parse_ref() or build_utils.parse_sha() or "0.0.0-SNAPSHOT"
@@ -11,15 +11,15 @@ def deps():
     build_utils.fetch_maven("org.clojure", "clojure", "1.11.1"),
     build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
     build_utils.fetch_maven("org.clojure", "spec.alpha", "0.3.218"),
-    build_utils.fetch_maven("io.github.humbleui", "types", "0.2.0", classifier="clojure"),
+    build_utils.fetch_maven("io.github.humbleui", "types", build_utils.deps_version("types$clojure"), classifier="clojure"),
     "src",
   ]
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--jwm-dir', default=None)
-  parser.add_argument('--jwm-version', default="0.4.10")
+  parser.add_argument('--jwm-version', default=build_utils.deps_version("jwm"))
   parser.add_argument('--skija-dir', default=None)
-  parser.add_argument('--skija-version', default='0.106.0')
+  parser.add_argument('--skija-version', default=build_utils.deps_version("skija-macos-arm64"))
   (args, _) = parser.parse_known_args()
 
   if args.jwm_dir:

@@ -14,6 +14,12 @@ system = get_arg("system") or {'Darwin': 'macos', 'Linux': 'linux', 'Windows': '
 classpath_separator = ';' if platform.system() == 'Windows' else ':'
 mvn = "mvn.cmd" if platform.system() == "Windows" else "mvn"
 
+def deps_version(name):
+  with open("deps.edn") as f:
+    for line in f.readlines():
+      if m := re.search(re.escape(name) + '\\s*{\\s*:mvn/version\\s*"([0-9.]+)"', line):
+        return m.group(1)
+
 def classpath_join(entries):
   return classpath_separator.join(entries)
 
