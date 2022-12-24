@@ -49,8 +49,9 @@
                              (debug/on-start :event))
                            
                            (when on-event
-                             (core/catch-and-log
-                               (on-event window e)))
+                             (when e
+                               (core/catch-and-log
+                                 (on-event window e))))
                            
                            (case type
                              :window-close-request

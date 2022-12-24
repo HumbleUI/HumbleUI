@@ -587,7 +587,7 @@
   [child]
   protocols/IComponent
   (-measure [_ _ cs]
-    cs)
+    (core/ipoint 0 0))
   (-draw [_ _ _ _])
   (-event [_ _ _])
   (-iterate [this _ cb]

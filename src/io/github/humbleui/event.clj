@@ -257,4 +257,6 @@
     EventWindowScreenChange
     {:event :window-screen-change}
     
-    nil))
+    (do
+      ; (println "Unrecognized event" e)
+      nil)))

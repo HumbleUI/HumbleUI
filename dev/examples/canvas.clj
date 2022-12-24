@@ -63,6 +63,5 @@
           (recur (+ y (* 2 leading scale)) (next kv)))))))
 
 (def ui
-  (ui/center
-    (ui/canvas {:on-paint on-paint
-                :on-event on-event})))
+  (ui/canvas {:on-paint on-paint
+              :on-event on-event}))

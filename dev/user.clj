@@ -1,5 +1,6 @@
 (ns user
   (:require
+    [clojure.tools.namespace.repl :as ns]
     [examples.7guis-converter]
     [examples.align]
     [examples.animation]
@@ -109,6 +110,16 @@
            (examples name)))])))
 
 (reset! state/*app app)
+
+(ns/set-refresh-dirs "src" "dev")
+
+(defn reload []
+  (set! *warn-on-reflection* true)
+  ; (set! *unchecked-math* :warn-on-boxed)
+  (let [res (ns/refresh)]
+    (if (instance? Throwable res)
+      (throw res)
+      res)))
 
 (defn -main [& args]
   (ui/start-app!
