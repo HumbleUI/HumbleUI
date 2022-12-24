@@ -69,8 +69,7 @@
                        ^:mut my-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
-    (assoc cs :height
-      (:height (core/measure thumb ctx cs))))
+    (core/measure thumb ctx cs))
   
   (-draw [_ ctx rect canvas]
     (set! my-rect rect)
