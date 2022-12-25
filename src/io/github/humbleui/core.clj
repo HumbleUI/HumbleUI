@@ -540,7 +540,8 @@
 (defn measure [comp ctx ^IPoint cs]
   {:pre  [(instance? IPoint cs)]
    :post [(instance? IPoint %)]}
-  (protocols/-measure comp ctx cs))
+  (when comp
+    (protocols/-measure comp ctx cs)))
 
 (defn draw [comp ctx ^IRect rect ^Canvas canvas]
   {:pre [(instance? IRect rect)]}
@@ -639,7 +640,7 @@
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (some #(protocols/-iterate % ctx cb) children)))
+      (some #(core/iterate-child % ctx cb) children)))
   
   AutoCloseable
   (close [_]
