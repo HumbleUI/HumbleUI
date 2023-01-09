@@ -60,7 +60,7 @@
   (map->Column
     (normalize-input children)))
 
-(core/deftype+ Row[modes factors]
+(core/deftype+ Row [modes factors]
   :extends core/AContainer
     
   protocols/IComponent
