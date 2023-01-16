@@ -13,7 +13,7 @@ def main():
   ]
   return subprocess.call(["java",
     "--class-path", build_utils.classpath_join(classpath),
-    "clojure.main", "-m", "user", "--interactive"]
+    "clojure.main", "-m", "examples", "--interactive"]
   )
 
 if __name__ == '__main__':

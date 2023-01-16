@@ -8,7 +8,7 @@
   (atom nil))
 
 (def *example
-  (atom "Text Field"))
+  (atom "Effects"))
 
 (def *todomvc-state
   (atom
