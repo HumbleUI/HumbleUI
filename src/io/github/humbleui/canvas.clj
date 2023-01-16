@@ -26,8 +26,9 @@
 
 (defn clip-rect [^Canvas canvas r]
   (condp instance? r
-    Rect (.clipRect canvas r)
-    IRect (.clipRect canvas (.toRect ^IRect r))))
+    IRect (.clipRect canvas (.toRect ^IRect r))
+    RRect (.clipRRect canvas ^RRect r true)
+    Rect  (.clipRect canvas r)))
 
 (defn translate [^Canvas canvas dx dy]
   (.translate canvas dx dy))
