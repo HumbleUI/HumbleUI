@@ -21,29 +21,64 @@
 (defn draw-arc [^Canvas canvas left top right bottom start-angle sweep-angle use-center ^Paint paint]
   (.drawArc canvas left top right bottom start-angle sweep-angle use-center paint))
 
+(def blend-modes
+  {:clear BlendMode/CLEAR
+   :src BlendMode/SRC
+   :dst BlendMode/DST
+   :src-over BlendMode/SRC_OVER
+   :dst-over BlendMode/DST_OVER
+   :src-in BlendMode/SRC_IN
+   :dst-in BlendMode/DST_IN
+   :src-out BlendMode/SRC_OUT
+   :dst-out BlendMode/DST_OUT
+   :src-atop BlendMode/SRC_ATOP
+   :dst-atop BlendMode/DST_ATOP
+   :xor BlendMode/XOR
+   :plus BlendMode/PLUS
+   :modulate BlendMode/MODULATE
+   :screen BlendMode/SCREEN
+   :overlay BlendMode/OVERLAY
+   :darken BlendMode/DARKEN
+   :lighten BlendMode/LIGHTEN
+   :color-dodge BlendMode/COLOR_DODGE
+   :color-burn BlendMode/COLOR_BURN
+   :hard-light BlendMode/HARD_LIGHT
+   :soft-light BlendMode/SOFT_LIGHT
+   :difference BlendMode/DIFFERENCE
+   :exclusion BlendMode/EXCLUSION
+   :multiply BlendMode/MULTIPLY
+   :hue BlendMode/HUE
+   :saturation BlendMode/SATURATION
+   :color BlendMode/COLOR
+   :luminosity BlendMode/LUMINOSITY})
+
+
 (defn draw-triangles
   ([^Canvas canvas points colors ^Paint paint]
    (.drawTriangles canvas points colors paint))
   ([^Canvas canvas points colors tex-coords indices ^Paint paint]
    (.drawTriangles canvas points colors tex-coords indices paint))
-  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
-   (.drawTriangles canvas points colors tex-coords indices blend-mode paint)))
+  ([^Canvas canvas points colors tex-coords indices blend-mode ^Paint paint]
+   (let [blend-mode (blend-mode blend-modes)]
+    (.drawTriangles canvas points colors tex-coords indices blend-mode paint))))
 
 (defn draw-tri-strip
   ([^Canvas canvas points colors ^Paint paint]
    (.drawTriangleStrip canvas points colors paint))
   ([^Canvas canvas points colors tex-coords indices ^Paint paint]
    (.drawTriangleStrip canvas points colors tex-coords indices paint))
-  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
-   (.drawTriangleStrip canvas points colors tex-coords indices blend-mode paint)))
+  ([^Canvas canvas points colors tex-coords indices blend-mode ^Paint paint]
+   (let [blend-mode (blend-mode blend-modes)]
+     (.drawTriangleStrip canvas points colors tex-coords indices blend-mode paint))))
 
 (defn draw-tri-fan
   ([^Canvas canvas points colors ^Paint paint]
    (.drawTriangleFan canvas points colors paint))
   ([^Canvas canvas points colors tex-coords indices ^Paint paint]
    (.drawTriangleFan canvas points colors tex-coords indices paint))
-  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
-   (.drawTriangleFan canvas points colors tex-coords indices blend-mode paint)))
+  ([^Canvas canvas points colors tex-coords indices blend-mode ^Paint paint]
+   (let [blend-mode (blend-mode blend-modes)]
+     (.drawTriangleFan canvas points colors tex-coords indices blend-mode paint))))
 
 (defn clear [^Canvas canvas color]
   (.clear canvas (unchecked-int color)))
