@@ -1,7 +1,7 @@
 (ns io.github.humbleui.canvas
   (:import
     [io.github.humbleui.types IRect Rect RRect]
-    [io.github.humbleui.skija Canvas Font Paint]))
+    [io.github.humbleui.skija BlendMode Canvas Font Paint]))
 
 (defn draw-line
   ([^Canvas canvas p1 p2 ^Paint paint]
@@ -17,6 +17,33 @@
 
 (defn draw-circle [^Canvas canvas x y r ^Paint paint]
   (.drawCircle canvas x y r paint))
+
+(defn draw-arc [^Canvas canvas left top right bottom start-angle sweep-angle use-center ^Paint paint]
+  (.drawArc canvas left top right bottom start-angle sweep-angle use-center paint))
+
+(defn draw-triangles
+  ([^Canvas canvas points colors ^Paint paint]
+   (.drawTriangles canvas points colors paint))
+  ([^Canvas canvas points colors tex-coords indices ^Paint paint]
+   (.drawTriangles canvas points colors tex-coords indices paint))
+  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
+   (.drawTriangles canvas points colors tex-coords indices blend-mode paint)))
+
+(defn draw-tri-strip
+  ([^Canvas canvas points colors ^Paint paint]
+   (.drawTriangleStrip canvas points colors paint))
+  ([^Canvas canvas points colors tex-coords indices ^Paint paint]
+   (.drawTriangleStrip canvas points colors tex-coords indices paint))
+  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
+   (.drawTriangleStrip canvas points colors tex-coords indices blend-mode paint)))
+
+(defn draw-tri-fan
+  ([^Canvas canvas points colors ^Paint paint]
+   (.drawTriangleFan canvas points colors paint))
+  ([^Canvas canvas points colors tex-coords indices ^Paint paint]
+   (.drawTriangleFan canvas points colors tex-coords indices paint))
+  ([^Canvas canvas points colors tex-coords indices ^BlendMode blend-mode ^Paint paint]
+   (.drawTriangleFan canvas points colors tex-coords indices blend-mode paint)))
 
 (defn clear [^Canvas canvas color]
   (.clear canvas (unchecked-int color)))
