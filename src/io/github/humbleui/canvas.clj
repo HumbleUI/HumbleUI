@@ -1,7 +1,13 @@
 (ns io.github.humbleui.canvas
   (:import
-    [io.github.humbleui.types IRect Rect RRect]
+    [io.github.humbleui.types Point IRect Rect RRect]
     [io.github.humbleui.skija BlendMode Canvas Font Paint]))
+
+(defn draw-polygon
+  ([^Canvas canvas floats-or-points ^Paint paint]
+   (if (= (type floats-or-points) "[F")
+     (.drawPolygon canvas #^floats floats-or-points paint)
+     (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" floats-or-points paint))))
 
 (defn draw-line
   ([^Canvas canvas p1 p2 ^Paint paint]
