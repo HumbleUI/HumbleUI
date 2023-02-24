@@ -21,6 +21,12 @@
     RRect (.drawRRect canvas r paint)
     Rect  (.drawRect  canvas r paint)))
 
+(defn draw-oval [^Canvas canvas r ^Paint paint]
+  (condp instance? r
+    IRect (.drawOval canvas (.toRect ^IRect r) paint)
+    RRect (.drawOval canvas r paint)
+    Rect  (.drawOval canvas r paint)))
+
 (defn draw-circle [^Canvas canvas x y r ^Paint paint]
   (.drawCircle canvas x y r paint))
 
