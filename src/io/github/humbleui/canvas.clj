@@ -34,6 +34,35 @@
   (.drawArc canvas left top right bottom start-angle sweep-angle use-center paint))
 
 (def blend-modes
+  ":clear replaces destination with zero: fully transparent.
+   :src replaces destination.
+   :dst preserves destination.
+   :src-over source over destination.
+   :dst-over destination over source.
+   :src-in source trimmed inside destination.
+   :dst-in destination trimmed inside source.
+   :src-out source trimmed outside destination.
+   :dst-out destination trimmed outside source.
+   :src-atop source inside destination blended with destination.
+   :dst-atop destination inside source blended with source.
+   :xor source and destination trimmed outside each other.
+   :plus sum colors.
+   :modulate product of premultiplied colors, darkens destination.
+   :screen multiply inverse of pixels followed by inverting result, brightens destination.
+   :overlay multiply or screen depending on destination.
+   :darken darker of source and destination.
+   :lighten lighter of source and destination.
+   :color-dodge brighten destination to reflect source.
+   :color-burn darken destination to reflect source.
+   :hard-light multiply or screen depending on source.
+   :soft-light darken or lighten depending on source.
+   :difference subtract darker from lighter with higher contrast.
+   :exclusion subtract darker from lighter with lower contrast.
+   :multiply multiply source with destination darkening image.
+   :hue hue of source with saturation and luminosity of destination.
+   :saturation saturation of source with hue and luminosity of destination.
+   :color hue and saturation of source with luminosity of destination.
+   :luminosity luminosity of source with hue and saturation of destination."
   {:clear BlendMode/CLEAR
    :src BlendMode/SRC
    :dst BlendMode/DST
