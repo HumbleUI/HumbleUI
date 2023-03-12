@@ -1,5 +1,6 @@
 (ns examples
   (:require
+    [clojure.core.server :as server]
     [examples.7guis-converter]
     [examples.align]
     [examples.animation]
@@ -33,8 +34,7 @@
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui]
-    [nrepl.cmdline :as nrepl]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn set-floating! [window floating]
   (when window
@@ -92,18 +92,18 @@
     ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
     (ui/row
       (ui/vscrollbar
-        (ui/column
-          (for [[name _] (sort-by first examples)]
-            (ui/clickable
-              {:on-click (fn [_] (reset! state/*example name))}
-              (ui/dynamic ctx [selected? (= name @state/*example)
-                               hovered?  (:hui/hovered? ctx)]
-                (let [label (ui/padding 20 10
-                              (ui/label name))]
-                  (cond
-                    selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
-                    hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
-                    :else     label)))))))
+          (ui/column
+            (for [[name _] (sort-by first examples)]
+              (ui/clickable
+                {:on-click (fn [_] (reset! state/*example name))}
+                (ui/dynamic ctx [selected? (= name @state/*example)
+                                 hovered?  (:hui/hovered? ctx)]
+                  (let [label (ui/padding 20 10
+                                (ui/label name))]
+                    (cond
+                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
+                      :else     label)))))))
       border-line
       [:stretch 1
        (ui/clip
@@ -120,11 +120,15 @@
           {:title    "Humble 🐝 UI"
            :mac-icon "dev/images/icon.icns"
            :screen   (:id screen)
-           :width    800
+           :width    600
            :height   600
            :x        :center
            :y        :center}
           state/*app))))
   (set-floating! @state/*window @state/*floating)
-  (reset! debug/*enabled? true)
-  (apply nrepl/-main args))
+  #_(reset! debug/*enabled? true)
+  (server/start-server
+    {:name          "repl"
+     :port          5555
+     :accept        'clojure.core.server/repl
+     :server-daemon false}))
