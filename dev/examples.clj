@@ -29,6 +29,7 @@
     [examples.toggle]
     [examples.tooltip]
     [examples.tree]
+    [examples.treemap]
     [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.debug :as debug]
@@ -75,6 +76,7 @@
     "Toggle" examples.toggle/ui
     "Tooltip" examples.tooltip/ui
     "Tree" examples.tree/ui
+    "Treemap" examples.treemap/ui
     "Wordle" examples.wordle/ui))
 
 (def light-grey
@@ -127,8 +129,12 @@
           state/*app))))
   (set-floating! @state/*window @state/*floating)
   #_(reset! debug/*enabled? true)
-  (server/start-server
-    {:name          "repl"
-     :port          5555
-     :accept        'clojure.core.server/repl
-     :server-daemon false}))
+  (let [{port "--port"
+         :or {port "5555"}} (apply array-map args)
+        port (parse-long port)]
+    (println "Started Server Socket REPL on port" port)
+    (server/start-server
+      {:name          "repl"
+       :port          port
+       :accept        'clojure.core.server/repl
+       :server-daemon false})))

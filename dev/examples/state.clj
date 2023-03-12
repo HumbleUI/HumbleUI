@@ -8,7 +8,7 @@
   (atom nil))
 
 (def *example
-  (atom "Effects"))
+  (atom "Treemap"))
 
 (def *todomvc-state
   (atom
@@ -22,6 +22,9 @@
                     :completed? true}
                  2 {:label "third"
                     :completed? false})}))
+
+(def *treemap-state
+  (atom nil))
 
 (def *floating
   (atom false))
