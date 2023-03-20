@@ -523,6 +523,7 @@
         (swap! *state assoc key len)))))
 
 (core/deftype+ TextInput [*state
+                          on-change
                           ^ShapingOptions features
                           ^:mut           my-rect]
   :extends core/ATerminal
@@ -724,6 +725,10 @@
                              true             (edit :insert (:text event))))
             (when-some [postponed (:postponed state)]
               (protocols/-event this ctx postponed))
+            (and on-change
+                 (try (on-change @*state)
+                      (catch Throwable e
+                        (core/log-error e))))
             true)
           
           ;; composing region
@@ -875,10 +880,11 @@
                                :backspace [:kill-marked :delete-char-left]
                                :delete    [:kill-marked :delete-char-right]))]
             (or
-              (when(seq ops)
+              (when (seq ops)
                 (swap! *state
                   (fn [state]
                     (reduce #(edit %1 %2 nil) state ops)))
+                (and on-change (on-change @*state))
                 true)
               (some #{:letter :digit :whitespace} (:key-types event))))
           
@@ -888,7 +894,7 @@
 (defn text-input
   ([*state]
    (text-input nil *state))
-  ([_opts *state]
+  ([{:keys [on-change] :as _opts} *state]
    (dynamic/dynamic ctx [font     (or
                                     (:hui.text-field/font ctx)
                                     (:font-ui ctx))
@@ -927,8 +933,9 @@
                          :last-mouse-click   0}
                         %))
        (map->TextInput
-         {:*state *state
-          :features features})))))
+        {:*state *state
+         :on-change on-change
+         :features features})))))
 
 (defn text-field
   ([*state]
