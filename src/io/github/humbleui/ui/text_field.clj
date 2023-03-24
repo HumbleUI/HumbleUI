@@ -569,8 +569,9 @@
     (let [state @*state
           {:keys [text from to marked-from marked-to offset metrics]} state
           {:keys                [scale]
-           :hui/keys            [focused?]
            :hui.text-field/keys [padding-top]} ctx
+          focused? (or (:hui/focused? ctx)
+                       (:focused? state))
           line       (text-line this ctx)
           cap-height (math/round (:cap-height metrics))
           ascent     (math/ceil (- (- (:ascent metrics)) (:cap-height metrics)))
@@ -644,13 +645,13 @@
                 #(window/request-frame (:window ctx))
                 (- cursor-blink-interval
                   (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
-        
+
   (-event [this ctx event]
     ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move} (:event event))
     ;   (println (:hui/focused? ctx) event))
     (when (:hui/focused? ctx)
       (let [state @*state
-            {:keys [from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click]} state]
+            {:keys [from to marked-from marked-to offset ^TextLine line mouse-clicks last-mouse-click focused?]} state]
         (when (= :mouse-move (:event event))
           (swap! *state assoc
             :mouse-clicks 0))
@@ -660,10 +661,12 @@
           (and
             (= :mouse-button (:event event))
             (= :primary (:button event))
-            (:pressed? event)
-            my-rect
-            (core/rect-contains? my-rect (core/ipoint (:x event) (:y event))))
-          (let [x             (-> (:x event)
+            (:pressed? event))
+          (if-not (and my-rect
+                       (core/rect-contains? my-rect (core/ipoint (:x event) (:y event))))
+            (when focused?
+              (swap! *state assoc :focused? false))
+            (let [x             (-> (:x event)
                                 (- (:x my-rect))
                                 (+ offset))
                 offset'       (.getOffsetAtCoord line x)
@@ -675,6 +678,7 @@
                              true
                              (assoc
                                :selecting?       true
+                               :focused?         true
                                :last-mouse-click now
                                :mouse-clicks     mouse-clicks')
                          
@@ -686,8 +690,8 @@
                           
                              (< 2 mouse-clicks')
                              (edit :select-all nil)))
-            true)
-          
+            true))
+
           ; mouse up
           (and
             (= :mouse-button (:event event))
@@ -895,7 +899,9 @@
   ([*state]
    (text-input nil *state))
   ([{:keys [on-change] :as _opts} *state]
-   (dynamic/dynamic ctx [font     (or
+   (dynamic/dynamic ctx [focused? (or (:hui/focused? ctx)
+                                      (:focused? @*state))
+                         font     (or
                                     (:hui.text-field/font ctx)
                                     (:font-ui ctx))
                          metrics  (font/metrics font)
@@ -929,6 +935,7 @@
                          :cursor-blink-pivot (core/now)
                          :offset             nil
                          :selecting?         false
+                         :focused?           (boolean focused?)
                          :mouse-clicks       0
                          :last-mouse-click   0}
                         %))
@@ -941,11 +948,13 @@
   ([*state]
    (text-field nil *state))
   ([opts *state]
-   (focusable/focusable opts
+   (let [{:keys [focused?]} @*state]
+     (focusable/focusable (assoc opts :focused focused?)
      (listeners/on-key-focused
        (:keymap opts)
        (with-cursor/with-cursor :ibeam
-         (dynamic/dynamic ctx [active? (:hui/focused? ctx)
+         (dynamic/dynamic ctx [active? (or (:hui/focused? ctx)
+                                           focused?)
                                stroke  (if active?
                                          (:hui.text-field/border-active ctx)
                                          (:hui.text-field/border-inactive ctx))
@@ -955,4 +964,4 @@
                                radius  (:hui.text-field/border-radius ctx)]
            (rect/rounded-rect {:radius radius} bg
              (rect/rounded-rect {:radius radius} stroke
-               (text-input opts *state)))))))))
+               (text-input opts *state))))))))))
