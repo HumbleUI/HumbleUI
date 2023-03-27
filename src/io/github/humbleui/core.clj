@@ -585,7 +585,7 @@
 
 (defparent ATerminal
   "Simple component that has no children"
-  [child]
+  []
   protocols/IComponent
   (-measure [_ _ cs]
     (core/ipoint 0 0))
