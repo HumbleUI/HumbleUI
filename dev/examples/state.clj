@@ -8,7 +8,7 @@
   (atom nil))
 
 (def *example
-  (atom "Treemap"))
+  (atom "Text Field"))
 
 (def *todomvc-state
   (atom

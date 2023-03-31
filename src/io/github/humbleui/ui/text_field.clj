@@ -15,6 +15,7 @@
     [io.github.humbleui.window :as window])
   (:import
     [java.lang AutoCloseable]
+    [io.github.humbleui.jwm TextInputClient]
     [io.github.humbleui.skija BreakIterator Canvas Font FontMetrics TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
 
@@ -718,46 +719,54 @@
           ;; typing
           (= :text-input (:event event))
           (do
-            (swap! *state #(cond-> %
-                             true             (dissoc :postponed)
-                             (:marked-from %) (edit :kill-marked nil)
-                             (not= from to)   (edit :kill nil)
-                             true             (edit :insert (:text event))))
-            (when-some [postponed (:postponed state)]
-              (protocols/-event this ctx postponed))
+            (swap! *state
+              (fn [state]
+                (let [state (cond
+                              ;; straight up replace part of text
+                              (not (neg? (:replacement-start event)))
+                              (assoc state
+                                :from (:replacement-start event)
+                                :to   (:replacement-end event))
+                              
+                              ;; replace marked with text
+                              (:marked-from state)
+                              (edit state :kill-marked nil)
+                              
+                              :else
+                              state)
+                      state (if (not= (:from state) (:to state))
+                              (edit state :kill nil)
+                              state)]
+                  (edit state :insert (:text event)))))
             (and on-change
-                 (try (on-change @*state)
-                      (catch Throwable e
-                        (core/log-error e))))
+              (try (on-change @*state)
+                (catch Throwable e
+                  (core/log-error e))))
             true)
           
           ;; composing region
           (= :text-input-marked (:event event))
           (do
             (swap! *state
-              #(cond-> %
-                 (:marked-from %) (edit :kill-marked nil)
-                 (not= from to)   (edit :kill nil)
-                 true             (edit :insert-marked event)))
+              (fn [state]
+                (let [state (if-not (neg? (:replacement-start event))
+                              (-> state
+                                (edit :move-to-position (:replacement-start event))
+                                (edit :expand-to-position (:replacement-end event)))
+                              state)
+                      state (if (:marked-from state)
+                              (edit state :kill-marked nil)
+                              state)
+                      state (if (not= (:from state) (:to state))
+                              (edit state :kill nil)
+                              state)]
+                  (edit state :insert-marked event))))
             true)
           
-          ;; rect for composing region
-          (= :get-rect-for-marked-range (:event event))
-          (let [{:hui.text-field/keys [padding-top]} ctx
-                metrics    (:metrics @*state)
-                cap-height (Math/ceil (:cap-height metrics))
-                ascent     (Math/ceil (- (- (:ascent metrics)) cap-height))
-                descent    (Math/ceil (:descent metrics))
-                baseline   (+ padding-top cap-height)
-                left       (.getCoordAtOffset line (or marked-from from))
-                right      (if (= (or marked-to to) (or marked-from from))
-                             left
-                             (.getCoordAtOffset line (or marked-to to)))]
-            (core/irect-ltrb
-              (+ (:x my-rect) (- offset) left)
-              (+ (:y my-rect) padding-top (- ascent))
-              (+ (:x my-rect) (- offset) right)
-              (+ (:y my-rect) baseline descent)))
+          ;; text input client
+          (= :get-text-input-client (:event event))
+          {:client this
+           :ctx    ctx}
           
           ;; emoji popup macOS
           (and
@@ -770,14 +779,7 @@
           (do
             (app/open-symbols-palette)
             false)
-          
-          ;; when exiting composing region with left/right/backspace/delete,
-          ;; key down comes before text input, and we need it after
-          (and (= :key (:event event)) (:pressed? event) (:marked-from state))
-          (do
-            (swap! *state assoc :postponed event)
-            false)
-          
+                    
           ;; command
           (and (= :key (:event event)) (:pressed? event))
           (let [key        (:key event)
@@ -889,7 +891,41 @@
               (some #{:letter :digit :whitespace} (:key-types event))))
           
           (and (= :key (:event event)) (not (:pressed? event)))
-          (some #{:letter :digit :whitespace} (:key-types event)))))))
+          (some #{:letter :digit :whitespace} (:key-types event))))))
+  
+  TextInputClient
+  (getRectForMarkedRange [this selection-start selection-end]
+    (let [{:keys [from to marked-from marked-to offset metrics]} @*state
+          {:hui.text-field/keys [padding-top]} core/*ctx*
+          line       (text-line this core/*ctx*)
+          cap-height (Math/ceil (:cap-height metrics))
+          ascent     (Math/ceil (- (- (:ascent metrics)) cap-height))
+          descent    (Math/ceil (:descent metrics))
+          baseline   (+ padding-top cap-height)
+          left       (.getCoordAtOffset line (or marked-from from))
+          right      (if (= (or marked-to to) (or marked-from from))
+                       left
+                       (.getCoordAtOffset line (or marked-to to)))]
+      (core/irect-ltrb
+        (+ (:x my-rect) (- offset) left)
+        (+ (:y my-rect) padding-top (- ascent))
+        (+ (:x my-rect) (- offset) right)
+        (+ (:y my-rect) baseline descent))))
+  
+  (getSelectedRange [_]
+    (let [{:keys [from to]} @*state]
+      (core/irange from to)))
+  
+  (getMarkedRange [_]
+    (let [{:keys [marked-from marked-to]} @*state]
+      (core/irange marked-from marked-to)))
+  
+  (getSubstring [_ start end]
+    (let [{:keys [text]} @*state
+          len (count text)
+          start (min start len)
+          end   (min end start)]
+      (subs text start end))))
 
 (defn text-input
   ([*state]
@@ -925,7 +961,6 @@
                          :char-iter          nil
                          :undo               nil
                          :redo               nil
-                         :postponed          nil
                          :cursor-blink-pivot (core/now)
                          :offset             nil
                          :selecting?         false
@@ -933,9 +968,9 @@
                          :last-mouse-click   0}
                         %))
        (map->TextInput
-        {:*state *state
-         :on-change on-change
-         :features features})))))
+         {:*state *state
+          :on-change on-change
+          :features features})))))
 
 (defn text-field
   ([*state]

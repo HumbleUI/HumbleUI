@@ -10,7 +10,7 @@
   (:import
     [io.github.humbleui.skija Canvas]
     [io.github.humbleui.skija.shaper Shaper]
-    [io.github.humbleui.types IPoint IRect Point Rect RRect]
+    [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
 
@@ -43,6 +43,8 @@
      ~@body
      (catch Throwable t#
        (log-error t#))))
+
+(def ^:dynamic *ctx*)
 
 ;; macros
 
@@ -314,6 +316,9 @@
 
 (defn point ^Point [x y]
   (Point. x y))
+
+(defn irange ^IRange [^long start ^long end]
+  (IRange. start end))
 
 (defn irect-xywh ^IRect [^long x ^long y ^long w ^long h]
   (IRect/makeXYWH x y w h))

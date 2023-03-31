@@ -116,7 +116,7 @@
 
 (defn -main [& args]
   (ui/start-app!
-    (let [screen (last (app/screens))]
+    (let [screen (app/primary-screen)]
       (reset! state/*window 
         (ui/window
           {:title    "Humble 🐝 UI"

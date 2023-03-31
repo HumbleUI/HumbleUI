@@ -102,15 +102,38 @@
                              nil)
                            (when (not= :frame-skija type)
                              (debug/on-end :event)))))
+        input-client-fn #(when on-event
+                           (on-event window {:event :get-text-input-client}))
         input-client (reify TextInputClient
                        (getRectForMarkedRange [_ selection-start selection-end]
                          (or
-                           (when on-event
-                             (core/catch-and-log
-                               (on-event window {:event           :get-rect-for-marked-range
-                                                 :selection-start selection-start
-                                                 :selection-end   selection-end})))
-                           (IRect/makeXYWH 0 0 0 0))))]
+                           (core/catch-and-log
+                             (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
+                               (binding [core/*ctx* ctx]
+                                 (.getRectForMarkedRange client selection-start selection-end))))
+                           (IRect/makeXYWH 0 0 0 0)))
+                       
+                       (getSelectedRange [_]
+                         (or
+                           (core/catch-and-log
+                             (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
+                               (binding [core/*ctx* ctx]
+                                 (.getSelectedRange client))))
+                           (core/irange -1 -1)))
+                         
+                       (getMarkedRange [_]
+                         (or
+                           (core/catch-and-log
+                             (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
+                               (binding [core/*ctx* ctx]
+                                 (.getMarkedRange client))))
+                           (core/irange -1 -1)))
+                       
+                       (getSubstring [_ start end]
+                         (core/catch-and-log
+                           (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
+                             (binding [core/*ctx* ctx]
+                               (.getSubstring client start end))))))]
     (.setLayer window layer)
     (.setEventListener window listener)
     ; (.setTextInputEnabled window true)

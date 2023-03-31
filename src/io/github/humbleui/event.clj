@@ -212,14 +212,18 @@
      :modifiers   (modifiers->set (.-_modifiers e))}
 
     EventTextInput
-    {:event :text-input
-     :text  (.getText e)}
+    {:event             :text-input
+     :text              (.getText e)
+     :replacement-start (.getReplacementStart e)
+     :replacement-end   (.getReplacementEnd e)}
     
     EventTextInputMarked
-    {:event           :text-input-marked
-     :text            (.getText e)
-     :selection-start (.getSelectionStart e)
-     :selection-end   (.getSelectionEnd e)}
+    {:event             :text-input-marked
+     :text              (.getText e)
+     :selection-start   (.getSelectionStart e)
+     :selection-end     (.getSelectionEnd e)
+     :replacement-start (.getReplacementStart e)
+     :replacement-end   (.getReplacementEnd e)}
     
     EventWindowClose
     {:event :window-close}
