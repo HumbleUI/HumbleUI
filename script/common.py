@@ -41,7 +41,7 @@ def deps():
       build_utils.execdir + '/' + args.skija_dir + '/shared/target/classes',
     ]
   else:
-    skija_native = 'skija-' + build_utils.system + (('-' + build_utils.arch) if 'macos' == build_utils.system else '')
+    skija_native = f'skija-{build_utils.system}-{build_utils.arch}'
     deps += [
       build_utils.fetch_maven('io.github.humbleui', 'skija-shared', args.skija_version),
       build_utils.fetch_maven('io.github.humbleui', skija_native, args.skija_version),

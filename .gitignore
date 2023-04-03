@@ -3,6 +3,7 @@ hs_err_pid*.log
 .cpcache
 target
 *.diff
+/script/repl_local.sh
 
 # Calva specific
 
