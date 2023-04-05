@@ -26,7 +26,7 @@
       (canvas/clip-rect canvas rect)
       (let [child-rect (-> rect
                          (update :y + offset)
-                         (assoc :height Integer/MAX_VALUE))]
+                         (assoc :height (:height child-size)))]
         (core/draw child ctx child-rect canvas))))
   
   (-event [_ ctx event]

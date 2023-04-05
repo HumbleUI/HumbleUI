@@ -96,18 +96,18 @@
     ; :hui.text-field/fill-text (paint/fill 0xFFCC3333)
     (ui/row
       (ui/vscrollbar
-          (ui/column
-            (for [[name _] (sort-by first examples)]
-              (ui/clickable
-                {:on-click (fn [_] (reset! state/*example name))}
-                (ui/dynamic ctx [selected? (= name @state/*example)
-                                 hovered?  (:hui/hovered? ctx)]
-                  (let [label (ui/padding 20 10
-                                (ui/label name))]
-                    (cond
-                      selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
-                      hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
-                      :else     label)))))))
+        (ui/column
+          (for [[name _] (sort-by first examples)]
+            (ui/clickable
+              {:on-click (fn [_] (reset! state/*example name))}
+              (ui/dynamic ctx [selected? (= name @state/*example)
+                               hovered?  (:hui/hovered? ctx)]
+                (let [label (ui/padding 20 10
+                              (ui/label name))]
+                  (cond
+                    selected? (ui/rect (paint/fill 0xFFB2D7FE) label)
+                    hovered?  (ui/rect (paint/fill 0xFFE1EFFA) label)
+                    :else     label)))))))
       border-line
       [:stretch 1
        (ui/clip

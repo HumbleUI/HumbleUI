@@ -35,22 +35,21 @@ It does not take much technical knowledge to see, for example, that higher-bandw
 
 (def ui
   (ui/vscrollbar
-    (ui/valign 0
-      (ui/padding 30
-        (ui/shadow {:dy 2 :blur 4 :color 0x33000000}
-          (ui/shadow {:dy 5 :blur 20 :color 0x20000000}
-            (ui/rect (paint/fill 0xFFFFFFFF)
-              (ui/padding 40 60
-                (ui/rect (paint/stroke 0xFFEEEEEE 2)
-                  (ui/column
-                    (ui/dynamic ctx [{:keys [font-ui scale]} ctx]
-                      (paragraph
-                        {:font (font/make-with-cap-height
-                                 (font/typeface font-ui)
-                                 (* 20 scale))
-                         :line-height 30}
-                        "Definition of a Humane Interface"))
-                    gap
-                    (->> (str/split text #"\n\n")
-                      (map paragraph)
-                      (interpose gap))))))))))))
+    (ui/padding 30
+      (ui/shadow {:dy 2 :blur 4 :color 0x33000000}
+        (ui/shadow {:dy 5 :blur 20 :color 0x20000000}
+          (ui/rect (paint/fill 0xFFFFFFFF)
+            (ui/padding 40 60
+              (ui/rect (paint/stroke 0xFFEEEEEE 2)
+                (ui/column
+                  (ui/dynamic ctx [{:keys [font-ui scale]} ctx]
+                    (paragraph
+                      {:font (font/make-with-cap-height
+                               (font/typeface font-ui)
+                               (* 20 scale))
+                       :line-height 30}
+                      "Definition of a Humane Interface"))
+                  gap
+                  (->> (str/split text #"\n\n")
+                    (map paragraph)
+                    (interpose gap)))))))))))
