@@ -23,6 +23,7 @@
     [io.github.humbleui.ui.label :as label]
     [io.github.humbleui.ui.listeners :as listeners]
     [io.github.humbleui.ui.padding :as padding]
+    [io.github.humbleui.ui.paragraph :as paragraph]
     [io.github.humbleui.ui.rect :as rect]
     [io.github.humbleui.ui.scroll :as scroll]
     [io.github.humbleui.ui.shadow :as shadow]
@@ -68,6 +69,7 @@
   listeners/on-key-focused
   listeners/text-listener
   padding/padding
+  paragraph/paragraph
   rect/rect
   rect/rounded-rect
   scroll/vscroll
