@@ -1,6 +1,7 @@
 (ns io.github.humbleui.ui.label
   (:require
     [clojure.math :as math]
+    [clojure.string :as str]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui.dynamic :as dynamic])
@@ -26,7 +27,9 @@
    (dynamic/dynamic ctx [^Font font (or (:font opts) (:font-ui ctx))
                          paint (or (:paint opts) (:fill-text ctx))]
      (let [text     (str text)
-           features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT (:features opts))
+           features (cond-> ShapingOptions/DEFAULT
+                      (not (empty? (:features opts)))
+                      (.withFeatures (str/join " " (:features opts))))
            line     (.shapeLine core/shaper text font ^ShapingOptions features)]
        (map->Label
          {:paint   paint
