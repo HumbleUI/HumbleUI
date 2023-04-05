@@ -1,6 +1,9 @@
 (ns ^{:clojure.tools.namespace.repl/load false}
   io.github.humbleui.protocols)
 
+(def *debug?
+  (atom false))
+
 (defprotocol ISettable
   (-set! [_ key value]))
 

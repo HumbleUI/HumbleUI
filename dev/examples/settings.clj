@@ -1,8 +1,8 @@
 (ns examples.settings
   (:require
     [examples.state :as state]
-    [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui :as ui]))
 
 (def ui
@@ -30,4 +30,4 @@
                     (ui/valign 0.5
                       (ui/label "Debug"))
                     [:stretch 1 nil]
-                    (ui/toggle debug/*enabled?)))))))))))
+                    (ui/toggle protocols/*debug?)))))))))))

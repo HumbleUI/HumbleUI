@@ -4,7 +4,8 @@
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
-    [io.github.humbleui.event :as event])
+    [io.github.humbleui.event :as event]
+    [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
@@ -82,7 +83,7 @@
                                    (debug/on-start :paint)
                                    (on-paint window canvas)
                                    (debug/on-end :paint)
-                                   (when @debug/*enabled?
+                                   (when @protocols/*debug?
                                      (canvas/with-canvas canvas
                                        (let [scale (scale window)
                                              rect  (content-rect window)]
