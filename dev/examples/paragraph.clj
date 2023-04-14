@@ -27,7 +27,7 @@ It does not take much technical knowledge to see, for example, that higher-bandw
    (ui/halign 0
      (ui/dynamic ctx [{:keys [scale]} ctx]
        (ui/rect (paint/fill 0xFFEEEEEE)
-         (let [opts' (merge {:features ["cv01" "cv09" "ss03"]} opts)]
+         (let [opts' (merge {:features ["cv01" "cv02" "cv09" "cv10" "ss03" "ss04"]} opts)]
            (ui/paragraph opts' text)))))))
 
 (def gap
