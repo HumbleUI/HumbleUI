@@ -31,7 +31,7 @@
 (defn padding
   ([p child]
    (if (map? p)
-     (map->Padding (assoc :child child))
+     (map->Padding (assoc p :child child))
      (map->Padding
        {:left   p
         :top    p
