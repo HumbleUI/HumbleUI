@@ -297,6 +297,16 @@
 (defn find-by [key-fn key xs]
   (reduce (fn [_ x] (when (= key (key-fn x)) (reduced x))) nil xs))
 
+(defn without [pred coll]
+  (persistent!
+    (reduce
+      (fn [coll el]
+        (if (pred el)
+          coll
+          (conj! coll el)))
+      (transient (empty coll))
+      coll)))
+
 (defn slurp-bytes ^bytes [src]
   (if (bytes? src)
     src

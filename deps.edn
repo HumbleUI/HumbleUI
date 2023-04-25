@@ -12,5 +12,5 @@
   {:extra-paths ["dev" "test"]
    :extra-deps  {org.clojure/tools.namespace {:mvn/version "1.3.0"}
                  criterium/criterium {:mvn/version "0.4.6"}}
-   :main-opts   ["-m" "user" "--interactive"]
+   :main-opts   ["-m" "examples"]
    :jvm-opts    ["-ea"]}}}
