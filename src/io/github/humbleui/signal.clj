@@ -1,4 +1,6 @@
 (ns io.github.humbleui.signal
+  (:refer-clojure :exclude [mapv reset! swap!])
+
   (:require
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
@@ -22,18 +24,20 @@
       (doouts [out (:outputs signal)]
         (set-state! out :check)))))
 
-(defn- mutate-impl! [signal value']
+(defn- reset-impl! [signal value' cache']
   (protocols/-set! signal :state :clean)
   (when (not= (:value signal) value')
     (protocols/-set! signal :value value')
+    (protocols/-set! signal :cache cache')
     (doouts [out (:outputs signal)]
       (set-state! out :dirty)))
   value')
 
 (defn- read-dirty [signal]
   (let [*context (volatile! (transient #{}))
-        value'   (binding [*context* *context]
-                   ((:value-fn signal)))
+        {value' :value
+         cache' :cache} (binding [*context* *context]
+                          ((:value-fn signal) (:value signal) (:cache signal)))
         inputs   (:inputs signal)
         inputs'  (persistent! @*context)
         ref      (WeakReference. signal)]
@@ -50,7 +54,7 @@
             outputs' (conj outputs ref)]
         (protocols/-set! input :outputs outputs')))
     (protocols/-set! signal :inputs inputs')
-    (mutate-impl! signal value')))
+    (reset-impl! signal value' cache')))
 
 (defn- read-check [signal]
   (loop [inputs (:inputs signal)]
@@ -67,7 +71,7 @@
 ;; User APIs
 
 ;; TODO synchronize
-(core/deftype+ Signal [value-fn ^:mut value ^:mut inputs ^:mut outputs ^:mut state]
+(core/deftype+ Signal [value-fn ^:mut value ^:mut cache ^:mut inputs ^:mut outputs ^:mut state]
   Object
   (toString [_]
     (str "#Signal{value=" value ", state=" state "}"))
@@ -79,7 +83,7 @@
       :clean value
       :dirty (read-dirty this)
       :check (read-check this))))
-                  
+
 (defn signal 
   "Observable mutable state"
   [initial]
@@ -88,18 +92,34 @@
      :outputs #{}
      :state   :clean}))
 
+(defn computed* [value-fn]
+  (map->Signal
+    {:value-fn value-fn
+     :inputs   #{}
+     :outputs  #{}
+     :state    :dirty}))
+
 (defmacro computed
   "Observable derived computation"
   [& body]
-  `(map->Signal
-     {:value-fn (fn []
-                  ~@body)
-      :inputs   #{}
-      :outputs  #{}
-      :state    :dirty}))
+  `(computed* (fn [~'_ ~'_] {:value (do ~@body)})))
 
-(defn mutate! [signal value']
+(defn reset! [signal value']
   (assert (nil? (:inputs signal)) "Only source signals can be directly mutated")
-  (mutate-impl! signal value'))
+  (reset-impl! signal value' nil))
+
+(defn swap! [signal f & args]
+  (reset! signal (apply f @signal args)))
 
 ;; TODO effect
+
+(defn mapv-impl [old-val cache f xs]
+  (let [mapping (into {} (map vector cache old-val))]
+    (clojure.core/mapv #(or (mapping %) (f %)) xs)))
+
+(defmacro mapv [f xs]
+  `(computed*
+     (fn [old-val# cache#]
+       (let [xs# ~xs]
+         {:cache xs#
+          :value (mapv-impl old-val# cache# ~f xs#)}))))
