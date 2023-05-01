@@ -9,6 +9,7 @@
     [examples.button]
     [examples.calculator]
     [examples.canvas]
+    [examples.canvas-shapes]
     [examples.checkbox]
     [examples.container]
     [examples.effects]
@@ -58,6 +59,7 @@
     "Button" examples.button/ui
     "Calculator" examples.calculator/ui
     "Canvas" examples.canvas/ui
+    "Canvas Shapes" examples.canvas-shapes/ui
     "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
     "Effects" examples.effects/ui
