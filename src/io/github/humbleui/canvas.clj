@@ -1,12 +1,63 @@
 (ns io.github.humbleui.canvas
   (:import
-    [io.github.humbleui.types Point IRect Rect RRect]
-    [io.github.humbleui.skija BlendMode Canvas Font Paint]))
+    [io.github.humbleui.types IPoint Point IRect Rect RRect]
+    [io.github.humbleui.skija BlendMode Canvas Font Paint Path]))
+
+
+(def float-array-class (Class/forName "[F"))
+(def ipoint-array-class (Class/forName "[Lio.github.humbleui.types.IPoint;"))
+(def point-array-class (Class/forName "[Lio.github.humbleui.types.Point;"))
+
+(defn draw-point
+  ([^Canvas canvas p ^Paint paint]
+   (.drawPoint canvas (:x p) (:y p) paint))
+  ([^Canvas canvas x y ^Paint paint]
+   (.drawPoint canvas x y paint)))
+
+(defn draw-points [^Canvas canvas floats-or-points ^Paint paint]
+  (cond
+    (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
+    (.drawPoints canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
+    (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
+    (.drawPoints canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+    (coll? floats-or-points)
+    (.drawPoints canvas #^floats (float-array floats-or-points) paint)
+    (= (type floats-or-points) float-array-class)
+    (.drawPoints canvas #^floats floats-or-points paint)
+    (= (type floats-or-points) ipoint-array-class)
+    (.drawPoints canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+    :else
+    (.drawPoints canvas ^"[Lio.github.humbleui.types.Point;" floats-or-points paint)))
+
+(defn draw-lines [^Canvas canvas floats-or-points ^Paint paint]
+  (cond
+    (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
+    (.drawLines canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
+    (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
+    (.drawLines canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+    (coll? floats-or-points)
+    (.drawLines canvas #^floats (float-array floats-or-points) paint)
+    (= (type floats-or-points) float-array-class)
+    (.drawLines canvas #^floats floats-or-points paint)
+    (= (type floats-or-points) ipoint-array-class)
+    (.drawLines canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+    :else
+    (.drawLines canvas ^"[Lio.github.humbleui.types.Point;" floats-or-points paint)))
 
 (defn draw-polygon
   ([^Canvas canvas floats-or-points ^Paint paint]
-   (if (= (type floats-or-points) "[F")
+   (cond
+     (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
+     (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
+     (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
+     (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+     (coll? floats-or-points)
+     (.drawPolygon canvas #^floats (float-array floats-or-points) paint)
+     (= (type floats-or-points) float-array-class)
      (.drawPolygon canvas #^floats floats-or-points paint)
+     (= (type floats-or-points) ipoint-array-class)
+     (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point (map (fn [^IPoint x] (.toPoint x)) floats-or-points)) paint)
+     :else
      (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" floats-or-points paint))))
 
 (defn draw-line
@@ -14,6 +65,15 @@
    (.drawLine canvas (:x p1) (:y p1) (:x p2) (:y p2) paint))
   ([^Canvas canvas x1 y1 x2 y2 ^Paint paint]
    (.drawLine canvas x1 y1 x2 y2 paint)))
+
+(defn draw-arc
+  ([^Canvas canvas r start-angle sweep-angle use-center ^Paint paint]
+   (condp instance? r
+     IRect (let [r (.toRect ^IRect r)] (.drawArc canvas (:x r) (:y r) (:right r) (:bottom r) start-angle sweep-angle use-center paint))
+     RRect (.drawArc canvas (:x r) (:y r) (:right r) (:bottom r) start-angle sweep-angle use-center paint)
+     Rect  (.drawArc canvas (:x r) (:y r) (:right r) (:bottom r) start-angle sweep-angle use-center paint)))
+  ([^Canvas canvas left top right bottom start-angle sweep-angle use-center ^Paint paint]
+   (.drawArc canvas left top right bottom start-angle sweep-angle use-center paint)))
 
 (defn draw-rect [^Canvas canvas r ^Paint paint]
   (condp instance? r
@@ -29,9 +89,6 @@
 
 (defn draw-circle [^Canvas canvas x y r ^Paint paint]
   (.drawCircle canvas x y r paint))
-
-(defn draw-arc [^Canvas canvas left top right bottom start-angle sweep-angle use-center ^Paint paint]
-  (.drawArc canvas left top right bottom start-angle sweep-angle use-center paint))
 
 (def blend-modes
   ":clear replaces destination with zero: fully transparent.
