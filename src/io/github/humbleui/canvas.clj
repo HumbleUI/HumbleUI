@@ -16,6 +16,8 @@
 
 (defn draw-points [^Canvas canvas floats-or-points ^Paint paint]
   (cond
+    ;; skip empty colls
+    (empty? floats-or-points) nil
     (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
     (.drawPoints canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
     (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
@@ -31,6 +33,8 @@
 
 (defn draw-lines [^Canvas canvas floats-or-points ^Paint paint]
   (cond
+    ;; skip empty colls
+    (empty? floats-or-points) nil
     (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
     (.drawLines canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
     (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
@@ -47,6 +51,8 @@
 (defn draw-polygon
   ([^Canvas canvas floats-or-points ^Paint paint]
    (cond
+     ;; skip empty colls
+     (empty? floats-or-points) nil
      (and (coll? floats-or-points) (instance? Point (first floats-or-points)))
      (.drawPolygon canvas ^"[Lio.github.humbleui.types.Point;" (into-array Point floats-or-points) paint)
      (and (coll? floats-or-points) (instance? IPoint (first floats-or-points)))
