@@ -96,6 +96,12 @@
 (defn draw-circle [^Canvas canvas x y r ^Paint paint]
   (.drawCircle canvas x y r paint))
 
+(defn draw-rrect [^Canvas canvas ^RRect r ^Paint paint]
+  (.drawRRect canvas r paint))
+
+(defn draw-double-rrect [^Canvas canvas ^RRect r1 ^RRect r2 ^Paint paint]
+  (.drawDRRect canvas r1 r2 paint))
+
 (def blend-modes
   ":clear replaces destination with zero: fully transparent.
    :src replaces destination.

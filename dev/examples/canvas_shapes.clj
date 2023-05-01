@@ -183,6 +183,22 @@
          (with-open [fill (paint/fill 0xFFCCCC00)]
            (canvas/draw-string canvas "rect [100 250 150 100]" (:x rect) (- (:y rect) 8) font-ui fill-text)
            (canvas/draw-rect canvas rect fill)))))
+   :paint-oval
+   (fn paint-oval [ctx ^Canvas canvas width height scale size]
+     (let [{:keys [font-ui fill-text]} ctx
+           irect (core/irect-xywh 100 50 150 50)
+           rrect (core/rrect-xywh 50 150 100 50 5)
+           rect (core/rect-xywh 100 250 150 100)]
+       (canvas/with-canvas canvas
+         (with-open [fill (paint/fill 0xFF00CCCC)]
+           (canvas/draw-string canvas "irect [100 50 150 50]" (:x irect) (- (:y irect) 8) font-ui fill-text)
+           (canvas/draw-oval canvas irect fill))
+         (with-open [fill (paint/fill 0xFFCC00CC)]
+           (canvas/draw-string canvas "rrect [50 150 100 50 5]" (:x rrect) (- (:y rrect) 8) font-ui fill-text)
+           (canvas/draw-oval canvas rrect fill))
+         (with-open [fill (paint/fill 0xFFCCCC00)]
+           (canvas/draw-string canvas "rect [100 250 150 100]" (:x rect) (- (:y rect) 8) font-ui fill-text)
+           (canvas/draw-oval canvas rect fill)))))
    :paint-circle
    (fn paint-circle [ctx ^Canvas canvas width height scale size]
      (let [{:keys [font-ui fill-text]} ctx
@@ -190,7 +206,31 @@
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFF00CCCC)]
            (canvas/draw-string canvas "circle [150 100 50]" x (- y r 8) font-ui fill-text)
-           (canvas/draw-circle canvas x y r fill)))))})
+           (canvas/draw-circle canvas x y r fill)))))
+   :paint-rrect
+   (fn paint-oval [ctx ^Canvas canvas width height scale size]
+     (let [{:keys [font-ui fill-text]} ctx
+           rrect (core/rrect-xywh 50 150 100 50 5)]
+       (with-open [fill (paint/fill 0xFFCC00CC)]
+         (canvas/draw-string canvas "rrect [50 150 100 50 5]" (:x rrect) (- (:y rrect) 8) font-ui fill-text)
+         (canvas/draw-rrect canvas rrect fill))))
+   :paint-drrect
+   (fn paint-oval [ctx ^Canvas canvas width height scale size]
+     (let [{:keys [font-ui fill-text]} ctx
+           rrect-1 (core/rrect-xywh 50 150 100 50 5)
+           rrect-2 (core/rrect-xywh 60 160 50 30 5)
+           srrect-1 (core/rrect-xywh 50 350 100 50 5)
+           srrect-2 (core/rrect-xywh 60 360 50 30 5)]
+       (canvas/with-canvas canvas
+         (with-open [fill (paint/fill 0xFFCC00CC)
+                     stroke (paint/stroke 0xFFCC00CC 1)]
+           (canvas/draw-string canvas "outer [50 150 100 50 5]" (:x rrect-1) (- (:y rrect-1) 36) font-ui fill-text)
+           (canvas/draw-string canvas "inner [60 160 50 30 5]" (:x rrect-1) (- (:y rrect-1) 8) font-ui fill-text)
+           (canvas/draw-rrect canvas rrect-1 stroke)
+           (canvas/draw-rrect canvas rrect-2 stroke)
+           (canvas/draw-string canvas "shifted outer [50 350 100 50 5]" (:x srrect-1) (- (:y srrect-1) 36) font-ui fill-text)
+           (canvas/draw-string canvas "shifted inner [60 360 50 30 5]" (:x srrect-1) (- (:y srrect-1) 8) font-ui fill-text)
+           (canvas/draw-double-rrect canvas srrect-1 srrect-2 fill)))))})
 
 (def ui
   (ui/vscrollbar
@@ -199,7 +239,8 @@
         (partition-all 3
           (for [paint-kw [:paint-point :paint-points :paint-lines
                           :paint-polygon :paint-line :paint-arc
-                          :paint-rect :paint-circle]]
+                          :paint-rect :paint-oval :paint-circle
+                          :paint-rrect :paint-drrect]]
             (ui/padding 10
               (ui/column
                 (ui/label (pr-str paint-kw))
