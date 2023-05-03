@@ -1,6 +1,7 @@
 (ns io.github.humbleui.signal-test
   (:require
     [clojure.test :as test :refer [deftest is are testing]]
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.signal :as signal]))
 
 (deftest mutate-direct
@@ -27,6 +28,7 @@
     (is (= 35 @*c))
     (signal/reset! *b 9)
     (is (= 45 @*c))))
+
   
 (deftest depth-2-linear
   (let [*a (signal/signal 1)
@@ -166,6 +168,34 @@
     (is (= "4" @*d))
     (is (= 3 @*cnt))))
 
+(deftest effect
+  (let [*a   (signal/signal 1)
+        *cnt (atom 0)
+        *e   (signal/effect [*a]
+               (swap! *cnt inc))]
+    (is (= 0 @*cnt))
+    @*a
+    (is (= 0 @*cnt))
+    (signal/reset! *a 2)
+    (is (= 1 @*cnt)))
+  
+  (let [*a   (signal/signal 1)
+        *b   (signal/computed (+ 10 @*a))
+        *c   (signal/computed (mod @*b 3))
+        *cnt (atom 0)
+        *e   (signal/effect [*c]
+               (swap! *cnt inc))]
+    (is (= 0 @*cnt))
+    
+    (signal/reset! *a 2)
+    (is (= 1 @*cnt))
+    
+    (signal/reset! *a 3)
+    (is (= 2 @*cnt))
+    
+    (signal/reset! *a 6)
+    (is (= 2 @*cnt))))
+
 (deftest incremental-mapv
   (let [*from (signal/signal 0)
         *to   (signal/signal 5)
@@ -204,4 +234,5 @@
     (is (= [0 1 2 3 4 5 6  -2 -1 0 1 4 5 6] @*calc))))
 
 (comment
+  (test/run-test effect)
   (test/test-ns *ns*))

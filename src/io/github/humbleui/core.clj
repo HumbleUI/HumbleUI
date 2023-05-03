@@ -434,6 +434,14 @@
                 sym' (with-meta (symbol (name alias)) meta)]]
       (list 'def sym' alias))))
 
+(def ^:private lock
+  (Object.))
+
+(defn log [& args]
+  (locking lock
+    (apply println args)
+    (flush)))
+
 ;; deftype+
 
 (defn- signature [method]
