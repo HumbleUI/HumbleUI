@@ -51,8 +51,9 @@
                            
                            (when on-event
                              (when e
-                               (core/catch-and-log
-                                 (on-event window e))))
+                               (when-not (#{:frame :frame-skija} type)
+                                 (core/catch-and-log
+                                   (on-event window e)))))
                            
                            (case type
                              :window-close-request

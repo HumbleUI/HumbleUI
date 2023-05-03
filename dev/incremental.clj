@@ -48,6 +48,8 @@
 (def *fill-button
   (s/signal 0xFFA5C9EF))
 
+(def ^:dynamic *mutations*)
+
 (defn draw-repaint [comp ctx rect canvas]
   (protocols/-set! comp :renders ((fnil inc 0) (:renders comp)))
   (when (= 1 (:renders comp))
@@ -80,16 +82,41 @@
   (-event [this ctx event]
     (core/event-child (s/maybe-read *child) ctx event)))
 
-(core/deftype+ Clickable [*on-click]
+(core/deftype+ Mutations []
   :extends AWrapper2
   protocols/IComponent
   (-event [this ctx event]
+    (let [*mutations (volatile! (transient []))
+          res (binding [*mutations* *mutations]
+                (core/event-child (s/maybe-read *child) ctx event))
+          mutations (persistent! @*mutations)]
+      (doseq [m mutations]
+        (m))
+      (when-not (empty? mutations)
+        (request-frame))
+      res)))
+
+(defn mutations [*child]
+  (map->Mutations
+    {:*child *child}))
+
+(defn mutate-later [f]
+  (vswap! *mutations* conj! f))
+
+(core/deftype+ Clickable [*on-click]
+  :extends AWrapper2
+  protocols/IComponent
+  (-draw [this ctx rect canvas]
+    (set! child-rect rect)
+    (core/draw-child (s/maybe-read *child) ctx rect canvas)
+    (draw-repaint this ctx rect canvas))
+
+  (-event [this ctx event]
     (when (and
             (= :mouse-button (:event event))
-            (:pressed? event)
-            child-rect
+            (not (:pressed? event))
             (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
-      ((s/maybe-read *on-click))
+      (mutate-later (s/maybe-read *on-click))
       nil)))
 
 (defn clickable [*on-click *child]
@@ -126,9 +153,7 @@
                    (math/ceil (:cap-height @*metrics)))
        :*paint   *fill-text
        :*line    *line
-       :*metrics *metrics
-       :*repaint (s/effect [*text *font-ui *fill-text]
-                   (request-frame))})))
+       :*metrics *metrics})))
 
 (core/deftype+ Padding [*amount]
   :extends AWrapper2
@@ -156,9 +181,7 @@
 (defn padding [*amount *child]
   (map->Padding
     {:*amount  (s/computed (* @*scale (s/maybe-read *amount)))
-     :*child   *child
-     :*repaint (s/effect [*amount]
-                 (request-frame))}))
+     :*child   *child}))
 
 (core/deftype+ Center []
   :extends AWrapper2
@@ -197,9 +220,7 @@
 (defn fill [*color *child]
   (map->Fill
     {:*paint (s/computed (paint/fill (s/maybe-read *color)))
-     :*child *child 
-     :*repaint (s/effect [*color]
-                 (request-frame))}))
+     :*child *child}))
 
 (core/deftype+ Gap [*width *height]
   :extends ATerminal2
@@ -209,10 +230,8 @@
 
 (defn gap [*width *height]
   (map->Gap
-    {:*width   (s/computed (core/iceil (* @*scale (s/maybe-read *width))))
-     :*height  (s/computed (core/iceil (* @*scale (s/maybe-read *height))))
-     :*repaint (s/effect [*width *height]
-                 (request-frame))}))
+    {:*width  (s/computed (core/iceil (* @*scale (s/maybe-read *width))))
+     :*height (s/computed (core/iceil (* @*scale (s/maybe-read *height))))}))
 
 (core/deftype+ Column [*children ^:mut renders]
   protocols/IComponent
@@ -325,29 +344,31 @@
           (button #(s/reset! *filter f) text))))))
 
 (def app
-  (center
-    (let [header    (padding *padding
-                      (row
-                        [(label "Todos:")
-                         (label (s/computed (count @*todos)))
-                         (label "visible:")
-                         (label (s/computed (count @*filtered-todos)))]))
-          first-btn (button
-                      (fn [] (s/swap! *todos #(vec (cons (s/signal (random-todo)) %))))
-                      "Add First")
-          last-btn  (button
-                      #(s/swap! *todos conj (s/signal (random-todo)))
-                      "Add last")
-          *body     #_(s/computed
-                        (mapv render-todo @*filtered-todos))
-          (s/mapv render-todo @*filtered-todos)]
-      (column
-        (s/computed
-          (concat
-            [header
-             filter-btns]
-            (s/maybe-read *body)
-            [(row [first-btn last-btn])]))))))
+  (mutations
+    (center
+      (let [header    (padding *padding
+                        (row
+                          [(label "Todos:")
+                           (label (s/computed (count @*todos)))
+                           (label "visible:")
+                           (label (s/computed (count @*filtered-todos)))]))
+            ; *body     (s/computed
+            ;               (mapv render-todo @*filtered-todos))
+            *body     (s/mapv render-todo @*filtered-todos)
+            first-btn (button
+                        (fn [] (s/swap! *todos #(vec (cons (s/signal (random-todo)) %))))
+                        "Add First")
+            last-btn  (button
+                        #(s/swap! *todos conj (s/signal (random-todo)))
+                        "Add last")
+            footer    (row [first-btn last-btn])]
+        (column
+          (s/computed
+            (concat
+              [header
+               filter-btns]
+              (s/maybe-read *body)
+              [footer])))))))
 
 (reset! state/*app app)
 
