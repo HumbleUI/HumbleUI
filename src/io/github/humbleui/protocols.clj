@@ -7,6 +7,9 @@
 (defprotocol ISettable
   (-set! [_ key value]))
 
+(defn -update! [this key f & args]
+  (-set! this key (apply f (get this key) args)))
+
 (defprotocol IContext
   (-context [_ ctx]))
 

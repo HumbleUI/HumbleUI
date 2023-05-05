@@ -22,31 +22,36 @@
 (defn request-frame []
   (some-> @state/*window window/request-frame))
 
-(def *scale
-  (s/signal
-    (or
-      (when-some [window @state/*window]
-        (app/doui
-          (window/scale window)))
-      1)))
+(s/defsignal *scale
+  (or
+    (when-some [window @state/*window]
+      (app/doui
+        (window/scale window)))
+    1))
 
-(def *face-ui
-  (s/signal
-    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Regular.ttf")))
+(s/defsignal *face-ui
+  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Regular.ttf"))
 
-(def *font-ui
-  (s/computed
-    (font/make-with-cap-height @*face-ui (* 10 @*scale))))
+(s/defsignal *font-ui
+  (font/make-with-cap-height @*face-ui (* 10 @*scale)))
 
-(def *fill-text
-  (s/signal
-    (paint/fill 0xFF000000)))
+(s/defsignal *font-ui-cap-height
+  (-> @*font-ui font/metrics :cap-height math/ceil))
 
-(def *padding
-  (s/signal 10))
+(s/defsignal *color-text
+  0xFF000000)
 
-(def *fill-button
-  (s/signal 0xFFA5C9EF))
+(s/defsignal *fill-text
+  (paint/fill @*color-text))
+
+(s/defsignal *color-button
+  0xFFA5C9EF)
+
+(s/defsignal *fill-button
+  (paint/fill @*color-button))
+
+(s/defsignal *padding
+  10)
 
 (def ^:dynamic *mutations*)
 
@@ -82,22 +87,40 @@
   (-event [this ctx event]
     (core/event-child (s/maybe-read *child) ctx event)))
 
-(core/deftype+ Mutations []
+(core/deftype+ Shell [^:mut effect]
   :extends AWrapper2
   protocols/IComponent
+  (-draw [this ctx rect canvas]
+    (set! child-rect rect)
+    (let [_        (some-> effect s/dispose!)
+          *context (volatile! (transient #{}))
+          _        (binding [s/*context* *context]
+                     (core/draw-child (s/maybe-read *child) ctx rect canvas))
+          signals  (persistent! @*context)] ;; what was read during draw
+      
+      ;; log all watched signals
+      (println "Watching for next re-render:")
+      (doseq [s signals]
+        (core/log " " (:name s) (:value s)))
+      (println "")
+
+      ;; actually watch signals
+      (set! effect
+        (s/effect signals
+          (request-frame)))))
+  
   (-event [this ctx event]
+    ;; track mutations
     (let [*mutations (volatile! (transient []))
           res (binding [*mutations* *mutations]
                 (core/event-child (s/maybe-read *child) ctx event))
           mutations (persistent! @*mutations)]
       (doseq [m mutations]
         (m))
-      (when-not (empty? mutations)
-        (request-frame))
       res)))
 
-(defn mutations [*child]
-  (map->Mutations
+(defn shell [*child]
+  (map->Shell
     {:*child *child}))
 
 (defn mutate-later [f]
@@ -124,36 +147,28 @@
     {:*on-click *on-click
      :*child *child}))
 
-(core/deftype+ Label [*w *h *paint *line *metrics]
-  :extends ATerminal2
-  
+(core/deftype+ Label [*paint *line]
+  :extends ATerminal2  
   protocols/IComponent
   (-measure [_ ctx cs]
-    (core/ipoint @*w @*h))
+    (core/ipoint (math/ceil (.getWidth ^TextLine @*line)) @*font-ui-cap-height))
   
   (-draw [this ctx rect ^Canvas canvas]
     (.drawTextLine canvas
       @*line
       (:x rect)
-      (+ (:y rect) @*h)
+      (+ (:y rect) @*font-ui-cap-height)
       (s/maybe-read *paint))
     (draw-repaint this ctx rect canvas)))
 
 (defn label [*text]
-  (let [*line    (s/computed
-                   (let [text (str (s/maybe-read *text))
-                         font @*font-ui]
-                     (.shapeLine core/shaper text font ShapingOptions/DEFAULT)))
-        *metrics (s/computed
-                   (font/metrics @*font-ui))]
+  (let [*line (s/signal-named (str "label/line[" (s/maybe-read *text) "]")
+                (let [text (str (s/maybe-read *text))
+                      font @*font-ui]
+                  (.shapeLine core/shaper text font ShapingOptions/DEFAULT)))]
     (map->Label
-      {:*w       (s/computed
-                   (math/ceil (.getWidth ^TextLine @*line)))
-       :*h       (s/computed
-                   (math/ceil (:cap-height @*metrics)))
-       :*paint   *fill-text
-       :*line    *line
-       :*metrics *metrics})))
+      {:*paint *fill-text
+       :*line  *line})))
 
 (core/deftype+ Padding [*amount]
   :extends AWrapper2
@@ -180,12 +195,11 @@
 
 (defn padding [*amount *child]
   (map->Padding
-    {:*amount  (s/computed (* @*scale (s/maybe-read *amount)))
-     :*child   *child}))
+    {:*amount (s/signal-named "padding/amount" (* @*scale (s/maybe-read *amount)))
+     :*child  *child}))
 
 (core/deftype+ Center []
   :extends AWrapper2
-  
   protocols/IComponent
   (-measure [_ ctx cs]
     cs)
@@ -217,9 +231,9 @@
     (core/draw-child (s/maybe-read *child) ctx rect canvas)
     (draw-repaint this ctx rect canvas)))
 
-(defn fill [*color *child]
+(defn fill [*paint *child]
   (map->Fill
-    {:*paint (s/computed (paint/fill (s/maybe-read *color)))
+    {:*paint *paint
      :*child *child}))
 
 (core/deftype+ Gap [*width *height]
@@ -230,8 +244,8 @@
 
 (defn gap [*width *height]
   (map->Gap
-    {:*width  (s/computed (core/iceil (* @*scale (s/maybe-read *width))))
-     :*height (s/computed (core/iceil (* @*scale (s/maybe-read *height))))}))
+    {:*width  (s/signal-named "gap/width" (core/iceil (* @*scale (s/maybe-read *width))))
+     :*height (s/signal-named "gap/height" (core/iceil (* @*scale (s/maybe-read *height))))}))
 
 (core/deftype+ Column [*children ^:mut renders]
   protocols/IComponent
@@ -293,25 +307,30 @@
   (map->Row
     {:*children *children}))
 
-(defn random-todo []
+(s/defsignal *filter
+  :all)
+
+(defn random-todo [filter]
   {:id      (+ 100 (rand-int 900))
-   :checked (rand-nth [true false])})
+   :checked (case filter
+              :all       (rand-nth [true false])
+              :active    false
+              :completed true)})
 
-(def *todos
-  (s/signal
-    (vec
-      (repeatedly 5 #(s/signal (random-todo))))))
+(defn random-*todo [filter]
+  (let [todo (random-todo filter)]
+    (s/signal-named (str "todo[" (:id todo) "]")
+      todo)))
 
-(def *filter
-  (s/signal
-    :all))
+(s/defsignal *todos
+  (vec
+    (repeatedly 5 #(random-*todo :all))))
 
-(def *filtered-todos
-  (s/computed
-    (case @*filter
-      :all       @*todos
-      :active    (vec (remove #(:checked @%) @*todos))
-      :completed (filterv #(:checked @%) @*todos))))
+(s/defsignal *filtered-todos
+  (case @*filter
+    :all       @*todos
+    :active    (vec (remove #(:checked @%) @*todos))
+    :completed (filterv #(:checked @%) @*todos)))
 
 (defn button [*on-click *label]
   (clickable *on-click
@@ -327,8 +346,11 @@
     (row
       [(clickable
          #(s/swap! *todo update :checked not)
-         (label (s/computed (if (:checked @*todo) "✅" "❌"))))
-       (label (s/computed (:id @*todo)))
+         (label (s/signal-named (str "todo[" (:id @*todo) "]/checkbox")
+                  (if (:checked @*todo) "✅" "☑️"))))
+       (label
+         (s/signal-named (str "todo[" (:id @*todo) "]/label")
+           (str "Todo #" (:id @*todo))))
        (clickable
          #(s/swap! *todos without *todo)
          (label "🗑️"))])))
@@ -337,33 +359,37 @@
   (row
     (for [f [:all :active :completed]
           :let [text (str/capitalize (name f))
-                *s   (s/computed (= f @*filter))]]
-      (s/computed
+                *s   (s/signal-named (str "filter-btn[" f "]/match")
+                       (= f @*filter))]]
+      (s/signal-named (str "filter-btn[" f "]")
         (if @*s
           (padding *padding (label text))
           (button #(s/reset! *filter f) text))))))
 
 (def app
-  (mutations
+  (shell
     (center
       (let [header    (padding *padding
                         (row
                           [(label "Todos:")
-                           (label (s/computed (count @*todos)))
+                           (label (s/signal-named "header/count-all" (count @*todos)))
                            (label "visible:")
-                           (label (s/computed (count @*filtered-todos)))]))
-            ; *body     (s/computed
-            ;               (mapv render-todo @*filtered-todos))
-            *body     (s/mapv render-todo @*filtered-todos)
+                           (label (s/signal-named "header/count-visible" (count @*filtered-todos)))]))
+            *body     (s/mapv render-todo *filtered-todos)
             first-btn (button
-                        (fn [] (s/swap! *todos #(vec (cons (s/signal (random-todo)) %))))
+                        (fn []
+                          (let [filter @*filter]
+                            (s/swap! *todos #(vec (cons (random-*todo filter) %)))))
                         "Add First")
             last-btn  (button
-                        #(s/swap! *todos conj (s/signal (random-todo)))
+                        (fn []
+                          (let [filter @*filter]
+                            (s/swap! *todos conj (random-*todo filter))))
                         "Add last")
-            footer    (row [first-btn last-btn])]
+            gc        (button (fn [] (System/gc)) "GC")
+            footer    (row [first-btn last-btn gc])]
         (column
-          (s/computed
+          (s/signal-named "column"
             (concat
               [header
                filter-btns]
@@ -386,6 +412,7 @@
                     :y        :center}
                    state/*app)]
       ; (window/set-z-order window :floating)
+      (reset! protocols/*debug? true)
       (reset! state/*window window)))
   (let [{port "--port"
          :or {port "5555"}} (apply array-map args)
@@ -403,8 +430,15 @@
   (s/reset! *padding 7)
   (s/reset! *padding 10)
   (s/reset! *padding 20)
-  (s/reset! *fill-button 0xFFE0E0E0)
-  (s/reset! *fill-button 0xFFA5C9EF)
-  (s/reset! *fill-button 0xFFD4D0C8)
+  (s/reset! *color-button 0xFFE0E0E0)
+  (s/reset! *color-button 0xFFD4D0C8)
+  (s/reset! *color-button 0xFFA5C9EF)
   (s/reset! *scale 2)
-  (s/reset! *scale 4))
+  (s/reset! *scale 4)
+  (do
+    (s/swap! (first @*todos) update :checked not)
+    (:checked @(first @*todos)))
+  (do
+    (s/swap! (last @*todos) update :checked not)
+    (:checked @(last @*todos)))
+  (request-frame))

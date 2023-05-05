@@ -132,7 +132,7 @@
            :y        :center}
           state/*app))))
   (set-floating! @state/*window @state/*floating)
-  #_(reset! debug/*enabled? true)
+  #_(reset! protocols/*debug? true)
   (let [{port "--port"
          :or {port "5555"}} (apply array-map args)
         port (parse-long port)]

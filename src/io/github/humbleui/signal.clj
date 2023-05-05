@@ -14,16 +14,27 @@
 (def ^:private ^:dynamic *effects*
   nil)
 
+(defn make-ref [val]
+  (WeakReference. val))
+
+(defn read-ref [^WeakReference ref]
+  (.get ref))
+
 (defmacro doouts [[sym outputs] & body]
-  `(doseq [^Reference ref# ~outputs
-           :let [~sym (.get ref#)]
+  `(doseq [ref# ~outputs
+           :let [~sym (read-ref ref#)]
            :when (some? ~sym)]
      ~@body))
+
+(defn disj-output [signal output]
+  (let [outputs  (:outputs signal)
+        outputs' (core/without #(identical? (read-ref %) output) outputs)]
+    (protocols/-set! signal :outputs outputs')))
       
 (defn- set-state! [signal state]
   ; (core/log "set-state!" (:value signal) state)
   (when (and
-          (= :effect (:type signal))
+          (= :eager (:type signal))
           *effects*
           (not= :clean state))
     (vswap! *effects* conj signal))
@@ -47,17 +58,15 @@
         {value' :value
          cache' :cache} (binding [*context* *context]
                           ((:value-fn signal) (:value signal) (:cache signal)))]
-    (if (not= :effect (:type signal))
-      (let [inputs   (:inputs signal)
-            inputs'  (persistent! @*context)
-            _        (assert (every? #(#{:signal :computed} (:type %)) inputs'))
-            ref      (WeakReference. signal)]
+    (when-not (= :eager (:type signal))
+      (let [inputs  (:inputs signal)
+            inputs' (persistent! @*context)
+            _       (assert (every? #(= :lazy (:type %)) inputs'))
+            ref     (make-ref signal)]
         ;; remove from inputs we don’t reference
         (doseq [input inputs
                 :when (not (inputs' input))]
-          (let [outputs  (:outputs input)
-                outputs' (core/without #(identical? (.get ^Reference %) signal) outputs)]
-            (protocols/-set! input :outputs outputs')))
+          (disj-output input signal))
         ;; add to newly acquired inputs
         (doseq [input inputs'
                 :when (not (inputs input))]
@@ -74,7 +83,8 @@
         (protocols/-set! signal :state :clean)
         (:value signal))
       (do
-        @(first inputs)
+        (binding [*context* nil]
+          @(first inputs))
         (if (= :dirty (:state signal))
           (read-dirty signal)
           (recur (next inputs)))))))
@@ -82,42 +92,44 @@
 ;; User APIs
 
 ;; TODO synchronize
-(core/deftype+ Signal [value-fn ^:mut value ^:mut cache ^:mut inputs ^:mut outputs ^:mut state type]
+(core/deftype+ Signal [name value-fn ^:mut value ^:mut cache ^:mut inputs ^:mut outputs ^:mut state type]
   Object
   (toString [_]
-    (str "#Signal{value=" value ", state=" state "}"))
+    (str "#Signal{name=" name ", state=" state ", value=" value "}"))
   IDeref
   (deref [this]
     (when *context*
       (vswap! *context* conj! this))
     (case state
-      :clean value
-      :dirty (read-dirty this)
-      :check (read-check this))))
+      :clean    value
+      :dirty    (read-dirty this)
+      :check    (read-check this)
+      :disposed (throw (ex-info "Can't read disposed signal" {})))))
 
-(defn signal 
-  "Observable mutable state"
-  [initial]
-  (map->Signal
-    {:value   initial
-     :outputs #{}
-     :state   :clean
-     :type    :signal}))
-
-(defn computed* [value-fn]
+(defn signal* [name value-fn]
   (let [signal (map->Signal
-                 {:value-fn value-fn
+                 {:name     name
+                  :value-fn value-fn
                   :inputs   #{}
                   :outputs  #{}
                   :state    :dirty
-                  :type     :computed})]
+                  :type     :lazy})]
     (read-dirty signal) ;; force deps
     signal))
 
-(defmacro computed
+(defmacro signal-named
+  "Observable derived computation"
+  [name & body]
+  `(signal* ~name (fn [~'_ ~'_] {:value (do ~@body)})))
+
+(defmacro signal
   "Observable derived computation"
   [& body]
-  `(computed* (fn [~'_ ~'_] {:value (do ~@body)})))
+  `(signal* :anonymous (fn [~'_ ~'_] {:value (do ~@body)})))
+
+(defmacro defsignal [name & body]
+  `(def ~name
+     (signal* (quote ~name) (fn [~'_ ~'_] {:value (do ~@body)}))))
 
 (defn maybe-read [signal-or-value]
   (if (instance? Signal signal-or-value)
@@ -125,15 +137,28 @@
     signal-or-value))
 
 (defn reset! [signal value']
-  (assert (nil? (:inputs signal)) "Only source signals can be directly mutated")
   (let [*effects (volatile! #{})]
+    ;; clear out all dependencies
+    (doseq [input (:inputs signal)]
+      (disj-output input signal))
+    (protocols/-set! signal :inputs #{})
+    ;; change value and collect all triggered effects
     (binding [*effects* *effects]
       (reset-impl! signal value' nil))
+    ;; execute effects
     (doseq [effect @*effects]
       @effect)))
 
 (defn swap! [signal f & args]
   (reset! signal (apply f @signal args)))
+
+(defn dispose! [signal]
+  (doseq [input (:inputs signal)]
+    (disj-output input signal))
+  (doto signal
+    (protocols/-set! :state :disposed)
+    (protocols/-set! :value nil)
+    (protocols/-set! :cache nil)))
 
 (defmacro effect [inputs & body]
   `(let [inputs# (->> ~inputs
@@ -144,19 +169,18 @@
                     :inputs   (set inputs#)
                     :outputs  #{}
                     :state    :clean
-                    :type     :effect})]
+                    :type     :eager})]
      (doseq [input# inputs#
              :let [outputs# (:outputs input#)]]
-       (protocols/-set! input# :outputs (conj outputs# (WeakReference. signal#))))
+       (protocols/-set! input# :outputs (conj outputs# (make-ref signal#))))
      signal#))
 
-(defn mapv-impl [old-val cache f xs]
-  (let [mapping (into {} (map vector cache old-val))]
-    (clojure.core/mapv #(or (mapping %) (f %)) xs)))
-
-(defmacro mapv [f xs]
-  `(computed*
-     (fn [old-val# cache#]
-       (let [xs# ~xs]
-         {:cache xs#
-          :value (mapv-impl old-val# cache# ~f xs#)}))))
+(defn mapv [f *xs]
+  (signal*
+    :mapv
+    (fn [old-val cache]
+      (let [xs      @*xs
+            mapping (into {} (map vector cache old-val))
+            xs'     (clojure.core/mapv #(or (mapping %) (f %)) xs)]
+        {:cache xs
+         :value xs'}))))
