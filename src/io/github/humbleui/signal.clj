@@ -1,6 +1,5 @@
 (ns io.github.humbleui.signal
   (:refer-clojure :exclude [mapv reset! swap!])
-
   (:require
     [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols])
@@ -125,7 +124,7 @@
 (defmacro signal
   "Observable derived computation"
   [& body]
-  `(signal* :anonymous (fn [~'_ ~'_] {:value (do ~@body)})))
+  `(signal* "anon-signal" (fn [~'_ ~'_] {:value (do ~@body)})))
 
 (defmacro defsignal [name & body]
   `(def ~name
@@ -152,19 +151,21 @@
 (defn swap! [signal f & args]
   (reset! signal (apply f @signal args)))
 
-(defn dispose! [signal]
-  (doseq [input (:inputs signal)]
-    (disj-output input signal))
-  (doto signal
-    (protocols/-set! :state :disposed)
-    (protocols/-set! :value nil)
-    (protocols/-set! :cache nil)))
+(defn dispose! [& signals]
+  (doseq [signal signals]
+    (doseq [input (:inputs signal)]
+      (disj-output input signal))
+    (doto signal
+      (protocols/-set! :state :disposed)
+      (protocols/-set! :value nil)
+      (protocols/-set! :cache nil))))
 
-(defmacro effect [inputs & body]
+(defmacro effect-named [name inputs & body]
   `(let [inputs# (->> ~inputs
                    (filter #(instance? Signal %)))
          signal# (map->Signal
-                   {:value-fn (fn [_# _#]
+                   {:name     ~name
+                    :value-fn (fn [_# _#]
                                 ~@body)
                     :inputs   (set inputs#)
                     :outputs  #{}
@@ -175,12 +176,15 @@
        (protocols/-set! input# :outputs (conj outputs# (make-ref signal#))))
      signal#))
 
+(defmacro effect [inputs & body]
+  `(effect-named "anon-effect" ~inputs ~@body))
+
 (defn mapv [f *xs]
   (signal*
     :mapv
     (fn [old-val cache]
       (let [xs      @*xs
             mapping (into {} (map vector cache old-val))
-            xs'     (clojure.core/mapv #(or (mapping %) (f %)) xs)]
+            xs'     (clojure.core/mapv #(or (mapping %) (binding [*context* nil] (f %))) xs)]
         {:cache xs
          :value xs'}))))

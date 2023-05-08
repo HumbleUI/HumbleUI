@@ -18,3 +18,7 @@
   (-draw            [_ ctx ^IRect rect canvas])
   (-event           [_ ctx event])
   (-iterate         [_ ctx cb]))
+
+(defprotocol ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))

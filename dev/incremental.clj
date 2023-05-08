@@ -22,6 +22,9 @@
 (defn request-frame []
   (some-> @state/*window window/request-frame))
 
+(def *frame
+  (atom 0))
+
 (s/defsignal *scale
   (or
     (when-some [window @state/*window]
@@ -55,26 +58,33 @@
 
 (def ^:dynamic *mutations*)
 
-(defn draw-repaint [comp ctx rect canvas]
-  (protocols/-set! comp :renders ((fnil inc 0) (:renders comp)))
-  (when (= 1 (:renders comp))
-    (canvas/draw-rect canvas (-> rect .toRect (.inflate (* 2 @*scale))) (paint/stroke 0x80FF00FF @*scale))))
+(def ^:dynamic *rendered*)
+
+(defn after-draw [comp ctx rect canvas]
+  (when (nil? (:frame comp))
+    (protocols/-on-mount comp)
+    (canvas/draw-rect canvas (-> rect .toRect (.inflate (* 2 @*scale))) (paint/stroke 0x80FF00FF @*scale)))
+  (protocols/-set! comp :frame @*frame)
+  (vswap! *rendered* conj! comp))
   
 (core/defparent ATerminal2
   "Simple component that has no children"
-  [^:mut renders]
+  [^:mut frame]
   protocols/IComponent
   (-measure [_ _ cs]
     (core/ipoint 0 0))
   (-draw [this ctx rect canvas]
-    (draw-repaint this ctx rect canvas))
+    (after-draw this ctx rect canvas))
   (-event [_ _ _])
   (-iterate [this _ cb]
-    (cb this)))
+    (cb this))
+  protocols/ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))
 
 (core/defparent AWrapper2
   "A component that has exactly one child"
-  [*child ^:mut child-rect ^:mut renders]
+  [*child ^:mut child-rect ^:mut frame]
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure (s/maybe-read *child) ctx cs))
@@ -82,32 +92,47 @@
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child (s/maybe-read *child) ctx rect canvas)
-    (draw-repaint this ctx rect canvas))
+    (after-draw this ctx rect canvas))
 
   (-event [this ctx event]
-    (core/event-child (s/maybe-read *child) ctx event)))
+    (core/event-child (s/maybe-read *child) ctx event))
+  
+  protocols/ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))
 
-(core/deftype+ Shell [^:mut effect]
+(core/deftype+ Shell [^:mut effect ^:mut rendered]
   :extends AWrapper2
   protocols/IComponent
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
-    (let [_        (some-> effect s/dispose!)
-          *context (volatile! (transient #{}))
-          _        (binding [s/*context* *context]
-                     (core/draw-child (s/maybe-read *child) ctx rect canvas))
-          signals  (persistent! @*context)] ;; what was read during draw
+    (let [frame     @*frame
+          _         (some-> effect s/dispose!)
+          *context  (volatile! (transient #{}))
+          *rendered (volatile! (transient []))
+          _         (binding [s/*context* *context
+                              *rendered*  *rendered]
+                      (core/draw-child (s/maybe-read *child) ctx rect canvas))
+          signals   (persistent! @*context)] ;; what was read during draw
+      
+      (doseq [comp rendered
+              :when (< (:frame comp) frame)]
+        (protocols/-on-unmount comp))
+      (set! rendered (persistent! @*rendered))
       
       ;; log all watched signals
-      (println "Watching for next re-render:")
-      (doseq [s signals]
-        (core/log " " (:name s) (:value s)))
-      (println "")
+      ; (println "Watching for next re-render:")
+      ; (doseq [s signals]
+      ;   (core/log " " (:name s) (:value s)))
+      ; (println "")
 
       ;; actually watch signals
       (set! effect
-        (s/effect signals
-          (request-frame)))))
+        (s/effect-named "request-frame" signals
+          (request-frame)))
+      
+      ;; bump frame number
+      (reset! *frame (inc frame))))
   
   (-event [this ctx event]
     ;; track mutations
@@ -132,7 +157,7 @@
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
     (core/draw-child (s/maybe-read *child) ctx rect canvas)
-    (draw-repaint this ctx rect canvas))
+    (after-draw this ctx rect canvas))
 
   (-event [this ctx event]
     (when (and
@@ -159,7 +184,11 @@
       (:x rect)
       (+ (:y rect) @*font-ui-cap-height)
       (s/maybe-read *paint))
-    (draw-repaint this ctx rect canvas)))
+    (after-draw this ctx rect canvas))
+  
+  protocols/ILifecycle
+  (-on-unmount [_]
+    (s/dispose! *line)))
 
 (defn label [*text]
   (let [*line (s/signal-named (str "label/line[" (s/maybe-read *text) "]")
@@ -172,7 +201,6 @@
 
 (core/deftype+ Padding [*amount]
   :extends AWrapper2
-  
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [amount     (* 2 (s/maybe-read *amount))
@@ -191,7 +219,11 @@
           (- (:right rect) amount)
           (- (:bottom rect) amount))
         canvas)
-      (draw-repaint this ctx rect canvas))))
+      (after-draw this ctx rect canvas)))
+  
+  protocols/ILifecycle
+  (-on-unmount [_]
+    (s/dispose! *amount)))
 
 (defn padding [*amount *child]
   (map->Padding
@@ -216,7 +248,7 @@
                        (-> (:y rect) (+ (/ h 2)) (- (/ ch 2)))
                        cw ch)]
       (protocols/-draw child ctx rect' canvas))
-    (draw-repaint this ctx rect canvas)))
+    (after-draw this ctx rect canvas)))
 
 (defn center [*child]
   (map->Center
@@ -224,12 +256,11 @@
 
 (core/deftype+ Fill [*paint]
   :extends AWrapper2
-  
   protocols/IComponent
   (-draw [this ctx rect canvas]
     (canvas/draw-rect canvas rect (s/maybe-read *paint))
     (core/draw-child (s/maybe-read *child) ctx rect canvas)
-    (draw-repaint this ctx rect canvas)))
+    (after-draw this ctx rect canvas)))
 
 (defn fill [*paint *child]
   (map->Fill
@@ -240,14 +271,18 @@
   :extends ATerminal2
   protocols/IComponent
   (-measure [_ ctx _cs]
-    (core/ipoint @*width @*height)))
+    (core/ipoint @*width @*height))
+  
+  protocols/ILifecycle
+  (-on-unmount [_]
+    (s/dispose! *width *height)))
 
 (defn gap [*width *height]
   (map->Gap
     {:*width  (s/signal-named "gap/width" (core/iceil (* @*scale (s/maybe-read *width))))
      :*height (s/signal-named "gap/height" (core/iceil (* @*scale (s/maybe-read *height))))}))
 
-(core/deftype+ Column [*children ^:mut renders]
+(core/deftype+ Column [*children ^:mut frame]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [gap (* @*scale @*padding)]
@@ -267,16 +302,20 @@
           (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
             (protocols/-draw child ctx (core/irect-xywh (:x rect) top (:width size) (:height size)) canvas)
             (recur (next children) (+ top (:height size) gap))))))
-    (draw-repaint this ctx rect canvas))
+    (after-draw this ctx rect canvas))
   
   (-event [_ ctx event]
-    (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (s/maybe-read *children))))
+    (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (s/maybe-read *children)))
+  
+  protocols/ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))
 
 (defn column [*children]
   (map->Column
     {:*children *children}))
 
-(core/deftype+ Row [*children ^:mut renders]
+(core/deftype+ Row [*children ^:mut frame]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [gap (* @*scale @*padding)]
@@ -298,10 +337,14 @@
                 size  (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
             (protocols/-draw child ctx (core/irect-xywh left (:y rect) (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))
-    (draw-repaint this ctx rect canvas))
+    (after-draw this ctx rect canvas))
   
   (-event [_ ctx event]
-    (reduce #(core/eager-or %1 (protocols/-event (s/maybe-read %2) ctx event)) nil (s/maybe-read *children))))
+    (reduce #(core/eager-or %1 (protocols/-event (s/maybe-read %2) ctx event)) nil (s/maybe-read *children)))
+  
+  protocols/ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))
 
 (defn row [*children]
   (map->Row
@@ -310,21 +353,20 @@
 (s/defsignal *filter
   :all)
 
-(defn random-todo [filter]
-  {:id      (+ 100 (rand-int 900))
+(defn random-todo [id filter]
+  {:id      id
    :checked (case filter
               :all       (rand-nth [true false])
               :active    false
               :completed true)})
 
-(defn random-*todo [filter]
-  (let [todo (random-todo filter)]
+(defn random-*todo [id filter]
+  (let [todo (random-todo id filter)]
     (s/signal-named (str "todo[" (:id todo) "]")
       todo)))
 
 (s/defsignal *todos
-  (vec
-    (repeatedly 5 #(random-*todo :all))))
+  (mapv #(random-*todo % :all) (range 0 5)))
 
 (s/defsignal *filtered-todos
   (case @*filter
@@ -346,11 +388,12 @@
     (row
       [(clickable
          #(s/swap! *todo update :checked not)
-         (label (s/signal-named (str "todo[" (:id @*todo) "]/checkbox")
-                  (if (:checked @*todo) "✅" "☑️"))))
+         (label
+           (s/signal-named (str "todo[" (:id @*todo) "]/checkbox")
+             (if (:checked @*todo) "✅" "☑️"))))
        (label
          (s/signal-named (str "todo[" (:id @*todo) "]/label")
-           (str "Todo #" (:id @*todo))))
+           (str @*todo " frame " @*frame)))
        (clickable
          #(s/swap! *todos without *todo)
          (label "🗑️"))])))
@@ -378,23 +421,26 @@
             *body     (s/mapv render-todo *filtered-todos)
             first-btn (button
                         (fn []
-                          (let [filter @*filter]
-                            (s/swap! *todos #(vec (cons (random-*todo filter) %)))))
+                          (let [filter @*filter
+                                id     (-> @*todos first deref :id dec)]
+                            (s/swap! *todos #(vec (cons (random-*todo id filter) %)))))
                         "Add First")
             last-btn  (button
                         (fn []
-                          (let [filter @*filter]
-                            (s/swap! *todos conj (random-*todo filter))))
+                          (let [filter @*filter
+                                id     (-> @*todos last deref :id inc)]
+                            (s/swap! *todos conj (random-*todo id filter))))
                         "Add last")
             gc        (button (fn [] (System/gc)) "GC")
             footer    (row [first-btn last-btn gc])]
         (column
           (s/signal-named "column"
-            (concat
-              [header
-               filter-btns]
-              (s/maybe-read *body)
-              [footer])))))))
+            (vec
+              (concat
+                [header
+                 filter-btns]
+                (s/maybe-read *body)
+                [footer]))))))))
 
 (reset! state/*app app)
 
@@ -408,8 +454,8 @@
                     :screen   (:id screen)
                     :width    800
                     :height   600
-                    :x        :center
-                    :y        :center}
+                    :x        :left
+                    :y        :top}
                    state/*app)]
       ; (window/set-z-order window :floating)
       (reset! protocols/*debug? true)

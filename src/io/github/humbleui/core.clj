@@ -297,6 +297,9 @@
 (defn find-by [key-fn key xs]
   (reduce (fn [_ x] (when (= key (key-fn x)) (reduced x))) nil xs))
 
+(defn repeatedlyv [n f]
+  (into [] (repeatedly n f)))
+
 (defn without [pred coll]
   (persistent!
     (reduce
