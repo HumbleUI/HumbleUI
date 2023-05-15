@@ -60,9 +60,12 @@
 
 (def ^:dynamic *rendered*)
 
+(defn before-draw [comp ctx rect canvas]
+  (when (nil? (:frame comp))
+    (protocols/-on-mount comp)))
+
 (defn after-draw [comp ctx rect canvas]
   (when (nil? (:frame comp))
-    (protocols/-on-mount comp)
     (canvas/draw-rect canvas (-> rect .toRect (.inflate (* 2 @*scale))) (paint/stroke 0x80FF00FF @*scale)))
   (protocols/-set! comp :frame @*frame)
   (vswap! *rendered* conj! comp))
@@ -74,6 +77,7 @@
   (-measure [_ _ cs]
     (core/ipoint 0 0))
   (-draw [this ctx rect canvas]
+    (before-draw this ctx rect canvas)
     (after-draw this ctx rect canvas))
   (-event [_ _ _])
   (-iterate [this _ cb]
@@ -91,12 +95,23 @@
   
   (-draw [this ctx rect canvas]
     (set! child-rect rect)
+    (before-draw this ctx rect canvas)
     (core/draw-child (s/maybe-read *child) ctx rect canvas)
     (after-draw this ctx rect canvas))
 
   (-event [this ctx event]
     (core/event-child (s/maybe-read *child) ctx event))
   
+  protocols/ILifecycle
+  (-on-mount [_])
+  (-on-unmount [_]))
+
+(core/defparent AContainer2
+  "A component that has 1+ child"
+  [*children ^:mut frame]
+  protocols/IComponent
+  (-event [_ ctx event]
+    (reduce #(core/eager-or %1 (protocols/-event (s/maybe-read %2) ctx event)) nil (s/maybe-read *children)))  
   protocols/ILifecycle
   (-on-mount [_])
   (-on-unmount [_]))
@@ -282,7 +297,8 @@
     {:*width  (s/signal-named "gap/width" (core/iceil (* @*scale (s/maybe-read *width))))
      :*height (s/signal-named "gap/height" (core/iceil (* @*scale (s/maybe-read *height))))}))
 
-(core/deftype+ Column [*children ^:mut frame]
+(core/deftype+ Column []
+  :extends AContainer2
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [gap (* @*scale @*padding)]
@@ -295,6 +311,7 @@
           (core/isize w h)))))
   
   (-draw [this ctx rect canvas]
+    (before-draw this ctx rect canvas)
     (let [gap (* @*scale @*padding)]
       (loop [children (s/maybe-read *children)
              top      (:y rect)]
@@ -302,20 +319,14 @@
           (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
             (protocols/-draw child ctx (core/irect-xywh (:x rect) top (:width size) (:height size)) canvas)
             (recur (next children) (+ top (:height size) gap))))))
-    (after-draw this ctx rect canvas))
-  
-  (-event [_ ctx event]
-    (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (s/maybe-read *children)))
-  
-  protocols/ILifecycle
-  (-on-mount [_])
-  (-on-unmount [_]))
+    (after-draw this ctx rect canvas)))
 
 (defn column [*children]
   (map->Column
     {:*children *children}))
 
-(core/deftype+ Row [*children ^:mut frame]
+(core/deftype+ Row []
+  :extends AContainer2
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [gap (* @*scale @*padding)]
@@ -329,6 +340,7 @@
           (core/isize w h)))))
   
   (-draw [this ctx rect canvas]
+    (before-draw this ctx rect canvas)
     (let [gap (* @*scale @*padding)]
       (loop [children (s/maybe-read *children)
              left     (:x rect)]
@@ -337,14 +349,7 @@
                 size  (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
             (protocols/-draw child ctx (core/irect-xywh left (:y rect) (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))
-    (after-draw this ctx rect canvas))
-  
-  (-event [_ ctx event]
-    (reduce #(core/eager-or %1 (protocols/-event (s/maybe-read %2) ctx event)) nil (s/maybe-read *children)))
-  
-  protocols/ILifecycle
-  (-on-mount [_])
-  (-on-unmount [_]))
+    (after-draw this ctx rect canvas)))
 
 (defn row [*children]
   (map->Row
@@ -366,7 +371,7 @@
       todo)))
 
 (s/defsignal *todos
-  (mapv #(random-*todo % :all) (range 0 5)))
+  (mapv #(random-*todo % :all) (range 0 1)))
 
 (s/defsignal *filtered-todos
   (case @*filter
@@ -439,22 +444,22 @@
               (concat
                 [header
                  filter-btns]
-                (s/maybe-read *body)
+                @*body
                 [footer]))))))))
 
 (reset! state/*app app)
 
 (defn -main [& args]  
   (ui/start-app!
-    (let [screen (last (app/screens))
+    (let [screen (first (app/screens))
           _      (s/reset! *scale (:scale screen))
           window (ui/window
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
-                    :width    800
-                    :height   600
-                    :x        :left
+                    :width    400
+                    :height   (/ (:height (:work-area screen)) (:scale screen))
+                    :x        :right
                     :y        :top}
                    state/*app)]
       ; (window/set-z-order window :floating)

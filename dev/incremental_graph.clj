@@ -17,7 +17,8 @@
   (:import
     [io.github.humbleui.types Point IRect]
     [io.github.humbleui.skija Canvas Color Paint Path TextLine]
-    [io.github.humbleui.skija.shaper ShapingOptions]))
+    [io.github.humbleui.skija.shaper ShapingOptions]
+    [java.util HashMap Map WeakHashMap]))
 
 (declare window)
 
@@ -43,9 +44,11 @@
         force (core/point 0 0)]
     (->Node name line mass pos force @*frame nil)))
 
-(def *state
-  (atom {:nodes {}
-         :edges {}}))
+(def *nodes
+  (atom (WeakHashMap.)))
+
+(def show-effects?
+  false)
 
 (defn sources []
   (concat
@@ -59,52 +62,46 @@
     @i/*todos))
 
 (defn collect-signals [acc s]
-  (if (= :eager (:type s))
+  (if (and (not show-effects?) (= :eager (:type s)))
     acc
     (reduce
       collect-signals
       (conj! acc s)
       (keep s/read-ref (:outputs s)))))
 
-(defn update-nodes [nodes sources]
-  (let [signals' (persistent! (reduce collect-signals (transient #{}) sources))]
+(defn update-nodes [nodes]
+  (let [signals' (persistent! (reduce collect-signals (transient #{}) (sources)))]
     (reduce
-      (fn [m s]
-        (let [node (or (nodes s) (make-node s))
-              value @s]
+      (fn [^Map m s]
+        (let [node (or (.get nodes s) (make-node s))
+              value (:value s)]
           (when (not= value (:last-value node))
             (protocols/-set! node :last-value value)
             (protocols/-set! node :frame @*frame))
-          (assoc m s node)))
-      {} signals')))
+          (.put m s node)
+          m))
+      (WeakHashMap.) signals')))
 
 (defn collect-edges 
-  ([nodes sources]
-   (reduce #(collect-edges nodes %1 %2) {} sources))
-  ([nodes acc s]
+  ([nodes]
+   (reduce #(collect-edges nodes %1 %2) {} (sources)))
+  ([^Map nodes acc s]
    (cond
-     (= :eager (:type s))
+     (and (not show-effects?) (= :eager (:type s)))
      acc
      
-     (nil? (nodes s))
+     (nil? (.get nodes s))
      acc
      
      :else
-     (let [outs (->> (:outputs s)
-                  (keep s/read-ref)
-                  (remove #(= :eager (:type %)))
-                  (filter #(nodes %)))]
+     (let [outs (cond->> (:outputs s)
+                  true (keep s/read-ref)
+                  (not show-effects?) (remove #(= :eager (:type %)))
+                  true (filter #(.containsKey nodes %)))]
        (reduce
          #(collect-edges nodes %1 %2)
          (assoc acc s outs)
          outs)))))
-
-(defn update-state [state]
-  (let [sources (sources)
-        nodes'  (update-nodes (:nodes state) sources)
-        edges'  (collect-edges nodes' sources)]
-    {:nodes nodes'
-     :edges edges'}))
 
 (def *focus?
   (atom true))
@@ -139,7 +136,7 @@
 (def strings
   0.1)
 
-(defn apply-forces! [nodes edges ^Point center]
+(defn apply-forces! [nodes ^Point center]
   ;; gravity
   (doseq [[_ n] nodes]
     (let [gf (-> ^Point (:pos n) (.offset (.inverse center)) (.inverse) (.scale g))]
@@ -156,7 +153,7 @@
         (protocols/-update! from :force #(.offset ^Point % force))
         (protocols/-update! to :force #(.offset ^Point % (.inverse force))))))
   ;; edges
-  (doseq [[from tos] edges
+  (doseq [[from tos] (collect-edges nodes)
           to tos]
     (let [from  ^Node (get nodes from)
           to    ^Node (get nodes to)
@@ -198,8 +195,8 @@
 (defn on-paint [ctx ^Canvas canvas size]
   (let [{:keys [font-ui scale]} ctx
         {:keys [width height]} size
-        {:keys [nodes edges]} (swap! *state update-state)]
-    (apply-forces! nodes edges (core/point (/ width 2) (/ height 2)))
+        nodes (swap! *nodes update-nodes)]
+    (apply-forces! nodes (core/point (/ width 2) (/ height 2)))
     (canvas/clear canvas 0xFFFFFFFF)
         
     ; draw nodes
@@ -225,7 +222,7 @@
             (.drawTextLine canvas val-line left (+ top (* 3 h)) fill-text)))))
     
     ; draw edges
-    (doseq [[from tos] edges
+    (doseq [[from tos] (collect-edges nodes)
             to tos
             :let [from (get nodes from)
                   to   (get nodes to)]]
@@ -247,8 +244,14 @@
 
 (defonce window
   (app/doui
-    (ui/window
-      {:title "Visualizer"
-       :x     :right
-       :y     :bottom}
-      #'app)))
+    (let [screen (last (app/screens))
+          scale  (:scale screen)
+          {:keys [width height]} (:work-area screen)]
+      (ui/window
+        {:title  "Visualizer"
+         :screen (:id screen)
+         :width  (/ width scale)
+         :height (/ height scale)
+         :exit-on-close? false}
+        #'app))))
+
