@@ -1,3 +1,5 @@
+;; Run with ./script/incremental.sh
+
 (ns incremental
   (:require
     [clojure.core.server :as server]
@@ -47,11 +49,11 @@
 (s/defsignal *fill-text
   (paint/fill @*color-text))
 
-(s/defsignal *color-button
+(s/defsignal *accent
   0xFFA5C9EF)
 
 (s/defsignal *fill-button
-  (paint/fill @*color-button))
+  (paint/fill @*accent))
 
 (s/defsignal *padding
   10)
@@ -506,10 +508,10 @@
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
-                    :width    400
-                    :height   (/ (:height (:work-area screen)) (:scale screen))
-                    :x        :right
-                    :y        :top}
+                    :width    400 #_400
+                    :height   600 #_(/ (:height (:work-area screen)) (:scale screen))
+                    :x        :center #_:right
+                    :y        :center #_:top}
                    state/*app)]
       ; (window/set-z-order window :floating)
       (reset! protocols/*debug? true)
@@ -530,15 +532,10 @@
   (s/reset! *padding 7)
   (s/reset! *padding 10)
   (s/reset! *padding 20)
-  (s/reset! *color-button 0xFFE0E0E0)
-  (s/reset! *color-button 0xFFD4D0C8)
-  (s/reset! *color-button 0xFFA5C9EF)
+  (s/reset! *accent 0xFFE0E0E0)
+  (s/reset! *accent 0xFFD4D0C8)
+  (s/reset! *accent 0xFFA5C9EF)
   (s/reset! *scale 2)
+  (s/reset! *scale 3)
   (s/reset! *scale 4)
-  (do
-    (s/swap! (first @*todos) update :checked not)
-    (:checked @(first @*todos)))
-  (do
-    (s/swap! (last @*todos) update :checked not)
-    (:checked @(last @*todos)))
   (request-frame))
