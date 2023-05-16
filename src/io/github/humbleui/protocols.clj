@@ -14,11 +14,16 @@
   (-context [_ ctx]))
 
 (defprotocol IComponent
-  (-measure ^IPoint [_ ctx ^IPoint cs])
-  (-draw            [_ ctx ^IRect rect canvas])
-  (-event           [_ ctx event])
-  (-iterate         [_ ctx cb]))
+  (-measure ^IPoint      [_ ctx ^IPoint cs])
+  (-measure-impl ^IPoint [_ ctx ^IPoint cs])
+  (-draw                 [_ ctx ^IRect rect canvas])
+  (-draw-impl            [_ ctx ^IRect rect canvas])
+  (-event                [_ ctx event])
+  (-event-impl           [_ ctx event])
+  (-iterate              [_ ctx cb]))
 
 (defprotocol ILifecycle
   (-on-mount [_])
-  (-on-unmount [_]))
+  (-on-mount-impl [_])
+  (-on-unmount [_])
+  (-on-unmount-impl [_]))

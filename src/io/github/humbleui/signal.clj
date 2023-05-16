@@ -160,7 +160,8 @@
     (doto signal
       (protocols/-set! :state :disposed)
       (protocols/-set! :value nil)
-      (protocols/-set! :cache nil))))
+      (protocols/-set! :cache nil)))
+  nil)
 
 (defmacro effect-named [name inputs & body]
   `(let [inputs# (->> ~inputs
