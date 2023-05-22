@@ -5,6 +5,7 @@
     [clojure.core.server :as server]
     [clojure.math :as math]
     [clojure.string :as str]
+    [clj-async-profiler.core :as profiler]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
@@ -70,7 +71,7 @@
 
 (defn after-draw [comp ctx rect canvas]
   (when (nil? (:frame comp))
-    (canvas/draw-rect canvas (-> rect .toRect (.inflate (* 2 @*scale))) (paint/stroke 0x80FF00FF @*scale)))
+    (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate (* 2 @*scale))) (paint/stroke 0x80FF00FF @*scale)))
   (protocols/-set! comp :frame @*frame)
   (vswap! *rendered* conj! comp))
 
@@ -122,7 +123,8 @@
   :extends ATerminal2  
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (core/ipoint (math/ceil (.getWidth ^TextLine @*line)) @*font-ui-cap-height))
+    (let [^TextLine line @*line]
+      (core/ipoint (math/ceil (.getWidth line)) @*font-ui-cap-height)))
   
   (-draw-impl [this ctx rect ^Canvas canvas]
     (.drawTextLine canvas
@@ -314,7 +316,10 @@
              h        0]
         (if-some [child (first children)]
           (let [size (protocols/-measure child ctx cs)]
-            (recur (next children) (max w (:width size)) (+ h (:height size) gap)))
+            (recur
+              (next children)
+              (long (max w (:width size)))
+              (long (+ h (:height size) gap))))
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
@@ -341,7 +346,10 @@
         (if-some [*child (first children)]
           (let [child (s/maybe-read *child)
                 size  (protocols/-measure child ctx cs)]
-            (recur (next children) (+ w (:width size) gap) (max h (:height size))))
+            (recur
+              (next children)
+              (long (+ w (:width size) gap))
+              (long (max h (:height size)))))
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
@@ -390,7 +398,10 @@
           (request-frame)))
       
       ;; bump frame number
-      (reset! *frame (inc frame))))
+      (reset! *frame (inc frame))
+      
+      #_(request-frame)
+      ))
   
   (-event [this ctx event]
     ;; track mutations
@@ -465,6 +476,16 @@
           (padding *padding (label text))
           (button #(s/reset! *filter f) text))))))
 
+(defn add-first []
+  (let [filter @*filter
+        id     (-> @*todos first deref :id dec)]
+    (s/swap! *todos #(vec (cons (random-*todo id filter) %)))))
+
+(defn add-last []
+  (let [filter @*filter
+        id     (-> @*todos last deref :id inc)]
+    (s/swap! *todos conj (random-*todo id filter))))
+
 (def app
   (shell
     (center
@@ -475,18 +496,8 @@
                            (label "visible:")
                            (label (s/signal-named "header/count-visible" (count @*filtered-todos)))]))
             *body     (s/mapv render-todo *filtered-todos)
-            first-btn (button
-                        (fn []
-                          (let [filter @*filter
-                                id     (-> @*todos first deref :id dec)]
-                            (s/swap! *todos #(vec (cons (random-*todo id filter) %)))))
-                        "Add First")
-            last-btn  (button
-                        (fn []
-                          (let [filter @*filter
-                                id     (-> @*todos last deref :id inc)]
-                            (s/swap! *todos conj (random-*todo id filter))))
-                        "Add last")
+            first-btn (button add-first "Add First")
+            last-btn  (button add-last "Add last")
             gc        (button (fn [] (System/gc)) "GC")
             footer    (row [first-btn last-btn gc])]
         (column
@@ -500,7 +511,7 @@
 
 (reset! state/*app app)
 
-(defn -main [& args]  
+(defn -main [& args]
   (ui/start-app!
     (let [screen (first (app/screens))
           _      (s/reset! *scale (:scale screen))
@@ -527,6 +538,10 @@
        :server-daemon false})))
 
 (comment
+  (profiler/profile
+    (dotimes [i 1000]
+      (add-last)))
+  
   (s/reset! *padding 0)
   (s/reset! *padding 5)
   (s/reset! *padding 7)

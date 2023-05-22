@@ -257,6 +257,10 @@
 (defn clamp [x from to]
   (min (max x from) to))
 
+(defn single [xs]
+  (assert (= 1 (count xs)) ("Expected 1 element, got " (count xs)))
+  (first xs))
+
 (defn between? [x from to]
   (and
     (<= from x)

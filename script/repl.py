@@ -9,7 +9,8 @@ def main():
     build_utils.fetch_maven("org.clojure", "tools.namespace", build_utils.deps_version("tools.namespace")),
     build_utils.fetch_maven("org.clojure", "java.classpath", "1.0.0"),
     build_utils.fetch_maven("org.clojure", "tools.reader", "1.3.6"),
-    build_utils.fetch_maven("criterium", "criterium", build_utils.deps_version("criterium"), repo = common.clojars)
+    build_utils.fetch_maven("criterium", "criterium", build_utils.deps_version("criterium"), repo = common.clojars),
+    build_utils.fetch_maven("com.clojure-goes-fast", "clj-async-profiler", build_utils.deps_version("clj-async-profiler"), repo = common.clojars),
   ]
   
   parser = argparse.ArgumentParser()
@@ -19,6 +20,9 @@ def main():
   return subprocess.call(["java",
     "--class-path", build_utils.classpath_join(classpath),
     "-ea",
+    "-Djdk.attach.allowAttachSelf",
+    # "-XX:+UnlockDiagnosticVMOptions",
+    # "-XX:+DebugNonSafepoints",
     "clojure.main", "-m", args.main])
 
 if __name__ == '__main__':
