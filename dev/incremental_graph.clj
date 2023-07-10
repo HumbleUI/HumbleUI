@@ -13,7 +13,7 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]
-    [examples.state :as state])
+    [state])
   (:import
     [io.github.humbleui.types Point IRect]
     [io.github.humbleui.skija Canvas Color Paint Path TextLine]
@@ -73,7 +73,7 @@
   (let [signals' (persistent! (reduce collect-signals (transient #{}) (sources)))]
     (reduce
       (fn [^Map m s]
-        (let [node (or (.get nodes s) (make-node s))
+        (let [node (or (.get ^Map nodes s) (make-node s))
               value (:value s)]
           (when (not= value (:last-value node))
             (protocols/-set! node :last-value value)
@@ -242,16 +242,15 @@
                    :window-focus-out (reset! *focus? false)
                    nil))}))
 
-(defonce window
-  (app/doui
-    (let [screen (last (app/screens))
-          scale  (:scale screen)
-          {:keys [width height]} (:work-area screen)]
-      (ui/window
-        {:title  "Visualizer"
-         :screen (:id screen)
-         :width  (/ width scale)
-         :height (/ height scale)
-         :exit-on-close? false}
-        #'app))))
-
+; (defonce window
+;   (app/doui
+;     (let [screen (last (app/screens))
+;           scale  (:scale screen)
+;           {:keys [width height]} (:work-area screen)]
+;       (ui/window
+;         {:title  "Visualizer"
+;          :screen (:id screen)
+;          :width  (/ width scale)
+;          :height (/ height scale)
+;          :exit-on-close? false}
+;         #'app))))

@@ -261,6 +261,9 @@
   (assert (= 1 (count xs)) ("Expected 1 element, got " (count xs)))
   (first xs))
 
+(defn consv [x xs]
+  (vec (cons x xs)))
+
 (defn between? [x from to]
   (and
     (<= from x)
@@ -516,7 +519,7 @@
   (let [[parent body] (if (= :extends (first body))
                         (let [[_ sym & body'] body]
                           [(or (some-> sym resolve deref)
-                             (throw (ex-info (str "Can't resolve symbol: " sym) {:symbol symbol})))
+                             (throw (ex-info (str "Can't resolve symbol: " sym) {:symbol sym})))
                            body'])
                         [nil body])
         update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
@@ -604,12 +607,18 @@
   "Defines base “class” that deftype+ can extend from.
    Supports extra field and protocols which deftype+ can partially override.
    If calling external functions, use fully-qualified or namespaced symbol"
-  [sym doc fields & body]
-  (if (string? doc)
-    `(def ~sym
+  [sym & body]
+  (let [[doc body]    (if (string? (first body)) [(first body) (next body)] ["" body])
+        [fields body] [(first body) (next body)]
+        [parent body] (if (= :extends (first body)) [(second body) (nnext body)] [nil body])
+        parent        (when parent
+                        (or (some-> parent resolve deref)
+                          (throw (ex-info (str "Can't resolve symbol: " parent) {:symbol symbol}))))
+        fields    (vec (concat (:fields parent) fields))
+        protocols (merge-with merge (:protocols parent) (group-protos body))]
+    `(def ~sym ~doc
        {:fields    (quote ~fields)
-        :protocols (quote ~(group-protos body))})
-    `(defparent ~sym "" ~fields ~@body)))
+        :protocols (quote ~protocols)})))
 
 (alias 'core 'io.github.humbleui.core)
 

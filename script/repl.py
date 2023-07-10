@@ -14,7 +14,7 @@ def main():
   ]
   
   parser = argparse.ArgumentParser()
-  parser.add_argument('--main', default='examples')
+  parser.add_argument('--ns', default='examples')
   (args, _) = parser.parse_known_args()
 
   return subprocess.call(["java",
@@ -23,7 +23,7 @@ def main():
     "-Djdk.attach.allowAttachSelf",
     # "-XX:+UnlockDiagnosticVMOptions",
     # "-XX:+DebugNonSafepoints",
-    "clojure.main", "-m", args.main])
+    "clojure.main", "-m", "user", "--ns", args.ns])
 
 if __name__ == '__main__':
   sys.exit(main())

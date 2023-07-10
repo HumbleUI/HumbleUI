@@ -16,14 +16,11 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]
-    [examples.state :as state])
+    [state])
   (:import
     [io.github.humbleui.types IRect]
     [io.github.humbleui.skija Canvas TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
-
-(defn request-frame []
-  (some-> @state/*window window/request-frame))
 
 (def *frame
   (atom 0))
@@ -395,12 +392,12 @@
       ;; actually watch signals
       (set! effect
         (s/effect-named "request-frame" signals
-          (request-frame)))
+          (state/request-frame)))
       
       ;; bump frame number
       (reset! *frame (inc frame))
       
-      #_(request-frame)
+      #_(state/request-frame)
       ))
   
   (-event [this ctx event]
@@ -509,34 +506,6 @@
                 @*body
                 [footer]))))))))
 
-(reset! state/*app app)
-
-(defn -main [& args]
-  (ui/start-app!
-    (let [screen (first (app/screens))
-          _      (s/reset! *scale (:scale screen))
-          window (ui/window
-                   {:title    "Humble 🐝 UI"
-                    :mac-icon "dev/images/icon.icns"
-                    :screen   (:id screen)
-                    :width    400 #_400
-                    :height   600 #_(/ (:height (:work-area screen)) (:scale screen))
-                    :x        :center #_:right
-                    :y        :center #_:top}
-                   state/*app)]
-      ; (window/set-z-order window :floating)
-      (reset! protocols/*debug? true)
-      (reset! state/*window window)))
-  (let [{port "--port"
-         :or {port "5555"}} (apply array-map args)
-        port (parse-long port)]
-    (println "Started Server Socket REPL on port" port)
-    (server/start-server
-      {:name          "repl"
-       :port          port
-       :accept        'clojure.core.server/repl
-       :server-daemon false})))
-
 (comment
   (profiler/profile
     (dotimes [i 1000]
@@ -553,4 +522,4 @@
   (s/reset! *scale 2)
   (s/reset! *scale 3)
   (s/reset! *scale 4)
-  (request-frame))
+  (state/request-frame))

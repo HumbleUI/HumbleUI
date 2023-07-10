@@ -1,6 +1,6 @@
 (ns examples.settings
   (:require
-    [examples.state :as state]
+    [state :as state]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui :as ui]))

@@ -1,12 +1,6 @@
 (ns ^{:clojure.tools.namespace.repl/load false}
   examples.state)
 
-(def *window
-  (atom nil))
-
-(def *app
-  (atom nil))
-
 (def *example
   (atom "Paragraph"))
 
@@ -26,5 +20,3 @@
 (def *treemap-state
   (atom nil))
 
-(def *floating
-  (atom false))

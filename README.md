@@ -89,16 +89,16 @@ Sample apps:
 
 ## Development
 
-Run nREPL server:
+Run REPL server:
 
 ```
-./script/nrepl.py
+./script/repl.py
 ```
 
 To reload demo app using `tools.namespace`, evaluate:
 
 ```
-(examples.state/reload)
+(user/reload)
 ```
 
 ## Examples

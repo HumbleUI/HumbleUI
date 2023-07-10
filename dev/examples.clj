@@ -21,9 +21,9 @@
     [examples.paragraph]
     [examples.scroll]
     [examples.settings]
-    [examples.state :as state]
     [examples.slider]
     [examples.stack]
+    [examples.state :as state]
     [examples.svg]
     [examples.text-field]
     [examples.text-field-debug]
@@ -38,16 +38,6 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui]))
-
-(defn set-floating! [window floating]
-  (when window
-    (if floating
-      (window/set-z-order window :floating)
-      (window/set-z-order window :normal))))
-
-(add-watch state/*floating ::window
-  (fn [_ _ _ floating]
-    (set-floating! @state/*window floating)))
 
 (def examples
   (sorted-map
@@ -101,8 +91,8 @@
         (ui/column
           (for [[name _] (sort-by first examples)]
             (ui/clickable
-              {:on-click (fn [_] (reset! state/*example name))}
-              (ui/dynamic ctx [selected? (= name @state/*example)
+              {:on-click (fn [_] (reset! examples.state/*example name))}
+              (ui/dynamic ctx [selected? (= name @examples.state/*example)
                                hovered?  (:hui/hovered? ctx)]
                 (let [label (ui/padding 20 10
                               (ui/label name))]
@@ -113,32 +103,6 @@
       border-line
       [:stretch 1
        (ui/clip
-         (ui/dynamic _ [name @state/*example]
+         (ui/dynamic _ [name @examples.state/*example]
            (examples name)))])))
 
-(reset! state/*app app)
-
-(defn -main [& args]
-  (ui/start-app!
-    (let [screen (app/primary-screen)]
-      (reset! state/*window 
-        (ui/window
-          {:title    "Humble 🐝 UI"
-           :mac-icon "dev/images/icon.icns"
-           :screen   (:id screen)
-           :width    600
-           :height   600
-           :x        :center
-           :y        :center}
-          state/*app))))
-  (set-floating! @state/*window @state/*floating)
-  #_(reset! protocols/*debug? true)
-  (let [{port "--port"
-         :or {port "5555"}} (apply array-map args)
-        port (parse-long port)]
-    (println "Started Server Socket REPL on port" port)
-    (server/start-server
-      {:name          "repl"
-       :port          port
-       :accept        'clojure.core.server/repl
-       :server-daemon false})))

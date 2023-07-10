@@ -32,13 +32,15 @@
          paint-fn   (fn [window canvas]
                       (canvas/clear canvas bg-color)
                       (let [bounds (window/content-rect window)]
-                        (core/draw (app-fn) (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas)))
+                        (when-some [app (app-fn)]
+                          (core/draw app (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas))))
          event-fn   (fn [window event]
                       (core/when-every [{:keys [x y]} event]
                         (vreset! *mouse-pos (core/ipoint x y)))
-                      (when-let [result (core/event (app-fn) (ctx-fn window) event)]
-                        (window/request-frame window)
-                        result))
+                      (when-some [app (app-fn)]
+                        (when-let [result (core/event app (ctx-fn window) event)]
+                          (window/request-frame window)
+                          result)))
          window     (window/make
                       {:on-close (when (or ref? exit-on-close?)
                                    #(do
