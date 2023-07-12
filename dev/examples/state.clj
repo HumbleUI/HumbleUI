@@ -2,7 +2,7 @@
   examples.state)
 
 (def *example
-  (atom "Paragraph"))
+  (atom "OkLCH"))
 
 (def *todomvc-state
   (atom

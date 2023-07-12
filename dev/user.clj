@@ -3,15 +3,28 @@
   (:require
     [clojure.core.server :as server]
     [clojure.tools.namespace.repl :as ns]
+    [clojure.tools.namespace.track :as track]
     [state]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui])
+  (:import
+    [io.github.humbleui.skija ColorSpace]))
 
 (ns/set-refresh-dirs "src" "dev")
 
+(def *reloaded
+  (atom nil))
+
+(add-watch #'ns/refresh-tracker ::watch
+  (fn [_ _ old new]
+    (when (empty? (::track/load new))
+      (reset! *reloaded (::track/load old)))))
+
 (defn after-reload []
-  (reset! state/*app @(requiring-resolve (symbol @state/*ns "app"))))
+  (reset! state/*app @(requiring-resolve (symbol @state/*ns "app")))
+  (let [cnt (count @*reloaded)]
+    (str "Reloaded " cnt " namespace" (when (> cnt 1) "s"))))
 
 (defn reload []
   (set! *warn-on-reflection* true)
@@ -65,6 +78,9 @@
                     :x        :center
                     :y        :center}
                    state/*app)]
+      ;; TODO load real monitor profile
+      (when (= :macos app/platform)
+        (set! (.-_colorSpace (.getLayer window)) (ColorSpace/getDisplayP3)))
       (set-floating! window @state/*floating)
       ; (reset! protocols/*debug? true)
       (deliver state/*window window)))

@@ -18,6 +18,7 @@
     [examples.grid]
     [examples.image-snapshot]
     [examples.label]
+    [examples.oklch]
     [examples.paragraph]
     [examples.scroll]
     [examples.settings]
@@ -58,6 +59,7 @@
     "Grid" examples.grid/ui
     "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui
+    "OkLCH" examples.oklch/ui
     "Paragraph" examples.paragraph/ui
     "Scroll" examples.scroll/ui
     "Settings" examples.settings/ui
