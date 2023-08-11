@@ -874,7 +874,13 @@
                              
                              (core/when-case (and (not macos?) ctrl?) key
                                :a [:select-all]
-                               :z [:undo])
+                               :z [:undo]
+                               :y [:redo])
+                             
+                             (core/when-case (and (not macos?) ctrl? selection?) key
+                               :x [:copy :kill]
+                               :c [:copy]
+                               :v [:kill :paste])
                              
                              (core/when-case true key
                                :left      [:move-char-left]
