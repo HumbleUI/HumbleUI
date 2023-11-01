@@ -2,7 +2,7 @@
   examples.state)
 
 (def *example
-  (atom "OkLCH"))
+  (atom "Framerate"))
 
 (def *todomvc-state
   (atom

@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import argparse, base64, functools, glob, itertools, json, os, pathlib, platform, re, shutil, subprocess, tempfile, time, urllib.request, zipfile
+import argparse, base64, functools, glob, itertools, json, os, pathlib, platform, re, shutil, subprocess, tempfile, time, sys, urllib.request, zipfile
 from typing import List, Tuple
 
 def get_arg(name):
@@ -9,7 +9,8 @@ def get_arg(name):
   return vars(args).get(name.replace("-", "_"))
 
 execdir = os.getcwd()
-arch   = get_arg("arch") or {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64'}[platform.machine()]
+native_arch = {'AMD64': 'x64', 'x86_64': 'x64', 'arm64': 'arm64', 'aarch64': 'arm64'}[platform.machine()]
+arch   = get_arg("arch")   or native_arch
 system = get_arg("system") or {'Darwin': 'macos', 'Linux': 'linux', 'Windows': 'windows'}[platform.system()]
 classpath_separator = ';' if platform.system() == 'Windows' else ':'
 mvn = "mvn.cmd" if platform.system() == "Windows" else "mvn"
@@ -57,7 +58,7 @@ def copy_replace(src, dst, replacements):
     updated = updated.replace(key, value)
   makedirs(os.path.dirname(dst))
   if updated != slurp(dst):
-    print("Writing", dst)
+    print("Writing", dst, flush=True)
     with open(dst, 'w') as f:
       f.write(updated)
 
@@ -84,7 +85,7 @@ def has_newer(sources, targets):
 
 def fetch(url, file):
   if not os.path.exists(file):
-    print('Downloading', url)
+    print('Downloading', url, flush=True)
     data = urllib.request.urlopen(url).read()
     if os.path.dirname(file):
       makedirs(os.path.dirname(file))
@@ -97,14 +98,23 @@ def fetch_maven(group, name, version, classifier=None, repo='https://repo1.maven
   fetch(repo + '/' + path, file)
   return file
 
+def check_call(args):
+  res = subprocess.call(args)
+  if res != 0:
+    cmd = ' '.join(args)
+    if len(cmd) > 100:
+      cmd = cmd[:100] + '...'
+    print('---\nProcess "' + cmd + '" failed with code ' + str(res), flush=True)
+    sys.exit(res)
+
 def javac(sources, target, classpath = [], modulepath = [], add_modules = [], release = '11', opts=[]):
   makedirs(target)
   classes = {path.stem: path.stat().st_mtime for path in pathlib.Path(target).rglob('*.class') if '$' not in path.stem}
   newer = lambda path: path.stem not in classes or path.stat().st_mtime > classes.get(path.stem)
   new_sources = [path for path in sources if newer(pathlib.Path(path))]
   if new_sources:
-    print('Compiling', len(new_sources), 'java files to', target + ':', new_sources)
-    subprocess.check_call([
+    print('Compiling', len(new_sources), 'java files to', target + ':', new_sources, flush=True)
+    check_call([
       'javac',
       '-encoding', 'UTF8',
       *opts,
@@ -115,25 +125,25 @@ def javac(sources, target, classpath = [], modulepath = [], add_modules = [], re
       '-d', target,
       *new_sources])
 
-def jar(target: str, *content: List[Tuple[str, str]]) -> str:
+def jar(target: str, *content: List[Tuple[str, str]], opts=[]) -> str:
   if has_newer(files(*[dir + "/" + subdir + "/**" for (dir, subdir) in content]), [target]):
-    print(f"Packaging {os.path.basename(target)}")
+    print(f"Packaging {os.path.basename(target)}", flush=True)
     makedirs(os.path.dirname(target))
-    subprocess.check_call(["jar",
+    check_call(["jar",
       "--create",
       "--file", target,
-      *cat([["-C", dir, file] for (dir, file) in content])])
+      *cat([["-C", dir, file] for (dir, file) in content])] + opts)
   return target
 
 @functools.lru_cache(maxsize=1)
 def lombok():
-  return fetch_maven('org.projectlombok', 'lombok', '1.18.22')
+  return fetch_maven('org.projectlombok', 'lombok', '1.18.28')
 
 def delombok(dirs: List[str], target: str, classpath: List[str] = [], modulepath: List[str] = []):
   sources = files(*[dir + "/**/*.java" for dir in dirs])
   if has_newer(sources, files(target + "/**")):
-    print("Delomboking", *dirs, "to", target)
-    subprocess.check_call(["java",
+    print("Delomboking", *dirs, "to", target, flush=True)
+    check_call(["java",
       "-Dfile.encoding=UTF8",
       "-jar", lombok(),
       "delombok",
@@ -147,8 +157,8 @@ def delombok(dirs: List[str], target: str, classpath: List[str] = [], modulepath
 def javadoc(dirs: List[str], target: str, classpath: List[str] = [], modulepath: List[str] = []):
   sources = files(*[dir + "/**/*.java" for dir in dirs])
   if has_newer(sources, files(target + "/**")):
-    print("Generating JavaDoc", *dirs, "to", target)
-    subprocess.check_call(["javadoc",
+    print("Generating JavaDoc", *dirs, "to", target, flush=True)
+    check_call(["javadoc",
       *(["--class-path", classpath_join(classpath)] if classpath else []),
       *(["--module-path", classpath_join(modulepath)] if modulepath else []),
       "-d", target,
@@ -194,8 +204,8 @@ def deploy(jar,
 
   classifier = classifier or (re.fullmatch(r".*-\d+\.\d+\.\d+(?:-SNAPSHOT)?(?:-([a-z0-9\-]+))?\.jar", os.path.basename(jar))[1])
 
-  print(f'Deploying {jar}', classifier, pom)
-  subprocess.check_call(
+  print(f'Deploying {jar}', classifier, pom, flush=True)
+  check_call(
     [mvn, 'gpg:sign-and-deploy-file'] + \
     mvn_settings + \
     [f'-DpomFile={tempdir}/{pom}',
@@ -217,28 +227,28 @@ def release(ossrh_username = os.getenv('OSSRH_USERNAME'),
                                  headers=headers,
                                  data = json.dumps(data).encode('utf-8') if data else None)
     resp = urllib.request.urlopen(req).read().decode('utf-8')
-    print(' ', path, "->", resp)
+    print(' ', path, "->", resp, flush=True)
     return json.loads(resp) if resp else None
 
-  print('Finding staging repo')
+  print('Finding staging repo', flush=True)
   resp = fetch('/profile_repositories')
   if len(resp['data']) != 1:
-    print("Too many open repositories:", [repo['repositoryId'] for repo in resp['data']])
+    print("Too many open repositories:", [repo['repositoryId'] for repo in resp['data']], flush=True)
     return 1
 
   repo_id = resp['data'][0]["repositoryId"]
   
-  print('Closing repo', repo_id)
+  print('Closing repo', repo_id, flush=True)
   resp = fetch('/bulk/close', data = {"data": {"description": "", "stagedRepositoryIds": [repo_id]}})
 
   while True:
-    print('Checking repo', repo_id, 'status')
+    print('Checking repo', repo_id, 'status', flush=True)
     resp = fetch('/repository/' + repo_id + '/activity')
     close_events = [e for e in resp if e['name'] == 'close' and 'stopped' in e and 'events' in e]
     close_events = close_events[0]['events'] if close_events else []
     fail_events = [e for e in close_events if e['name'] == 'ruleFailed']
     if fail_events:
-      print(fail_events)
+      print(fail_events, flush=True)
       return 1
 
     if close_events and close_events[-1]['name'] == 'repositoryClosed':
@@ -246,11 +256,11 @@ def release(ossrh_username = os.getenv('OSSRH_USERNAME'),
 
     time.sleep(0.5)
 
-  print('Releasing staging repo', repo_id)
+  print('Releasing staging repo', repo_id, flush=True)
   resp = fetch('/bulk/promote', data = {"data": {
               "autoDropAfterRelease": True,
               "description": "",
               "stagedRepositoryIds":[repo_id]
         }})
-  print('Success! Just released', repo_id)
+  print('Success! Just released', repo_id, flush=True)
   return 0

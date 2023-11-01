@@ -1,5 +1,4 @@
-(ns ^{:clojure.tools.namespace.repl/load false}
-  user
+(ns user
   (:require
     [clojure.core.server :as server]
     [clojure.tools.namespace.repl :as ns]
@@ -10,6 +9,8 @@
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija ColorSpace]))
+
+(ns/disable-reload!)
 
 (ns/set-refresh-dirs "src" "dev")
 
