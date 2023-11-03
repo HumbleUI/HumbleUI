@@ -35,6 +35,7 @@
     [examples.tooltip]
     [examples.tree]
     [examples.treemap]
+    [examples.unicode]
     [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.debug :as debug]
@@ -77,6 +78,7 @@
     "Tooltip" examples.tooltip/ui
     "Tree" examples.tree/ui
     "Treemap" examples.treemap/ui
+    "Unicode" examples.unicode/ui
     "Wordle" examples.wordle/ui))
 
 (def light-grey
