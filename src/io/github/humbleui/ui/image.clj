@@ -8,11 +8,14 @@
 (core/deftype+ AnImage [^Image image]
   :extends core/ATerminal
   protocols/IComponent
-  (-measure [_ _ctx _cs]
-    (core/ipoint (.getWidth image) (.getHeight image)))
+  (-measure [_ _ctx cs]
+    (let [aspect (/ (.getWidth image) (.getHeight image))]
+      (core/ipoint (:width cs) (/ (:width cs) aspect))))
   
   (-draw [_ _ctx rect ^Canvas canvas]
-    (.drawImageRect canvas image (core/rect rect))))
+    (let [aspect (/ (.getWidth image) (.getHeight image))
+          rect'  (core/rect-xywh (:x rect) (:y rect) (:width rect) (/ (:width rect) aspect))]
+      (.drawImageRect canvas image rect'))))
 
 (defn image [src]
   (let [image (Image/makeFromEncoded (core/slurp-bytes src))]

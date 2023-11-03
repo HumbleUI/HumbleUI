@@ -5,6 +5,7 @@
     [examples.align]
     [examples.animation]
     [examples.backdrop]
+    [examples.blur]
     [examples.bmi-calculator]
     [examples.button]
     [examples.calculator]
@@ -47,6 +48,7 @@
     "Align" examples.align/ui
     "Animation" examples.animation/ui
     "Backdrop" examples.backdrop/ui
+    "Blur" examples.blur/ui
     "BMI Calculator" examples.bmi-calculator/ui
     "Button" examples.button/ui
     "Calculator" examples.calculator/ui

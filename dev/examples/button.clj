@@ -19,7 +19,9 @@
         (ui/halign 0
           (ui/button #(swap! *clicks inc)
             (ui/row
-              (ui/image "dev/images/add.png")
+              (ui/width 14
+                (ui/height 14
+                  (ui/image "dev/images/add.png")))
               (ui/gap 5 0)
               (ui/valign 0.5
                 (ui/label "With PNG icon")))))
