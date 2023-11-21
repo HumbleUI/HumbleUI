@@ -23,7 +23,7 @@
             mouse-pos'  (IPoint. (:x event) (:y event))
             is-inside?  (core/rect-contains? child-rect mouse-pos')]
         ;; mouse over
-        (when (and (not was-inside?) is-inside?)
+        (when is-inside?
           (window/set-cursor window cursor))
         ;; mouse out
         (when (and was-inside? (not is-inside?))
