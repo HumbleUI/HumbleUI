@@ -16,7 +16,6 @@
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
-    [io.github.humbleui.ui.theme :as theme]
     [io.github.humbleui.window :as window]
     [state :as state])
   (:import
@@ -47,20 +46,30 @@
 
 ;; base classes
 
-(defn after-draw [comp ctx rect canvas]
-  (when-not (:mounted? comp)
-    (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) (paint/stroke 0x80FF00FF 2)))
-  (protocols/-set! comp :mounted? true))
+(def ctor-border
+  (paint/stroke 0x80FF00FF 2))
 
 (core/defparent AComponent3
-  [^:mut props ^:mut children ^:mut mounted?]
+  [^:mut props
+   ^:mut children
+   ^:mut mounted?
+   ^:mut self-rect]
   protocols/IComponent
   (-measure [this ctx cs]
     (protocols/-measure-impl this ctx cs))
-    
+  
+  (-measure-impl [this ctx cs]
+    (core/measure (single children) ctx cs))
+  
   (-draw [this ctx rect canvas]
+    (set! self-rect rect)
     (protocols/-draw-impl this ctx rect canvas)
-    (after-draw this ctx rect canvas))
+    (when-not mounted?
+      (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
+      (set! mounted? true)))
+
+  (-draw-impl [this ctx rect canvas]
+    (core/draw-child (single children) ctx rect canvas))
   
   (-event [this ctx event]
     (protocols/-event-impl this ctx event))
@@ -103,16 +112,7 @@
 
 (defmethod upgrade :default [ctx past desc]
   (let [{:keys [tag props]} (parse-desc desc)]
-    (cond
-      (class? tag)
-      (doseq [[k v] props]
-        (protocols/-set! past k v))
-      
-      (ifn? tag)
-      (protocols/-set! past :props props)
-      
-      :else
-      (throw (ex-info "I’m confused" {:past past, :desc desc}))))
+    (protocols/-set! past :props props))
   past)
 
 ;; ctor
@@ -120,8 +120,7 @@
 (defmulti ctor (fn [ctx desc] (first desc)))
 
 (defmethod ctor :default [ctx desc]
-  (println "ctor" desc)
-  (let [{:keys [tag props]} (parse-desc desc)]
+  (let [{:keys [tag props children]} (parse-desc desc)]
     (cond
       (class? tag)
       (let [sym  (symbol (str "map->" (.getSimpleName ^Class tag)))
@@ -129,7 +128,7 @@
         (ctor props))
       
       (ifn? tag)
-      (reconciler tag props)
+      (reconciler tag props children)
       
       :else
       (throw (ex-info "I’m confused" {:desc desc})))))
@@ -161,11 +160,10 @@
     (.close line)))
   
 (defmethod ctor Label [ctx desc]
-  (println "ctor" desc)
   (let [props    (:props (parse-desc desc))
         text     (:text props)
         font     (:font-ui ctx)
-        features (:features props ShapingOptions/DEFAULT)]
+        features (or (:features props) (:features ctx) ShapingOptions/DEFAULT)]
     (map->Label
       {:props props
        :font  font
@@ -203,25 +201,65 @@
 
 ;; OnClick
 
-(core/deftype+ OnClick [^:mut on-click ^:mut child-rect]
+(core/deftype+ OnClick []
   :extends AComponent3
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (protocols/-measure (single children) ctx cs))
 
   (-draw-impl [this ctx rect canvas]
-    (set! child-rect rect)
     (protocols/-draw (single children) ctx rect canvas))
   
   (-event-impl [this ctx event]
     (when (and
             (= :mouse-button (:event event))
             (:pressed? event)
-            (core/rect-contains? child-rect (core/ipoint (:x event) (:y event))))
-      (on-click event))
+            (core/rect-contains? self-rect (core/ipoint (:x event) (:y event))))
+      ((:on-click props) event))
     (core/event-child (single children) ctx event)))
 
-(derive OnClick ::AWrapper3)
+
+;; Padding
+
+(core/deftype+ Padding []
+  :extends AComponent3
+  protocols/IComponent
+  (-measure-impl [_ ctx cs]
+    (let [scale  (:scale ctx)
+          left   (* scale (or (:left props)   (:horizontal props) (:padding props) 0))
+          right  (* scale (or (:right props)  (:horizontal props) (:padding props) 0))
+          top    (* scale (or (:top props)    (:vertical props)   (:padding props) 0))
+          bottom (* scale (or (:bottom props) (:vertical props)   (:padding props) 0))
+          cs'    (core/ipoint
+                   (- (:width cs) left right)
+                   (- (:height cs) top bottom))
+          size'  (core/measure (single children) ctx cs')]
+      (core/ipoint
+        (+ (:width size') left right)
+        (+ (:height size') top bottom))))
+
+  (-draw-impl [this ctx rect canvas]
+    (let [scale  (:scale ctx)
+          left   (* scale (or (:left props)   (:horizontal props) (:padding props) 0))
+          right  (* scale (or (:right props)  (:horizontal props) (:padding props) 0))
+          top    (* scale (or (:top props)    (:vertical props)   (:padding props) 0))
+          bottom (* scale (or (:bottom props) (:vertical props)   (:padding props) 0))
+          rect'  (core/irect-ltrb
+                   (+ (:x rect) left)
+                   (+ (:y rect) top)
+                   (- (:right rect) right)
+                   (- (:bottom rect) bottom))]
+      (protocols/-draw (single children) ctx rect' canvas))))
+
+
+;; Rect
+
+(core/deftype+ Rect []
+  :extends AComponent3
+  protocols/IComponent  
+  (-draw-impl [this ctx rect canvas]
+    (canvas/draw-rect canvas rect (:fill props))
+    (core/draw-child (single children) ctx rect canvas)))
 
 
 ;; Column
@@ -243,12 +281,14 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap (* (:scale ctx) padding)]
+    (let [gap   (* (:scale ctx) padding)
+          width (:width rect)]
       (loop [children children
              top      (:y rect)]
         (when-some [child (first children)]
-          (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
-            (protocols/-draw child ctx (core/irect-xywh (:x rect) top (:width size) (:height size)) canvas)
+          (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))
+                x    (+ (:x rect) (/ (- width (:width size)) 2))]
+            (protocols/-draw child ctx (core/irect-xywh x top (:width size) (:height size)) canvas)
             (recur (next children) (+ top (:height size) gap))))))))
 
 ;; Row
@@ -270,59 +310,73 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap (* (:scale ctx) padding)]
+    (let [gap (* (:scale ctx) padding)
+          height   (:height rect)]
       (loop [children children
              left     (:x rect)]
         (when-some [child (first children)]
-          (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))]
-            (protocols/-draw child ctx (core/irect-xywh left (:y rect) (:width size) (:height size)) canvas)
+          (let [size (protocols/-measure child ctx (core/isize (:width rect) (:height rect)))
+                y    (+ (:y rect) (/ (- height (:height size)) 2))]
+            (protocols/-draw child ctx (core/irect-xywh left y (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))))
 
 ;; App
 
 (defn reconcile [ctx past current]
-  (loop [past-coll    past
-         current-coll (flatten current)
-         future-coll  []]
-    (if (empty? current-coll)
-      future-coll
-      (let [current           (first current-coll)
-            current-coll'     (next current-coll)
-            [past past-coll'] (core/cond+                                
-                                ;; full match
-                                (compatible? ctx (first past-coll) current)
-                                [(first past-coll) (next past-coll)]
+  (let [past-keyed (into {}
+                     (keep #(when-some [key (:key (:props %))] [key %]) past))]
+    (loop [past-coll    (remove #(:key (:props %)) past)
+           current-coll (flatten current)
+           future-coll  []]
+      (if (empty? current-coll)
+        future-coll
+        (let [current           (first current-coll)
+              {:keys [tag props children]} (parse-desc current)
+              current-coll'     (next current-coll)
+              past              (past-keyed (:key props))
+              [past past-coll'] (core/cond+
+                                  ;; key match
+                                  (and past (compatible? ctx past current))
+                                  [past past-coll]
+                                  
+                                  ;; full match
+                                  (compatible? ctx (first past-coll) current)
+                                  [(first past-coll) (next past-coll)]
                                 
-                                ;; inserted new widget
-                                (compatible? ctx (first past-coll) (fnext current-coll))
-                                [nil past-coll]
+                                  ;; inserted new widget
+                                  (compatible? ctx (first past-coll) (fnext current-coll))
+                                  [nil past-coll]
                                 
-                                ;; deleted a widget
-                                (compatible? ctx (fnext past-coll) current)
-                                [(fnext past-coll) (nnext past-coll)]
+                                  ;; deleted a widget
+                                  (compatible? ctx (fnext past-coll) current)
+                                  [(fnext past-coll) (nnext past-coll)]
                                 
-                                ;; no match
-                                :else
-                                [nil (next past-coll)])
-            future            (if past
-                                (do
-                                  (println "Upgrade" past "->" current)
-                                  (upgrade ctx past current))
-                                (ctor ctx current))
-            {:keys [tag children]} (parse-desc current)]
-        (when (class? tag)
-          (protocols/-set! future :children (reconcile ctx (:children past) children)))
-        (recur past-coll' current-coll' (conj future-coll future))))))
+                                  ;; no match
+                                  :else
+                                  [nil (next past-coll)])
+              future            (if past
+                                  (upgrade ctx past current)
+                                  (ctor ctx current))]
+          (when (class? tag)
+            (protocols/-set! future :children (reconcile ctx (:children past) children)))
+          (recur past-coll' current-coll' (conj future-coll future)))))))
+
+(def ^:dynamic *reconciler*)
 
 (defn ensure-children [reconciler ctx]
-  (let [children' (reconcile ctx
-                    (:children reconciler)
-                    [((:ctor reconciler) (:props reconciler))])]
-    (protocols/-set! reconciler :children children')))
+  (binding [*reconciler* reconciler]
+    (let [children' (reconcile ctx
+                      (:children reconciler)
+                      [((:ctor reconciler)
+                        (:props reconciler)
+                        (:children-desc reconciler))])]
+      (protocols/-set! reconciler :children children'))))
 
 (core/deftype+ Reconciler [^:mut ctor
                            ^:mut props
-                           ^:mut children]
+                           ^:mut children
+                           ^:mut state
+                           ^:mut children-desc]
   protocols/IComponent
   (-measure [this ctx cs]
     (ensure-children this ctx)
@@ -342,50 +396,66 @@
 
 (defn reconciler
   ([ctor]
-   (reconciler ctor {}))
-  ([ctor props]
+   (reconciler ctor {} nil))
+  ([ctor props children]
    (map->Reconciler
-     {:ctor ctor
-      :props props})))
+     {:ctor          ctor
+      :props         props
+      :children-desc children})))
+
+(defn use-state [init]
+  (let [*a  (or
+              (:state *reconciler*)
+              (atom init))
+        _   (protocols/-set! *reconciler* :state *a)
+        val @*a
+        set #(do
+               (reset! *a %)
+               (state/request-frame))]
+    [val set]))
 
 (def *state
   (atom
-    [{:id 0 :count 0}
-     {:id 1 :count 0}
-     {:id 2 :count 0}]))
+    (sorted-map 0 0, 1 0, 2 0)))
+
+(defn button [{:keys [on-click]} children]
+  [OnClick {:on-click on-click}
+   [Rect {:fill (paint/fill 0xFFB2D7FE)}
+    [Padding {:padding 10}
+     children]]])
+
+(defn row [{:keys [id count]} _]
+  (let [[local set-local] (use-state 0)]
+    [Row
+     [Label {:text (str "Id: " id)}]
+     [button {:on-click (fn [_] (swap! *state dissoc id))}
+      [Label {:text "DEL"}]]
+     [Label {:text (str "Global: " count)}]
+     [button {:on-click (fn [_] (swap! *state update id inc))}
+      [Label {:text "INC"}]]
+     [Label {:text (str "Local: " local)}]
+     [button {:on-click (fn [_] (set-local (inc local)))}
+      [Label {:text "INC"}]]]))
+
+(defn root [_ _]
+  [Center
+   [Column
+    (for [[id count] @*state]
+      [row {:key id, :id id, :count count}])
+    [Row
+     [button {:on-click (fn [_] (swap! *state assoc (inc (last (keys @*state))) 0))}
+      [Label {:text "ADD"}]]]]])
+
+(def app
+  (ui/default-theme
+    {:cap-height 15}
+    (ui/with-context
+      {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
+      (reconciler root))))
 
 (add-watch *state ::redraw
   (fn [_ _ _ _]
     (state/request-frame)))
-
-(defn del [xs i]
-  (vec (concat (take i xs) (drop (inc i) xs))))
-
-(defn row [{:keys [idx]}]
-  (let [{:keys [id count]} (nth @*state idx)]
-    [Row
-     [OnClick {:on-click (fn [_] (swap! *state del idx))}
-      [Label {:text "DEL"}]]
-     [Label {:text (str "id: " id ", count: " count)}]
-     [OnClick {:on-click (fn [_] (swap! *state update idx update :count inc))}
-      [Label {:text "INC"}]]
-     [OnClick {:on-click (fn [_] (swap! *state update idx update :count dec))}
-      [Label {:text "DEC"}]]]))
-
-(defn root [_]
-  [Center
-   [Column
-    (for [idx (range (count @*state))
-          :let [{:keys [id count]} (nth @*state idx)]]
-      [row {:idx idx}])
-    [Row
-     [OnClick {:on-click (fn [_] (swap! *state conj {:id (inc (:id (last @*state) -1)) :count 0}))}
-      [Label {:text "ADD"}]]]]])
-
-(def app
-  (theme/default-theme
-    {:cap-height 15}
-    (reconciler root)))
 
 (comment
   (-> app
