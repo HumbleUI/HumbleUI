@@ -23,7 +23,7 @@
     [io.github.humbleui.skija Canvas TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
 
-(declare reconciler)
+(declare reconciler ensure-children)
 
 ;; Constants
 
@@ -90,14 +90,19 @@
 
 ;; compatible?
 
-(defmulti compatible? (fn [ctx past desc] (first desc)))
+(defmulti compatible-impl? (fn [past desc] (first desc)))
 
-(defmethod compatible? :default [ctx past desc]
+(defmethod compatible-impl? :default [past desc]
+  true)
+
+(defn compatible? [past desc]
   (and past desc
     (let [{:keys [tag]} (parse-desc desc)]
       (cond
         (class? tag)
-        (= (class past) tag)
+        (and
+          (= (class past) tag)
+          (compatible-impl? past desc))
       
         (ifn? tag)
         (= (:ctor past) tag)
@@ -105,27 +110,24 @@
         :else
         (throw (ex-info "I’m confused" {:past past, :desc desc}))))))
 
-    
 ;; upgrade
 
-(defmulti upgrade (fn [ctx past desc] (first desc)))
+(defmulti upgrade (fn [past desc] (first desc)))
 
-(defmethod upgrade :default [ctx past desc]
+(defmethod upgrade :default [past desc]
   (let [{:keys [tag props]} (parse-desc desc)]
     (protocols/-set! past :props props))
   past)
 
 ;; ctor
 
-(defmulti ctor (fn [ctx desc] (first desc)))
-
-(defmethod ctor :default [ctx desc]
+(defn ctor [desc]
   (let [{:keys [tag props children]} (parse-desc desc)]
     (cond
       (class? tag)
       (let [sym  (symbol (str "map->" (.getSimpleName ^Class tag)))
             ctor (ns-resolve 'vdom sym)]
-        (ctor props))
+        (ctor {:props props}))
       
       (ifn? tag)
       (reconciler tag props children)
@@ -138,17 +140,25 @@
 
 ;; Label
 
-(core/deftype+ Label [^:mut text
-                      ^:mut font
-                      ^:mut ^TextLine line]
+(defn ensure-line [label ctx]
+  (when (nil? (:line label))
+    (let [props    (:props label)
+          text     (:text props)
+          font     (:font-ui ctx)
+          features (or (:features props) (:features ctx) ShapingOptions/DEFAULT)]
+      (protocols/-set! label :line (.shapeLine core/shaper text font features)))))
+
+(core/deftype+ Label [^:mut ^TextLine line]
   :extends AComponent3
   protocols/IComponent
-  (-measure-impl [_ ctx cs]
+  (-measure-impl [this ctx cs]
+    (ensure-line this ctx)
     (core/ipoint
       (math/ceil (.getWidth line))
       (* (:scale ctx) (:leading ctx))))
   
   (-draw-impl [this ctx rect ^Canvas canvas]
+    (ensure-line this ctx)
     (.drawTextLine canvas
       line
       (:x rect)
@@ -159,23 +169,9 @@
   (-on-unmount-impl [_]
     (.close line)))
   
-(defmethod ctor Label [ctx desc]
-  (let [props    (:props (parse-desc desc))
-        text     (:text props)
-        font     (:font-ui ctx)
-        features (or (:features props) (:features ctx) ShapingOptions/DEFAULT)]
-    (map->Label
-      {:props props
-       :font  font
-       :line  (.shapeLine core/shaper text font features)})))
+(defmethod compatible-impl? Label [past desc]
+  (= (:props past) (:props (parse-desc desc))))
 
-(defmethod compatible? Label [ctx past desc]
-  (and
-    past
-    desc
-    (= (class past) (first desc))
-    (= (:props past) (:props (parse-desc desc)))))
-        
 
 ;; Center
 
@@ -322,7 +318,7 @@
 
 ;; App
 
-(defn reconcile [ctx past current]
+(defn reconcile [past current]
   (let [past-keyed (into {}
                      (keep #(when-some [key (:key (:props %))] [key %]) past))]
     (loop [past-coll    (remove #(:key (:props %)) past)
@@ -336,41 +332,52 @@
               past              (past-keyed (:key props))
               [past past-coll'] (core/cond+
                                   ;; key match
-                                  (and past (compatible? ctx past current))
+                                  (and past (compatible? past current))
                                   [past past-coll]
                                   
                                   ;; full match
-                                  (compatible? ctx (first past-coll) current)
+                                  (compatible? (first past-coll) current)
                                   [(first past-coll) (next past-coll)]
                                 
                                   ;; inserted new widget
-                                  (compatible? ctx (first past-coll) (fnext current-coll))
+                                  (compatible? (first past-coll) (fnext current-coll))
                                   [nil past-coll]
                                 
                                   ;; deleted a widget
-                                  (compatible? ctx (fnext past-coll) current)
+                                  (compatible? (fnext past-coll) current)
                                   [(fnext past-coll) (nnext past-coll)]
                                 
                                   ;; no match
                                   :else
                                   [nil (next past-coll)])
               future            (if past
-                                  (upgrade ctx past current)
-                                  (ctor ctx current))]
-          (when (class? tag)
-            (protocols/-set! future :children (reconcile ctx (:children past) children)))
+                                  (upgrade past current)
+                                  (ctor current))]
+          (cond 
+            (class? tag)
+            (protocols/-set! future :children (reconcile (:children past) children))
+            
+            (ifn? tag)
+            (ensure-children future)
+            
+            :else
+            (throw (ex-info "I’m confused" {:past past, :desc current})))
           (recur past-coll' current-coll' (conj future-coll future)))))))
 
 (def ^:dynamic *reconciler*)
 
-(defn ensure-children [reconciler ctx]
-  (binding [*reconciler* reconciler]
-    (let [children' (reconcile ctx
+(def ^:dynamic *state-idx*)
+
+(defn ensure-children [reconciler]
+  (binding [*reconciler* reconciler
+            *state-idx*  (volatile! 0)]
+    (let [children' (reconcile
                       (:children reconciler)
                       [((:ctor reconciler)
                         (:props reconciler)
                         (:children-desc reconciler))])]
-      (protocols/-set! reconciler :children children'))))
+      (protocols/-set! reconciler :children children')))
+  reconciler)
 
 (core/deftype+ Reconciler [^:mut ctor
                            ^:mut props
@@ -379,11 +386,9 @@
                            ^:mut children-desc]
   protocols/IComponent
   (-measure [this ctx cs]
-    (ensure-children this ctx)
     (core/measure (single children) ctx cs))
   
   (-draw [this ctx rect canvas]
-    (ensure-children this ctx)
     (core/draw-child (single children) ctx rect canvas))
 
   (-event [this ctx event]
@@ -394,25 +399,41 @@
       (cb this)
       (core/iterate-child (single children) ctx cb))))
 
-(defn reconciler
-  ([ctor]
-   (reconciler ctor {} nil))
-  ([ctor props children]
-   (map->Reconciler
-     {:ctor          ctor
-      :props         props
-      :children-desc children})))
+(defn reconciler [ctor props children]
+  (ensure-children
+    (map->Reconciler
+      {:ctor          ctor
+       :props         props
+       :children-desc children})))
+
+(defn use-state-impl [init-fn]
+  (let [reconciler *reconciler*
+        idx        @*state-idx*
+        _          (cond
+                     (nil? (:state reconciler))
+                     (protocols/-set! reconciler :state [(volatile! (init-fn))])
+                     
+                     (< (dec (count (:state reconciler))) idx)
+                     (protocols/-set! reconciler :state (conj (:state reconciler) (volatile! (init-fn)))))
+        *a         (nth (:state reconciler) idx)
+        _          (vswap! *state-idx* inc)
+        val        @*a
+        set-fn     #(do
+                      (vreset! *a %)
+                      (ensure-children reconciler)
+                      (state/request-frame))]
+    [val set-fn]))
 
 (defn use-state [init]
-  (let [*a  (or
-              (:state *reconciler*)
-              (atom init))
-        _   (protocols/-set! *reconciler* :state *a)
-        val @*a
-        set #(do
-               (reset! *a %)
-               (state/request-frame))]
-    [val set]))
+  (use-state-impl (fn [] init)))
+
+(defn use-memo [f deps]
+  (let [[[old-deps old-val] set-fn] (use-state-impl (fn [] [deps (apply f deps)]))]
+    (if (= old-deps deps)
+      old-val
+      (let [new-val (apply f deps)]
+        (set-fn [deps new-val])
+        new-val))))
 
 (def *state
   (atom
@@ -425,7 +446,8 @@
      children]]])
 
 (defn row [{:keys [id count]} _]
-  (let [[local set-local] (use-state 0)]
+  (let [[local1 set-local1] (use-state 0)
+        [local2 set-local2] (use-state 0)]
     [Row
      [Label {:text (str "Id: " id)}]
      [button {:on-click (fn [_] (swap! *state dissoc id))}
@@ -433,28 +455,41 @@
      [Label {:text (str "Global: " count)}]
      [button {:on-click (fn [_] (swap! *state update id inc))}
       [Label {:text "INC"}]]
-     [Label {:text (str "Local: " local)}]
-     [button {:on-click (fn [_] (set-local (inc local)))}
+     [Label {:text (str "Local 1: " local1)}]
+     [button {:on-click (fn [_] (set-local1 (inc local1)))}
+      [Label {:text "INC"}]]
+     [Label {:text (str "Local 2: " local2)}]
+     [button {:on-click (fn [_] (set-local2 (inc local2)))}
       [Label {:text "INC"}]]]))
+
+(defn memo-row [{:keys [id count]} _]
+  (use-memo
+    (fn [id count]
+      [row {:id id, :count count}])
+    [id count]))
 
 (defn root [_ _]
   [Center
    [Column
     (for [[id count] @*state]
-      [row {:key id, :id id, :count count}])
+      [memo-row {:key id, :id id, :count count}])
     [Row
      [button {:on-click (fn [_] (swap! *state assoc (inc (last (keys @*state))) 0))}
       [Label {:text "ADD"}]]]]])
+
+(def the-root
+  (reconciler root {} []))
 
 (def app
   (ui/default-theme
     {:cap-height 15}
     (ui/with-context
       {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
-      (reconciler root))))
+      the-root)))
 
 (add-watch *state ::redraw
   (fn [_ _ _ _]
+    (ensure-children the-root)
     (state/request-frame)))
 
 (comment
