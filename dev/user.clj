@@ -62,11 +62,7 @@
   (fn [_ _ _ floating]
     (set-floating! @state/*window floating)))
 
-(defn -main [& {ns   "--ns"
-                port "--port"
-                :or {ns   "examples"
-                     port "5555"}
-                :as args}]
+(defn start [& args]
   ;; setup window
   (ui/start-app!
     (let [screen (last (app/screens))
@@ -74,7 +70,7 @@
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
-                    :width    600
+                    :width    800
                     :height   600
                     :x        :center
                     :y        :center}
@@ -88,11 +84,17 @@
   @state/*window
   
   ;; setup app
-  (reset! state/*ns ns)
-  (user/after-reload)
+  (let [args (apply array-map args)
+        ns   (get args "--ns" "examples")]
+    (reset! state/*ns ns)
+    (user/after-reload)))
+
+(defn -main [& args]
+  (apply startargs)
 
   ;; setup repl
-  (let [port (parse-long port)]
+  (let [args (apply array-map args)
+        port (parse-long (get args "--port" "5555"))]
     (println "Started Server Socket REPL on port" port)
     (server/start-server
       {:name          "repl"
