@@ -322,60 +322,81 @@
 
 ;; App
 
+(defn unmount [ctx comp]
+  (doseq [child (:children comp)]
+    (unmount ctx child))
+  (doseq [*state (:state comp)
+          :let [[type _ on-unmount] @*state]
+          :when (= :effect type)
+          :when on-unmount]
+    (on-unmount)))
+
 (defn reconcile [ctx past current]
-  (let [past-keyed (into {}
-                     (keep #(when-some [key (:key (:props %))] [key %]) past))]
-    (loop [past-coll    (remove #(:key (:props %)) past)
-           current-coll (flatten current)
-           future-coll  []]
-      (if (empty? current-coll)
-        future-coll
-        (let [current           (first current-coll)
-              {:keys [tag props children]} (parse-desc current)
-              current-coll'     (next current-coll)
-              past              (past-keyed (:key props))
-              [past past-coll'] (core/cond+
-                                  ;; key match
-                                  (and past (compatible? past current))
-                                  [past past-coll]
+  (loop [past-coll    (remove #(:key (:props %)) past)
+         past-keyed   (into {}
+                        (keep #(when-some [key (:key (:props %))] [key %]) past))
+         current-coll (flatten current)
+         unmount-coll []
+         future-coll  []]
+    (if (empty? current-coll)
+      (do
+        (doseq [comp (concat unmount-coll (vals past-keyed) past-coll)]
+          (unmount ctx comp))
+        future-coll)
+      (let [current           (first current-coll)
+            {:keys [tag props children]} (parse-desc current)
+            current-coll'     (next current-coll)
+            past              (past-keyed (:key props))
+              
+            [past past-coll' past-keyed' unmount-coll']
+            (core/cond+
+              ;; key match
+              (and past (compatible? past current))
+              [past past-coll (dissoc past-keyed (:key props)) unmount-coll]
+              
+              ;; key but no match
+              past
+              [nil past-coll (dissoc past-keyed (:key props)) (conj unmount-coll past)]
                                   
-                                  ;; full match
-                                  (compatible? (first past-coll) current)
-                                  [(first past-coll) (next past-coll)]
+              ;; full match
+              (compatible? (first past-coll) current)
+              [(first past-coll) (next past-coll) past-keyed unmount-coll]
                                 
-                                  ;; inserted new widget
-                                  (compatible? (first past-coll) (fnext current-coll))
-                                  [nil past-coll]
+              ;; inserted new widget
+              (compatible? (first past-coll) (fnext current-coll))
+              [nil past-coll past-keyed unmount-coll]
                                 
-                                  ;; deleted a widget
-                                  (compatible? (fnext past-coll) current)
-                                  [(fnext past-coll) (nnext past-coll)]
+              ;; deleted a widget
+              (compatible? (fnext past-coll) current)
+              [(fnext past-coll) (nnext past-coll) past-keyed (conj unmount-coll (first past-coll))]
                                 
-                                  ;; no match
-                                  :else
-                                  [nil (next past-coll)])
-              [future skip?]      (cond
-                                    (nil? past)
-                                    [(ctor current) false]
-                                    
-                                    (identical? (:desc past) current)
-                                    [past true]
-                                    
-                                    :else
-                                    [(upgrade past current) false])]
-          (cond 
-            skip?
-            :nop
+              ;; no match
+              :else
+              [nil (next past-coll) past-keyed (conj unmount-coll (first past-coll))])
+              
+            [future skip?]
+            (cond
+              (nil? past)
+              [(ctor current) false]
+                                  
+              (identical? (:desc past) current)
+              [past true]
+                                  
+              :else
+              [(upgrade past current) false])]
+        (cond 
+          skip?
+          :nop
                 
-            (class? tag)
-            (protocols/-set! future :children (reconcile ctx (:children past) children))
+          (class? tag)
+          (protocols/-set! future :children (reconcile ctx (:children past) children))
             
-            (ifn? tag)
-            (ensure-children ctx future)
+          (ifn? tag)
+          (ensure-children ctx future)
             
-            :else
-            (throw (ex-info "I’m confused" {:past past, :desc current})))
-          (recur past-coll' current-coll' (conj future-coll future)))))))
+          :else
+          (throw (ex-info "I’m confused" {:past past, :desc current})))
+        (recur past-coll' past-keyed' current-coll' unmount-coll' (conj future-coll future))))))
 
 (def ^:dynamic *ctx*)
 
@@ -431,35 +452,54 @@
        :children-desc children})))
 
 (defn use-ref-impl [init-fn]
-  (let [reconciler *reconciler*
-        state      (:state reconciler)
-        idx        @*state-idx*
-        _          (cond
-                     (nil? state)
-                     (protocols/-set! reconciler :state [(volatile! (init-fn))])
-                     
-                     (< (dec (count state)) idx)
-                     (protocols/-set! reconciler :state (conj state (volatile! (init-fn)))))
-        *a         (nth (:state reconciler) idx)]
+  (let [comp  *reconciler*
+        state (:state comp)
+        idx   @*state-idx*
+        _     (cond
+                (nil? state)
+                (protocols/-set! comp :state [(volatile! (init-fn))])
+                
+                (< (dec (count state)) idx)
+                (protocols/-set! comp :state (conj state (volatile! (init-fn)))))
+        *a    (nth (:state comp) idx)]
     (vswap! *state-idx* inc)
     *a))
 
 (defn use-state [init]
-  (let [*a         (use-ref-impl (fn [] init))
-        reconciler *reconciler*]
-    [@*a #(do
-            (vreset! *a %)
-            (protocols/-set! reconciler :dirty? true)
+  (let [*a      (use-ref-impl (fn [] [:state init]))
+        comp    *reconciler*
+        [_ val] @*a]
+    [val #(do
+            (vreset! *a [:state %])
+            (protocols/-set! comp :dirty? true)
             (state/request-frame))]))
 
 (defn use-memo [f deps]
-  (let [*a (use-ref-impl (fn [] [deps (apply f deps)]))
-        [old-deps old-val] @*a]
+  (let [*a (use-ref-impl (fn [] [:memo deps (apply f deps)]))
+        [_ old-deps old-val] @*a]
     (if (= old-deps deps)
       old-val
       (let [new-val (apply f deps)]
-        (vreset! *a [deps new-val])
+        (vreset! *a [:memo deps new-val])
         new-val))))
+
+(defn use-effect [f deps]
+  (let [*a                      (use-ref-impl (fn [] nil))
+        [_ old-deps on-unmount] @*a
+        comp                    *reconciler*]
+    (when (or (nil? deps) (nil? old-deps) (not= old-deps deps))
+      (when on-unmount
+        (on-unmount))
+      (let [on-unmount' (f)]
+        (if (ifn? on-unmount')
+          (vreset! *a [:effect deps on-unmount'])
+          (vreset! *a [:effect deps nil]))))))
+
+(defn use-callback
+  ([f]
+   (use-callback f []))
+  ([f deps]
+   (use-memo (fn [] f) deps)))
 
 (def *state
   (atom
@@ -474,6 +514,14 @@
 (defn row [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
         [local2 set-local2] (use-state 0)]
+    (use-effect
+      #(do
+         (println "mount" id)
+         (fn []
+           (println "unmount" id)))
+      [])
+    (use-effect #(println "render" id) nil)
+    (use-effect #(println "change" id count) [id count])
     [Row
      [Label {:text (str "Id: " id)}]
      [button {:on-click (fn [_] (swap! *state dissoc id))}
@@ -499,9 +547,12 @@
    [Column
     (for [[id count] @*state]
       [memo-row {:key id, :id id, :count count}])
-    [Row
-     [button {:on-click (fn [_] (swap! *state assoc ((fnil inc -1) (last (keys @*state))) 0))}
-      [Label {:text "ADD"}]]]]])
+    (let [cb (use-callback
+               (fn [_]
+                 (swap! *state assoc ((fnil inc -1) (last (keys @*state))) 0)))]
+      [Row {:key :last}
+       [button {:on-click cb}
+        [Label {:text "ADD"}]]])]])
 
 (def the-root
   (reconciler [root]))
