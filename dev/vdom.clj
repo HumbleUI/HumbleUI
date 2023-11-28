@@ -50,7 +50,8 @@
   (paint/stroke 0x80FF00FF 2))
 
 (core/defparent AComponent3
-  [^:mut props
+  [^:mut desc
+   ^:mut props
    ^:mut children
    ^:mut mounted?
    ^:mut self-rect]
@@ -99,6 +100,9 @@
   (and past desc
     (let [{:keys [tag]} (parse-desc desc)]
       (cond
+        (identical? (:desc past) desc)
+        true
+        
         (class? tag)
         (and
           (= (class past) tag)
@@ -112,10 +116,9 @@
 
 ;; upgrade
 
-(defmulti upgrade (fn [past desc] (first desc)))
-
-(defmethod upgrade :default [past desc]
+(defn upgrade [past desc]
   (let [{:keys [tag props]} (parse-desc desc)]
+    (protocols/-set! past :desc desc)
     (protocols/-set! past :props props))
   past)
 
@@ -127,10 +130,11 @@
       (class? tag)
       (let [sym  (symbol (str "map->" (.getSimpleName ^Class tag)))
             ctor (ns-resolve 'vdom sym)]
-        (ctor {:props props}))
+        (ctor {:desc desc
+               :props props}))
       
       (ifn? tag)
-      (reconciler tag props children)
+      (reconciler desc)
       
       :else
       (throw (ex-info "I’m confused" {:desc desc})))))
@@ -350,10 +354,19 @@
                                   ;; no match
                                   :else
                                   [nil (next past-coll)])
-              future            (if past
-                                  (upgrade past current)
-                                  (ctor current))]
+              [future skip?]      (cond
+                                    (nil? past)
+                                    [(ctor current) false]
+                                    
+                                    (identical? (:desc past) current)
+                                    [past true]
+                                    
+                                    :else
+                                    [(upgrade past current) false])]
           (cond 
+            skip?
+            :nop
+                
             (class? tag)
             (protocols/-set! future :children (reconcile (:children past) children))
             
@@ -379,7 +392,8 @@
       (protocols/-set! reconciler :children children')))
   reconciler)
 
-(core/deftype+ Reconciler [^:mut ctor
+(core/deftype+ Reconciler [^:mut desc
+                           ^:mut ctor
                            ^:mut props
                            ^:mut children
                            ^:mut state
@@ -399,12 +413,14 @@
       (cb this)
       (core/iterate-child (single children) ctx cb))))
 
-(defn reconciler [ctor props children]
-  (ensure-children
-    (map->Reconciler
-      {:ctor          ctor
-       :props         props
-       :children-desc children})))
+(defn reconciler [desc]
+  (let [{:keys [tag props children]} (parse-desc desc)]
+    (ensure-children
+      (map->Reconciler
+        {:desc          desc
+         :ctor          tag
+         :props         props
+         :children-desc children}))))
 
 (defn use-state-impl [init-fn]
   (let [reconciler *reconciler*
@@ -474,11 +490,11 @@
     (for [[id count] @*state]
       [memo-row {:key id, :id id, :count count}])
     [Row
-     [button {:on-click (fn [_] (swap! *state assoc (inc (last (keys @*state))) 0))}
+     [button {:on-click (fn [_] (swap! *state assoc ((fnil inc -1) (last (keys @*state))) 0))}
       [Label {:text "ADD"}]]]]])
 
 (def the-root
-  (reconciler root {} []))
+  (reconciler [root]))
 
 (def app
   (ui/default-theme
