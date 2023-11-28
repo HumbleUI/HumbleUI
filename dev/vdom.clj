@@ -322,7 +322,7 @@
 
 ;; App
 
-(defn reconcile [past current]
+(defn reconcile [ctx past current]
   (let [past-keyed (into {}
                      (keep #(when-some [key (:key (:props %))] [key %]) past))]
     (loop [past-coll    (remove #(:key (:props %)) past)
@@ -368,23 +368,27 @@
             :nop
                 
             (class? tag)
-            (protocols/-set! future :children (reconcile (:children past) children))
+            (protocols/-set! future :children (reconcile ctx (:children past) children))
             
             (ifn? tag)
-            (ensure-children future)
+            (ensure-children ctx future)
             
             :else
             (throw (ex-info "I’m confused" {:past past, :desc current})))
           (recur past-coll' current-coll' (conj future-coll future)))))))
 
+(def ^:dynamic *ctx*)
+
 (def ^:dynamic *reconciler*)
 
 (def ^:dynamic *state-idx*)
 
-(defn ensure-children [reconciler]
-  (binding [*reconciler* reconciler
+(defn ensure-children [ctx reconciler]
+  (binding [*ctx*        ctx
+            *reconciler* reconciler
             *state-idx*  (volatile! 0)]
     (let [children' (reconcile
+                      ctx
                       (:children reconciler)
                       [((:ctor reconciler)
                         (:props reconciler)
@@ -397,12 +401,16 @@
                            ^:mut props
                            ^:mut children
                            ^:mut state
+                           ^:mut dirty?
                            ^:mut children-desc]
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure (single children) ctx cs))
   
   (-draw [this ctx rect canvas]
+    (when dirty?
+      (ensure-children ctx this)
+      (set! dirty? false))
     (core/draw-child (single children) ctx rect canvas))
 
   (-event [this ctx event]
@@ -415,40 +423,42 @@
 
 (defn reconciler [desc]
   (let [{:keys [tag props children]} (parse-desc desc)]
-    (ensure-children
-      (map->Reconciler
-        {:desc          desc
-         :ctor          tag
-         :props         props
-         :children-desc children}))))
+    (map->Reconciler
+      {:desc          desc
+       :ctor          tag
+       :props         props
+       :dirty?        true
+       :children-desc children})))
 
-(defn use-state-impl [init-fn]
+(defn use-ref-impl [init-fn]
   (let [reconciler *reconciler*
+        state      (:state reconciler)
         idx        @*state-idx*
         _          (cond
-                     (nil? (:state reconciler))
+                     (nil? state)
                      (protocols/-set! reconciler :state [(volatile! (init-fn))])
                      
-                     (< (dec (count (:state reconciler))) idx)
-                     (protocols/-set! reconciler :state (conj (:state reconciler) (volatile! (init-fn)))))
-        *a         (nth (:state reconciler) idx)
-        _          (vswap! *state-idx* inc)
-        val        @*a
-        set-fn     #(do
-                      (vreset! *a %)
-                      (ensure-children reconciler)
-                      (state/request-frame))]
-    [val set-fn]))
+                     (< (dec (count state)) idx)
+                     (protocols/-set! reconciler :state (conj state (volatile! (init-fn)))))
+        *a         (nth (:state reconciler) idx)]
+    (vswap! *state-idx* inc)
+    *a))
 
 (defn use-state [init]
-  (use-state-impl (fn [] init)))
+  (let [*a         (use-ref-impl (fn [] init))
+        reconciler *reconciler*]
+    [@*a #(do
+            (vreset! *a %)
+            (protocols/-set! reconciler :dirty? true)
+            (state/request-frame))]))
 
 (defn use-memo [f deps]
-  (let [[[old-deps old-val] set-fn] (use-state-impl (fn [] [deps (apply f deps)]))]
+  (let [*a (use-ref-impl (fn [] [deps (apply f deps)]))
+        [old-deps old-val] @*a]
     (if (= old-deps deps)
       old-val
       (let [new-val (apply f deps)]
-        (set-fn [deps new-val])
+        (vreset! *a [deps new-val])
         new-val))))
 
 (def *state
@@ -505,7 +515,7 @@
 
 (add-watch *state ::redraw
   (fn [_ _ _ _]
-    (ensure-children the-root)
+    (protocols/-set! the-root :dirty? true)
     (state/request-frame)))
 
 (comment

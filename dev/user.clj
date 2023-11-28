@@ -90,7 +90,7 @@
     (user/after-reload)))
 
 (defn -main [& args]
-  (apply startargs)
+  (apply start args)
 
   ;; setup repl
   (let [args (apply array-map args)
