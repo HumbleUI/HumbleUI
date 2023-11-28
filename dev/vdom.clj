@@ -451,6 +451,8 @@
        :dirty?        true
        :children-desc children})))
 
+;; Hooks
+
 (defn use-ref-impl [init-fn]
   (let [comp  *reconciler*
         state (:state comp)
@@ -501,17 +503,44 @@
   ([f deps]
    (use-memo (fn [] f) deps)))
 
+;; API
+
+(defn render [mount desc]
+  (let [{:keys [tag props children]} (parse-desc desc)]
+    (protocols/-set! mount :desc          desc)
+    (protocols/-set! mount :ctor          tag)
+    (protocols/-set! mount :props         props)
+    (protocols/-set! mount :dirty?        true)
+    (protocols/-set! mount :children-desc children)
+    (state/request-frame)))
+
+(def app-root
+  (reconciler nil))
+
+(def app
+  (ui/default-theme
+    {:cap-height 15}
+    (ui/with-context
+      {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
+      app-root)))
+
+;; User app
+
 (def *state
   (atom
     (sorted-map 0 0, 1 0, 2 0)))
 
-(defn button [{:keys [on-click]} children]
+(add-watch *state ::redraw
+  (fn [_ _ _ _]
+    (render app-root [App])))
+
+(defn Button [{:keys [on-click]} children]
   [OnClick {:on-click on-click}
-   [Rect {:fill (paint/fill 0xFFB2D7FE)}
+   [Rect {:fill (:hui.button/bg *ctx*)}
     [Padding {:padding 10}
      children]]])
 
-(defn row [{:keys [id count]} _]
+(defn Item [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
         [local2 set-local2] (use-state 0)]
     (use-effect
@@ -524,55 +553,35 @@
     (use-effect #(println "change" id count) [id count])
     [Row
      [Label {:text (str "Id: " id)}]
-     [button {:on-click (fn [_] (swap! *state dissoc id))}
+     [Button {:on-click (fn [_] (swap! *state dissoc id))}
       [Label {:text "DEL"}]]
      [Label {:text (str "Global: " count)}]
-     [button {:on-click (fn [_] (swap! *state update id inc))}
+     [Button {:on-click (fn [_] (swap! *state update id inc))}
       [Label {:text "INC"}]]
      [Label {:text (str "Local 1: " local1)}]
-     [button {:on-click (fn [_] (set-local1 (inc local1)))}
+     [Button {:on-click (fn [_] (set-local1 (inc local1)))}
       [Label {:text "INC"}]]
      [Label {:text (str "Local 2: " local2)}]
-     [button {:on-click (fn [_] (set-local2 (inc local2)))}
+     [Button {:on-click (fn [_] (set-local2 (inc local2)))}
       [Label {:text "INC"}]]]))
 
-(defn memo-row [{:keys [id count]} _]
+(defn MemoItem [{:keys [id count]} _]
   (use-memo
     (fn [id count]
-      [row {:id id, :count count}])
+      [Item {:id id, :count count}])
     [id count]))
 
-(defn root [_ _]
+(defn App [_ _]
   [Center
    [Column
     (for [[id count] @*state]
-      [memo-row {:key id, :id id, :count count}])
+      [MemoItem {:key id, :id id, :count count}])
     (let [cb (use-callback
                (fn [_]
                  (swap! *state assoc ((fnil inc -1) (last (keys @*state))) 0)))]
       [Row {:key :last}
-       [button {:on-click cb}
+       [Button {:on-click cb}
         [Label {:text "ADD"}]]])]])
 
-(def the-root
-  (reconciler [root]))
+(render app-root [App])
 
-(def app
-  (ui/default-theme
-    {:cap-height 15}
-    (ui/with-context
-      {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
-      the-root)))
-
-(add-watch *state ::redraw
-  (fn [_ _ _ _]
-    (protocols/-set! the-root :dirty? true)
-    (state/request-frame)))
-
-(comment
-  (-> app
-    :child
-    :child
-    :child
-    :children)
-  )
