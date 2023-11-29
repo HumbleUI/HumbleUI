@@ -28,7 +28,7 @@
 ;; Constants
 
 (def padding
-  20)
+  10)
 
 
 ;; Utils
@@ -415,14 +415,21 @@
 (defn ensure-children [ctx reconciler]
   (binding [*ctx*        ctx
             *reconciler* reconciler
-            *state-idx*  (volatile! 0)]
+            *state-idx*  (volatile! 0)
+            s/*context*  (volatile! (transient #{}))]
     (let [children' (reconcile
                       ctx
                       (:children reconciler)
                       [((:ctor reconciler)
                         (:props reconciler)
                         (:children-desc reconciler))])]
-      (protocols/-set! reconciler :children children')))
+      (protocols/-set! reconciler :children children')
+      (let [signals (persistent! @@#'s/*context*)]
+        (protocols/-set! reconciler :effect
+          (when-not (empty? signals)
+            (s/effect-named "invalidate" signals
+              (protocols/-set! reconciler :dirty? true)
+              (state/request-frame)))))))
   reconciler)
 
 (core/deftype+ Reconciler [^:mut desc
@@ -431,7 +438,8 @@
                            ^:mut children
                            ^:mut state
                            ^:mut dirty?
-                           ^:mut children-desc]
+                           ^:mut children-desc
+                           ^:mut effect]
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure (single children) ctx cs))
@@ -484,6 +492,12 @@
             (protocols/-set! comp :dirty? true)
             (state/request-frame))]))
 
+(defn use-signal [init]
+  (let [*a      (use-ref-impl (fn [] [:signal (s/signal init)]))
+        comp    *reconciler*
+        [_ signal] @*a]
+    signal))
+
 (defn use-memo [f deps]
   (let [*a (use-ref-impl (fn [] [:memo deps (f)]))
         [_ old-deps old-val] @*a]
@@ -534,7 +548,7 @@
 
 (def app
   (ui/default-theme
-    {:cap-height 15}
+    {:cap-height 10}
     (ui/with-context
       {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
       app-root)))
@@ -551,9 +565,16 @@
     [Padding {:padding 10}
      children]]])
 
+(s/defsignal *global-signal
+  0)
+
 (defn Item [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
         [local2 set-local2] (use-state 0)
+        *signal             (use-signal 0)
+        *effect             (use-memo
+                              (fn [] (s/signal (* @*global-signal id)))
+                              [id])
         del                 (use-callback
                               (fn [_] (swap! *state dissoc id))
                               [id])
@@ -572,15 +593,23 @@
      [Label {:text (str "Id: " id)}]
      [Button {:on-click del}
       [Label {:text "DEL"}]]
-     [Label {:text (str "Global: " count)}]
+     [Label {:text (str "Global atom " count)}]
      [Button {:on-click inc-global}
-      [Label {:text "INC"}]]
-     [Label {:text (str "Local 1: " local1)}]
+      [Label {:text "+"}]]
+     
+     [Label {:text (str "Local " local1)}]
      [Button {:on-click (fn [_] (set-local1 (inc local1)))}
-      [Label {:text "INC"}]]
-     [Label {:text (str "Local 2: " local2)}]
+      [Label {:text "+"}]]
+     [Label {:text (str "Local " local2)}]
      [Button {:on-click (fn [_] (set-local2 (inc local2)))}
-      [Label {:text "INC"}]]]))
+      [Label {:text "+"}]]
+     [Label {:text (str "Global signal " @*global-signal)}]
+     [Button {:on-click (fn [_] (s/swap! *global-signal inc))}
+      [Label {:text "+"}]]
+     [Label {:text (str "Local Signal " @*signal)}]
+     [Button {:on-click (fn [_] (s/swap! *signal inc))}
+      [Label {:text "+"}]]
+     [Label {:text (str "Effect " @*effect)}]]))
   
 (def MemoItem
   (memo Item))
