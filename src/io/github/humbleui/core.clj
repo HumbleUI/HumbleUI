@@ -447,9 +447,16 @@
 (def ^:private lock
   (Object.))
 
+(def t0
+  (System/currentTimeMillis))
+
 (defn log [& args]
   (locking lock
-    (apply println args)
+    (let [dt    (- (System/currentTimeMillis) t0)
+          mins  (quot dt 60000)
+          secs  (mod (quot dt 1000) 60)
+          msecs (mod dt 1000)]
+      (apply println (format "%02d:%02d.%03d" mins secs msecs) args))
     (flush)))
 
 ;; deftype+

@@ -114,6 +114,14 @@
         :else
         (throw (ex-info "I’m confused" {:past past, :desc desc}))))))
 
+;; skip-update?
+
+(defn skip-update? [past desc]
+  (let [{:keys [tag props]} (parse-desc desc)]
+    (if-some [f (:props-equal? (meta tag))]
+      (f (:props past) props)
+      (identical? (:desc past) desc))))
+
 ;; upgrade
 
 (defn upgrade [past desc]
@@ -379,7 +387,7 @@
               (nil? past)
               [(ctor current) false]
                                   
-              (identical? (:desc past) current)
+              (skip-update? past current)
               [past true]
                                   
               :else
@@ -477,11 +485,11 @@
             (state/request-frame))]))
 
 (defn use-memo [f deps]
-  (let [*a (use-ref-impl (fn [] [:memo deps (apply f deps)]))
+  (let [*a (use-ref-impl (fn [] [:memo deps (f)]))
         [_ old-deps old-val] @*a]
     (if (= old-deps deps)
       old-val
-      (let [new-val (apply f deps)]
+      (let [new-val (f)]
         (vreset! *a [:memo deps new-val])
         new-val))))
 
@@ -504,6 +512,13 @@
    (use-memo (fn [] f) deps)))
 
 ;; API
+
+(defn memo
+  ([comp]
+   (memo comp #(= %1 %2)))
+  ([comp props-equal-fn]
+   (with-meta comp
+     {:props-equal? props-equal-fn})))
 
 (defn render [mount desc]
   (let [{:keys [tag props children]} (parse-desc desc)]
@@ -530,10 +545,6 @@
   (atom
     (sorted-map 0 0, 1 0, 2 0)))
 
-(add-watch *state ::redraw
-  (fn [_ _ _ _]
-    (render app-root [App])))
-
 (defn Button [{:keys [on-click]} children]
   [OnClick {:on-click on-click}
    [Rect {:fill (:hui.button/bg *ctx*)}
@@ -542,21 +553,27 @@
 
 (defn Item [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
-        [local2 set-local2] (use-state 0)]
+        [local2 set-local2] (use-state 0)
+        del                 (use-callback
+                              (fn [_] (swap! *state dissoc id))
+                              [id])
+        inc-global          (use-callback
+                              (fn [_] (swap! *state update id inc))
+                              [id])]
     (use-effect
       #(do
-         (println "mount" id)
+         (core/log "mount" id)
          (fn []
-           (println "unmount" id)))
+           (core/log "unmount" id)))
       [])
-    (use-effect #(println "render" id) nil)
-    (use-effect #(println "change" id count) [id count])
+    (use-effect #(core/log "change" id count) [id count])
+    (use-effect #(core/log "render" id) nil)
     [Row
      [Label {:text (str "Id: " id)}]
-     [Button {:on-click (fn [_] (swap! *state dissoc id))}
+     [Button {:on-click del}
       [Label {:text "DEL"}]]
      [Label {:text (str "Global: " count)}]
-     [Button {:on-click (fn [_] (swap! *state update id inc))}
+     [Button {:on-click inc-global}
       [Label {:text "INC"}]]
      [Label {:text (str "Local 1: " local1)}]
      [Button {:on-click (fn [_] (set-local1 (inc local1)))}
@@ -564,12 +581,9 @@
      [Label {:text (str "Local 2: " local2)}]
      [Button {:on-click (fn [_] (set-local2 (inc local2)))}
       [Label {:text "INC"}]]]))
-
-(defn MemoItem [{:keys [id count]} _]
-  (use-memo
-    (fn [id count]
-      [Item {:id id, :count count}])
-    [id count]))
+  
+(def MemoItem
+  (memo Item))
 
 (defn App [_ _]
   [Center
@@ -585,3 +599,6 @@
 
 (render app-root [App])
 
+(add-watch *state ::redraw
+  (fn [_ _ _ _]
+    (render app-root [App])))
