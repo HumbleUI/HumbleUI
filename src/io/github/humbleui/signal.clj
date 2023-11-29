@@ -105,7 +105,7 @@
       :clean    value
       :dirty    (read-dirty this)
       :check    (read-check this)
-      :disposed (throw (ex-info "Can't read disposed signal" {})))))
+      :disposed (throw (ex-info (str "Can't read disposed signal '" name "'") {})))))
 
 (defn signal* [name value-fn]
   (let [signal (map->Signal

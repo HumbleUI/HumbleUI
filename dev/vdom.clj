@@ -333,11 +333,15 @@
 (defn unmount [ctx comp]
   (doseq [child (:children comp)]
     (unmount ctx child))
+  (some-> comp :signal-effect s/dispose!)
   (doseq [*state (:state comp)
-          :let [[type _ on-unmount] @*state]
-          :when (= :effect type)
-          :when on-unmount]
-    (on-unmount)))
+          :let [state @*state
+                type (first state)]]
+    (when (= :effect type)
+      (when-some [on-unmount (nth state 2)]
+        (on-unmount)))
+    (when (= :signal type)
+      (s/dispose! (nth state 1)))))
 
 (defn reconcile [ctx past current]
   (loop [past-coll    (remove #(:key (:props %)) past)
@@ -425,9 +429,10 @@
                         (:children-desc reconciler))])]
       (protocols/-set! reconciler :children children')
       (let [signals (persistent! @@#'s/*context*)]
-        (protocols/-set! reconciler :effect
+        (some-> reconciler :signal-effect s/dispose!)
+        (protocols/-set! reconciler :signal-effect
           (when-not (empty? signals)
-            (s/effect-named "invalidate" signals
+            (s/effect-named (str "signal-effect-" reconciler) signals
               (protocols/-set! reconciler :dirty? true)
               (state/request-frame)))))))
   reconciler)
@@ -439,7 +444,7 @@
                            ^:mut state
                            ^:mut dirty?
                            ^:mut children-desc
-                           ^:mut effect]
+                           ^:mut signal-effect]
   protocols/IComponent
   (-measure [this ctx cs]
     (core/measure (single children) ctx cs))
@@ -456,7 +461,12 @@
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (core/iterate-child (single children) ctx cb))))
+      (core/iterate-child (single children) ctx cb)))
+  
+  Object
+  (toString [_]
+    (let [{:keys [tag props]} (parse-desc desc)]
+      (str "Reconciler[" tag ", " props "]"))))
 
 (defn reconciler [desc]
   (let [{:keys [tag props children]} (parse-desc desc)]
@@ -492,11 +502,14 @@
             (protocols/-set! comp :dirty? true)
             (state/request-frame))]))
 
-(defn use-signal [init]
-  (let [*a      (use-ref-impl (fn [] [:signal (s/signal init)]))
-        comp    *reconciler*
-        [_ signal] @*a]
-    signal))
+(defn use-signal
+  ([init]
+   (use-signal (str "use-signal-" *reconciler*) init))
+  ([name init]
+   (let [*a         (use-ref-impl (fn [] [:signal (s/signal-named name init)]))
+         comp       *reconciler*
+         [_ signal] @*a]
+     signal)))
 
 (defn use-memo [f deps]
   (let [*a (use-ref-impl (fn [] [:memo deps (f)]))
@@ -571,9 +584,9 @@
 (defn Item [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
         [local2 set-local2] (use-state 0)
-        *signal             (use-signal 0)
+        *signal             (use-signal (str "local-" id) 0)
         *effect             (use-memo
-                              (fn [] (s/signal (* @*global-signal id)))
+                              (fn [] (s/signal-named (str "effect-" id) (* @*global-signal id)))
                               [id])
         del                 (use-callback
                               (fn [_] (swap! *state dissoc id))
