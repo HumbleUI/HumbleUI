@@ -137,7 +137,7 @@ def jar(target: str, *content: List[Tuple[str, str]], opts=[]) -> str:
 
 @functools.lru_cache(maxsize=1)
 def lombok():
-  return fetch_maven('org.projectlombok', 'lombok', '1.18.28')
+  return fetch_maven('org.projectlombok', 'lombok', '1.18.30')
 
 def delombok(dirs: List[str], target: str, classpath: List[str] = [], modulepath: List[str] = []):
   sources = files(*[dir + "/**/*.java" for dir in dirs])

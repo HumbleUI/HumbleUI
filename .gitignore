@@ -1,3 +1,4 @@
+.repl-port
 .nrepl-port
 hs_err_pid*.log
 .cpcache

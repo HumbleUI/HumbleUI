@@ -27,3 +27,7 @@
   (-on-mount-impl [_])
   (-on-unmount [_])
   (-on-unmount-impl [_]))
+
+(defprotocol IVDom
+  (-reconcile-impl [_ new-el])
+  (-compatible-impl [_ new-el]))

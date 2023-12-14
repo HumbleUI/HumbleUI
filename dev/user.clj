@@ -1,6 +1,7 @@
 (ns user
   (:require
     [clojure.core.server :as server]
+    [clojure.java.io :as io]
     [clojure.tools.namespace.repl :as ns]
     [clojure.tools.namespace.track :as track]
     [state]
@@ -27,8 +28,14 @@
   (let [cnt (count @*reloaded)]
     (str "Reloaded " cnt " namespace" (when (> cnt 1) "s"))))
 
+(defn before-reload []
+  (when-some [var (resolve 'io.github.humbleui.core/timer)]
+    (.cancel ^java.util.Timer @var)
+    (alter-var-root var (constantly (java.util.Timer. true)))))
+
 (defn reload []
   (set! *warn-on-reflection* true)
+  (before-reload)
   ; (set! *unchecked-math* :warn-on-boxed)
   (let [res (ns/refresh :after 'user/after-reload)]
     (if (instance? Throwable res)
@@ -65,15 +72,15 @@
 (defn start [& args]
   ;; setup window
   (ui/start-app!
-    (let [screen (last (app/screens))
+    (let [screen (first (app/screens))
           window (ui/window
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
-                    :width    800
-                    :height   600
-                    :x        :center
-                    :y        :center}
+                    :width    400
+                    :height   300
+                    :x        :right
+                    :y        :top}
                    state/*app)]
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
@@ -94,8 +101,13 @@
 
   ;; setup repl
   (let [args (apply array-map args)
-        port (parse-long (get args "--port" "5555"))]
+        port (or
+               (some-> (get args "--port") parse-long)
+               (+ 1024 (rand-int 64512)))
+        file (io/file ".repl-port")]
     (println "Started Server Socket REPL on port" port)
+    (spit file port)
+    (.deleteOnExit file)
     (server/start-server
       {:name          "repl"
        :port          port

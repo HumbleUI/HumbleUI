@@ -23,7 +23,7 @@ def main():
     "-Djdk.attach.allowAttachSelf",
     # "-XX:+UnlockDiagnosticVMOptions",
     # "-XX:+DebugNonSafepoints",
-    "clojure.main", "-m", "user", "--ns", args.ns])
+    "clojure.main", "--report", "stderr", "-m", "user", "--ns", args.ns])
 
 if __name__ == '__main__':
   sys.exit(main())

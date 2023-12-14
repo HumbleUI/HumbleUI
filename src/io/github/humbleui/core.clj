@@ -577,6 +577,11 @@
 
 ;; prototypes
 
+(defn set!! [obj & kvs]
+  (doseq [[k v] (partition 2 kvs)]
+    (protocols/-set! obj k v))
+  obj)
+
 (defn measure [comp ctx ^IPoint cs]
   {:pre  [(instance? IPoint cs)]
    :post [(instance? IPoint %)]}

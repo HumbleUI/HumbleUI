@@ -581,6 +581,19 @@
 (s/defsignal *global-signal
   0)
 
+; (defn Item [props]
+;   [Row
+;    [Label]])
+
+; (defn Item [props]
+;   (let [state (atom nil)]
+;     {:mount-fn   (fn ...)
+;      :unmount-fn (fn ...)
+;      :render-fn
+;      (fn []
+;        [Row
+;         [Label]])}))
+
 (defn Item [{:keys [id count]} _]
   (let [[local1 set-local1] (use-state 0)
         [local2 set-local2] (use-state 0)
@@ -600,7 +613,9 @@
          (fn []
            (core/log "unmount" id)))
       [])
-    (use-effect #(core/log "change" id count) [id count])
+    (use-effect
+      #(core/log "change" id count)
+      [id count])
     (use-effect #(core/log "render" id) nil)
     [Row
      [Label {:text (str "Id: " id)}]
