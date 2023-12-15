@@ -56,11 +56,8 @@
                    (do
                      (core/set!! *comp*
                        :render     (:render res)
-                       :on-mount   (:on-mount res)
                        :on-unmount (:on-unmount res)
                        :dirty?     true)
-                     (core/when-every [{:keys [on-mount]} res]
-                       (on-mount))
                      *comp*)
                
                    (vector? res)
@@ -76,6 +73,8 @@
                    :else
                    (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res})))]
         (core/set!! comp :el el)
+        (when-some [key (:key (meta el))]
+          (core/set!! comp :key key))
         comp))))
 
 (defn compatible? [old-comp new-el]
@@ -84,49 +83,78 @@
     (identical? (first (:el old-comp)) (first new-el))
     (protocols/-compatible-impl old-comp new-el)))
 
-
 (defn unmount [comp]
-  (core/when-every [{:keys [on-unmount]} comp]
-    (on-unmount)))
+  (core/iterate-child comp nil
+    #(core/when-every [{:keys [on-unmount]} %]
+       (on-unmount))))
 
 (defn reconcile [old-comps new-els]
-  (loop [old-comps old-comps
+  (loop [old-comps-keyed (->> old-comps
+                           (filter :key)
+                           (map #(vector (:key %) %))
+                           (into {}))
+         old-comps       (remove :key old-comps)
          new-els   new-els
          res       []]
     (core/cond+
       (empty? new-els)
-      res
+      (do
+        (doseq [[_ comp] (concat old-comps old-comps-keyed)]
+          (unmount comp))
+        res)
       
       :let [[old-comp & old-comps'] old-comps
-            [new-el & new-els'] new-els]
+            [new-el & new-els'] new-els
+            key (:key (meta new-el))]
+      
+      key
+      (let [old-comp (old-comps-keyed key)]
+        (cond
+          ;; new key
+          (nil? old-comp)
+          (let [new-comp (make new-el)]
+            (recur old-comps-keyed old-comps new-els' (conj res new-comp)))
+          
+          ;; compatible key
+          (compatible? old-comp new-el)
+          (do
+            (protocols/-reconcile-impl old-comp new-el)
+            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res old-comp)))
+          
+          ;; non-compatible key
+          :else
+          (let [new-comp (make new-el)]
+            (unmount old-comp)
+            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res new-comp)))))        
       
       (compatible? old-comp new-el)
       (do
         (protocols/-reconcile-impl old-comp new-el)
-        (recur old-comps' new-els' (conj res old-comp)))
+        (recur old-comps-keyed old-comps' new-els' (conj res old-comp)))
       
       ;; old-comp was dropped
       (compatible? (first old-comps') new-el)
       (let [_ (unmount old-comp)
             [old-comp & old-comps'] old-comps']
         (protocols/-reconcile-impl old-comp new-el)
-        (recur (next old-comps') new-els' (conj res old-comp)))
+        (recur old-comps-keyed (next old-comps') new-els' (conj res old-comp)))
       
       ;; new-el was inserted
       (compatible? old-comp (first new-els'))
       (let [new-comp (make new-el)]
-        (recur old-comps new-els' (conj res new-comp)))
+        (recur old-comps-keyed old-comps new-els' (conj res new-comp)))
       
       ;; just incompatible
       :else
       (let [new-comp (make new-el)]
         (unmount old-comp)
-        (recur old-comps' new-els' (conj res new-comp))))))
+        (recur old-comps-keyed old-comps' new-els' (conj res new-comp))))))
 
 (core/defparent AComponent4
   [^:mut el
    ^:mut mounted?
-   ^:mut self-rect]
+   ^:mut self-rect
+   ^:mut key]
   
   protocols/IComponent
   (-measure [this ctx cs]
@@ -154,6 +182,9 @@
   protocols/IComponent
   (-event-impl [this ctx event])
   
+  (-iterate [this ctx cb]
+    (cb this))
+  
   protocols/IVDom
   (-compatible-impl [this new-el]
     (= el new-el))
@@ -173,6 +204,11 @@
   (-event-impl [this ctx event]
     (core/event child ctx event))
   
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (core/iterate-child child ctx cb)))
+  
   protocols/IVDom
   (-reconcile-impl [_ el']
     (let [[_ [child-el]] (maybe-opts (next el'))
@@ -185,6 +221,11 @@
   protocols/IComponent  
   (-event-impl [this ctx event]
     (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil children))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (some #(core/iterate-child % ctx cb) children)))
   
   protocols/IVDom
   (-reconcile-impl [_ el']
@@ -201,7 +242,6 @@
       (core/set!! comp :dirty? false))))
 
 (core/deftype+ FnComponent [^:mut render
-                            ^:mut on-mount
                             ^:mut on-unmount
                             ^:mut child
                             ^:mut dirty?]
@@ -219,6 +259,11 @@
   (-event-impl [this ctx event]
     (maybe-render this ctx)
     (core/event child ctx event))
+  
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (core/iterate-child child ctx cb)))
   
   protocols/IVDom
   (-reconcile-impl [_ el']
@@ -372,13 +417,17 @@
      (fn [] (timer))
      :render
      (fn [_]
-       [label @*state])}))
+       [label "Timer: " @*state " sec"])}))
 
 (defn item [*state id]
-  [row
-   [label "Row: " id ", clicks: " (@*state id)]
-   [on-click (fn [_] (swap! *state update id inc)) [label "[ INC ]"]]
-   [on-click (fn [_] (swap! *state dissoc id)) [label "[ DEL ]"]]])
+  (println "mount" id)
+  {:on-unmount (fn [] (println "unmount" id))
+   :render
+   (fn [*state id]
+     [row
+      [label "Row: " id ", clicks: " (@*state id)]
+      [on-click (fn [_] (swap! *state update id inc)) [label "[ INC ]"]]
+      [on-click (fn [_] (swap! *state dissoc id)) [label "[ DEL ]"]]])})
 
 (defn app-impl []
   (let [*state (ratom (into (sorted-map) (map #(vector % 0) (range 3))))]
@@ -386,10 +435,9 @@
      (fn []
        [center
         [column
-         [label "Key" " - " "Value"]
          [timer 0]
          (for [k (keys @*state)]
-           [item *state k])
+           ^{:key k} [item *state k])
          [on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))
           [label "[ ADD ]"]]]])}))
 
