@@ -27,12 +27,9 @@
 
 (def ^:dynamic *comp*)
 
-(defn rerender [comp]
+(defn invalidate [comp]
   (core/set!! comp :dirty? true)
   (state/request-frame))
-
-(def padding
-  10)
 
 (def ctor-border
   (paint/stroke 0x80FF00FF 2))
@@ -45,12 +42,26 @@
     [(first vals) (next vals)]
     [{} vals]))
 
+(defn maybe-render [comp ctx]
+  (binding [*ctx* ctx]
+    (when (:dirty? comp)
+      (protocols/-reconcile-impl comp (:el comp))
+      (core/set!! comp :dirty? false))))
+
+(defn make-record [^Class class]
+  (let [ns   (str/replace (.getPackageName class) "_" "-")
+        name (str "map->" (.getSimpleName class))
+        ctor (ns-resolve (symbol ns) (symbol name))]
+    (ctor {})))
+
 (defn make [el]
   (if (satisfies? protocols/IComponent el)
     el
     (binding [*comp* (map->FnComponent {})]
       (let [[f & args] el
-            res  (apply f args)
+            res  (cond
+                   (ifn? f)   (apply f args)
+                   (class? f) (make-record f))
             comp (core/cond+
                    (map? res)
                    (do
@@ -66,9 +77,18 @@
                        :render f
                        :dirty? true)
                      *comp*)
+                   
+                   (ifn? res)
+                   (do
+                     (core/set!! *comp*
+                       :render res
+                       :dirty? true)
+                     *comp*)
                
                    (satisfies? protocols/IComponent res)
-                   res
+                   (do
+                     (core/set!! res :dirty? true)
+                     res)
                
                    :else
                    (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res})))]
@@ -154,20 +174,24 @@
   [^:mut el
    ^:mut mounted?
    ^:mut self-rect
-   ^:mut key]
+   ^:mut key
+   ^:mut dirty?]
   
   protocols/IComponent
   (-measure [this ctx cs]
+    (maybe-render this ctx)
     (protocols/-measure-impl this ctx cs))
     
   (-draw [this ctx rect canvas]
     (set! self-rect rect)
+    (maybe-render this ctx)
     (protocols/-draw-impl this ctx rect canvas)
     (when-not mounted?
       (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
       (set! mounted? true)))
   
   (-event [this ctx event]
+    (maybe-render this ctx)
     (protocols/-event-impl this ctx event))
     
   protocols/IVDom
@@ -195,7 +219,7 @@
 (core/defparent AWrapper4 [^:mut child]
   :extends AComponent4
   protocols/IComponent
-  (-measure-impl [_ ctx cs]
+  (-measure-impl [this ctx cs]
     (core/measure child ctx cs))
 
   (-draw-impl [this ctx rect canvas]
@@ -235,16 +259,9 @@
       (set! children children')
       (set! el el'))))
 
-(defn maybe-render [comp ctx]
-  (binding [*ctx* ctx]
-    (when (:dirty? comp)
-      (protocols/-reconcile-impl comp (:el comp))
-      (core/set!! comp :dirty? false))))
-
 (core/deftype+ FnComponent [^:mut render
                             ^:mut on-unmount
-                            ^:mut child
-                            ^:mut dirty?]
+                            ^:mut child]
   :extends AComponent4
   protocols/IComponent
   (-measure-impl [this ctx cs]
@@ -272,7 +289,13 @@
       (set! child child')
       (set! el el'))))
 
-(core/deftype+ Label [^:mut ^TextLine line]
+(defmacro defcomponent [name & rest]
+  `(do
+     (core/deftype+ ~name ~@rest)
+     (defn ~(symbol (str/lower-case (str name))) [& args#]
+       (~(symbol (str "map->" name)) {}))))
+
+(defcomponent Label [^:mut ^TextLine line]
   :extends ATerminal4
   protocols/IComponent
   (-measure-impl [this ctx cs]
@@ -287,7 +310,7 @@
       (+ (:y rect) (* (:scale ctx) (:leading ctx)))
       (:fill-text ctx))))
 
-(defn label [& args]
+(defn a-label [& args]
   (let [[opts texts] (maybe-opts args)
         font         (or (:font opts) (:font-ui *ctx*))
         features     (or (:features opts) (:features *ctx*) ShapingOptions/DEFAULT)
@@ -297,7 +320,15 @@
                        (* (:scale *ctx*) (:leading *ctx*)))]
     (map->Label {:line line})))
 
-(core/deftype+ Center []
+(declare row)
+
+(defn label [& children]
+  (if (= 1 (count children))
+    [a-label (first children)]
+    [row
+     (map #(vector a-label %) children)]))
+
+(defcomponent Center []
   :extends AWrapper4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -315,10 +346,7 @@
                        cw ch)]
       (protocols/-draw child ctx rect' canvas))))
 
-(defn center [child-el]
-  (map->Center {:child (make child-el)}))
-
-(core/deftype+ OnClick []
+(defcomponent Clickable []
   :extends AWrapper4
   protocols/IComponent  
   (-event-impl [this ctx event]
@@ -326,25 +354,56 @@
             (= :mouse-button (:event event))
             (:pressed? event)
             (core/rect-contains? self-rect (core/ipoint (:x event) (:y event))))
-      ((nth el 1) event))
-    (core/event-child child ctx event))
-  
-  protocols/IVDom
-  (-reconcile-impl [_ el']
-    (let [[_ _ child-el] el'
-          [child'] (reconcile [child] [child-el])]
-      (set! child child')
-      (set! el el'))))
+      (core/when-every [[opts _] (maybe-opts (next el))
+                        {:keys [on-click]} opts]
+        (on-click event)))
+    (core/event-child child ctx event)))
 
-(defn on-click [cb child-el]
-  (map->OnClick
-    {:child (make child-el)}))
+(defcomponent Padding []
+  :extends AWrapper4
+  protocols/IComponent
+  (-measure-impl [_ ctx cs]
+    (let [[opts _] (maybe-opts (next el))
+          scale    (:scale ctx)
+          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) 0))
+          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) 0))
+          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) 0))
+          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) 0))
+          cs'      (core/ipoint
+                     (- (:width cs) left right)
+                     (- (:height cs) top bottom))
+          size'    (core/measure child ctx cs')]
+      (core/ipoint
+        (+ (:width size') left right)
+        (+ (:height size') top bottom))))
 
-(core/deftype+ Column []
+  (-draw-impl [this ctx rect canvas]
+    (let [[opts _] (maybe-opts (next el))
+          scale    (:scale ctx)
+          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) 0))
+          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) 0))
+          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) 0))
+          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) 0))
+          rect'    (core/irect-ltrb
+                     (+ (:x rect) left)
+                     (+ (:y rect) top)
+                     (- (:right rect) right)
+                     (- (:bottom rect) bottom))]
+      (protocols/-draw child ctx rect' canvas))))
+
+(defcomponent Rect []
+  :extends AWrapper4
+  protocols/IComponent  
+  (-draw-impl [this ctx rect canvas]
+    (let [[opts _] (maybe-opts (next el))]
+      (canvas/draw-rect canvas rect (:fill opts))
+      (core/draw-child child ctx rect canvas))))
+
+(defcomponent Column []
   :extends AContainer4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [gap (* (:scale ctx) padding)]
+    (let [gap (* (:scale ctx) (:padding ctx))]
       (loop [children children
              w        0
              h        0]
@@ -357,7 +416,7 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap   (* (:scale ctx) padding)
+    (let [gap   (* (:scale ctx) (:padding ctx))
           width (:width rect)]
       (loop [children children
              top      (:y rect)]
@@ -367,14 +426,11 @@
             (protocols/-draw child ctx (core/irect-xywh x top (:width size) (:height size)) canvas)
             (recur (next children) (+ top (:height size) gap))))))))
 
-(defn column [& child-els]
-  (map->Column {:children (mapv make (flatten child-els))}))
-
-(core/deftype+ Row []
+(defcomponent Row []
   :extends AContainer4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [gap (* (:scale ctx) padding)]
+    (let [gap (* (:scale ctx) (:padding ctx))]
       (loop [children children
              w        0
              h        0]
@@ -387,7 +443,7 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap (* (:scale ctx) padding)
+    (let [gap (* (:scale ctx) (:padding ctx))
           height   (:height rect)]
       (loop [children children
              left     (:x rect)]
@@ -397,17 +453,21 @@
             (protocols/-draw child ctx (core/irect-xywh left y (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))))
 
-(defn row [& child-els]
-  (map->Row {:children (mapv make (flatten child-els))}))
-
 (defn ratom [init]
   (let [comp *comp*
         res  (atom init)]
-    (add-watch res ::rerender
+    (add-watch res ::invalidate
       (fn [_ _ old new]
         (when (not= old new)
-          (rerender comp))))
+          (invalidate comp))))
     res))
+
+(defn button [opts child]
+  [clickable (select-keys opts [:on-click])
+   [rect {:fill (:hui.button/bg *ctx*)}
+    [padding {:horizontal (:padding *ctx*)
+              :vertical   (quot (:padding *ctx*) 2)}
+     child]]])
 
 (defn timer [init]
   (let [*state (ratom init)
@@ -417,7 +477,7 @@
      (fn [] (timer))
      :render
      (fn [_]
-       [label "Timer: " @*state " sec"])}))
+       [label "Timer" @*state "sec"])}))
 
 (defn item [*state id]
   (println "mount" id)
@@ -425,25 +485,27 @@
    :render
    (fn [*state id]
      [row
-      [label "Row: " id ", clicks: " (@*state id)]
-      [on-click (fn [_] (swap! *state update id inc)) [label "[ INC ]"]]
-      [on-click (fn [_] (swap! *state dissoc id)) [label "[ DEL ]"]]])})
+      [label "Id" id "Clicks" (@*state id)]
+      [button {:on-click (fn [_] (swap! *state update id inc))}
+       [label "INC"]]
+      [button {:on-click (fn [_] (swap! *state dissoc id))}
+       [label "DEL"]]])})
 
 (defn app-impl []
   (let [*state (ratom (into (sorted-map) (map #(vector % 0) (range 3))))]
-    {:render
-     (fn []
-       [center
-        [column
-         [timer 0]
-         (for [k (keys @*state)]
-           ^{:key k} [item *state k])
-         [on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))
-          [label "[ ADD ]"]]]])}))
+    (fn []
+      [center
+       [column
+        [timer 0]
+        (for [k (keys @*state)]
+          ^{:key k} [item *state k])
+        [button {:on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))}
+         [label "ADD"]]]])))
 
 (def app
   (ui/default-theme
     {:cap-height 10}
     (ui/with-context
-      {:features (.withFeatures ShapingOptions/DEFAULT "tnum")}
+      {:features (.withFeatures ShapingOptions/DEFAULT "tnum")
+       :padding  10}
       (make [app-impl]))))
