@@ -119,7 +119,7 @@
     (core/cond+
       (empty? new-els)
       (do
-        (doseq [[_ comp] (concat old-comps old-comps-keyed)]
+        (doseq [comp (concat old-comps (vals old-comps-keyed))]
           (unmount comp))
         res)
       
@@ -145,28 +145,32 @@
           :else
           (let [new-comp (make new-el)]
             (unmount old-comp)
-            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res new-comp)))))        
-      
+            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res new-comp)))))
+
       (compatible? old-comp new-el)
       (do
+        ; (println "compatible" old-comp new-el)
         (protocols/-reconcile-impl old-comp new-el)
         (recur old-comps-keyed old-comps' new-els' (conj res old-comp)))
       
       ;; old-comp was dropped
       (compatible? (first old-comps') new-el)
-      (let [_ (unmount old-comp)
+      (let [; _ (println "old-comp dropped" old-comp new-el)
+            _ (unmount old-comp)
             [old-comp & old-comps'] old-comps']
         (protocols/-reconcile-impl old-comp new-el)
         (recur old-comps-keyed (next old-comps') new-els' (conj res old-comp)))
       
       ;; new-el was inserted
       (compatible? old-comp (first new-els'))
-      (let [new-comp (make new-el)]
+      (let [; _ (println "new-el inserted" old-comp new-el)
+            new-comp (make new-el)]
         (recur old-comps-keyed old-comps new-els' (conj res new-comp)))
       
       ;; just incompatible
       :else
-      (let [new-comp (make new-el)]
+      (let [; _ (println "incompatible" old-comp new-el)
+            new-comp (make new-el)]
         (unmount old-comp)
         (recur old-comps-keyed old-comps' new-els' (conj res new-comp))))))
 
@@ -453,6 +457,34 @@
             (protocols/-draw child ctx (core/irect-xywh left y (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))))
 
+(defcomponent Split []
+  :extends AContainer4
+  protocols/IComponent
+  (-measure-impl [_ ctx cs]
+    cs)
+  
+  (-draw-impl [this ctx rect canvas]
+    (let [[left right] children
+          left-size  (core/measure left ctx (core/isize (:width rect) (:height rect)))
+          left-rect  (core/irect-xywh
+                       (:x rect)
+                       (:y rect)
+                       (:width left-size)
+                       (:height rect))
+          right-rect (core/irect-xywh
+                       (+ (:x rect) (:width left-size))
+                       (:y rect)
+                       (- (:width rect) (:width left-size))
+                       (:height rect))]
+      (core/draw left ctx left-rect canvas)
+      (core/draw right ctx right-rect canvas))))
+
+(defn split
+  ([left right]
+   (split {} left right))
+  ([opts left right]
+   (map->Split {})))
+
 (defn ratom [init]
   (let [comp *comp*
         res  (atom init)]
@@ -469,15 +501,111 @@
               :vertical   (quot (:padding *ctx*) 2)}
      child]]])
 
-(defn timer [init]
-  (let [*state (ratom init)
-        timer  (core/schedule
+;; examples
+
+(defn example-static []
+  [label "Hello, bumbles!"])
+
+(defn comp-no-args []
+  [label "No args"])
+
+(defn comp-one-arg [msg]
+  [label msg])
+
+(defn comp-two-args [a b]
+  [row
+   [label a]
+   [label b]])
+
+(defn comp-varargs [& msgs]
+  [row
+   (map #(vector label %) msgs)])
+
+(defn example-arguments []
+  [column
+   [comp-no-args]
+   [comp-one-arg "One arg"]
+   [comp-two-args "Two" "args"]
+   [comp-varargs "Multiple variable args"]
+   [comp-varargs "Multiple" "variable" "args"]])
+
+(defn example-return-fn []
+  (let [*state (ratom 0)]
+    (fn []
+      [row
+       [label "Clicked:" @*state]
+       [button {:on-click (fn [_] (swap! *state inc))}
+        [label "INC"]]])))
+
+(defn example-return-map []
+  (let [*state (ratom 0)]
+    {:render
+     (fn []
+       [row
+        [label "Clicked:" @*state]
+        [button {:on-click (fn [_] (swap! *state inc))}
+         [label "INC"]]])}))
+
+(defn example-lifecycle []
+  (let [*state (ratom 0)
+        _      (println "starting timer")
+        cancel (core/schedule
                  #(swap! *state inc) 0 1000)]
     {:on-unmount
-     (fn [] (timer))
+     (fn []
+       (println "cancelling timer")
+       (cancel))
      :render
-     (fn [_]
+     (fn []
        [label "Timer" @*state "sec"])}))
+
+(defn example-diff-incompat []
+  (let [*state (ratom 0)]
+    (fn []
+      [column
+       (for [i (range 6)
+             :let [lbl [padding {:padding (:padding *ctx*)}
+                        [label (str "Item " i)]]]]
+         (if (= i @*state)
+           [rect {:fill (:hui.button/bg *ctx*)} lbl]
+           [clickable {:on-click (fn [_] (reset! *state i))} lbl]))])))
+
+(defn example-diff-compat []
+  (let [*state (ratom 0)
+        transparent (paint/fill 0x00000000)]
+    (fn []
+      [column
+       (for [i (range 6)]
+         [clickable {:on-click (fn [_] (reset! *state i))}
+          [rect {:fill (if (= i @*state)
+                         (:hui.button/bg *ctx*)
+                         transparent)}
+           [padding {:padding (:padding *ctx*)}
+            [label (str "Item " i)]]]])])))
+
+(defn example-diff-keys []
+  (let [*state (ratom 0)]
+    (fn []
+      [column
+       (for [i (range 6)]
+         (if (= i @*state)
+           ^{:key i} [rect {:fill (:hui.button/bg *ctx*)}
+                      [padding {:padding (:padding *ctx*)}
+                       [label (str "Item" i)]]]
+           ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
+                      [padding {:padding (:padding *ctx*)}
+                       [label (str "Item" i)]]]))])))
+
+(defn example-invalidate []
+  (let [*state (atom 0)
+        comp   *comp*]
+    (fn []
+      [row
+       [label "Clicked:" @*state]
+       [button {:on-click (fn [_] 
+                            (swap! *state inc)
+                            (invalidate comp))}
+        [label "INC"]]])))
 
 (defn item [*state id]
   (println "mount" id)
@@ -491,16 +619,42 @@
       [button {:on-click (fn [_] (swap! *state dissoc id))}
        [label "DEL"]]])})
 
-(defn app-impl []
+(defn example-rows []
   (let [*state (ratom (into (sorted-map) (map #(vector % 0) (range 3))))]
     (fn []
-      [center
+      [column
+       (for [k (keys @*state)]
+         ^{:key k} [item *state k])
+       [button {:on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))}
+        [label "ADD"]]])))
+
+;; shell
+
+(def examples
+  ["static"
+   "arguments"
+   "return-fn"
+   "return-map"
+   "lifecycle"
+   "diff-incompat"
+   "diff-compat"
+   "diff-keys"
+   "invalidate"
+   "rows"])
+
+(defn app-impl []
+  (let [*selected (ratom (first examples))]
+    (fn []
+      [split
        [column
-        [timer 0]
-        (for [k (keys @*state)]
-          ^{:key k} [item *state k])
-        [button {:on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))}
-         [label "ADD"]]]])))
+        (for [name examples
+              :let [lbl [padding {:padding (:padding *ctx*)}
+                         [label name]]]]
+          (if (= @*selected name)
+            ^{:key name} [rect {:fill (:hui.button/bg *ctx*)} lbl]
+            ^{:key name} [clickable {:on-click (fn [_] (reset! *selected name))} lbl]))]
+       [center
+        [@(ns-resolve 'vdom-2 (symbol (str "example-" @*selected)))]]])))
 
 (def app
   (ui/default-theme
