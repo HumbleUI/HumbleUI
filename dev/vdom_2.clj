@@ -42,17 +42,32 @@
     [(first vals) (next vals)]
     [{} vals]))
 
+(defn invoke [f]
+  (when f
+    (f)))
+
 (defn maybe-render [comp ctx]
-  (binding [*ctx* ctx]
+  (binding [*comp* comp
+            *ctx*  ctx]
     (when (:dirty? comp)
-      (protocols/-reconcile-impl comp (:el comp))
-      (core/set!! comp :dirty? false))))
+      (invoke (:before-render comp))
+      (try
+        (protocols/-reconcile-impl comp (:el comp))
+        (core/set!! comp :dirty? false)
+        (finally
+          (invoke (:after-render comp)))))))
 
 (defn make-record [^Class class]
   (let [ns   (str/replace (.getPackageName class) "_" "-")
         name (str "map->" (.getSimpleName class))
         ctor (ns-resolve (symbol ns) (symbol name))]
     (ctor {})))
+
+(defn collect [key xs]
+  (let [cbs (keep key xs)]
+    (fn [& args]
+      (doseq [cb cbs]
+        (apply cb args)))))
 
 (defn make [el]
   (if (satisfies? protocols/IComponent el)
@@ -66,11 +81,23 @@
                    (map? res)
                    (do
                      (core/set!! *comp*
-                       :render     (:render res)
-                       :on-unmount (:on-unmount res)
-                       :dirty?     true)
+                       :render        (:render res)
+                       :before-render (:before-render res)
+                       :after-render  (:after-render res)
+                       :after-unmount (:after-unmount res)
+                       :dirty?        true)
                      *comp*)
                
+                   (and (vector? res) (map? (first res)))
+                   (do
+                     (core/set!! *comp*
+                       :render        (some :render res)
+                       :before-render (collect :before-render res)
+                       :after-render  (collect :after-render res)
+                       :after-unmount (collect :after-unmount res)
+                       :dirty?        true)
+                     *comp*)
+                   
                    (vector? res)
                    (do
                      (core/set!! *comp*
@@ -105,15 +132,14 @@
 
 (defn unmount [comp]
   (core/iterate-child comp nil
-    #(core/when-every [{:keys [on-unmount]} %]
-       (on-unmount))))
+    #(invoke (:after-unmount %))))
 
 (defn reconcile [old-comps new-els]
   (loop [old-comps-keyed (->> old-comps
                            (filter :key)
                            (map #(vector (:key %) %))
                            (into {}))
-         old-comps       (remove :key old-comps)
+         old-comps       (filter #(and % (nil? (:key %))) old-comps)
          new-els   new-els
          res       []]
     (core/cond+
@@ -222,20 +248,28 @@
   
 (core/defparent AWrapper4 [^:mut child]
   :extends AComponent4
+  protocols/IContext
+  (-context [_ ctx]
+    ctx)
+
   protocols/IComponent
   (-measure-impl [this ctx cs]
-    (core/measure child ctx cs))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/measure child ctx' cs)))
 
   (-draw-impl [this ctx rect canvas]
-    (core/draw child ctx rect canvas))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/draw child ctx' rect canvas)))
   
   (-event-impl [this ctx event]
-    (core/event child ctx event))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (core/event child ctx' event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (core/iterate-child child ctx cb)))
+      (when-some [ctx' (protocols/-context this ctx)]
+        (core/iterate-child child ctx' cb))))
   
   protocols/IVDom
   (-reconcile-impl [_ el']
@@ -264,7 +298,9 @@
       (set! el el'))))
 
 (core/deftype+ FnComponent [^:mut render
-                            ^:mut on-unmount
+                            ^:mut before-render
+                            ^:mut after-render
+                            ^:mut after-unmount
                             ^:mut child]
   :extends AComponent4
   protocols/IComponent
@@ -293,13 +329,7 @@
       (set! child child')
       (set! el el'))))
 
-(defmacro defcomponent [name & rest]
-  `(do
-     (core/deftype+ ~name ~@rest)
-     (defn ~(symbol (str/lower-case (str name))) [& args#]
-       (~(symbol (str "map->" name)) {}))))
-
-(defcomponent Label [^:mut ^TextLine line]
+(core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
   protocols/IComponent
   (-measure-impl [this ctx cs]
@@ -324,15 +354,26 @@
                        (* (:scale *ctx*) (:leading *ctx*)))]
     (map->Label {:line line})))
 
-(declare row)
+(declare row with-context)
 
 (defn label [& children]
   (if (= 1 (count children))
     [a-label (first children)]
-    [row
+    [row {:gap 0}
      (map #(vector a-label %) children)]))
 
-(defcomponent Center []
+(core/deftype+ WithContext []
+  :extends AWrapper4
+  protocols/IContext
+  (-context [_ ctx]
+    (let [[opts _] (maybe-opts (next el))]
+      (merge ctx opts))))
+
+(defn with-context [ctx child]
+  (assert (map? ctx))
+  (map->WithContext {}))
+
+(core/deftype+ Center []
   :extends AWrapper4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -350,7 +391,10 @@
                        cw ch)]
       (protocols/-draw child ctx rect' canvas))))
 
-(defcomponent Clickable []
+(defn center [child]
+  (map->Center {}))
+
+(core/deftype+ Clickable []
   :extends AWrapper4
   protocols/IComponent  
   (-event-impl [this ctx event]
@@ -363,7 +407,10 @@
         (on-click event)))
     (core/event-child child ctx event)))
 
-(defcomponent Padding []
+(defn clickable [opts child]
+  (map->Clickable {}))
+
+(core/deftype+ Padding []
   :extends AWrapper4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -395,7 +442,10 @@
                      (- (:bottom rect) bottom))]
       (protocols/-draw child ctx rect' canvas))))
 
-(defcomponent Rect []
+(defn padding [opts child]
+  (map->Padding {}))
+
+(core/deftype+ Rect []
   :extends AWrapper4
   protocols/IComponent  
   (-draw-impl [this ctx rect canvas]
@@ -403,11 +453,15 @@
       (canvas/draw-rect canvas rect (:fill opts))
       (core/draw-child child ctx rect canvas))))
 
-(defcomponent Column []
+(defn rect [opts child]
+  (map->Rect {}))
+
+(core/deftype+ Column []
   :extends AContainer4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [gap (* (:scale ctx) (:padding ctx))]
+    (let [[opts _] (maybe-opts (next el))
+          gap      (* (:scale ctx) (or (:gap opts) (:padding ctx)))]
       (loop [children children
              w        0
              h        0]
@@ -420,8 +474,9 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap   (* (:scale ctx) (:padding ctx))
-          width (:width rect)]
+    (let [[opts _] (maybe-opts (next el))
+          gap      (* (:scale ctx) (or (:gap opts) (:padding ctx)))
+          width    (:width rect)]
       (loop [children children
              top      (:y rect)]
         (when-some [child (first children)]
@@ -430,11 +485,15 @@
             (protocols/-draw child ctx (core/irect-xywh x top (:width size) (:height size)) canvas)
             (recur (next children) (+ top (:height size) gap))))))))
 
-(defcomponent Row []
+(defn column [& children]
+  (map->Column {}))
+
+(core/deftype+ Row []
   :extends AContainer4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [gap (* (:scale ctx) (:padding ctx))]
+    (let [[opts _] (maybe-opts (next el))
+          gap      (* (:scale ctx) (or (:gap opts) (:padding ctx)))]
       (loop [children children
              w        0
              h        0]
@@ -447,7 +506,8 @@
           (core/isize w h)))))
   
   (-draw-impl [this ctx rect canvas]
-    (let [gap (* (:scale ctx) (:padding ctx))
+    (let [[opts _] (maybe-opts (next el))
+          gap      (* (:scale ctx) (or (:gap opts) (:padding ctx)))
           height   (:height rect)]
       (loop [children children
              left     (:x rect)]
@@ -457,7 +517,10 @@
             (protocols/-draw child ctx (core/irect-xywh left y (:width size) (:height size)) canvas)
             (recur (next children) (+ left (:width size) gap))))))))
 
-(defcomponent Split []
+(defn row [& children]
+  (map->Row {}))
+
+(core/deftype+ Split []
   :extends AContainer4
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -501,6 +564,25 @@
               :vertical   (quot (:padding *ctx*) 2)}
      child]]])
 
+(defn use-signals []
+  (let [*effect (volatile! nil)
+        comp    *comp*]
+    {:before-render
+     (fn []
+       (push-thread-bindings {#'s/*context* (volatile! (transient #{}))}))
+     :after-render
+     (fn []
+       (let [signals (persistent! @@#'s/*context*)]
+         (pop-thread-bindings)
+         (some-> @*effect s/dispose!)
+         (vreset! *effect
+           (when-not (empty? signals)
+             (s/effect signals
+               (invalidate comp))))))
+     :after-unmount
+     (fn []
+       (some-> @*effect s/dispose!))}))
+
 ;; examples
 
 (defn example-static []
@@ -513,9 +595,7 @@
   [label msg])
 
 (defn comp-two-args [a b]
-  [row
-   [label a]
-   [label b]])
+  [label a b])
 
 (defn comp-varargs [& msgs]
   [row
@@ -525,15 +605,15 @@
   [column
    [comp-no-args]
    [comp-one-arg "One arg"]
-   [comp-two-args "Two" "args"]
+   [comp-two-args "Two" " args"]
    [comp-varargs "Multiple variable args"]
-   [comp-varargs "Multiple" "variable" "args"]])
+   [comp-varargs "Multiple" " variable" " args"]])
 
 (defn example-return-fn []
   (let [*state (ratom 0)]
     (fn []
       [row
-       [label "Clicked:" @*state]
+       [label "Clicked: " @*state]
        [button {:on-click (fn [_] (swap! *state inc))}
         [label "INC"]]])))
 
@@ -542,22 +622,34 @@
     {:render
      (fn []
        [row
-        [label "Clicked:" @*state]
+        [label "Clicked: " @*state]
         [button {:on-click (fn [_] (swap! *state inc))}
          [label "INC"]]])}))
+
+(defn example-return-maps []
+  (let [*state (ratom 0)]
+    [{:after-unmount (fn [] (println "unmount 1"))}
+     {:after-unmount (fn [] (println "unmount 2"))}
+     {:after-unmount (fn [] (println "unmount 3"))
+      :render
+      (fn []
+        [row
+         [label "Clicked: " @*state]
+         [button {:on-click (fn [_] (swap! *state inc))}
+          [label "INC"]]])}]))
 
 (defn example-lifecycle []
   (let [*state (ratom 0)
         _      (println "starting timer")
         cancel (core/schedule
                  #(swap! *state inc) 0 1000)]
-    {:on-unmount
+    {:after-unmount
      (fn []
        (println "cancelling timer")
        (cancel))
      :render
      (fn []
-       [label "Timer" @*state "sec"])}))
+       [label "Timer: " @*state " sec"])}))
 
 (defn example-diff-incompat []
   (let [*state (ratom 0)]
@@ -565,7 +657,7 @@
       [column
        (for [i (range 6)
              :let [lbl [padding {:padding (:padding *ctx*)}
-                        [label (str "Item " i)]]]]
+                        [label "Item " i]]]]
          (if (= i @*state)
            [rect {:fill (:hui.button/bg *ctx*)} lbl]
            [clickable {:on-click (fn [_] (reset! *state i))} lbl]))])))
@@ -581,7 +673,7 @@
                          (:hui.button/bg *ctx*)
                          transparent)}
            [padding {:padding (:padding *ctx*)}
-            [label (str "Item " i)]]]])])))
+            [label "Item " i]]]])])))
 
 (defn example-diff-keys []
   (let [*state (ratom 0)]
@@ -591,29 +683,52 @@
          (if (= i @*state)
            ^{:key i} [rect {:fill (:hui.button/bg *ctx*)}
                       [padding {:padding (:padding *ctx*)}
-                       [label (str "Item" i)]]]
+                       [label "Item" i]]]
            ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
                       [padding {:padding (:padding *ctx*)}
-                       [label (str "Item" i)]]]))])))
+                       [label "Item" i]]]))])))
 
 (defn example-invalidate []
   (let [*state (atom 0)
         comp   *comp*]
     (fn []
       [row
-       [label "Clicked:" @*state]
+       [label "Clicked: " @*state]
        [button {:on-click (fn [_] 
                             (swap! *state inc)
                             (invalidate comp))}
         [label "INC"]]])))
 
+(defn example-signals-label [_ _]
+  (let [*render (volatile! 0)]
+    [(use-signals)
+     {:render
+      (fn [text *signal]
+        [label text @*signal ", render: " (vswap! *render inc)])}]))
+
+(defn example-signals []
+  (let [*signal (s/signal "s" 0)
+        *double (s/signal "(* s 2)" (* 2 @*signal))
+        *quot   (s/signal "(quot s 3)" (quot @*signal 3))]
+    (fn []
+      [column
+       [example-signals-label "Signal: " *signal]
+       [example-signals-label "Signal: " *signal]
+       [example-signals-label "Double: " *double]
+       [example-signals-label "Quot 3: " *quot]
+       [row
+        [button {:on-click (fn [_] (s/swap! *signal dec))}
+         [label "DEC"]]
+        [button {:on-click (fn [_] (s/swap! *signal inc))}
+         [label "INC"]]]])))
+
 (defn item [*state id]
   (println "mount" id)
-  {:on-unmount (fn [] (println "unmount" id))
+  {:after-unmount (fn [] (println "unmount" id))
    :render
    (fn [*state id]
      [row
-      [label "Id" id "Clicks" (@*state id)]
+      [label "Id: " id ", clicks: " (@*state id)]
       [button {:on-click (fn [_] (swap! *state update id inc))}
        [label "INC"]]
       [button {:on-click (fn [_] (swap! *state dissoc id))}
@@ -635,11 +750,13 @@
    "arguments"
    "return-fn"
    "return-map"
+   "return-maps"
    "lifecycle"
    "diff-incompat"
    "diff-compat"
    "diff-keys"
    "invalidate"
+   "signals"
    "rows"])
 
 (defn app-impl []
