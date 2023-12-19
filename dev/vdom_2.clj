@@ -50,12 +50,8 @@
   (binding [*comp* comp
             *ctx*  ctx]
     (when (:dirty? comp)
-      (invoke (:before-render comp))
-      (try
-        (protocols/-reconcile-impl comp (:el comp))
-        (core/set!! comp :dirty? false)
-        (finally
-          (invoke (:after-render comp)))))))
+      (protocols/-reconcile-impl comp (:el comp))
+      (core/set!! comp :dirty? false))))
 
 (defn make-record [^Class class]
   (let [ns   (str/replace (.getPackageName class) "_" "-")
@@ -81,21 +77,27 @@
                    (map? res)
                    (do
                      (core/set!! *comp*
-                       :render        (:render res)
-                       :before-render (:before-render res)
-                       :after-render  (:after-render res)
-                       :after-unmount (:after-unmount res)
-                       :dirty?        true)
+                       :render           (:render res)
+                       :before-update    (:before-update res)
+                       :after-update     (:after-update res)
+                       :before-reconcile (:before-reconcile res)
+                       :after-reconcile  (:after-reconcile res)
+                       :after-mount      (:after-mount res)
+                       :after-unmount    (:after-unmount res)
+                       :dirty?           true)
                      *comp*)
                
                    (and (vector? res) (map? (first res)))
                    (do
                      (core/set!! *comp*
-                       :render        (some :render res)
-                       :before-render (collect :before-render res)
-                       :after-render  (collect :after-render res)
-                       :after-unmount (collect :after-unmount res)
-                       :dirty?        true)
+                       :render           (some :render res)
+                       :before-update    (collect :before-update res)
+                       :after-update     (collect :after-update res)
+                       :before-reconcile (collect :before-reconcile res)
+                       :after-reconcile  (collect :after-reconcile res)
+                       :after-mount      (collect :after-mount res)
+                       :after-unmount    (collect :after-unmount res)
+                       :dirty?           true)
                      *comp*)
                    
                    (vector? res)
@@ -122,6 +124,8 @@
         (core/set!! comp :el el)
         (when-some [key (:key (meta el))]
           (core/set!! comp :key key))
+        (when-some [ref (:ref (meta el))]
+          (reset! ref comp))
         comp))))
 
 (defn compatible? [old-comp new-el]
@@ -297,22 +301,35 @@
       (set! children children')
       (set! el el'))))
 
-(core/deftype+ FnComponent [^:mut render
-                            ^:mut before-render
-                            ^:mut after-render
-                            ^:mut after-unmount
-                            ^:mut child]
+(core/deftype+ FnComponent [^:mut child
+                            ^:mut was-dirty?
+                            ^:mut after-mount
+                            ^:mut before-reconcile
+                            ^:mut render
+                            ^:mut after-reconcile
+                            ^:mut before-update
+                            ^:mut after-update
+                            ^:mut after-unmount]
   :extends AComponent4
   protocols/IComponent
   (-measure-impl [this ctx cs]
     (maybe-render this ctx)
     (core/measure child ctx cs))
-
-  (-draw-impl [this ctx rect canvas]
-    ; (core/log "Render")
-    (maybe-render this ctx)
-    (core/draw child ctx rect canvas))
   
+  (-draw [this ctx rect canvas]
+    (set! self-rect rect)
+    (maybe-render this ctx)
+    (when was-dirty?
+      (invoke before-update))
+    (core/draw child ctx rect canvas)
+    (when was-dirty?
+      (invoke after-update)
+      (set! was-dirty? false))
+    (when-not mounted?
+      (invoke after-mount)
+      (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
+      (set! mounted? true)))
+    
   (-event-impl [this ctx event]
     (maybe-render this ctx)
     (core/event child ctx event))
@@ -323,11 +340,16 @@
       (core/iterate-child child ctx cb)))
   
   protocols/IVDom
-  (-reconcile-impl [_ el']
-    (let [child-el (apply render (next el'))
-          [child'] (reconcile [child] [child-el])]
-      (set! child child')
-      (set! el el'))))
+  (-reconcile-impl [this el']
+    (invoke before-reconcile)
+    (try
+      (set! was-dirty? true)
+      (let [child-el (apply render (next el'))
+            [child'] (reconcile [child] [child-el])]
+        (set! child child')
+        (set! el el'))
+      (finally
+        (invoke after-reconcile)))))
 
 (core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
@@ -561,16 +583,17 @@
   [clickable (select-keys opts [:on-click])
    [rect {:fill (:hui.button/bg *ctx*)}
     [padding {:horizontal (:padding *ctx*)
-              :vertical   (quot (:padding *ctx*) 2)}
+              :vertical   (:padding *ctx*)}
      child]]])
 
 (defn use-signals []
-  (let [*effect (volatile! nil)
+  (let [id      (rand-int 10000)
+        *effect (volatile! nil)
         comp    *comp*]
-    {:before-render
+    {:before-reconcile
      (fn []
        (push-thread-bindings {#'s/*context* (volatile! (transient #{}))}))
-     :after-render
+     :after-reconcile
      (fn []
        (let [signals (persistent! @@#'s/*context*)]
          (pop-thread-bindings)
@@ -722,6 +745,28 @@
         [button {:on-click (fn [_] (s/swap! *signal inc))}
          [label "INC"]]]])))
 
+(defn example-refs []
+  (let [*ref   (atom nil)
+        *size  (ratom nil)
+        *state (ratom "A")]
+    {:render
+     (fn []
+       [column
+        ^{:ref *ref} [label @*state]
+        [label "Size: " @*size]
+        [button {:on-click
+                 (fn [_]
+                   (reset! *state
+                     (str/join
+                       (repeatedly (+ 1 (rand-int 10))
+                         #(rand-nth "abcdefghijklmnopqrstuvwxyz")))))}
+         [label "Randomize"]]])
+     :after-update
+     (fn []
+       (let [rect (:self-rect @*ref)
+             size [(:width rect) (:height rect)]]
+         (reset! *size size)))}))
+
 (defn item [*state id]
   (println "mount" id)
   {:after-unmount (fn [] (println "unmount" id))
@@ -757,6 +802,7 @@
    "diff-keys"
    "invalidate"
    "signals"
+   "refs"
    "rows"])
 
 (defn app-impl []
