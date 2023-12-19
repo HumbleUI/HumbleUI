@@ -261,6 +261,15 @@
   (assert (= 1 (count xs)) ("Expected 1 element, got " (count xs)))
   (first xs))
 
+(defn some-map [& args]
+  (persistent!
+    (reduce
+      (fn [m [k v]]
+        (if (some? v)
+          (assoc! m k v)
+          m))
+      (transient {}) (partition 2 args))))
+
 (defn consv [x xs]
   (vec (cons x xs)))
 
@@ -397,6 +406,21 @@
         (* scale size))
       (math/round)
       (long))))
+
+(defn arities [f]
+    (let [methods  (.getDeclaredMethods (class f))
+          fixed    (->> methods
+                     (filter #(= "invoke" (.getName ^java.lang.reflect.Method %)))
+                     (map #(.getParameterCount ^java.lang.reflect.Method %))
+                     (sort)
+                     (vec))
+          vararg   (->> methods
+                     (find #(= "getRequiredArity" (.getName ^java.lang.reflect.Method %))))
+          required (when vararg
+                     (.invoke ^java.lang.reflect.Method vararg f (make-array 0)))]
+      (some-map
+        :fixed fixed
+        :vararg required)))
 
 (defn- timer-task ^TimerTask [f]
   (proxy [TimerTask] []

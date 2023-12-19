@@ -65,6 +65,9 @@
       (doseq [cb cbs]
         (apply cb args)))))
 
+(defn assert-arities [f g]
+  (assert (= (core/arities f) (core/arities g)) (str "Arities of component fn and render fn should match, component: " (core/arities f) ", render: " (core/arities g))))
+
 (defn make [el]
   (if (satisfies? protocols/IComponent el)
     el
@@ -76,6 +79,7 @@
             comp (core/cond+
                    (map? res)
                    (do
+                     (assert-arities f (:render res))
                      (core/set!! *comp*
                        :render           (:render res)
                        :before-update    (:before-update res)
@@ -89,6 +93,7 @@
                
                    (and (vector? res) (map? (first res)))
                    (do
+                     (assert-arities f (some :render res))
                      (core/set!! *comp*
                        :render           (some :render res)
                        :before-update    (collect :before-update res)
@@ -109,6 +114,7 @@
                    
                    (ifn? res)
                    (do
+                     (assert-arities f res)
                      (core/set!! *comp*
                        :render res
                        :dirty? true)
@@ -806,7 +812,7 @@
    "rows"])
 
 (defn app-impl []
-  (let [*selected (ratom (first examples))]
+  (let [*selected (ratom "signals" #_(first examples))]
     (fn []
       [split
        [column
