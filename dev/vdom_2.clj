@@ -404,9 +404,6 @@
 (core/deftype+ Center []
   :extends AWrapper4
   protocols/IComponent
-  (-measure-impl [_ ctx cs]
-    cs)
-
   (-draw-impl [this ctx rect canvas]
     (let [w          (:width rect)
           h          (:height rect)
@@ -444,10 +441,10 @@
   (-measure-impl [_ ctx cs]
     (let [[opts _] (maybe-opts (next el))
           scale    (:scale ctx)
-          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) 0))
-          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) 0))
-          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) 0))
-          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) 0))
+          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) (:padding ctx) 0))
+          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) (:padding ctx) 0))
+          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) (:padding ctx) 0))
+          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) (:padding ctx) 0))
           cs'      (core/ipoint
                      (- (:width cs) left right)
                      (- (:height cs) top bottom))
@@ -459,10 +456,10 @@
   (-draw-impl [this ctx rect canvas]
     (let [[opts _] (maybe-opts (next el))
           scale    (:scale ctx)
-          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) 0))
-          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) 0))
-          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) 0))
-          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) 0))
+          left     (* scale (or (:left opts)   (:horizontal opts) (:padding opts) (:padding ctx) 0))
+          right    (* scale (or (:right opts)  (:horizontal opts) (:padding opts) (:padding ctx) 0))
+          top      (* scale (or (:top opts)    (:vertical opts)   (:padding opts) (:padding ctx) 0))
+          bottom   (* scale (or (:bottom opts) (:vertical opts)   (:padding opts) (:padding ctx) 0))
           rect'    (core/irect-ltrb
                      (+ (:x rect) left)
                      (+ (:y rect) top)
@@ -470,8 +467,11 @@
                      (- (:bottom rect) bottom))]
       (protocols/-draw child ctx rect' canvas))))
 
-(defn padding [opts child]
-  (map->Padding {}))
+(defn padding
+  ([child]
+   (map->Padding {}))
+  ([opts child]
+   (map->Padding {})))
 
 (core/deftype+ Rect []
   :extends AWrapper4
@@ -483,6 +483,17 @@
 
 (defn rect [opts child]
   (map->Rect {}))
+
+(core/deftype+ Width []
+  :extends AWrapper4
+  protocols/IComponent  
+  (-measure-impl [_ ctx cs]
+    (let [[opts _] (maybe-opts (next el))
+          size     (core/measure child ctx (core/ipoint (:width opts) (:height cs)))]
+      (core/ipoint (:width opts) (:height size)))))
+
+(defn width [opts child]
+  (map->Width {}))
 
 (core/deftype+ Column []
   :extends AContainer4
@@ -499,7 +510,7 @@
               (next children)
               (long (max w (:width size)))
               (long (+ h (:height size) gap))))
-          (core/isize w h)))))
+          (core/isize w (if (> h gap) (- h gap) h))))))
   
   (-draw-impl [this ctx rect canvas]
     (let [[opts _] (maybe-opts (next el))
@@ -531,7 +542,7 @@
               (next children)
               (long (+ w (:width size) gap))
               (long (max h (:height size)))))
-          (core/isize w h)))))
+          (core/isize (if (> w gap) (- w gap) w) h)))))
   
   (-draw-impl [this ctx rect canvas]
     (let [[opts _] (maybe-opts (next el))
@@ -588,9 +599,8 @@
 (defn button [opts child]
   [clickable (select-keys opts [:on-click])
    [rect {:fill (:hui.button/bg *ctx*)}
-    [padding {:horizontal (:padding *ctx*)
-              :vertical   (:padding *ctx*)}
-     child]]])
+    [padding {}
+     [center child]]]])
 
 (defn use-signals []
   (let [id      (rand-int 10000)
@@ -773,6 +783,16 @@
              size [(:width rect) (:height rect)]]
          (reset! *size size)))}))
 
+(defn example-materialize []
+  (let [labels ["Ok" "Save" "Save & Quit"]
+        comps  (mapv #(make [button {} [label %]]) labels)
+        cs     (core/ipoint Integer/MAX_VALUE Integer/MAX_VALUE)
+        widths (mapv #(:width (core/measure % *ctx* cs)) comps)
+        max-w  (reduce max 0 widths)]
+    [row
+     (for [comp comps]
+       [width {:width max-w} comp])]))
+
 (defn item [*state id]
   (println "mount" id)
   {:after-unmount (fn [] (println "unmount" id))
@@ -809,6 +829,7 @@
    "invalidate"
    "signals"
    "refs"
+   "materialize"
    "rows"])
 
 (defn app-impl []
