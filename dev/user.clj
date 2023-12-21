@@ -55,7 +55,7 @@
 (defn p [form]
   `(let [res# ~form]
      (locking lock
-       (println (str "#p" (position) " " '~form " => " res#)))
+       (println (str "#p" (position) " " '~form " => " (pr-str res#))))
      res#))
 
 (defn set-floating! [window floating]

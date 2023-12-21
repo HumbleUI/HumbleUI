@@ -83,10 +83,13 @@
                    (class? f) (make-record f))
             comp (core/cond+
                    (map? res)
-                   (do
-                     (assert-arities f (:render res))
+                   (let [render (:render res)]
+                     (when render
+                       (assert-arities f render))
                      (core/set!! *comp*
-                       :render           (:render res)
+                       :measure          (:measure res)
+                       :draw             (:draw res)
+                       :render           render
                        :should-setup?    (:should-setup? res)
                        :should-render?   (:should-render? res)
                        :before-draw      (:before-draw res)
@@ -99,10 +102,13 @@
                      *comp*)
                
                    (and (vector? res) (map? (first res)))
-                   (do
-                     (assert-arities f (some :render res))
+                   (let [render (some :render res)]
+                     (when render
+                       (assert-arities f render))
                      (core/set!! *comp*
-                       :render           (some :render res)
+                       :measure          (some :measure res)
+                       :draw             (some :draw res)
+                       :render           render
                        :should-setup?    (collect-bool :should-setup? res)
                        :should-render?   (collect-bool :should-render? res)
                        :before-draw      (collect :before-draw res)
@@ -332,6 +338,8 @@
                             ^:mut should-render?
                             ^:mut after-mount
                             ^:mut before-render
+                            ^:mut measure
+                            ^:mut draw
                             ^:mut render
                             ^:mut after-render
                             ^:mut before-draw
@@ -340,15 +348,23 @@
   :extends AComponent4
   protocols/IComponent
   (-measure-impl [this ctx cs]
-    (maybe-render this ctx)
-    (core/measure child ctx cs))
+    (when render
+      (maybe-render this ctx))
+    (if measure
+      (binding [*ctx* ctx]
+        (measure child cs))
+      (core/measure child ctx cs)))
   
   (-draw [this ctx rect canvas]
     (set! self-rect rect)
-    (maybe-render this ctx)
+    (when render
+      (maybe-render this ctx))
     (when was-dirty?
       (invoke before-draw))
-    (core/draw child ctx rect canvas)
+    (if draw
+      (binding [*ctx* ctx]
+        (draw child rect canvas))
+      (core/draw child ctx rect canvas))
     (when was-dirty?
       (invoke after-draw)
       (set! was-dirty? false))
@@ -358,25 +374,28 @@
       (set! mounted? true)))
     
   (-event-impl [this ctx event]
-    (maybe-render this ctx)
-    (core/event child ctx event))
+    (when render
+      (maybe-render this ctx)
+      (core/event child ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (core/iterate-child child ctx cb)))
+      (when render
+        (core/iterate-child child ctx cb))))
   
   protocols/IVDom
   (-reconcile-impl [this el']
-    (invoke before-render)
-    (try
-      (set! was-dirty? true)
-      (let [child-el (apply render (next el'))
-            [child'] (reconcile-many [child] [child-el])]
-        (set! child child')
-        (set! el el'))
-      (finally
-        (invoke after-render)))))
+    (when render
+      (invoke before-render)
+      (try
+        (set! was-dirty? true)
+        (let [child-el (apply render (next el'))
+              [child'] (reconcile-many [child] [child-el])]
+          (set! child child')
+          (set! el el'))
+        (finally
+          (invoke after-render))))))
 
 (core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
@@ -863,6 +882,60 @@
      (for [comp comps]
        [width {:width max-w} comp])]))
 
+(defn measure-draw-terminal []
+  (let [paint (paint/fill 0x2033CC33)]
+    {:measure
+     (fn [_ cs]
+       (core/ipoint 200 100))
+     :draw
+     (fn [_ rect canvas]
+       (canvas/draw-rect canvas rect paint))}))
+
+(defn draw-wrapper [_]
+  (let [paint (paint/fill 0x20CC3333)]
+    {:draw
+     (fn [child rect canvas]
+       (canvas/draw-rect canvas rect paint)
+       (core/draw child *ctx* rect canvas))
+     :render
+     (fn [child-el]
+       child-el)}))
+
+(defn measure-draw-wrapper [_]
+  (let [red   (paint/fill 0x20CC3333)
+        blue  (paint/fill 0x203333CC)
+        gap   (* (:scale *ctx*) 10)]
+    {:measure
+     (fn [child cs]
+       (let [size (core/measure child *ctx* cs)]
+         (core/ipoint 
+           (+ (:width size) (* 2 gap))
+           (+ (:height size) (* 2 gap)))))
+
+     :draw
+     (fn [child rect canvas]
+       (canvas/draw-rect canvas rect red)
+       (canvas/with-canvas canvas
+         (let [rect' (core/irect-xywh
+                       (+ (:x rect) gap)
+                       (+ (:y rect) gap)
+                       (- (:width rect) (* 2 gap))
+                       (- (:height rect) (* 2 gap)))]
+           (core/draw child *ctx* rect' canvas)
+           (canvas/draw-rect canvas rect' blue))))
+     
+     :render
+     (fn [child-el]
+       child-el)}))
+
+(defn example-measure-draw []
+  [column
+   [measure-draw-terminal]
+   [draw-wrapper
+    [label "Without measure"]]
+   [measure-draw-wrapper
+    [label "With measure"]]])
+
 (defn item [*state id]
   (println "mount" id)
   {:after-unmount (fn [] (println "unmount" id))
@@ -900,10 +973,11 @@
    "signals"
    "refs"
    "materialize"
+   "measure-draw"
    "rows"])
 
 (defn app-impl []
-  (let [*selected (ratom "skip-identical" #_(first examples))]
+  (let [*selected (ratom "measure-draw" #_(first examples))]
     (fn []
       [split
        [column
