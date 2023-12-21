@@ -77,10 +77,10 @@
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
-                    :width    400
-                    :height   600
-                    :x        :left
-                    :y        :top}
+                    :width    600
+                    :height   800
+                    :x        :center
+                    :y        :center}
                    state/*app)]
       ;; TODO load real monitor profile
       (when (= :macos app/platform)

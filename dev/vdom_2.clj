@@ -27,7 +27,7 @@
 
 (def ^:dynamic *comp*)
 
-(defn invalidate [comp]
+(defn force-update [comp]
   (core/set!! comp :dirty? true)
   (state/request-frame))
 
@@ -60,10 +60,15 @@
     (ctor {})))
 
 (defn collect [key xs]
-  (let [cbs (keep key xs)]
+  (core/when-every [cbs (not-empty (vec (keep key xs)))]
     (fn [& args]
       (doseq [cb cbs]
         (apply cb args)))))
+
+(defn collect-bool [key xs]
+  (core/when-every [cbs (not-empty (vec (keep key xs)))]
+    (fn [& args]
+      (reduce #(or %1 (apply %2 args)) false cbs))))
 
 (defn assert-arities [f g]
   (assert (= (core/arities f) (core/arities g)) (str "Arities of component fn and render fn should match, component: " (core/arities f) ", render: " (core/arities g))))
@@ -82,10 +87,12 @@
                      (assert-arities f (:render res))
                      (core/set!! *comp*
                        :render           (:render res)
-                       :before-update    (:before-update res)
-                       :after-update     (:after-update res)
-                       :before-reconcile (:before-reconcile res)
-                       :after-reconcile  (:after-reconcile res)
+                       :should-setup?    (:should-setup? res)
+                       :should-render?   (:should-render? res)
+                       :before-draw      (:before-draw res)
+                       :after-draw       (:after-draw res)
+                       :before-render    (:before-render res)
+                       :after-render     (:after-render res)
                        :after-mount      (:after-mount res)
                        :after-unmount    (:after-unmount res)
                        :dirty?           true)
@@ -96,10 +103,12 @@
                      (assert-arities f (some :render res))
                      (core/set!! *comp*
                        :render           (some :render res)
-                       :before-update    (collect :before-update res)
-                       :after-update     (collect :after-update res)
-                       :before-reconcile (collect :before-reconcile res)
-                       :after-reconcile  (collect :after-reconcile res)
+                       :should-setup?    (collect-bool :should-setup? res)
+                       :should-render?   (collect-bool :should-render? res)
+                       :before-draw      (collect :before-draw res)
+                       :after-draw       (collect :after-draw res)
+                       :before-render    (collect :before-render res)
+                       :after-render     (collect :after-render res)
                        :after-mount      (collect :after-mount res)
                        :after-unmount    (collect :after-unmount res)
                        :dirty?           true)
@@ -138,13 +147,23 @@
   (and 
     old-comp
     (identical? (first (:el old-comp)) (first new-el))
-    (protocols/-compatible-impl old-comp new-el)))
+    (protocols/-compatible-impl old-comp new-el)
+    (if-some [should-setup? (:should-setup? old-comp)]
+      (not (apply should-setup? (next new-el)))
+      true)))
 
 (defn unmount [comp]
   (core/iterate-child comp nil
     #(invoke (:after-unmount %))))
 
-(defn reconcile [old-comps new-els]
+(defn do-reconcile [old-comp new-el]
+  (when (if-some [should-render? (:should-render? old-comp)]
+          (apply should-render? (next new-el))
+          (not (identical? (:el old-comp) new-el)))
+    (protocols/-reconcile-impl old-comp new-el)
+    old-comp))
+
+(defn reconcile-many [old-comps new-els]
   (loop [old-comps-keyed (->> old-comps
                            (filter :key)
                            (map #(vector (:key %) %))
@@ -174,7 +193,7 @@
           ;; compatible key
           (compatible? old-comp new-el)
           (do
-            (protocols/-reconcile-impl old-comp new-el)
+            (do-reconcile old-comp new-el)
             (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res old-comp)))
           
           ;; non-compatible key
@@ -186,7 +205,7 @@
       (compatible? old-comp new-el)
       (do
         ; (println "compatible" old-comp new-el)
-        (protocols/-reconcile-impl old-comp new-el)
+        (do-reconcile old-comp new-el)
         (recur old-comps-keyed old-comps' new-els' (conj res old-comp)))
       
       ;; old-comp was dropped
@@ -194,7 +213,7 @@
       (let [; _ (println "old-comp dropped" old-comp new-el)
             _ (unmount old-comp)
             [old-comp & old-comps'] old-comps']
-        (protocols/-reconcile-impl old-comp new-el)
+        (do-reconcile old-comp new-el)
         (recur old-comps-keyed (next old-comps') new-els' (conj res old-comp)))
       
       ;; new-el was inserted
@@ -284,7 +303,7 @@
   protocols/IVDom
   (-reconcile-impl [_ el']
     (let [[_ [child-el]] (maybe-opts (next el'))
-          [child'] (reconcile [child] [child-el])]
+          [child'] (reconcile-many [child] [child-el])]
       (set! child child')
       (set! el el'))))
 
@@ -303,18 +322,20 @@
   (-reconcile-impl [_ el']
     (let [[_ child-els] (maybe-opts (next el'))
           child-els (flatten child-els)
-          children' (reconcile children child-els)]
+          children' (reconcile-many children child-els)]
       (set! children children')
       (set! el el'))))
 
 (core/deftype+ FnComponent [^:mut child
                             ^:mut was-dirty?
+                            ^:mut should-setup?
+                            ^:mut should-render?
                             ^:mut after-mount
-                            ^:mut before-reconcile
+                            ^:mut before-render
                             ^:mut render
-                            ^:mut after-reconcile
-                            ^:mut before-update
-                            ^:mut after-update
+                            ^:mut after-render
+                            ^:mut before-draw
+                            ^:mut after-draw
                             ^:mut after-unmount]
   :extends AComponent4
   protocols/IComponent
@@ -326,10 +347,10 @@
     (set! self-rect rect)
     (maybe-render this ctx)
     (when was-dirty?
-      (invoke before-update))
+      (invoke before-draw))
     (core/draw child ctx rect canvas)
     (when was-dirty?
-      (invoke after-update)
+      (invoke after-draw)
       (set! was-dirty? false))
     (when-not mounted?
       (invoke after-mount)
@@ -347,15 +368,15 @@
   
   protocols/IVDom
   (-reconcile-impl [this el']
-    (invoke before-reconcile)
+    (invoke before-render)
     (try
       (set! was-dirty? true)
       (let [child-el (apply render (next el'))
-            [child'] (reconcile [child] [child-el])]
+            [child'] (reconcile-many [child] [child-el])]
         (set! child child')
         (set! el el'))
       (finally
-        (invoke after-reconcile)))))
+        (invoke after-render)))))
 
 (core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
@@ -590,26 +611,27 @@
 (defn ratom [init]
   (let [comp *comp*
         res  (atom init)]
-    (add-watch res ::invalidate
+    (add-watch res ::force-update
       (fn [_ _ old new]
         (when (not= old new)
-          (invalidate comp))))
+          (force-update comp))))
     res))
 
-(defn button [opts child]
+(defn button [opts text]
   [clickable (select-keys opts [:on-click])
    [rect {:fill (:hui.button/bg *ctx*)}
     [padding {}
-     [center child]]]])
+     [center
+      [label text]]]]])
 
 (defn use-signals []
   (let [id      (rand-int 10000)
         *effect (volatile! nil)
         comp    *comp*]
-    {:before-reconcile
+    {:before-render
      (fn []
        (push-thread-bindings {#'s/*context* (volatile! (transient #{}))}))
-     :after-reconcile
+     :after-render
      (fn []
        (let [signals (persistent! @@#'s/*context*)]
          (pop-thread-bindings)
@@ -617,7 +639,7 @@
          (vreset! *effect
            (when-not (empty? signals)
              (s/effect signals
-               (invalidate comp))))))
+               (force-update comp))))))
      :after-unmount
      (fn []
        (some-> @*effect s/dispose!))}))
@@ -653,8 +675,7 @@
     (fn []
       [row
        [label "Clicked: " @*state]
-       [button {:on-click (fn [_] (swap! *state inc))}
-        [label "INC"]]])))
+       [button {:on-click (fn [_] (swap! *state inc))} "INC"]])))
 
 (defn example-return-map []
   (let [*state (ratom 0)]
@@ -662,8 +683,7 @@
      (fn []
        [row
         [label "Clicked: " @*state]
-        [button {:on-click (fn [_] (swap! *state inc))}
-         [label "INC"]]])}))
+        [button {:on-click (fn [_] (swap! *state inc))} "INC"]])}))
 
 (defn example-return-maps []
   (let [*state (ratom 0)]
@@ -674,8 +694,7 @@
       (fn []
         [row
          [label "Clicked: " @*state]
-         [button {:on-click (fn [_] (swap! *state inc))}
-          [label "INC"]]])}]))
+         [button {:on-click (fn [_] (swap! *state inc))} "INC"]])}]))
 
 (defn example-lifecycle []
   (let [*state (ratom 0)
@@ -727,7 +746,7 @@
                       [padding {:padding (:padding *ctx*)}
                        [label "Item" i]]]))])))
 
-(defn example-invalidate []
+(defn example-force-update []
   (let [*state (atom 0)
         comp   *comp*]
     (fn []
@@ -735,8 +754,61 @@
        [label "Clicked: " @*state]
        [button {:on-click (fn [_] 
                             (swap! *state inc)
-                            (invalidate comp))}
-        [label "INC"]]])))
+                            (force-update comp))}
+        "INC"]])))
+
+(defn should-setup [arg]
+  {:should-setup?
+   (fn [arg']
+     (> arg' arg))
+   :render
+   (fn [arg']
+     [label "setup: " arg ", render: " arg'])})
+
+(defn example-should-setup []
+  (let [*state (ratom 0)]
+    (fn []
+      [column
+       [should-setup @*state]
+       [row
+        [button {:on-click (fn [_] (swap! *state dec))} "DEC"]
+        [button {:on-click (fn [_] (swap! *state inc))} "INC"]]])))
+
+(defn should-render [arg]
+  (let [*last-arg (atom arg)]
+    {:should-render?
+     (fn [arg']
+       (let [[last-arg _] (reset-vals! *last-arg arg')]
+         (> arg' last-arg)))
+     :render
+     (fn [arg']
+       (reset! *last-arg arg')
+       [label "setup: " arg ", render: " arg'])}))
+
+(defn example-should-render []
+  (let [*state (ratom 0)]
+    (fn []
+      [column
+       [should-render @*state]
+       [row
+        [button {:on-click (fn [_] (swap! *state dec))} "DEC"]
+        [button {:on-click (fn [_] (swap! *state inc))} "INC"]]])))
+
+(defn skip-identical [arg]
+  (let [*render (atom 0)]
+    (fn [arg]
+      (swap! *render inc)
+      (println "Render" arg)
+      [label arg " " @*render])))
+
+(defn example-skip-identical []
+  (let [comp   *comp*
+        cached [skip-identical "Cached"]]
+    (fn []
+      [column
+       [skip-identical "Non-cached"]
+       cached
+       [button {:on-click (fn [_] (force-update comp))} "Render"]])))
 
 (defn example-signals-label [_ _]
   (let [*render (volatile! 0)]
@@ -756,10 +828,8 @@
        [example-signals-label "Double: " *double]
        [example-signals-label "Quot 3: " *quot]
        [row
-        [button {:on-click (fn [_] (s/swap! *signal dec))}
-         [label "DEC"]]
-        [button {:on-click (fn [_] (s/swap! *signal inc))}
-         [label "INC"]]]])))
+        [button {:on-click (fn [_] (s/swap! *signal dec))} "DEC"]
+        [button {:on-click (fn [_] (s/swap! *signal inc))} "INC"]]])))
 
 (defn example-refs []
   (let [*ref   (atom nil)
@@ -776,8 +846,8 @@
                      (str/join
                        (repeatedly (+ 1 (rand-int 10))
                          #(rand-nth "abcdefghijklmnopqrstuvwxyz")))))}
-         [label "Randomize"]]])
-     :after-update
+         "Randomize"]])
+     :after-draw
      (fn []
        (let [rect (:self-rect @*ref)
              size [(:width rect) (:height rect)]]
@@ -785,7 +855,7 @@
 
 (defn example-materialize []
   (let [labels ["Ok" "Save" "Save & Quit"]
-        comps  (mapv #(make [button {} [label %]]) labels)
+        comps  (mapv #(make [button {} %]) labels)
         cs     (core/ipoint Integer/MAX_VALUE Integer/MAX_VALUE)
         widths (mapv #(:width (core/measure % *ctx* cs)) comps)
         max-w  (reduce max 0 widths)]
@@ -800,10 +870,8 @@
    (fn [*state id]
      [row
       [label "Id: " id ", clicks: " (@*state id)]
-      [button {:on-click (fn [_] (swap! *state update id inc))}
-       [label "INC"]]
-      [button {:on-click (fn [_] (swap! *state dissoc id))}
-       [label "DEL"]]])})
+      [button {:on-click (fn [_] (swap! *state update id inc))} "INC"]
+      [button {:on-click (fn [_] (swap! *state dissoc id))} "DEL"]])})
 
 (defn example-rows []
   (let [*state (ratom (into (sorted-map) (map #(vector % 0) (range 3))))]
@@ -811,8 +879,7 @@
       [column
        (for [k (keys @*state)]
          ^{:key k} [item *state k])
-       [button {:on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))}
-        [label "ADD"]]])))
+       [button {:on-click (fn [_] (swap! *state assoc (inc (reduce max 0 (keys @*state))) 0))} "ADD"]])))
 
 ;; shell
 
@@ -826,14 +893,17 @@
    "diff-incompat"
    "diff-compat"
    "diff-keys"
-   "invalidate"
+   "force-update"
+   "should-setup"
+   "should-render"
+   "skip-identical"
    "signals"
    "refs"
    "materialize"
    "rows"])
 
 (defn app-impl []
-  (let [*selected (ratom "signals" #_(first examples))]
+  (let [*selected (ratom "skip-identical" #_(first examples))]
     (fn []
       [split
        [column
