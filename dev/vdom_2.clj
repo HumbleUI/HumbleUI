@@ -21,18 +21,18 @@
     [io.github.humbleui.skija Canvas TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
 
-(declare make map->FnComponent)
+(declare make map->FnNode)
 
 (def ^:dynamic *ctx*)
 
-(def ^:dynamic *comp*)
+(def ^:dynamic *node*)
 
-(defn force-update [comp]
-  (core/set!! comp :dirty? true)
+(defn force-update [node]
+  (core/set!! node :dirty? true)
   (state/request-frame))
 
 (def ctor-border
-  (paint/stroke 0x80FF00FF 2))
+  (paint/stroke 0x40FF00FF 2))
 
 (defn flatten [xs]
   (mapcat #(if (and (not (vector? %)) (sequential? %)) (flatten %) [%]) xs))
@@ -46,12 +46,12 @@
   (when f
     (f)))
 
-(defn maybe-render [comp ctx]
-  (binding [*comp* comp
+(defn maybe-render [node ctx]
+  (binding [*node* node
             *ctx*  ctx]
-    (when (:dirty? comp)
-      (protocols/-reconcile-impl comp (:el comp))
-      (core/set!! comp :dirty? false))))
+    (when (:dirty? node)
+      (protocols/-reconcile-impl node (:el node))
+      (core/set!! node :dirty? false))))
 
 (defn make-record [^Class class]
   (let [ns   (str/replace (.getPackageName class) "_" "-")
@@ -71,22 +71,22 @@
       (reduce #(or %1 (apply %2 args)) false cbs))))
 
 (defn assert-arities [f g]
-  (assert (= (core/arities f) (core/arities g)) (str "Arities of component fn and render fn should match, component: " (core/arities f) ", render: " (core/arities g))))
+  (assert (= (core/arities f) (core/arities g)) (str "Arities of node fn and render fn should match, node: " (core/arities f) ", render: " (core/arities g))))
 
 (defn make [el]
   (if (satisfies? protocols/IComponent el)
     el
-    (binding [*comp* (map->FnComponent {})]
+    (binding [*node* (map->FnNode {})]
       (let [[f & args] el
             res  (cond
                    (ifn? f)   (apply f args)
                    (class? f) (make-record f))
-            comp (core/cond+
+            node (core/cond+
                    (map? res)
                    (let [render (:render res)]
                      (when render
                        (assert-arities f render))
-                     (core/set!! *comp*
+                     (core/set!! *node*
                        :measure          (:measure res)
                        :draw             (:draw res)
                        :render           render
@@ -99,13 +99,13 @@
                        :after-mount      (:after-mount res)
                        :after-unmount    (:after-unmount res)
                        :dirty?           true)
-                     *comp*)
+                     *node*)
                
                    (and (vector? res) (map? (first res)))
                    (let [render (some :render res)]
                      (when render
                        (assert-arities f render))
-                     (core/set!! *comp*
+                     (core/set!! *node*
                        :measure          (some :measure res)
                        :draw             (some :draw res)
                        :render           render
@@ -118,22 +118,22 @@
                        :after-mount      (collect :after-mount res)
                        :after-unmount    (collect :after-unmount res)
                        :dirty?           true)
-                     *comp*)
+                     *node*)
                    
                    (vector? res)
                    (do
-                     (core/set!! *comp*
+                     (core/set!! *node*
                        :render f
                        :dirty? true)
-                     *comp*)
+                     *node*)
                    
                    (ifn? res)
                    (do
                      (assert-arities f res)
-                     (core/set!! *comp*
+                     (core/set!! *node*
                        :render res
                        :dirty? true)
-                     *comp*)
+                     *node*)
                
                    (satisfies? protocols/IComponent res)
                    (do
@@ -142,100 +142,100 @@
                
                    :else
                    (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res})))]
-        (core/set!! comp :el el)
+        (core/set!! node :el el)
         (when-some [key (:key (meta el))]
-          (core/set!! comp :key key))
+          (core/set!! node :key key))
         (when-some [ref (:ref (meta el))]
-          (reset! ref comp))
-        comp))))
+          (reset! ref node))
+        node))))
 
-(defn compatible? [old-comp new-el]
+(defn compatible? [old-node new-el]
   (and 
-    old-comp
-    (identical? (first (:el old-comp)) (first new-el))
-    (protocols/-compatible-impl old-comp new-el)
-    (if-some [should-setup? (:should-setup? old-comp)]
+    old-node
+    (identical? (first (:el old-node)) (first new-el))
+    (protocols/-compatible-impl old-node new-el)
+    (if-some [should-setup? (:should-setup? old-node)]
       (not (apply should-setup? (next new-el)))
       true)))
 
-(defn unmount [comp]
-  (core/iterate-child comp nil
+(defn unmount [node]
+  (core/iterate-child node nil
     #(invoke (:after-unmount %))))
 
-(defn do-reconcile [old-comp new-el]
-  (when (if-some [should-render? (:should-render? old-comp)]
+(defn do-reconcile [old-node new-el]
+  (when (if-some [should-render? (:should-render? old-node)]
           (apply should-render? (next new-el))
-          (not (identical? (:el old-comp) new-el)))
-    (protocols/-reconcile-impl old-comp new-el)
-    old-comp))
+          (not (identical? (:el old-node) new-el)))
+    (protocols/-reconcile-impl old-node new-el)
+    old-node))
 
-(defn reconcile-many [old-comps new-els]
-  (loop [old-comps-keyed (->> old-comps
+(defn reconcile-many [old-nodes new-els]
+  (loop [old-nodes-keyed (->> old-nodes
                            (filter :key)
                            (map #(vector (:key %) %))
                            (into {}))
-         old-comps       (filter #(and % (nil? (:key %))) old-comps)
+         old-nodes       (filter #(and % (nil? (:key %))) old-nodes)
          new-els   new-els
          res       []]
     (core/cond+
       (empty? new-els)
       (do
-        (doseq [comp (concat old-comps (vals old-comps-keyed))]
-          (unmount comp))
+        (doseq [node (concat old-nodes (vals old-nodes-keyed))]
+          (unmount node))
         res)
       
-      :let [[old-comp & old-comps'] old-comps
+      :let [[old-node & old-nodes'] old-nodes
             [new-el & new-els'] new-els
             key (:key (meta new-el))]
       
       key
-      (let [old-comp (old-comps-keyed key)]
+      (let [old-node (old-nodes-keyed key)]
         (cond
           ;; new key
-          (nil? old-comp)
-          (let [new-comp (make new-el)]
-            (recur old-comps-keyed old-comps new-els' (conj res new-comp)))
+          (nil? old-node)
+          (let [new-node (make new-el)]
+            (recur old-nodes-keyed old-nodes new-els' (conj res new-node)))
           
-          ;; compatible key
-          (compatible? old-comp new-el)
+          ;; nodeatible key
+          (compatible? old-node new-el)
           (do
-            (do-reconcile old-comp new-el)
-            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res old-comp)))
+            (do-reconcile old-node new-el)
+            (recur (dissoc old-nodes-keyed key) old-nodes new-els' (conj res old-node)))
           
           ;; non-compatible key
           :else
-          (let [new-comp (make new-el)]
-            (unmount old-comp)
-            (recur (dissoc old-comps-keyed key) old-comps new-els' (conj res new-comp)))))
+          (let [new-node (make new-el)]
+            (unmount old-node)
+            (recur (dissoc old-nodes-keyed key) old-nodes new-els' (conj res new-node)))))
 
-      (compatible? old-comp new-el)
+      (compatible? old-node new-el)
       (do
-        ; (println "compatible" old-comp new-el)
-        (do-reconcile old-comp new-el)
-        (recur old-comps-keyed old-comps' new-els' (conj res old-comp)))
+        ; (println "compatible" old-node new-el)
+        (do-reconcile old-node new-el)
+        (recur old-nodes-keyed old-nodes' new-els' (conj res old-node)))
       
-      ;; old-comp was dropped
-      (compatible? (first old-comps') new-el)
-      (let [; _ (println "old-comp dropped" old-comp new-el)
-            _ (unmount old-comp)
-            [old-comp & old-comps'] old-comps']
-        (do-reconcile old-comp new-el)
-        (recur old-comps-keyed (next old-comps') new-els' (conj res old-comp)))
+      ;; old-node was dropped
+      (compatible? (first old-nodes') new-el)
+      (let [; _ (println "old-node dropped" old-node new-el)
+            _ (unmount old-node)
+            [old-node & old-nodes'] old-nodes']
+        (do-reconcile old-node new-el)
+        (recur old-nodes-keyed (next old-nodes') new-els' (conj res old-node)))
       
       ;; new-el was inserted
-      (compatible? old-comp (first new-els'))
-      (let [; _ (println "new-el inserted" old-comp new-el)
-            new-comp (make new-el)]
-        (recur old-comps-keyed old-comps new-els' (conj res new-comp)))
+      (compatible? old-node (first new-els'))
+      (let [; _ (println "new-el inserted" old-node new-el)
+            new-node (make new-el)]
+        (recur old-nodes-keyed old-nodes new-els' (conj res new-node)))
       
       ;; just incompatible
       :else
-      (let [; _ (println "incompatible" old-comp new-el)
-            new-comp (make new-el)]
-        (unmount old-comp)
-        (recur old-comps-keyed old-comps' new-els' (conj res new-comp))))))
+      (let [; _ (println "incompatible" old-node new-el)
+            new-node (make new-el)]
+        (unmount old-node)
+        (recur old-nodes-keyed old-nodes' new-els' (conj res new-node))))))
 
-(core/defparent AComponent4
+(core/defparent ANode4
   [^:mut el
    ^:mut mounted?
    ^:mut self-rect
@@ -267,7 +267,7 @@
     true))
 
 (core/defparent ATerminal4 []
-  :extends AComponent4
+  :extends ANode4
   protocols/IComponent
   (-event-impl [this ctx event])
   
@@ -282,7 +282,7 @@
     this))
   
 (core/defparent AWrapper4 [^:mut child]
-  :extends AComponent4
+  :extends ANode4
   protocols/IContext
   (-context [_ ctx]
     ctx)
@@ -314,7 +314,7 @@
       (set! el el'))))
 
 (core/defparent AContainer4 [^:mut children]
-  :extends AComponent4
+  :extends ANode4
   protocols/IComponent  
   (-event-impl [this ctx event]
     (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil children))
@@ -332,20 +332,20 @@
       (set! children children')
       (set! el el'))))
 
-(core/deftype+ FnComponent [^:mut child
-                            ^:mut was-dirty?
-                            ^:mut should-setup?
-                            ^:mut should-render?
-                            ^:mut after-mount
-                            ^:mut before-render
-                            ^:mut measure
-                            ^:mut draw
-                            ^:mut render
-                            ^:mut after-render
-                            ^:mut before-draw
-                            ^:mut after-draw
-                            ^:mut after-unmount]
-  :extends AComponent4
+(core/deftype+ FnNode [^:mut child
+                       ^:mut was-dirty?
+                       ^:mut should-setup?
+                       ^:mut should-render?
+                       ^:mut after-mount
+                       ^:mut before-render
+                       ^:mut measure
+                       ^:mut draw
+                       ^:mut render
+                       ^:mut after-render
+                       ^:mut before-draw
+                       ^:mut after-draw
+                       ^:mut after-unmount]
+  :extends ANode4
   protocols/IComponent
   (-measure-impl [this ctx cs]
     (when render
@@ -628,12 +628,12 @@
    (map->Split {})))
 
 (defn ratom [init]
-  (let [comp *comp*
+  (let [node *node*
         res  (atom init)]
     (add-watch res ::force-update
       (fn [_ _ old new]
         (when (not= old new)
-          (force-update comp))))
+          (force-update node))))
     res))
 
 (defn button [opts text]
@@ -646,7 +646,7 @@
 (defn use-signals []
   (let [id      (rand-int 10000)
         *effect (volatile! nil)
-        comp    *comp*]
+        node    *node*]
     {:before-render
      (fn []
        (push-thread-bindings {#'s/*context* (volatile! (transient #{}))}))
@@ -658,7 +658,7 @@
          (vreset! *effect
            (when-not (empty? signals)
              (s/effect signals
-               (force-update comp))))))
+               (force-update node))))))
      :after-unmount
      (fn []
        (some-> @*effect s/dispose!))}))
@@ -767,13 +767,13 @@
 
 (defn example-force-update []
   (let [*state (atom 0)
-        comp   *comp*]
+        node   *node*]
     (fn []
       [row
        [label "Clicked: " @*state]
        [button {:on-click (fn [_] 
                             (swap! *state inc)
-                            (force-update comp))}
+                            (force-update node))}
         "INC"]])))
 
 (defn should-setup [arg]
@@ -821,13 +821,13 @@
       [label arg " " @*render])))
 
 (defn example-skip-identical []
-  (let [comp   *comp*
+  (let [node   *node*
         cached [skip-identical "Cached"]]
     (fn []
       [column
        [skip-identical "Non-cached"]
        cached
-       [button {:on-click (fn [_] (force-update comp))} "Render"]])))
+       [button {:on-click (fn [_] (force-update node))} "Render"]])))
 
 (defn example-signals-label [_ _]
   (let [*render (volatile! 0)]
@@ -874,13 +874,13 @@
 
 (defn example-materialize []
   (let [labels ["Ok" "Save" "Save & Quit"]
-        comps  (mapv #(make [button {} %]) labels)
+        nodes  (mapv #(make [button {} %]) labels)
         cs     (core/ipoint Integer/MAX_VALUE Integer/MAX_VALUE)
-        widths (mapv #(:width (core/measure % *ctx* cs)) comps)
+        widths (mapv #(:width (core/measure % *ctx* cs)) nodes)
         max-w  (reduce max 0 widths)]
     [row
-     (for [comp comps]
-       [width {:width max-w} comp])]))
+     (for [node nodes]
+       [width {:width max-w} node])]))
 
 (defn measure-draw-terminal []
   (let [paint (paint/fill 0x2033CC33)]
@@ -977,7 +977,7 @@
    "rows"])
 
 (defn app-impl []
-  (let [*selected (ratom "measure-draw" #_(first examples))]
+  (let [*selected (ratom (first examples))]
     (fn []
       [split
        [column
