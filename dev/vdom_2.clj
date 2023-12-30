@@ -4,6 +4,7 @@
     [clojure.core.server :as server]
     [clojure.math :as math]
     [clojure.string :as str]
+    [clojure.walk :as walk]
     [clj-async-profiler.core :as profiler]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
@@ -170,49 +171,59 @@
     old-node))
 
 (defn reconcile-many [old-nodes new-els]
-  (loop [old-nodes-keyed (->> old-nodes
-                           (filter :key)
-                           (map #(vector (:key %) %))
-                           (into {}))
+  (loop [old-nodes-keyed (reduce
+                           (fn [m n]
+                             (if-some [key (:key n)]
+                               (assoc! m key n)
+                               m))
+                           (transient {})
+                           old-nodes)
          old-nodes       (filter #(and % (nil? (:key %))) old-nodes)
-         new-els   new-els
-         res       []]
+         new-els         new-els
+         res             (transient [])
+         keys            (transient {})]
     (core/cond+
       (empty? new-els)
       (do
-        (doseq [node (concat old-nodes (vals old-nodes-keyed))]
+        (doseq [node (concat
+                       old-nodes
+                       (vals (persistent! old-nodes-keyed)))]
           (unmount node))
-        res)
+        (persistent! res))
       
       :let [[old-node & old-nodes'] old-nodes
-            [new-el & new-els'] new-els
-            key (:key (meta new-el))]
+            [new-el & new-els']     new-els
+            key                     (:key (meta new-el))]
       
       key
-      (let [old-node (old-nodes-keyed key)]
+      (let [key-idx  (inc (keys key -1))
+            keys'    (assoc! keys key key-idx)
+            key'     [key key-idx]
+            new-el'  (vary-meta new-el assoc :key key')
+            old-node (old-nodes-keyed key')]
         (cond
           ;; new key
           (nil? old-node)
-          (let [new-node (make new-el)]
-            (recur old-nodes-keyed old-nodes new-els' (conj res new-node)))
+          (let [new-node (make new-el')]
+            (recur old-nodes-keyed old-nodes new-els' (conj! res new-node) keys'))
           
-          ;; nodeatible key
-          (compatible? old-node new-el)
+          ;; compatible key
+          (compatible? old-node new-el')
           (do
-            (do-reconcile old-node new-el)
-            (recur (dissoc old-nodes-keyed key) old-nodes new-els' (conj res old-node)))
+            (do-reconcile old-node new-el')
+            (recur (dissoc! old-nodes-keyed key') old-nodes new-els' (conj! res old-node) keys'))
           
           ;; non-compatible key
           :else
-          (let [new-node (make new-el)]
+          (let [new-node (make new-el')]
             (unmount old-node)
-            (recur (dissoc old-nodes-keyed key) old-nodes new-els' (conj res new-node)))))
+            (recur (dissoc! old-nodes-keyed key') old-nodes new-els' (conj! res new-node) keys'))))
 
       (compatible? old-node new-el)
       (do
         ; (println "compatible" old-node new-el)
         (do-reconcile old-node new-el)
-        (recur old-nodes-keyed old-nodes' new-els' (conj res old-node)))
+        (recur old-nodes-keyed old-nodes' new-els' (conj! res old-node) keys))
       
       ;; old-node was dropped
       (compatible? (first old-nodes') new-el)
@@ -220,20 +231,20 @@
             _ (unmount old-node)
             [old-node & old-nodes'] old-nodes']
         (do-reconcile old-node new-el)
-        (recur old-nodes-keyed (next old-nodes') new-els' (conj res old-node)))
+        (recur old-nodes-keyed (next old-nodes') new-els' (conj! res old-node) keys))
       
       ;; new-el was inserted
       (compatible? old-node (first new-els'))
       (let [; _ (println "new-el inserted" old-node new-el)
             new-node (make new-el)]
-        (recur old-nodes-keyed old-nodes new-els' (conj res new-node)))
+        (recur old-nodes-keyed old-nodes new-els' (conj! res new-node) keys))
       
       ;; just incompatible
       :else
       (let [; _ (println "incompatible" old-node new-el)
             new-node (make new-el)]
         (unmount old-node)
-        (recur old-nodes-keyed old-nodes' new-els' (conj res new-node))))))
+        (recur old-nodes-keyed old-nodes' new-els' (conj! res new-node) keys)))))
 
 (core/defparent ANode4
   [^:mut el
@@ -663,6 +674,21 @@
      (fn []
        (some-> @*effect s/dispose!))}))
 
+(def *key
+  (volatile! 0))
+
+(defmacro defcomp [name args & body]
+  `(defn ~name ~args
+     ~@(walk/postwalk
+         (fn [form]
+           (if (and (vector? form) (instance? clojure.lang.IObj form))
+             (let [m (meta form)]
+               (if (contains? m :key)
+                 form
+                 (vary-meta form assoc :key (vswap! *key inc))))
+             form))
+         body)))
+
 ;; examples
 
 (defn example-static []
@@ -764,6 +790,38 @@
            ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
                       [padding {:padding (:padding *ctx*)}
                        [label "Item" i]]]))])))
+
+(defn auto-key-label [text]
+  (let [*state (atom 0)
+        fill   (paint/fill 0xFFEEEEEE)]
+    {:render
+     (fn [text]
+       [rect {:fill fill}
+         [padding {:padding (:padding *ctx*)}
+           [label text " (render #" (swap! *state inc) ")"]]])
+     :after-unmount
+     (fn []
+       (println "close" text @*state)
+       (.close fill))
+     }))
+
+(defcomp example-auto-keys []
+  (let [node *node*]
+    (fn []
+      [row
+       [column
+        (if (> (rand) 0.5)
+          [auto-key-label "Auto key left"]
+          [auto-key-label "Auto key right"])
+        (if (> (rand) 0.5)
+          ^{:key :second} [auto-key-label "Manual key left"]
+          ^{:key :second} [auto-key-label "Manual key right"])
+        (for [i (range 0 (+ 1 (rand-int 5)))]
+          [label "Item " i])
+        [auto-key-label "Auto key bottom"]
+        ^{:key :bottom} [auto-key-label "Manual key bottom"]]
+       [column
+        [button {:on-click (fn [_] (force-update node))} "Randomize"]]])))
 
 (defn example-force-update []
   (let [*state (atom 0)
@@ -966,6 +1024,7 @@
    "diff-incompat"
    "diff-compat"
    "diff-keys"
+   "auto-keys"
    "force-update"
    "should-setup"
    "should-render"
