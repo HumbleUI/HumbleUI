@@ -256,19 +256,22 @@
   protocols/IComponent
   (-measure [this ctx cs]
     (maybe-render this ctx)
-    (protocols/-measure-impl this ctx cs))
+    (binding [*node* this]
+      (protocols/-measure-impl this ctx cs)))
     
   (-draw [this ctx rect canvas]
     (set! self-rect rect)
     (maybe-render this ctx)
-    (protocols/-draw-impl this ctx rect canvas)
+    (binding [*node* this]
+      (protocols/-draw-impl this ctx rect canvas))
     (when-not mounted?
       (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
       (set! mounted? true)))
   
   (-event [this ctx event]
     (maybe-render this ctx)
-    (protocols/-event-impl this ctx event))
+    (binding [*node* this]
+      (protocols/-event-impl this ctx event)))
     
   protocols/IVDom
   (-reconcile-impl [this el]
@@ -677,17 +680,21 @@
 (def *key
   (volatile! 0))
 
+(defn auto-keys [form]
+  (walk/postwalk
+    (fn [form]
+      (if (and (vector? form) (instance? clojure.lang.IObj form))
+        (let [m (meta form)]
+          (if (contains? m :key)
+            form
+            (vary-meta form assoc :key (vswap! *key inc))))
+        form))
+    form))
+
 (defmacro defcomp [name args & body]
   `(defn ~name ~args
-     ~@(walk/postwalk
-         (fn [form]
-           (if (and (vector? form) (instance? clojure.lang.IObj form))
-             (let [m (meta form)]
-               (if (contains? m :key)
-                 form
-                 (vary-meta form assoc :key (vswap! *key inc))))
-             form))
-         body)))
+     (let [~'&node *node*]
+       ~@(auto-keys body))))
 
 ;; examples
 
@@ -793,12 +800,12 @@
 
 (defn auto-key-label [text]
   (let [*state (atom 0)
-        fill   (paint/fill 0xFFEEEEEE)]
+        fill   (paint/fill 0xFFDAE8C8)]
     {:render
      (fn [text]
        [rect {:fill fill}
-         [padding {:padding (:padding *ctx*)}
-           [label text " (render #" (swap! *state inc) ")"]]])
+        [padding {:padding (:padding *ctx*)}
+         [label text " (render #" (swap! *state inc) ")"]]])
      :after-unmount
      (fn []
        (println "close" text @*state)
@@ -806,33 +813,37 @@
      }))
 
 (defcomp example-auto-keys []
-  (let [node *node*]
-    (fn []
-      [row
-       [column
-        (if (> (rand) 0.5)
-          [auto-key-label "Auto key left"]
-          [auto-key-label "Auto key right"])
-        (if (> (rand) 0.5)
-          ^{:key :second} [auto-key-label "Manual key left"]
-          ^{:key :second} [auto-key-label "Manual key right"])
-        (for [i (range 0 (+ 1 (rand-int 5)))]
-          [label "Item " i])
-        [auto-key-label "Auto key bottom"]
-        ^{:key :bottom} [auto-key-label "Manual key bottom"]]
-       [column
-        [button {:on-click (fn [_] (force-update node))} "Randomize"]]])))
+  [row
+   [column
+    (if (> (rand) 0.5)
+      [auto-key-label "Auto key left"]
+      [auto-key-label "Auto key right"])
+    (if (> (rand) 0.5)
+      ^{:key :second} [auto-key-label "Manual key left"]
+      ^{:key :second} [auto-key-label "Manual key right"])
+    (for [i (range 0 (+ 1 (rand-int 5)))]
+      [label "Item " i])
+    [auto-key-label "Auto key bottom"]
+    ^{:key :bottom} [auto-key-label "Manual key bottom"]]
+   [column
+    [button {:on-click (fn [_] (force-update &node))} "Randomize"]]])
 
-(defn example-force-update []
-  (let [*state (atom 0)
-        node   *node*]
+(defcomp example-force-update-fn []
+  (let [*state (atom 0)]
     (fn []
       [row
        [label "Clicked: " @*state]
-       [button {:on-click (fn [_] 
-                            (swap! *state inc)
-                            (force-update node))}
+       [button
+        {:on-click
+         (fn [_] 
+           (swap! *state inc)
+           (force-update &node))}
         "INC"]])))
+
+(defcomp example-force-update-inline []
+  [row
+   [label "Random: " (rand)]
+   [button {:on-click (fn [_] (force-update &node))} "INC"]])
 
 (defn should-setup [arg]
   {:should-setup?
@@ -1025,7 +1036,8 @@
    "diff-compat"
    "diff-keys"
    "auto-keys"
-   "force-update"
+   "force-update-fn"
+   "force-update-inline"
    "should-setup"
    "should-render"
    "skip-identical"
