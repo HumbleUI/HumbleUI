@@ -88,8 +88,8 @@
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
                     :width    600
-                    :height   800
-                    :x        :center
+                    :height   900
+                    :x        :left
                     :y        :center}
                    state/*app)]
       ;; TODO load real monitor profile

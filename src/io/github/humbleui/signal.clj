@@ -107,6 +107,9 @@
       :check    (read-check this)
       :disposed (throw (ex-info (str "Can't read disposed signal '" name "'") {})))))
 
+(defmethod print-method Signal [o ^java.io.Writer w]
+  (.write w (str o)))
+
 (defn signal* [name value-fn]
   (let [signal (map->Signal
                  {:name     name

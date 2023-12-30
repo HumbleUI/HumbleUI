@@ -22,6 +22,10 @@
     [io.github.humbleui.skija Canvas TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
 
+(when-not (.equalsIgnoreCase "false" (System/getProperty "io.github.humbleui.pprint-fn"))
+  (defmethod print-method clojure.lang.AFunction [o ^java.io.Writer w]
+    (.write w (clojure.lang.Compiler/demunge (.getName (class o))))))
+
 (declare make map->FnNode)
 
 (def ^:dynamic *ctx*)
@@ -409,7 +413,14 @@
           (set! child child')
           (set! el el'))
         (finally
-          (invoke after-render))))))
+          (invoke after-render)))))
+  
+  java.lang.Object
+  (toString [_]
+    (pr-str el)))
+
+(defmethod print-method FnNode [o ^java.io.Writer w]
+  (.write w (str o)))
 
 (core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
