@@ -78,76 +78,113 @@
 (defn assert-arities [f g]
   (assert (= (core/arities f) (core/arities g)) (str "Arities of node fn and render fn should match, node: " (core/arities f) ", render: " (core/arities g))))
 
+(defn normalize-mixin [x]
+  (cond
+    (fn? x)
+    [{:render x}]
+    
+    (map? x)
+    [x]
+    
+    (and (sequential? x) (map? (first x)))
+    x
+    
+    :else
+    (throw (ex-info (str "Malformed mixin: " (pr-str x)) {:value x}))))
+
+(defn merge-mixins [a b]
+  (reduce-kv
+    (fn [m k v]
+      (let [mv (m k)]
+        (cond
+          (nil? mv)
+          (assoc m k v)
+          
+          (#{:measure :draw :render :value} k)
+          (throw (ex-info (str "Duplicate key in mixin maps: " k) {:left a, :right b}))
+          
+          (#{:should-setup? :should-render?} k)
+          (assoc m k (fn [& args]
+                       (or
+                         (apply mv args)
+                         (apply v args))))
+          
+          (#{:before-draw :after-draw :before-render :after-render :after-mount :after-unmount} k)
+          (assoc m k (fn [& args]
+                       (apply mv args)
+                       (apply v args)))
+          
+          :else
+          (throw (ex-info (str "Unexpected key in mixin: " k) {:left a, :right b})))))
+    a b))
+
+(defn with-impl [sym form body]
+  `(let [form#  ~form
+         ~sym   (:value form#)
+         mixin# (dissoc form# :value)
+         res#   ~body]
+     (reduce merge-mixins
+       (concat
+         (normalize-mixin mixin#)
+         (normalize-mixin res#)))))
+
+(defmacro with [bindings & body]
+  (if (= 0 (count bindings))
+    `(do ~@body)
+    (with-impl (first bindings) (second bindings)
+      `(with ~(nnext bindings)
+         ~@body))))
+
 (defn make [el]
   (if (satisfies? protocols/IComponent el)
     el
     (binding [*node* (map->FnNode {})]
       (let [[f & args] el
             res  (cond
-                   (ifn? f)   (apply f args)
+                   (fn? f)    (apply f args)
                    (class? f) (make-record f))
-            node (core/cond+
-                   (map? res)
-                   (let [render (:render res)]
-                     (when render
-                       (assert-arities f render))
-                     (core/set!! *node*
-                       :measure          (:measure res)
-                       :draw             (:draw res)
-                       :render           render
-                       :should-setup?    (:should-setup? res)
-                       :should-render?   (:should-render? res)
-                       :before-draw      (:before-draw res)
-                       :after-draw       (:after-draw res)
-                       :before-render    (:before-render res)
-                       :after-render     (:after-render res)
-                       :after-mount      (:after-mount res)
-                       :after-unmount    (:after-unmount res)
-                       :dirty?           true)
-                     *node*)
+            node (loop [res res]
+                   (core/cond+
+                     (fn? res)
+                     (do
+                       (assert-arities f res)
+                       (core/set!! *node* :render res)
+                       *node*)
                
-                   (and (vector? res) (map? (first res)))
-                   (let [render (some :render res)]
-                     (when render
-                       (assert-arities f render))
-                     (core/set!! *node*
-                       :measure          (some :measure res)
-                       :draw             (some :draw res)
-                       :render           render
-                       :should-setup?    (collect-bool :should-setup? res)
-                       :should-render?   (collect-bool :should-render? res)
-                       :before-draw      (collect :before-draw res)
-                       :after-draw       (collect :after-draw res)
-                       :before-render    (collect :before-render res)
-                       :after-render     (collect :after-render res)
-                       :after-mount      (collect :after-mount res)
-                       :after-unmount    (collect :after-unmount res)
-                       :dirty?           true)
-                     *node*)
+                     (satisfies? protocols/IComponent res)
+                     res
                    
-                   (vector? res)
-                   (do
-                     (core/set!! *node*
-                       :render f
-                       :dirty? true)
-                     *node*)
+                     (map? res)
+                     (let [render (:render res)]
+                       (when render
+                         (assert-arities f render))
+                       (core/set!! *node*
+                         :measure        (:measure res)
+                         :draw           (:draw res)
+                         :render         render
+                         :should-setup?  (:should-setup? res)
+                         :should-render? (:should-render? res)
+                         :before-draw    (:before-draw res)
+                         :after-draw     (:after-draw res)
+                         :before-render  (:before-render res)
+                         :after-render   (:after-render res)
+                         :after-mount    (:after-mount res)
+                         :after-unmount  (:after-unmount res))
+                       *node*)
+               
+                     (and (sequential? res) (map? (first res)))
+                     (recur (reduce merge-mixins res))
                    
-                   (ifn? res)
-                   (do
-                     (assert-arities f res)
-                     (core/set!! *node*
-                       :render res
-                       :dirty? true)
-                     *node*)
-               
-                   (satisfies? protocols/IComponent res)
-                   (do
-                     (core/set!! res :dirty? true)
-                     res)
-               
-                   :else
-                   (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res})))]
-        (core/set!! node :el el)
+                     (sequential? res)
+                     (do
+                       (core/set!! *node* :render f)
+                       *node*)
+
+                     :else
+                     (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
+        (core/set!! node
+          :el el
+          :dirty? true)
         (when-some [key (:key (meta el))]
           (core/set!! node :key key))
         (when-some [ref (:ref (meta el))]
@@ -704,7 +741,8 @@
 
 (defmacro defcomp [name args & body]
   `(defn ~name ~args
-     (let [~'&node *node*]
+     (let [~'&node *node*
+           ~'&ctx  *ctx*]
        ~@(auto-keys body))))
 
 ;; examples
@@ -759,7 +797,7 @@
          [label "Clicked: " @*state]
          [button {:on-click (fn [_] (swap! *state inc))} "INC"]])}]))
 
-(defn example-lifecycle []
+(defn timer []
   (let [*state (ratom 0)
         _      (println "starting timer")
         cancel (core/schedule
@@ -770,20 +808,60 @@
        (cancel))
      :render
      (fn []
-       [label "Timer: " @*state " sec"])}))
+       [label "Time: " @*state " sec"])}))
 
-(defn example-diff-incompat []
+(defn example-lifecycle []
+  (let [*visible? (ratom true)]
+    (fn []
+      (if @*visible?
+        [column
+         [timer]
+         [button {:on-click (fn [_] (reset! *visible? false))} "Hide"]]
+        [column
+         [button {:on-click (fn [_] (reset! *visible? true))} "Show"]]))))
+
+(defn use-state [val]
+  (let [*state (ratom val)]
+    {:value *state}))
+
+(defn use-timer []
+  (with [*state (use-state 0)]
+    (println "starting timer")
+    (let [cancel (core/schedule
+                   #(swap! *state inc) 0 1000)]
+      {:value *state
+       :after-unmount
+       (fn []
+         (println "cancelling timer")
+         (cancel))})))
+
+(defn timer2 []
+  (with [*timer (use-timer)]
+    (fn []
+      [label "Time: " @*timer " sec"])))
+
+(defn example-mixins []
+  (let [*visible? (ratom true)]
+    (fn []
+      (if @*visible?
+        [column
+         [timer2]
+         [button {:on-click (fn [_] (reset! *visible? false))} "Hide"]]
+        [column
+         [button {:on-click (fn [_] (reset! *visible? true))} "Show"]]))))
+
+(defcomp example-diff-incompat []
   (let [*state (ratom 0)]
     (fn []
       [column
        (for [i (range 6)
-             :let [lbl [padding {:padding (:padding *ctx*)}
+             :let [lbl [padding {:padding (:padding &ctx)}
                         [label "Item " i]]]]
          (if (= i @*state)
-           [rect {:fill (:hui.button/bg *ctx*)} lbl]
+           [rect {:fill (:hui.button/bg &ctx)} lbl]
            [clickable {:on-click (fn [_] (reset! *state i))} lbl]))])))
 
-(defn example-diff-compat []
+(defcomp example-diff-compat []
   (let [*state (ratom 0)
         transparent (paint/fill 0x00000000)]
     (fn []
@@ -791,22 +869,22 @@
        (for [i (range 6)]
          [clickable {:on-click (fn [_] (reset! *state i))}
           [rect {:fill (if (= i @*state)
-                         (:hui.button/bg *ctx*)
+                         (:hui.button/bg &ctx)
                          transparent)}
-           [padding {:padding (:padding *ctx*)}
+           [padding {:padding (:padding &ctx)}
             [label "Item " i]]]])])))
 
-(defn example-diff-keys []
+(defcomp example-diff-keys []
   (let [*state (ratom 0)]
     (fn []
       [column
        (for [i (range 6)]
          (if (= i @*state)
-           ^{:key i} [rect {:fill (:hui.button/bg *ctx*)}
-                      [padding {:padding (:padding *ctx*)}
+           ^{:key i} [rect {:fill (:hui.button/bg &ctx)}
+                      [padding {:padding (:padding &ctx)}
                        [label "Item" i]]]
            ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
-                      [padding {:padding (:padding *ctx*)}
+                      [padding {:padding (:padding &ctx)}
                        [label "Item" i]]]))])))
 
 (defn auto-key-label [text]
@@ -910,11 +988,10 @@
        [button {:on-click (fn [_] (force-update node))} "Render"]])))
 
 (defn example-signals-label [_ _]
-  (let [*render (volatile! 0)]
-    [(use-signals)
-     {:render
+  (with [_ (use-signals)]
+    (let [*render (volatile! 0)]
       (fn [text *signal]
-        [label text @*signal ", render: " (vswap! *render inc)])}]))
+        [label text @*signal ", render: " (vswap! *render inc)]))))
 
 (defn example-signals []
   (let [*signal (s/signal "s" 0)
@@ -1043,6 +1120,7 @@
    "return-map"
    "return-maps"
    "lifecycle"
+   "mixins"
    "diff-incompat"
    "diff-compat"
    "diff-keys"
