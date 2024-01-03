@@ -212,17 +212,17 @@
     old-node))
 
 (defn reconcile-many [old-nodes new-els]
-  (loop [old-nodes-keyed (reduce
-                           (fn [m n]
-                             (if-some [key (:key n)]
-                               (assoc! m key n)
-                               m))
-                           (transient {})
-                           old-nodes)
-         old-nodes       (filter #(and % (nil? (:key %))) old-nodes)
-         new-els         new-els
-         res             (transient [])
-         keys            (transient {})]
+  (core/loop+ [old-nodes-keyed (reduce
+                                 (fn [m n]
+                                   (if-some [key (:key n)]
+                                     (assoc! m key n)
+                                     m))
+                                 (transient {})
+                                 old-nodes)
+               old-nodes       (filter #(and % (nil? (:key %))) old-nodes)
+               new-els         new-els
+               res             (transient [])
+               keys-idxs       (transient {})]
     (core/cond+
       (empty? new-els)
       (do
@@ -237,34 +237,44 @@
             key                     (:key (meta new-el))]
       
       key
-      (let [key-idx  (inc (keys key -1))
-            keys'    (assoc! keys key key-idx)
-            key'     [key key-idx]
-            new-el'  (vary-meta new-el assoc :key key')
-            old-node (old-nodes-keyed key')]
+      (let [key-idx    (inc (keys-idxs key -1))
+            keys-idxs' (assoc! keys-idxs key key-idx)
+            key'       [key key-idx]
+            new-el'    (vary-meta new-el assoc :key key')
+            old-node   (old-nodes-keyed key')]
         (cond
           ;; new key
           (nil? old-node)
           (let [new-node (make new-el')]
-            (recur old-nodes-keyed old-nodes new-els' (conj! res new-node) keys'))
+            (recur [new-els   new-els'
+                    res       (conj! res new-node)
+                    keys-idxs keys-idxs']))
           
           ;; compatible key
           (compatible? old-node new-el')
           (do
             (do-reconcile old-node new-el')
-            (recur (dissoc! old-nodes-keyed key') old-nodes new-els' (conj! res old-node) keys'))
+            (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
+                    new-els         new-els'
+                    res             (conj! res old-node)
+                    keys-idxs       keys-idxs']))
           
           ;; non-compatible key
           :else
           (let [new-node (make new-el')]
             (unmount old-node)
-            (recur (dissoc! old-nodes-keyed key') old-nodes new-els' (conj! res new-node) keys'))))
+            (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
+                    new-els         new-els'
+                    res             (conj! res new-node)
+                    keys-idxs       keys-idxs']))))
 
       (compatible? old-node new-el)
       (do
         ; (println "compatible" old-node new-el)
         (do-reconcile old-node new-el)
-        (recur old-nodes-keyed old-nodes' new-els' (conj! res old-node) keys))
+        (recur [old-nodes old-nodes'
+                new-els   new-els'
+                res       (conj! res old-node)]))
       
       ;; old-node was dropped
       (compatible? (first old-nodes') new-el)
@@ -272,20 +282,25 @@
             _ (unmount old-node)
             [old-node & old-nodes'] old-nodes']
         (do-reconcile old-node new-el)
-        (recur old-nodes-keyed (next old-nodes') new-els' (conj! res old-node) keys))
+        (recur [old-nodes (next old-nodes')
+                new-els   new-els'
+                res       (conj! res old-node)]))
       
       ;; new-el was inserted
       (compatible? old-node (first new-els'))
       (let [; _ (println "new-el inserted" old-node new-el)
             new-node (make new-el)]
-        (recur old-nodes-keyed old-nodes new-els' (conj! res new-node) keys))
+        (recur [new-els new-els'
+                res     (conj! res new-node)]))
       
       ;; just incompatible
       :else
       (let [; _ (println "incompatible" old-node new-el)
             new-node (make new-el)]
         (unmount old-node)
-        (recur old-nodes-keyed old-nodes' new-els' (conj! res new-node) keys)))))
+        (recur [old-nodes old-nodes'
+                new-els   new-els'
+                res       (conj! res new-node)])))))
 
 (core/defparent ANode4
   [^:mut el

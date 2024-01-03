@@ -109,6 +109,25 @@
       :some `(or ~expr (cond+ ~@rest))
       `(if ~test ~expr (cond+ ~@rest)))))
 
+(defmacro loop+ [bindings & body]
+  (let [bindings (partition 2 bindings)
+        syms     (map first bindings)
+        vals     (map second bindings)
+        gensyms  (map #(gensym (name %)) syms)]
+    `(loop ~(vec (interleave gensyms vals))
+       (let ~(vec (interleave syms gensyms))
+         ~@(clojure.walk/postwalk
+             (fn [form]
+               (if (and (list? form) (= 'recur (first form)))
+                 (let [bindings' (or (second form) [])
+                       syms'     (into #{} (map first (partition 2 bindings')))]
+                   `(let ~bindings'
+                      (recur ~@(map (fn [sym gensym]
+                                      (or (syms' sym) gensym))
+                                 syms gensyms))))
+                 form))
+             body)))))
+
 (defmacro case-instance
   "Dispatch on `instance?` and tag symbol inside matched branch"
   [e & clauses]
@@ -408,19 +427,19 @@
       (long))))
 
 (defn arities [f]
-    (let [methods  (.getDeclaredMethods (class f))
-          fixed    (->> methods
-                     (filter #(= "invoke" (.getName ^java.lang.reflect.Method %)))
-                     (map #(.getParameterCount ^java.lang.reflect.Method %))
-                     (sort)
-                     (vec))
-          vararg   (->> methods
-                     (find #(= "getRequiredArity" (.getName ^java.lang.reflect.Method %))))
-          required (when vararg
-                     (.invoke ^java.lang.reflect.Method vararg f (make-array 0)))]
-      (some-map
-        :fixed fixed
-        :vararg required)))
+  (let [methods  (.getDeclaredMethods (class f))
+        fixed    (->> methods
+                   (filter #(= "invoke" (.getName ^java.lang.reflect.Method %)))
+                   (map #(.getParameterCount ^java.lang.reflect.Method %))
+                   (sort)
+                   (vec))
+        vararg   (->> methods
+                   (find #(= "getRequiredArity" (.getName ^java.lang.reflect.Method %))))
+        required (when vararg
+                   (.invoke ^java.lang.reflect.Method vararg f (make-array 0)))]
+    (some-map
+      :fixed fixed
+      :vararg required)))
 
 (defn- timer-task ^TimerTask [f]
   (proxy [TimerTask] []

@@ -2,6 +2,7 @@
   (:require
     [clojure.core.server :as server]
     [clojure.java.io :as io]
+    [clojure.test :as t]
     [clojure.tools.namespace.repl :as ns]
     [clojure.tools.namespace.track :as track]
     [state]
@@ -13,7 +14,7 @@
 
 (ns/disable-reload!)
 
-(ns/set-refresh-dirs "src" "dev")
+(ns/set-refresh-dirs "src" "dev" "test")
 
 (def *reloaded
   (atom nil))
@@ -123,3 +124,7 @@
        :port          port
        :accept        'clojure.core.server/repl
        :server-daemon false})))
+
+(defn test-all []
+  (reload)
+  (t/run-all-tests #"io.github.humbleui\..*-test"))
