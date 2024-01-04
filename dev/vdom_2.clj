@@ -54,7 +54,10 @@
 (defn maybe-render [node ctx]
   (binding [*node* node
             *ctx*  ctx]
-    (when (:dirty? node)
+    (when (or
+            (:dirty? node)
+            (when-some [should-render? (:should-render? node)]
+              (should-render?)))
       (protocols/-reconcile-impl node (:el node))
       (core/set!! node :dirty? false))))
 
@@ -179,7 +182,7 @@
                      (do
                        (core/set!! *node* :render f)
                        *node*)
-
+                     
                      :else
                      (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
         (core/set!! node
@@ -419,6 +422,7 @@
   protocols/IComponent
   (-measure-impl [this ctx cs]
     (when render
+      (set! self-rect (core/irect-xywh 0 0 (:width cs) (:height cs)))
       (maybe-render this ctx))
     (if measure
       (binding [*ctx* ctx]
@@ -431,10 +435,10 @@
       (maybe-render this ctx))
     (when was-dirty?
       (invoke before-draw))
-    (if draw
-      (binding [*ctx* ctx]
-        (draw child rect canvas))
-      (core/draw child ctx rect canvas))
+    (binding [*ctx* ctx]
+      (if draw
+        (draw child rect canvas)
+        (core/draw child ctx rect canvas)))
     (when was-dirty?
       (invoke after-draw)
       (set! was-dirty? false))
@@ -473,6 +477,21 @@
 
 (defmethod print-method FnNode [o ^java.io.Writer w]
   (.write w (str o)))
+
+(core/deftype+ Gap []
+  :extends ATerminal4
+  protocols/IComponent
+  (-measure-impl [this ctx cs]
+    (let [[opts] (maybe-opts (next el))
+          {:keys [width height]} opts]
+      (core/ipoint
+        (* (:scale ctx) (or width 0))
+        (* (:scale ctx) (or height 0)))))
+  
+  (-draw-impl [this ctx rect canvas]))
+
+(defn gap [opts]
+  (map->Gap {}))
 
 (core/deftype+ Label [^:mut ^TextLine line]
   :extends ATerminal4
@@ -605,9 +624,11 @@
   :extends AWrapper4
   protocols/IComponent  
   (-measure-impl [_ ctx cs]
-    (let [[opts _] (maybe-opts (next el))
-          size     (core/measure child ctx (core/ipoint (:width opts) (:height cs)))]
-      (core/ipoint (:width opts) (:height size)))))
+    (let [scale    (:scale ctx)
+          [opts _] (maybe-opts (next el))
+          size     (core/measure child ctx 
+                     (core/ipoint (* scale (:width opts)) (:height cs)))]
+      (core/ipoint (* scale (:width opts)) (:height size)))))
 
 (defn width [opts child]
   (map->Width {}))
@@ -811,6 +832,22 @@
         [row
          [label "Clicked: " @*state]
          [button {:on-click (fn [_] (swap! *state inc))} "INC"]])}]))
+
+(defn example-anon-fn []
+  [column
+   [(fn []
+      [label "just fn"])]
+   [(fn [x y z]
+      [label "fn + args: " x y z])
+    1 2 3]
+   [(fn []
+      (fn []
+        [label "setup"]))]
+   [(fn []
+      {:render
+       (fn []
+         [label "map"])})]])
+         
 
 (defn timer []
   (let [*state (ratom 0)
@@ -1108,6 +1145,38 @@
    [measure-draw-wrapper
     [label "With measure"]]])
 
+(defn use-size []
+  (let [*size   (atom (core/point 0 0))
+        size-fn (fn []
+                  (let [scale (or (:scale *ctx*) 1)
+                        w     (or (:width (:self-rect *node*)) 0)
+                        h     (or (:height (:self-rect *node*)) 0)]
+                    (core/point (/ w scale) (/ h scale))))]
+    {:should-render?
+     (fn [& args]
+       (let [size  @*size
+             size' (size-fn)]
+         (when (not= size size')
+           (reset! *size size')
+           true)))
+     :value *size}))
+
+(defcomp size-user [x y z]
+  (with [*size (use-size)]
+    (fn [x y z]
+      (let [w       (:width @*size)
+            padding (:padding &ctx)
+            size    60
+            cnt     (quot (+ w padding) (+ size padding))]
+        [row
+         (for [[_ text] (map vector (range 0 cnt) (cycle [x y z]))]
+           [rect {:fill (:hui.button/bg &ctx)}
+            [width {:width size}
+             [label text]]])]))))
+
+(defn example-use-size []
+  [size-user 1 2 3])
+
 (defn item [*state id]
   (println "mount" id)
   {:after-unmount (fn [] (println "unmount" id))
@@ -1134,6 +1203,7 @@
    "return-fn"
    "return-map"
    "return-maps"
+   "anon-fn"
    "lifecycle"
    "mixins"
    "diff-incompat"
@@ -1149,19 +1219,21 @@
    "refs"
    "materialize"
    "measure-draw"
+   "use-size"
    "rows"])
 
 (defn app-impl []
-  (let [*selected (ratom (first examples))]
+  (let [*selected (ratom "use-size" #_(first examples))]
     (fn []
       [split
-       [column
-        (for [name examples
-              :let [lbl [padding {:padding (:padding *ctx*)}
-                         [label name]]]]
-          (if (= @*selected name)
-            ^{:key name} [rect {:fill (:hui.button/bg *ctx*)} lbl]
-            ^{:key name} [clickable {:on-click (fn [_] (reset! *selected name))} lbl]))]
+       [padding {:padding 10}
+        [column {:gap 0}
+         (for [name examples
+               :let [lbl [padding {:padding 10}
+                          [label name]]]]
+           (if (= @*selected name)
+             ^{:key name} [rect {:fill (:hui.button/bg *ctx*)} lbl]
+             ^{:key name} [clickable {:on-click (fn [_] (reset! *selected name))} lbl]))]]
        [center
         [@(ns-resolve 'vdom-2 (symbol (str "example-" @*selected)))]]])))
 
