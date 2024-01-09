@@ -194,26 +194,15 @@
           (reset! ref node))
         node))))
 
-(defn compatible? [old-node new-el]
+(defn should-reconcile? [old-node new-el]
   (and 
     old-node
     (identical? (first (:el old-node)) (first new-el))
-    (protocols/-compatible-impl old-node new-el)
-    (if-some [should-setup? (:should-setup? old-node)]
-      (not (apply should-setup? (next new-el)))
-      true)))
+    (protocols/-should-reconcile? old-node new-el)))
 
 (defn unmount [node]
   (core/iterate-child node nil
     #(invoke (:after-unmount %))))
-
-(defn do-reconcile [old-node new-el]
-  (when (if-some [should-render? (:should-render? old-node)]
-          (apply should-render? (next new-el))
-          (not (identical? (:el old-node) new-el)))
-    (protocols/-reconcile-impl old-node new-el)
-    old-node)
-  (core/set!! old-node :el new-el))
 
 (defn reconcile-many [old-nodes new-els]
   (core/loop+ [old-nodes-keyed (reduce
@@ -255,9 +244,9 @@
                     keys-idxs keys-idxs']))
           
           ;; compatible key
-          (compatible? old-node new-el')
+          (should-reconcile? old-node new-el')
           (do
-            (do-reconcile old-node new-el')
+            (protocols/-reconcile old-node new-el')
             (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
                     new-els         new-els'
                     res             (conj! res old-node)
@@ -272,26 +261,26 @@
                     res             (conj! res new-node)
                     keys-idxs       keys-idxs']))))
 
-      (compatible? old-node new-el)
+      (should-reconcile? old-node new-el)
       (do
         ; (println "compatible" old-node new-el)
-        (do-reconcile old-node new-el)
+        (protocols/-reconcile old-node new-el)
         (recur [old-nodes old-nodes'
                 new-els   new-els'
                 res       (conj! res old-node)]))
       
       ;; old-node was dropped
-      (compatible? (first old-nodes') new-el)
+      (should-reconcile? (first old-nodes') new-el)
       (let [; _ (println "old-node dropped" old-node new-el)
             _ (unmount old-node)
             [old-node & old-nodes'] old-nodes']
-        (do-reconcile old-node new-el)
+        (protocols/-reconcile old-node new-el)
         (recur [old-nodes (next old-nodes')
                 new-els   new-els'
                 res       (conj! res old-node)]))
       
       ;; new-el was inserted
-      (compatible? old-node (first new-els'))
+      (should-reconcile? old-node (first new-els'))
       (let [; _ (println "new-el inserted" old-node new-el)
             new-node (make new-el)]
         (recur [new-els new-els'
@@ -334,10 +323,16 @@
       (protocols/-event-impl this ctx event)))
     
   protocols/IVDom
-  (-reconcile-impl [this el]
+  (protocols/-reconcile [this new-el]
+    (when (not (identical? (:el this) new-el))
+      (protocols/-reconcile-impl this new-el)
+      (set! el new-el))
+    this)
+  
+  (protocols/-reconcile-impl [this el]
     (throw (ex-info "Not implemented" {:el el})))
   
-  (-compatible-impl [this el]
+  (-should-reconcile? [this el]
     true))
 
 (core/defparent ATerminal4 []
@@ -349,10 +344,10 @@
     (cb this))
   
   protocols/IVDom
-  (-compatible-impl [this new-el]
+  (-should-reconcile? [this new-el]
     (= el new-el))
   
-  (-reconcile-impl [this el']
+  (protocols/-reconcile-impl [this el']
     this))
   
 (core/defparent AWrapper4 [^:mut child]
@@ -381,11 +376,10 @@
         (core/iterate-child child ctx' cb))))
   
   protocols/IVDom
-  (-reconcile-impl [_ el']
+  (protocols/-reconcile-impl [_ el']
     (let [[_ [child-el]] (maybe-opts (next el'))
-          [child'] (reconcile-many [child] [child-el])]
-      (set! child child')
-      (set! el el'))))
+          [child']       (reconcile-many [child] [child-el])]
+      (set! child child'))))
 
 (core/defparent AContainer4 [^:mut children]
   :extends ANode4
@@ -399,12 +393,11 @@
       (some #(core/iterate-child % ctx cb) children)))
   
   protocols/IVDom
-  (-reconcile-impl [_ el']
+  (protocols/-reconcile-impl [_ el']
     (let [[_ child-els] (maybe-opts (next el'))
-          child-els (flatten child-els)
-          children' (reconcile-many children child-els)]
-      (set! children children')
-      (set! el el'))))
+          child-els     (flatten child-els)
+          children'     (reconcile-many children child-els)]
+      (set! children children'))))
 
 (core/deftype+ FnNode [^:mut child
                        ^:mut should-setup?
@@ -456,16 +449,29 @@
         (core/iterate-child child ctx cb))))
   
   protocols/IVDom
-  (-reconcile-impl [this el']
+  (protocols/-reconcile [this new-el]
+    (when (if should-render?
+            (apply should-render? (next new-el))
+            (not (identical? (:el this) new-el)))
+      (protocols/-reconcile-impl this new-el))
+    (set! el new-el)
+    this)
+  
+  (protocols/-reconcile-impl [this new-el]
     (when render
       (invoke before-render)
       (try
-        (let [child-el (apply render (next el'))
+        (let [child-el (apply render (next new-el))
               [child'] (reconcile-many [child] [child-el])]
           (set! child child')
-          (set! el el'))
+          (set! el new-el))
         (finally
           (invoke after-render)))))
+  
+  (-should-reconcile? [_ new-el]
+    (if should-setup?
+      (not (apply should-setup? (next new-el)))
+      true))
   
   java.lang.Object
   (toString [_]
@@ -929,10 +935,10 @@
          (if (= i @*state)
            ^{:key i} [rect {:fill (:hui.button/bg *ctx*)}
                       [padding {:padding (:padding *ctx*)}
-                       [label "Item" i]]]
+                       [label "Item " i]]]
            ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
                       [padding {:padding (:padding *ctx*)}
-                       [label "Item" i]]]))])))
+                       [label "Item " i]]]))])))
 
 (defn auto-key-label [text]
   (let [*state (atom 0)

@@ -29,5 +29,6 @@
   (-on-unmount-impl [_]))
 
 (defprotocol IVDom
+  (-reconcile [_ new-el])
   (-reconcile-impl [_ new-el])
-  (-compatible-impl [_ new-el]))
+  (-should-reconcile? [_ new-el]))
