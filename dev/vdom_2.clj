@@ -57,7 +57,7 @@
     (when (or
             (:dirty? node)
             (when-some [should-render? (:should-render? node)]
-              (should-render?)))
+              (apply should-render? (next (:el node)))))
       (protocols/-reconcile-impl node (:el node))
       (core/set!! node :dirty? false))))
 
@@ -212,7 +212,8 @@
           (apply should-render? (next new-el))
           (not (identical? (:el old-node) new-el)))
     (protocols/-reconcile-impl old-node new-el)
-    old-node))
+    old-node)
+  (core/set!! old-node :el new-el))
 
 (defn reconcile-many [old-nodes new-els]
   (core/loop+ [old-nodes-keyed (reduce
@@ -1080,7 +1081,7 @@
   (let [labels ["Ok" "Save" "Save & Quit"]
         nodes  (mapv #(make [button {} %]) labels)
         cs     (core/ipoint Integer/MAX_VALUE Integer/MAX_VALUE)
-        widths (mapv #(:width (core/measure % *ctx* cs)) nodes)
+        widths (mapv #(/ (:width (core/measure % *ctx* cs)) (:scale *ctx*)) nodes)
         max-w  (reduce max 0 widths)]
     [row
      (for [node nodes]

@@ -90,7 +90,7 @@
                     :screen   (:id screen)
                     :width    600
                     :height   900
-                    :x        :left
+                    :x        :right
                     :y        :center}
                    state/*app)]
       ;; TODO load real monitor profile
