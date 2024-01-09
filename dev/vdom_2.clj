@@ -406,7 +406,6 @@
       (set! el el'))))
 
 (core/deftype+ FnNode [^:mut child
-                       ^:mut was-dirty?
                        ^:mut should-setup?
                        ^:mut should-render?
                        ^:mut after-mount
@@ -433,15 +432,12 @@
     (set! self-rect rect)
     (when render
       (maybe-render this ctx))
-    (when was-dirty?
-      (invoke before-draw))
+    (invoke before-draw)
     (binding [*ctx* ctx]
       (if draw
         (draw child rect canvas)
         (core/draw child ctx rect canvas)))
-    (when was-dirty?
-      (invoke after-draw)
-      (set! was-dirty? false))
+    (invoke after-draw)
     (when-not mounted?
       (invoke after-mount)
       (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
@@ -463,7 +459,6 @@
     (when render
       (invoke before-render)
       (try
-        (set! was-dirty? true)
         (let [child-el (apply render (next el'))
               [child'] (reconcile-many [child] [child-el])]
           (set! child child')
@@ -777,8 +772,7 @@
 
 (defmacro defcomp [name args & body]
   `(defn ~name ~args
-     (let [~'&node *node*
-           ~'&ctx  *ctx*]
+     (let [~'&node *node*]
        ~@(auto-keys body))))
 
 ;; examples
@@ -907,23 +901,23 @@
     (fn []
       [column
        (for [i (range 6)
-             :let [lbl [padding {:padding (:padding &ctx)}
+             :let [lbl [padding {:padding (:padding *ctx*)}
                         [label "Item " i]]]]
          (if (= i @*state)
-           [rect {:fill (:hui.button/bg &ctx)} lbl]
+           [rect {:fill (:hui.button/bg *ctx*)} lbl]
            [clickable {:on-click (fn [_] (reset! *state i))} lbl]))])))
 
 (defcomp example-diff-compat []
-  (let [*state (ratom 0)
+  (let [*state      (ratom 0)
         transparent (paint/fill 0x00000000)]
     (fn []
       [column
        (for [i (range 6)]
          [clickable {:on-click (fn [_] (reset! *state i))}
           [rect {:fill (if (= i @*state)
-                         (:hui.button/bg &ctx)
+                         (:hui.button/bg *ctx*)
                          transparent)}
-           [padding {:padding (:padding &ctx)}
+           [padding {:padding (:padding *ctx*)}
             [label "Item " i]]]])])))
 
 (defcomp example-diff-keys []
@@ -932,11 +926,11 @@
       [column
        (for [i (range 6)]
          (if (= i @*state)
-           ^{:key i} [rect {:fill (:hui.button/bg &ctx)}
-                      [padding {:padding (:padding &ctx)}
+           ^{:key i} [rect {:fill (:hui.button/bg *ctx*)}
+                      [padding {:padding (:padding *ctx*)}
                        [label "Item" i]]]
            ^{:key i} [clickable {:on-click (fn [_] (reset! *state i))}
-                      [padding {:padding (:padding &ctx)}
+                      [padding {:padding (:padding *ctx*)}
                        [label "Item" i]]]))])))
 
 (defn auto-key-label [text]
@@ -1059,12 +1053,13 @@
         [button {:on-click (fn [_] (s/swap! *signal dec))} "DEC"]
         [button {:on-click (fn [_] (s/swap! *signal inc))} "INC"]]])))
 
-(defn example-refs []
+(defcomp example-refs []
   (let [*ref   (atom nil)
         *size  (ratom nil)
         *state (ratom "A")]
     {:render
      (fn []
+       (core/log "render" &node)
        [column
         ^{:ref *ref} [label @*state]
         [label "Size: " @*size]
@@ -1145,34 +1140,36 @@
    [measure-draw-wrapper
     [label "With measure"]]])
 
+(defn node-size []
+  (let [scale (or (:scale *ctx*) 1)
+        w     (or (:width (:self-rect *node*)) 0)
+        h     (or (:height (:self-rect *node*)) 0)]
+    (core/point (/ w scale) (/ h scale))))
+
 (defn use-size []
-  (let [*size   (atom (core/point 0 0))
-        size-fn (fn []
-                  (let [scale (or (:scale *ctx*) 1)
-                        w     (or (:width (:self-rect *node*)) 0)
-                        h     (or (:height (:self-rect *node*)) 0)]
-                    (core/point (/ w scale) (/ h scale))))]
-    {:should-render?
-     (fn [& args]
-       (let [size  @*size
-             size' (size-fn)]
-         (when (not= size size')
-           (reset! *size size')
-           true)))
-     :value *size}))
+  (with [_ (use-signals)]
+    (let [*size (s/signal (core/point 0 0))]
+      {:before-draw
+       (fn [& args]
+         (s/reset! *size (node-size)))
+       :value *size})))
 
 (defcomp size-user [x y z]
   (with [*size (use-size)]
-    (fn [x y z]
-      (let [w       (:width @*size)
-            padding (:padding &ctx)
-            size    60
-            cnt     (quot (+ w padding) (+ size padding))]
-        [row
-         (for [[_ text] (map vector (range 0 cnt) (cycle [x y z]))]
-           [rect {:fill (:hui.button/bg &ctx)}
-            [width {:width size}
-             [label text]]])]))))
+    (let [padding 10
+          size    60
+          *cnt    (s/signal 
+                    (quot
+                      (+ (long (:width @*size)) padding)
+                      (+ size padding)))]
+      (fn [x y z]
+        (let [cnt @*cnt]
+          (core/log "render" cnt "cols")
+          [row
+           (for [[_ text] (map vector (range 0 cnt) (cycle [x y z]))]
+             [rect {:fill (:hui.button/bg *ctx*)}
+              [width {:width size}
+               [label text]]])])))))
 
 (defn example-use-size []
   [size-user 1 2 3])
