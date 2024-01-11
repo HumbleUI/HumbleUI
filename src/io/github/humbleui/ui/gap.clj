@@ -1,16 +1,19 @@
-(ns io.github.humbleui.ui.gap
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Gap [width height]
-  :extends core/ATerminal
+(core/deftype+ Gap []
+  :extends ATerminalNode
   protocols/IComponent
-  (-measure [_ ctx _cs]
-    (let [{:keys [scale]} ctx]
-      (core/ipoint (core/iceil (* scale width)) (core/iceil (* scale height))))))
+  (-measure-impl [_this ctx _cs]
+    (let [[_ opts] element
+          scale    (:scale ctx)]
+      (core/ipoint
+        (core/iceil (* scale (or (:width opts) 0)))
+        (core/iceil (* scale (or (:height opts) 0))))))
+  
+  (-draw-impl [_this _ctx _rect _canvas])
+  
+  (-should-reconcile? [this new-el]
+    true))
 
-(defn gap [width height]
-  (map->Gap
-    {:width  width
-     :height height}))
+(defn gap [opts]
+  (map->Gap {}))

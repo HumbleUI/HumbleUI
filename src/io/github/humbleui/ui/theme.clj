@@ -1,12 +1,4 @@
-(ns io.github.humbleui.ui.theme
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.typeface :as typeface]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.with-context :as with-context]))
+(in-ns 'io.github.humbleui.ui)
 
 (defn default-theme
   ([comp] (default-theme {} comp))
@@ -15,7 +7,7 @@
                    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Regular.ttf"))]
      ; face-italic  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Italic.ttf")
      ; face-bold    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf")
-     (dynamic/dynamic ctx [scale (:scale ctx)]
+     (dynamic ctx [scale (:scale ctx)]
        (let [font-ui    (if-some [size (:font-size opts)]
                           (font/make-with-size face-ui (* scale size))
                           (font/make-with-cap-height face-ui (* scale (or (:cap-height opts) 10))))
@@ -73,6 +65,4 @@
                          :hui.text-field/padding-bottom          (-> cap-height math/round (/ scale) float)
                          :hui.text-field/padding-left            (-> cap-height (/ 2) math/round (/ scale) float)
                          :hui.text-field/padding-right           (-> cap-height (/ 2) math/round (/ scale) float)}]
-         (with-context/with-context (core/merge-some theme opts) comp))))))
-
-; (require 'user :reload)
+         (with-context (core/merge-some theme opts) comp))))))

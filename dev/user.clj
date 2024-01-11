@@ -89,7 +89,7 @@
                     :mac-icon "dev/images/icon.icns"
                     :screen   (:id screen)
                     :width    600
-                    :height   900
+                    :height   944
                     :x        :right
                     :y        :center}
                    state/*app)]

@@ -1,38 +1,29 @@
-(ns io.github.humbleui.ui.dynamic
-  (:require
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols])
-  (:import
-    [java.lang AutoCloseable]))
-
-;; contextual / dynamic
+(in-ns 'io.github.humbleui.ui)
 
 (core/deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
-        (core/child-close child)
+        (unmount-child child)
         (set! child child')))
     (if (instance? Throwable child)
       cs
-      (core/measure child ctx cs)))
+      (measure child ctx cs)))
   
   (-draw [_ ctx rect canvas]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
-        (core/child-close child)
+        (unmount-child child)
         (set! child child')))
     (set! child-rect rect)
     (if (instance? Throwable child)
       (canvas/draw-rect canvas rect (paint/fill 0xFFCC3333))
-      (core/draw-child child ctx child-rect canvas)))
+      (draw-child child ctx child-rect canvas)))
   
   (-event [_ ctx event]
     (when-not (instance? Throwable child)
-      (core/event-child child ctx event)))
+      (event-child child ctx event)))
   
   (-iterate [this ctx cb]
     (or
@@ -40,9 +31,8 @@
       (when-not (instance? Throwable child)
         (protocols/-iterate child ctx cb))))
   
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+  (-unmount [_]
+    (unmount-child child)))
 
 (defn contextual [child-ctor]
   (->Contextual
@@ -53,7 +43,7 @@
          t))
     nil nil))
 
-(defn dynamic-impl [ctx-sym bindings body]
+(defn- dynamic-impl [ctx-sym bindings body]
   (let [syms (core/bindings->syms bindings)]
     `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
        (contextual

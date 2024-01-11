@@ -2,7 +2,7 @@
   examples.state)
 
 (def *example
-  (atom "Framerate"))
+  (atom "Label"))
 
 (def *todomvc-state
   (atom

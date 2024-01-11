@@ -1,15 +1,16 @@
 (ns io.github.humbleui.core
-  (:refer-clojure :exclude [find])
+  (:refer-clojure :exclude [find flatten])
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]
     [clojure.set :as set]
     [clojure.walk :as walk]
+    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.error :as error]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.skija Canvas]
-    [io.github.humbleui.skija.shaper Shaper]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
@@ -28,9 +29,6 @@
     (/ 0.57735)))
 
 ;; state
-
-(def ^Shaper shaper
-  (Shaper/makeShapeDontWrapOrReorder))
 
 (defonce ^Timer timer
   (Timer. true))
@@ -76,7 +74,7 @@
     (disj % '& '_)
     (vec %)))
 
-(defmacro when-every [bindings & body]
+(defmacro when-some+ [bindings & body]
   `(let ~bindings
      (when (every? some? ~(bindings->syms bindings))
        ~@body)))
@@ -317,6 +315,9 @@
 
 (defn zip [& xs]
   (apply map vector xs))
+
+(defn flatten [xs]
+  (mapcat #(if (and (not (vector? %)) (sequential? %)) (flatten %) [%]) xs))
 
 (defn conjv-limited [xs x limit]
   (if (>= (count xs) limit)
@@ -625,39 +626,6 @@
     (protocols/-set! obj k v))
   obj)
 
-(defn measure [comp ctx ^IPoint cs]
-  {:pre  [(instance? IPoint cs)]
-   :post [(instance? IPoint %)]}
-  (when comp
-    (protocols/-measure comp ctx cs)))
-
-(defn draw [comp ctx ^IRect rect ^Canvas canvas]
-  {:pre [(instance? IRect rect)]}
-  (protocols/-draw comp ctx rect canvas))
-
-(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
-  (when comp
-    (let [count (.getSaveCount canvas)]
-      (try
-        (draw comp ctx rect canvas)
-        (finally
-          (.restoreToCount canvas count))))))
-
-(defn event [comp ctx event]
-  (protocols/-event comp ctx event))
-
-(defn event-child [comp ctx event]
-  (when comp
-    (protocols/-event comp ctx event)))
-
-(defn iterate-child [comp ctx cb]
-  (when comp
-    (protocols/-iterate comp ctx cb)))
-
-(defn child-close [child]
-  (when (instance? AutoCloseable child)
-    (.close ^AutoCloseable child)))
-
 (defmacro defparent
   "Defines base “class” that deftype+ can extend from.
    Supports extra field and protocols which deftype+ can partially override.
@@ -674,69 +642,3 @@
     `(def ~sym ~doc
        {:fields    (quote ~fields)
         :protocols (quote ~protocols)})))
-
-(alias 'core 'io.github.humbleui.core)
-
-(defparent ATerminal
-  "Simple component that has no children"
-  []
-  protocols/IComponent
-  (-measure [_ _ cs]
-    (core/ipoint 0 0))
-  (-draw [_ _ _ _])
-  (-event [_ _ _])
-  (-iterate [this _ cb]
-    (cb this)))
-
-(defparent AWrapper
-  "A component that has exactly one child"
-  [child ^:mut child-rect]
-  protocols/IContext
-  (-context [_ ctx]
-    ctx)
-
-  protocols/IComponent
-  (-measure [this ctx cs]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/measure child ctx' cs)))
-  
-  (-draw [this ctx rect canvas]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (set! child-rect rect)
-      (core/draw-child child ctx' rect canvas)))
-
-  (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/event-child child ctx' event)))
-
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (when-some [ctx' (protocols/-context this ctx)]
-        (core/iterate-child child ctx' cb))))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defparent AContainer
-  "A component that has multiple children"
-  [children]
-  protocols/IComponent
-  (-event [this ctx event]
-    (reduce
-      (fn [acc child]
-        (core/eager-or acc
-          (core/event-child child ctx event)))
-      false
-      children))
-
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (some #(core/iterate-child % ctx cb) children)))
-  
-  AutoCloseable
-  (close [_]
-    (doseq [child children]
-      (core/child-close child))))

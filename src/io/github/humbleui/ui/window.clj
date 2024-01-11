@@ -33,12 +33,12 @@
                       (canvas/clear canvas bg-color)
                       (let [bounds (window/content-rect window)]
                         (when-some [app (app-fn)]
-                          (core/draw app (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas))))
+                          (protocols/-draw app (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas))))
          event-fn   (fn [window event]
-                      (core/when-every [{:keys [x y]} event]
+                      (core/when-some+ [{:keys [x y]} event]
                         (vreset! *mouse-pos (core/ipoint x y)))
                       (when-some [app (app-fn)]
-                        (when-let [result (core/event app (ctx-fn window) event)]
+                        (when-let [result (protocols/-event app (ctx-fn window) event)]
                           (window/request-frame window)
                           result)))
          window     (window/make
