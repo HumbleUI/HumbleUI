@@ -74,6 +74,12 @@
     (disj % '& '_)
     (vec %)))
 
+(defmacro if-some+ [bindings then else]
+  `(let ~bindings
+     (if (every? some? ~(bindings->syms bindings))
+       ~then
+       ~else)))
+
 (defmacro when-some+ [bindings & body]
   `(let ~bindings
      (when (every? some? ~(bindings->syms bindings))
@@ -267,9 +273,9 @@
   ([x y z & rest]
    (reduce #(or %1 %2) (or x y z) rest)))
 
-(defn invoke [f]
+(defn invoke [f & args]
   (when f
-    (f)))
+    (apply f args)))
 
 (defn clamp [x from to]
   (min (max x from) to))
@@ -317,7 +323,13 @@
   (apply map vector xs))
 
 (defn flatten [xs]
-  (mapcat #(if (and (not (vector? %)) (sequential? %)) (flatten %) [%]) xs))
+  (mapcat
+    #(cond
+       (nil? %)        []
+       (vector? %)     [%]
+       (sequential? %) (flatten %)
+       :else           [%])
+    xs))
 
 (defn conjv-limited [xs x limit]
   (if (>= (count xs) limit)
@@ -414,18 +426,6 @@
     (< (:x point) (:right rect))
     (<= (:y rect) (:y point))
     (< (:y point) (:bottom rect))))
-
-(defn dimension ^long [size cs ctx]
-  (let [scale (:scale ctx)]
-    (->
-      (if (fn? size)
-        (* scale
-          (size {:width  (/ (:width cs) scale)
-                 :height (/ (:height cs) scale)
-                 :scale  scale}))
-        (* scale size))
-      (math/round)
-      (long))))
 
 (defn arities [f]
   (let [methods  (.getDeclaredMethods (class f))

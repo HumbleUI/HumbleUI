@@ -9,28 +9,23 @@
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     ; [io.github.humbleui.ui.animation :as animation]
     ; [io.github.humbleui.ui.backdrop :as backdrop]
     ; [io.github.humbleui.ui.button :as button]
     ; [io.github.humbleui.ui.canvas :as canvas]
     ; [io.github.humbleui.ui.checkbox :as checkbox]
-    ; [io.github.humbleui.ui.clickable :as clickable]
     ; [io.github.humbleui.ui.clip :as clip]
-    ; [io.github.humbleui.ui.containers :as containers]
     ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
-    ; [io.github.humbleui.ui.hoverable :as hoverable]
     ; [io.github.humbleui.ui.image :as image]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.padding :as padding]
     ; [io.github.humbleui.ui.paragraph :as paragraph]
-    ; [io.github.humbleui.ui.rect :as rect]
-    ; [io.github.humbleui.ui.scroll :as scroll]
     ; [io.github.humbleui.ui.shadow :as shadow]
-    ; [io.github.humbleui.ui.sizing :as sizing]
     ; [io.github.humbleui.ui.slider :as slider]
     ; [io.github.humbleui.ui.stack :as stack]
     ; [io.github.humbleui.ui.svg :as svg]
@@ -63,14 +58,30 @@
    `(def ~(vary-meta name assoc :arglists arglists)
       ~@(if docstring [docstring] [])
       (delay
+        (core/log "Loading" ~file)
         (load ~(str "/io/github/humbleui/ui/" file))
         ~name))))
+
+(deflazy gap    '([] [{:keys [width height]}]) "gap")
+(deflazy label  '([& texts]) "label")
+
+(deflazy padding '([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
+(deflazy rect '([{:keys [paint]} child]) "rect")
+(deflazy rounded-rect '([{:keys [radius paint]} child]) "rect")
 
 (deflazy halign '([{:keys [position child-position]} child]) "align")
 (deflazy valign '([{:keys [position child-position]} child]) "align")
 (deflazy center '([child]) "align")
-(deflazy gap    '([{:keys [width height]}]) "gap")
-(deflazy label  '([& texts]) "label")
+(deflazy width '([{:keys [width]} child]) "sizing")
+(deflazy height '([{:keys [height]} child]) "sizing")
+
+(deflazy vscroll    '([child] [opts child]) "scroll")
+(deflazy vscrollbar '([child] [opts child]) "scroll")
+(deflazy column '([& children] [opts & children]) "containers")
+(deflazy row '([& children] [opts & children]) "containers")
+
+(deflazy hoverable '([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
+(deflazy clickable '([{:keys [on-click on-click-capture]} child]) "clickable")
 
 (core/import-vars
   ; animation/animation
@@ -78,17 +89,13 @@
   ; button/button
   ; canvas/canvas
   ; checkbox/checkbox
-  ; clickable/clickable
   ; clip/clip
   ; clip/clip-rrect
-  ; containers/column
-  ; containers/row
   ; draggable/draggable
   ; focusable/focusable
   ; focusable/focus-controller
   ; gap/gap
   ; grid/grid
-  ; hoverable/hoverable
   ; image/image
   ; image-snapshot/image-snapshot
   ; listeners/event-listener
@@ -96,16 +103,9 @@
   ; listeners/mouse-listener
   ; listeners/on-key-focused
   ; listeners/text-listener
-  ; padding/padding
   ; paragraph/paragraph
-  ; rect/rect
-  ; rect/rounded-rect
-  ; scroll/vscroll
-  ; scroll/vscrollbar
   ; shadow/shadow
   ; shadow/shadow-inset
-  ; sizing/width
-  ; sizing/height
   ; sizing/max-width
   ; slider/slider
   ; stack/stack

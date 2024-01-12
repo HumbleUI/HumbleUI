@@ -10,10 +10,10 @@
         (core/iceil (* scale (or (:width opts) 0)))
         (core/iceil (* scale (or (:height opts) 0))))))
   
-  (-draw-impl [_this _ctx _rect _canvas])
-  
-  (-should-reconcile? [this new-el]
-    true))
+  (-draw-impl [_this _ctx _rect _canvas]))
 
-(defn gap [opts]
-  (map->Gap {}))
+(defn gap
+  ([]
+   (gap {}))
+  ([opts]
+   (map->Gap {})))

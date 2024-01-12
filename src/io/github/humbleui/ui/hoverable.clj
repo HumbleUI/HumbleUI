@@ -1,57 +1,40 @@
-(ns io.github.humbleui.ui.hoverable
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Hoverable [on-hover on-out ^:mut hovered?]
-  :extends core/AWrapper
-  
-  protocols/IContext
-  (-context [_ ctx]
-    (cond-> ctx
-      hovered? (assoc :hui/hovered? true)))
+(core/deftype+ Hoverable [*hovered?]
+  :extends AWrapperNode
   
   protocols/IComponent
-  (-draw [this ctx rect ^Canvas canvas]
-    (set! child-rect rect)
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/draw-child child ctx' child-rect canvas)))
-
-  (-event [this ctx event]
-    (core/eager-or
-      (when-some [ctx' (protocols/-context this ctx)]
-        (core/event-child child ctx' event))
-      (core/when-every [{:keys [x y]} event]
-        (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')
-            (if hovered?'
-              (when on-hover
-                (on-hover))
-              (when on-out
-                (on-out)))
-            true))))))
+  (-event-impl [this ctx event]
+    (core/when-some+ [{:keys [x y]} event]
+      (let [[_ opts _]                (parse-element element)
+            {:keys [on-hover on-out]} opts
+            *hovered?                 (or (:*hovered? opts) *hovered?)
+            hovered?                  (core/rect-contains? rect (core/ipoint x y))]
+        (cond
+          (and @*hovered? (not hovered?))
+          (do
+            (signal/reset! *hovered? false)
+            (core/invoke on-hover event)
+            true)
+          
+          (and (not @*hovered?) hovered?)
+          (do
+            (signal/reset! *hovered? true)
+            (core/invoke on-out event)
+            true)
+          
+          :else
+          false)))))
 
 (defn hoverable
   "Enable the child element to respond to mouse hover events.
-
-  If no callback, the event can still effect rendering through use of dynamic
-  context as follows:
-
-    (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-       # here we know the hover state of the object
-       ...)
-
-  You can also respond to hover events by providing optional :on-hover and/or
-  :on-out callbacks in an options map as the first argument. The callback
-  functions take no arguments and ignore their return value."
+  
+   Opts are:
+   
+   :on-hover    :: (fn [event] ...)
+   :on-out      :: (fn [event] ...)
+   :*hoverable? :: signal"
   ([child]
-   (map->Hoverable
-     {:child child
-      :hovered? false}))
-  ([{:keys [on-hover on-out]} child]
-   (map->Hoverable
-     {:on-hover on-hover
-      :on-out   on-out
-      :child    child
-      :hovered? false})))
+   (hoverable {} child))
+  ([opts child]
+   (map->Hoverable {:*hovered? (signal/signal false)})))

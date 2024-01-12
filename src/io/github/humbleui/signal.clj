@@ -153,6 +153,10 @@
     (doseq [effect @*effects]
       @effect)))
 
+(defn reset-changed! [signal value']
+  (when (not= value' @signal)
+    (reset! signal value')))
+
 (defn swap! [signal f & args]
   (reset! signal (apply f @signal args)))
 

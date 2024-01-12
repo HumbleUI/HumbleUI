@@ -1,54 +1,35 @@
-(ns io.github.humbleui.ui.padding
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Padding [left top right bottom]
-  :extends core/AWrapper
+(core/deftype+ Padding []
+  :extends AWrapperNode
   
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (let [left'      (core/dimension left cs ctx)
-          right'     (core/dimension right cs ctx)
-          top'       (core/dimension top cs ctx)
-          bottom'    (core/dimension bottom cs ctx)
-          child-cs   (core/ipoint (- (:width cs) left' right') (- (:height cs) top' bottom'))
-          child-size (core/measure child ctx child-cs)]
+  (-measure-impl [_ ctx cs]
+    (let [[_ opts _] (parse-element element)
+          left       (dimension (or (:left opts)   (:horizontal opts) (:padding opts) 0) cs ctx)
+          right      (dimension (or (:right opts)  (:horizontal opts) (:padding opts) 0) cs ctx)
+          top        (dimension (or (:top opts)    (:vertical opts)   (:padding opts) 0) cs ctx)
+          bottom     (dimension (or (:bottom opts) (:vertical opts)   (:padding opts) 0) cs ctx)
+          child-cs   (core/ipoint (- (:width cs) left right) (- (:height cs) top bottom))
+          child-size (measure child ctx child-cs)]
       (core/ipoint
-        (+ (:width child-size) left' right')
-        (+ (:height child-size) top' bottom'))))
+        (+ (:width child-size) left right)
+        (+ (:height child-size) top bottom))))
   
-  (-draw [_ ctx rect ^Canvas canvas]
-    (let [left'      (core/dimension left rect ctx)
-          right'     (core/dimension right rect ctx)
-          top'       (core/dimension top rect ctx)
-          bottom'    (core/dimension bottom rect ctx)
-          width'     (- (:width rect) left' right')
-          height'    (- (:height rect) top' bottom')
-          child-rect (core/irect-xywh (+ (:x rect) left') (+ (:y rect) top') (max 0 width') (max 0 height'))]
-      (core/draw-child child ctx child-rect canvas))))
+  (-draw-impl [_ ctx rect ^Canvas canvas]
+    (let [[_ opts _] (parse-element element)
+          left       (dimension (or (:left opts)   (:horizontal opts) (:padding opts) 0) rect ctx)
+          right      (dimension (or (:right opts)  (:horizontal opts) (:padding opts) 0) rect ctx)
+          top        (dimension (or (:top opts)    (:vertical opts)   (:padding opts) 0) rect ctx)
+          bottom     (dimension (or (:bottom opts) (:vertical opts)   (:padding opts) 0) rect ctx)
+          width      (- (:width rect) left right)
+          height     (- (:height rect) top bottom)
+          child-rect (core/irect-xywh
+                       (+ (:x rect) left)
+                       (+ (:y rect) top)
+                       (max 0 width)
+                       (max 0 height))]
+      (draw-child child ctx child-rect canvas))))
 
-(defn padding
-  ([p child]
-   (if (map? p)
-     (map->Padding (assoc p :child child))
-     (map->Padding
-       {:left   p
-        :top    p
-        :right  p
-        :bottom p
-        :child  child})))
-  ([w h child]
-   (map->Padding
-       {:left   w
-        :top    h
-        :right  w
-        :bottom h
-        :child  child}))
-  ([l t r b child]
-   (map->Padding
-       {:left   l
-        :top    t
-        :right  r
-        :bottom b
-        :child  child})))
+(defn padding [opts child]
+  (map->Padding {}))

@@ -1,58 +1,26 @@
-(ns io.github.humbleui.ui.rect
-  (:require
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols])
-  (:import
-    [io.github.humbleui.types RRect]
-    [java.lang AutoCloseable]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Rect [paint child ^:mut child-rect]
+(core/deftype+ RectNode []
+  :extends AWrapperNode
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx rect canvas]
-    (set! child-rect rect)
-    (canvas/draw-rect canvas rect paint)
-    (core/draw-child child ctx child-rect canvas))
-  
-  (-event [_ ctx event]
-    (core/event-child child ctx event))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child ctx cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+  (-draw-impl [_ ctx rect canvas]
+    (let [[_ opts _ ] (parse-element element)
+          {:keys [paint]} opts]
+      (canvas/draw-rect canvas rect paint)
+      (draw-child child ctx rect canvas))))
 
-(defn rect [paint child]
-  (->Rect paint child nil))
+(defn rect [opts child]
+  (map->RectNode {}))
 
-(core/deftype+ RoundedRect [radius paint child ^:mut child-rect]
+(core/deftype+ RoundedRect []
+  :extends AWrapperNode
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (core/measure child ctx cs))
-  
-  (-draw [_ ctx rect canvas]
-    (set! child-rect rect)
-    (canvas/draw-rect canvas (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx))) paint)
-    (core/draw-child child ctx child-rect canvas))
-  
-  (-event [_ ctx event]
-    (core/event-child child ctx event))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child ctx cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+  (-draw-impl [_ ctx rect canvas]
+    (let [[_ opts _ ] (parse-element element)
+          {:keys [radius paint]} opts
+          rrect (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx)))]
+      (canvas/draw-rect canvas rrect paint)
+      (draw-child child ctx rect canvas))))
 
-(defn rounded-rect [opts paint child]
-  (->RoundedRect (:radius opts) paint child nil))
+(defn rounded-rect [opts child]
+  (map->RoundedRect {}))

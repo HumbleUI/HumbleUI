@@ -1,101 +1,108 @@
-(ns io.github.humbleui.ui.containers
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(defn flatten-container [input]
-  (into []
-    (mapcat
-      #(cond
-         (nil? %)        []
-         (vector? %)     [%]
-         (sequential? %) (flatten-container %)
-         :else           [[:hug nil %]]))
-    input))
-
-(defn- normalize-input [input]
-  (let [input' (flatten-container input)]
-    {:modes    (mapv #(nth % 0 nil) input')
-     :factors  (mapv #(nth % 1 nil) input')
-     :children (mapv #(nth % 2 nil) input')}))
-
-(core/deftype+ Column [modes factors]
-  :extends core/AContainer
+(core/deftype+ Column []
+  :extends AContainerNode
     
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (->> children
-      (filter some?)
-      (reduce
-        (fn [{:keys [width height]} child]
-          (let [child-size (core/measure child ctx cs)]
-            (core/ipoint (max width (:width child-size)) (+ height (:height child-size)))))
-        (core/ipoint 0 0))))
+  (-measure-impl [_ ctx cs]
+    (let [[_ opts _] (parse-element element)
+          gap        (* (:scale ctx) (:gap opts 0))]
+      (core/loopr
+        [width  0
+         height 0]
+        [child children]
+        (let [child-size (measure child ctx cs)]
+          (recur
+            (max width (:width child-size))
+            (if (= 0 height)
+              (+ height (:height child-size))
+              (+ height gap (:height child-size)))))
+        (core/ipoint width height))))
   
-  (-draw [_ ctx rect ^Canvas canvas]
-    (let [cs      (core/ipoint (:width rect) (:height rect))
-          known   (mapv
-                    (fn [mode child]
-                      (when (= :hug mode)
-                        (core/measure child ctx cs)))
-                    modes children)
-          space   (- (:height rect) (transduce (keep :height) + 0 known))
-          stretch (->> (map #(when (= :stretch %1) %2) modes factors)
-                    (filter some?)
-                    (reduce + 0))]
-      (reduce
-        (fn [height [size mode factor child]]
-          (let [child-height (long
-                               (case mode
-                                 :hug     (:height size)
-                                 :stretch (-> space (/ stretch) (* factor) (math/round))))
-                child-rect (core/irect-xywh (:x rect) (+ (:y rect) height) (max 0 (:width rect)) (max 0 child-height))]
-            (core/draw-child child ctx child-rect canvas)
-            (+ height child-height)))
-        0
-        (core/zip known modes factors children)))))
+  (-draw-impl [_ ctx rect ^Canvas canvas]
+    (let [[_ opts _]    (parse-element element)
+          gap           (* (:scale ctx) (:gap opts 0))
+          cs            (core/ipoint (:width rect) (:height rect))
+          known         (for [child children]
+                          (let [meta (meta (:element child))]
+                            (when (= :hug (:stretch meta :hug))
+                              (measure child ctx cs))))
+          space         (-> (:height rect)
+                          (- (transduce (keep :height) + 0 known))
+                          (- (* gap (dec (count children))))
+                          (max 0))
+          total-stretch (transduce (keep #(:stretch (meta (:element %)))) + 0 children)]
+      (loop [known    known
+             children children
+             height   0]
+        (when-not (empty? children)
+          (let [[size & known']     known
+                [child & children'] children
+                child-height        (long
+                                      (or
+                                        (:height size)
+                                        (let [stretch (:stretch (meta (:element child)))]
+                                          (-> space (/ total-stretch) (* stretch) (math/round)))))
+                child-rect          (core/irect-xywh
+                                      (:x rect)
+                                      (+ (:y rect) height)
+                                      (max 0 (:width rect))
+                                      (max 0 child-height))]
+            (draw-child child ctx child-rect canvas)
+            (recur known' children' (+ height gap child-height))))))))
 
 (defn column [& children]
-  (map->Column
-    (normalize-input children)))
+  (map->Column {}))
 
-(core/deftype+ Row [modes factors]
-  :extends core/AContainer
+(core/deftype+ Row []
+  :extends AContainerNode
     
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (->> children
-      (filter some?)
-      (reduce
-        (fn [{:keys [width height]} child]
-          (let [child-size (core/measure child ctx cs)]
-            (core/ipoint (+ width (:width child-size)) (max height (:height child-size)))))
-        (core/ipoint 0 0))))
+  (-measure-impl [_ ctx cs]
+    (let [[_ opts _] (parse-element element)
+          gap        (* (:scale ctx) (:gap opts 0))]
+      (core/loopr [width  0
+                   height 0]
+        [child children]
+        (let [child-size (measure child ctx cs)]
+          (recur
+            (if (= 0 width)
+              (+ width (:width child-size))
+              (+ width gap (:width child-size)))
+            (max height (:height child-size))))
+        (core/ipoint width height))))
   
-  (-draw [_ ctx rect canvas]
-    (let [cs      (core/ipoint (:width rect) (:height rect))
-          known   (mapv
-                    (fn [mode child]
-                      (when (= :hug mode)
-                        (core/measure child ctx cs)))
-                    modes children)
-          space   (- (:width rect) (transduce (keep :width) + 0 known))
-          stretch (->> (map #(when (= :stretch %1) %2) modes factors)
-                    (filter some?)
-                    (reduce + 0))]
-      (reduce
-        (fn [width [size mode factor child]]
-          (let [child-width (long
-                              (case mode
-                                :hug     (:width size)
-                                :stretch (-> space (/ stretch) (* factor) (math/round))))
-                child-rect (core/irect-xywh (+ (:x rect) width) (:y rect) (max 0 child-width) (max 0 (:height rect)))]
-            (core/draw-child child ctx child-rect canvas)
-            (+ width child-width)))
-        0
-        (core/zip known modes factors children)))))
+  (-draw-impl [_ ctx rect ^Canvas canvas]
+    (let [[_ opts _]    (parse-element element)
+          gap           (* (:scale ctx) (:gap opts 0))
+          cs            (core/ipoint (:width rect) (:height rect))
+          known         (for [child children]
+                          (let [meta (meta (:element child))]
+                            (when (= :hug (:stretch meta :hug))
+                              (measure child ctx cs))))
+          space         (-> (:width rect)
+                          (- (transduce (keep :width) + 0 known))
+                          (- (* gap (dec (count children))))
+                          (max 0))
+          total-stretch (transduce (keep #(:stretch (meta (:element %)))) + 0 children)]
+      (loop [known    known
+             children children
+             width    0]
+        (when-not (empty? children)
+          (let [[size & known']     known
+                [child & children'] children
+                child-width         (long
+                                      (or
+                                        (:width size)
+                                        (let [stretch (:stretch (meta (:element child)))]
+                                          (-> space (/ total-stretch) (* stretch) (math/round)))))
+                child-rect          (core/irect-xywh
+                                      (+ (:x rect) width)
+                                      (:y rect)
+                                      (max 0 child-width)
+                                      (max 0 (:height rect)))]
+            (draw-child child ctx child-rect canvas)
+            (recur known' children' (+ width gap child-width))))))))
 
 (defn row [& children]
-  (map->Row
-    (normalize-input children)))
+  (map->Row {}))

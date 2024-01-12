@@ -1,8 +1,10 @@
 (ns ^{:clojure.tools.namespace.repl/load false}
-  examples.state)
+  examples.state
+  (:require
+    [io.github.humbleui.signal :as signal]))
 
 (def *example
-  (atom "Label"))
+  (signal/signal "Container"))
 
 (def *todomvc-state
   (atom

@@ -1,13 +1,23 @@
 (in-ns 'io.github.humbleui.ui)
 
-(def ^:dynamic *ctx*)
-
-(def ^:dynamic *node*)
+;; utils
 
 (def ^Shaper shaper
   (Shaper/makeShapeDontWrapOrReorder))
 
-(declare map->FnNode)
+(defn dimension ^long [size cs ctx]
+  (let [scale (:scale ctx)]
+    (->
+      (if (fn? size)
+        (* scale
+          (size {:width  (/ (:width cs) scale)
+                 :height (/ (:height cs) scale)
+                 :scale  scale}))
+        (* scale size))
+      (math/round)
+      (long))))
+
+;; protocols
 
 (defn measure [comp ctx ^IPoint cs]
   (assert (instance? IPoint cs) (str "Expected IPoint as cs, got: " cs))
@@ -47,10 +57,18 @@
   (when comp
     (protocols/-unmount comp)))
 
-(defn maybe-opts [vals]
-  (if (map? (first vals))
-    [(first vals) (next vals)]
-    [{} vals]))
+;; vdom
+
+(def ^:dynamic *ctx*)
+
+(def ^:dynamic *node*)
+
+(declare map->FnNode)
+
+(defn parse-element [vals]
+  (if (map? (second vals))
+    [(first vals) (second vals) (nnext vals)]
+    [(first vals) {} (next vals)]))
 
 (defn maybe-render [node ctx]
   (when (or
@@ -168,8 +186,8 @@
                        (when render
                          (assert-arities f render))
                        (core/set!! *node*
-                         :measure        (:measure res)
-                         :draw           (:draw res)
+                         :user-measure   (:measure res)
+                         :user-draw      (:draw res)
                          :render         render
                          :should-setup?  (:should-setup? res)
                          :should-render? (:should-render? res)
@@ -301,6 +319,8 @@
   (core/set!! node :dirty? true)
   (.requestFrame ^Window window))
 
+;; Nodes
+
 (def ctor-border
   (paint/stroke 0x40FF00FF 2))
 
@@ -336,6 +356,9 @@
               *ctx*  ctx]
       (maybe-render this ctx)
       (protocols/-event-impl this ctx event)))
+  
+  (-event-impl [this ctx event]
+    nil)
     
   (-reconcile [this ctx new-element]
     (when (not (identical? (:element this) new-element))
@@ -359,13 +382,8 @@
   []
   :extends ANode
   protocols/IComponent
-  (-event-impl [_this _ctx _event])
-  
   (-iterate [this _ctx cb]
     (cb this))
-  
-  (-should-reconcile? [_this ctx new-element]
-    (= element new-element))
   
   (-reconcile-impl [this ctx _new-element]
     this))
@@ -383,9 +401,15 @@
     (when-some [ctx' (protocols/-context this ctx)]
       (draw-child child ctx' rect canvas)))
   
-  (-event-impl [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (event-child child ctx' event)))
+  (-event [this ctx event]
+    (when rect ;; TODO investigate why it might be nil
+      (when-some [ctx' (protocols/-context this ctx)]
+        (binding [*node* this
+                  *ctx*  ctx']
+          ; (maybe-render this ctx')
+          (core/eager-or
+            (event-child child ctx' event)
+            (protocols/-event-impl this ctx' event))))))
   
   (-iterate [this ctx cb]
     (or
@@ -394,76 +418,54 @@
         (iterate-child child ctx' cb))))
   
   (-reconcile-impl [_ ctx el']
-    (let [[_ [child-el]] (maybe-opts (next el'))
-          [child']       (reconcile-many ctx [child] [child-el])]
+    (let [[_ _ [child-el]] (parse-element el')
+          [child']         (reconcile-many ctx [child] [child-el])]
       (set! child child')))
   
   (-unmount [this]
     (unmount-child child)
     (protocols/-unmount-impl this)))
 
-; (core/defparent AWrapper
-;   "A component that has exactly one child"
-;   [child ^:mut child-rect]
-;   protocols/IContext
-;   (-context [_ ctx]
-;     ctx)
-
-;   protocols/IComponent
-;   (-measure [this ctx cs]
-;     (when-some [ctx' (protocols/-context this ctx)]
-;       (core/measure child ctx' cs)))
+(core/defparent AContainerNode
+  "A component that has multiple children"
+  [^:mut children]
+  :extends ANode
+  protocols/IComponent  
+  (-event [this ctx event]
+    (when-some [ctx' (protocols/-context this ctx)]
+      (binding [*node* this
+                *ctx*  ctx']
+        (maybe-render this ctx')
+        (core/eager-or
+          (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil children)
+          (protocols/-event-impl this ctx' event)))))
   
-;   (-draw [this ctx rect canvas]
-;     (when-some [ctx' (protocols/-context this ctx)]
-;       (set! child-rect rect)
-;       (draw-child child ctx' rect canvas)))
-
-;   (-event [this ctx event]
-;     (when-some [ctx' (protocols/-context this ctx)]
-;       (core/event-child child ctx' event)))
-
-;   (-iterate [this ctx cb]
-;     (or
-;       (cb this)
-;       (when-some [ctx' (protocols/-context this ctx)]
-;         (core/iterate-child child ctx' cb))))
+  (-iterate [this ctx cb]
+    (or
+      (cb this)
+      (some #(iterate-child % ctx cb) children)))
   
-;   AutoCloseable
-;   (close [_]
-;     (core/child-close child)))
-
-; (core/defparent AContainer
-;   "A component that has multiple children"
-;   [children]
-;   protocols/IComponent
-;   (-event [this ctx event]
-;     (reduce
-;       (fn [acc child]
-;         (core/eager-or acc
-;           (core/event-child child ctx event)))
-;       false
-;       children))
-
-;   (-iterate [this ctx cb]
-;     (or
-;       (cb this)
-;       (some #(core/iterate-child % ctx cb) children)))
+  (-reconcile-impl [_ ctx el']
+    (let [[_ _ child-els] (parse-element el')
+          child-els       (core/flatten child-els)
+          children'       (reconcile-many ctx children child-els)]
+      (set! children children')))
   
-;   AutoCloseable
-;   (close [_]
-;     (doseq [child children]
-;       (core/child-close child))))
+  (-unmount [this]
+    (doseq [child children]
+      (unmount-child child))
+    (protocols/-unmount-impl this)))
 
 ;; FnNode
 
 (core/deftype+ FnNode [^:mut child
+                       ^:mut effect
                        ^:mut should-setup?
                        ^:mut should-render?
                        ^:mut after-mount
                        ^:mut before-render
-                       ^:mut measure
-                       ^:mut draw
+                       ^:mut user-measure
+                       ^:mut user-draw
                        ^:mut render
                        ^:mut after-render
                        ^:mut before-draw
@@ -475,9 +477,9 @@
     (when render
       (set! rect (core/irect-xywh 0 0 (:width cs) (:height cs)))
       (maybe-render this ctx))
-    (if measure
+    (if user-measure
       (binding [*ctx* ctx]
-        (measure child cs))
+        (user-measure child cs))
       (measure child ctx cs)))
   
   (-draw [this ctx rect' canvas]
@@ -486,8 +488,8 @@
       (maybe-render this ctx))
     (core/invoke before-draw)
     (binding [*ctx* ctx]
-      (if draw
-        (draw child rect canvas)
+      (if user-draw
+        (user-draw child rect canvas)
         (protocols/-draw child ctx rect canvas)))
     (core/invoke after-draw)
     (when-not mounted?
@@ -497,7 +499,6 @@
     
   (-event-impl [this ctx event]
     (when render
-      (maybe-render this ctx)
       (event-child child ctx event)))
   
   (-iterate [this ctx cb]
@@ -514,14 +515,22 @@
     (set! element new-element)
     this)
   
-  (-reconcile-impl [_this ctx new-element]
+  (-reconcile-impl [this ctx new-element]
     (when render
       (core/invoke before-render)
       (try
-        (let [child-el (apply render (next new-element))
-              [child'] (reconcile-many ctx [child] [child-el])]
-          (set! child child')
-          (set! element new-element))
+        (binding [signal/*context* (volatile! (transient #{}))]
+          (let [child-el (apply render (next new-element))
+                [child'] (reconcile-many ctx [child] [child-el])
+                _        (set! child child')
+                _        (set! element new-element)
+                signals  (persistent! @@#'signal/*context*)
+                window   (:window ctx)]
+            (some-> effect signal/dispose!)
+            (set! effect
+              (when-not (empty? signals)
+                (signal/effect signals
+                  (force-render this window))))))
         (finally
           (core/invoke after-render)))))
   
@@ -532,6 +541,7 @@
   
   (-unmount [this]
     (unmount-child child)
+    (some-> effect signal/dispose!)
     (when after-unmount
       (after-unmount)))
   
