@@ -5,7 +5,8 @@
     [clojure.test :as t]
     [clojure.tools.namespace.repl :as ns]
     [clojure.tools.namespace.track :as track]
-    [state])
+    [state]
+    [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.skija ColorSpace]))
 
@@ -16,25 +17,28 @@
 (def *reloaded
   (atom nil))
 
-(add-watch #'ns/refresh-tracker ::watch
-  (fn [_ _ old new]
-    (when (empty? (::track/load new))
-      (reset! *reloaded (::track/load old)))))
-
 (defn after-reload []
   (reset! state/*app @(requiring-resolve (symbol @state/*ns "app")))
   (let [cnt (count @*reloaded)]
     (str "Reloaded " cnt " namespace" (when (> cnt 1) "s"))))
 
-(defn before-reload []
+(defn before-reload [nses]
   (when-some [var (resolve 'io.github.humbleui.core/timer)]
     (.cancel ^java.util.Timer @var)
-    (alter-var-root var (constantly (java.util.Timer. true)))))
+    (alter-var-root var (constantly (java.util.Timer. true))))
+  (when (contains? nses @state/*ns)
+    (when-some [var (resolve (symbol @state/*ns "app"))]
+      (protocols/-unmount @var)
+      (alter-var-root var (constantly nil)))))
+
+(add-watch #'ns/refresh-tracker ::watch
+  (fn [_ _ old new]
+    (when (empty? (::track/load new))
+      (before-reload (set (::track/load old)))
+      (reset! *reloaded (::track/load old)))))
 
 (defn reload []
   (set! *warn-on-reflection* true)
-  (before-reload)
-  ; (set! *unchecked-math* :warn-on-boxed)
   (let [res (ns/refresh :after 'user/after-reload)]
     (if (instance? Throwable res)
       (throw res)

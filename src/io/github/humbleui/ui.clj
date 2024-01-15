@@ -11,6 +11,7 @@
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
+    [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.animation :as animation]
     ; [io.github.humbleui.ui.backdrop :as backdrop]
     ; [io.github.humbleui.ui.button :as button]
@@ -29,7 +30,6 @@
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
     ; [io.github.humbleui.ui.tooltip :as tooltip]
-    [io.github.humbleui.ui.window :as window]
     ; [io.github.humbleui.ui.with-bounds :as with-bounds]
     ; [io.github.humbleui.ui.with-cursor :as with-cursor]
     )
@@ -48,6 +48,8 @@
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/sizing")
+(load "/io/github/humbleui/ui/window")
+
 
 (defmacro deflazy
   ([name arglists file]
@@ -111,7 +113,6 @@
   ; text-field/text-field
   ; toggle/toggle
   ; tooltip/tooltip
-  window/window
   ; with-bounds/with-bounds
   ; with-cursor/with-cursor
   )

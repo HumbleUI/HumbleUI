@@ -1,4 +1,5 @@
-(ns io.github.humbleui.signal
+(ns ^{:clojure.tools.namespace.repl/load false}
+  io.github.humbleui.signal
   (:refer-clojure :exclude [mapv reset! swap!])
   (:require
     [io.github.humbleui.core :as core]
