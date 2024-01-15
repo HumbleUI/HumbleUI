@@ -633,17 +633,19 @@
                 cursor-left           (quot cursor-width 2)
                 cursor-right          (- cursor-width cursor-left)
                 cursor-blink-interval (:hui.text-field/cursor-blink-interval ctx)
-                cursor-blink-pivot    (:cursor-blink-pivot state)]
-            (when (or
-                    (<= cursor-blink-interval 0)
-                    (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))
-              (canvas/draw-rect canvas
-                (core/rect-ltrb
-                  (+ (:x rect) (- offset) coord-to (- cursor-left))
-                  (+ (:y rect) (* scale padding-top) (- ascent))
-                  (+ (:x rect) (- offset) coord-to cursor-right)
-                  (+ (:y rect) baseline descent))
-                (:hui.text-field/fill-cursor ctx)))
+                cursor-blink-pivot    (:cursor-blink-pivot state)
+                cursor-visible?       (or
+                                        (<= cursor-blink-interval 0)
+                                        (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))]
+            (canvas/draw-rect canvas
+              (core/rect-ltrb
+                (+ (:x rect) (- offset) coord-to (- cursor-left))
+                (+ (:y rect) (* scale padding-top) (- ascent))
+                (+ (:x rect) (- offset) coord-to cursor-right)
+                (+ (:y rect) baseline descent))
+              (if cursor-visible?
+                (:hui.text-field/fill-cursor ctx)
+                (:hui.text-field/fill-cursor-off ctx)))
             (when (> cursor-blink-interval 0)
               (core/schedule
                 #(window/request-frame (:window ctx))
