@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [mapv reset! swap!])
   (:require
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols])
+    [io.github.humbleui.protocols :as protocols]
+    [extend-clj.core :as extend-clj])
   (:import
     [clojure.lang IDeref]
     [java.lang.ref Reference WeakReference]))
@@ -45,6 +46,7 @@
         (set-state! out :check)))))
 
 (defn- reset-impl! [signal value' cache']
+  ; (core/log "reset-impl!" (:name signal) value' cache')
   (protocols/-set! signal :state :clean)
   (when (not= (:value signal) value')
     (protocols/-set! signal :value value')
@@ -92,21 +94,61 @@
           (recur (next inputs)))))))
 
 ;; User APIs
-
+(declare reset!)
 ;; TODO synchronize
-(core/deftype+ Signal [name value-fn ^:mut value ^:mut cache ^:mut inputs ^:mut outputs ^:mut state type]
-  Object
-  (toString [_]
-    (str "#Signal{name=" name ", state=" state ", value=" value "}"))
-  IDeref
-  (deref [this]
+(extend-clj/deftype-atom Signal
+  [name
+   value-fn
+   ^:volatile-mutable value
+   ^:volatile-mutable cache
+   ^:volatile-mutable inputs
+   ^:volatile-mutable outputs
+   ^:volatile-mutable state
+   type]
+
+  (deref-impl [this]
     (when *context*
       (vswap! *context* conj! this))
     (case state
       :clean    value
       :dirty    (read-dirty this)
       :check    (read-check this)
-      :disposed (throw (ex-info (str "Can't read disposed signal '" name "'") {})))))
+      :disposed (throw (ex-info (str "Can't read disposed signal '" name "'") {}))))
+
+  ;; TODO check oldv
+  (compare-and-set-impl [this oldv newv]
+    (let [*effects (volatile! #{})]
+      ;; clear out all dependencies
+      (doseq [input inputs]
+        (disj-output input this))
+      (set! inputs #{})
+      ;; change value and collect all triggered effects
+      (binding [*effects* *effects]
+        (reset-impl! this newv nil))
+      ;; execute effects
+      (doseq [effect @*effects]
+        @effect))
+    true)
+  
+  protocols/ISettable
+  (-set! [_ k v]
+    (case k
+      :value   (set! value v)
+      :cache   (set! cache v)
+      :inputs  (set! inputs v)
+      :outputs (set! outputs v)
+      :state   (set! state v))))
+
+(defn map->Signal [m]
+  (->Signal
+    (:name m)
+    (:value-fn m)
+    (:value m)
+    (:cache m)
+    (:inputs m)
+    (:outputs m)
+    (:state m)
+    (:type m)))
 
 (defmethod print-method Signal [o ^java.io.Writer w]
   (.write w (str o)))
@@ -142,24 +184,14 @@
     signal-or-value))
 
 (defn reset! [signal value']
-  (let [*effects (volatile! #{})]
-    ;; clear out all dependencies
-    (doseq [input (:inputs signal)]
-      (disj-output input signal))
-    (protocols/-set! signal :inputs #{})
-    ;; change value and collect all triggered effects
-    (binding [*effects* *effects]
-      (reset-impl! signal value' nil))
-    ;; execute effects
-    (doseq [effect @*effects]
-      @effect)))
+  (clojure.core/reset! signal value'))
 
 (defn reset-changed! [signal value']
   (when (not= value' @signal)
-    (reset! signal value')))
+    (clojure.core/reset! signal value')))
 
 (defn swap! [signal f & args]
-  (reset! signal (apply f @signal args)))
+  (apply clojure.core/swap! signal f args))
 
 (defn dispose! [& signals]
   (doseq [signal signals]

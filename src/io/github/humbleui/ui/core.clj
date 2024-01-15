@@ -322,7 +322,7 @@
 ;; Nodes
 
 (def ctor-border
-  (paint/stroke 0x40FF00FF 2))
+  (paint/stroke 0x80FF00FF 4))
 
 (core/defparent ANode
   [^:mut element
@@ -347,7 +347,7 @@
               *ctx*  ctx]
       (maybe-render this ctx)
       (protocols/-draw-impl this ctx rect' canvas))
-    (when-not mounted?
+    (when (and @protocols/*debug? (not mounted?))
       (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ctor-border)
       (set! mounted? true)))
   
@@ -495,7 +495,8 @@
         (protocols/-draw child ctx rect canvas))
       (core/invoke after-draw)
       (when-not mounted?
-        (core/invoke after-mount)
+        (core/invoke after-mount))
+      (when (and @protocols/*debug? (not mounted?))
         (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
         (set! mounted? true))))
     

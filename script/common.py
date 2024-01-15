@@ -12,6 +12,7 @@ def deps():
     build_utils.fetch_maven("org.clojure", "core.specs.alpha", "0.2.62"),
     build_utils.fetch_maven("org.clojure", "spec.alpha", "0.3.218"),
     build_utils.fetch_maven("io.github.humbleui", "types", build_utils.deps_version("types$clojure"), classifier="clojure"),
+    build_utils.fetch_maven("io.github.tonsky", "extend-clj", build_utils.deps_version("extend-clj"), repo=clojars),
     "src",
   ]
 

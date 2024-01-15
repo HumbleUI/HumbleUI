@@ -6,7 +6,8 @@
   io.github.humbleui/skija-windows-x64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}}
+  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
+  io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}}
  :aliases
  {:dev
   {:extra-paths ["dev"]

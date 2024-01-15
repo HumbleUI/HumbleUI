@@ -1,18 +1,18 @@
 (in-ns 'io.github.humbleui.ui)
 
-(defn- app-node [app]
+(defn- app-node [theme app]
   (cond
     (and (instance? clojure.lang.IDeref app) (fn? @app))
-    (default-theme {}
+    (default-theme theme
       (make [@app]))
-                      
+
     (fn? app)
-    (default-theme {}
+    (default-theme theme
       (make [app]))
-    
+
     (instance? clojure.lang.IDeref app)
     @app
-                      
+
     :else
     app))
 
@@ -29,7 +29,7 @@
                bg-color 0xFFF6F6F6}} opts
          *mouse-pos (volatile! (core/ipoint 0 0))
          ref?       (instance? clojure.lang.IRef app)
-         *app-node  (atom (app-node app))
+         *app-node  (atom (app-node (:theme opts) app))
          ctx-fn     (fn [window]
                       (when-not (window/closed? window)
                         {:window    window
@@ -80,6 +80,6 @@
        (add-watch app ::redraw
          (fn [_ _ old new]
            (when-not (identical? old new)
-             (reset! *app-node (app-node app))
+             (reset! *app-node (app-node (:theme opts) app))
              (window/request-frame window)))))
      window)))
