@@ -40,3 +40,15 @@
 ;     {:probes probes
 ;      :child  child}))
 
+(defn node-size []
+  (let [scale (or (:scale *ctx*) 1)
+        w     (or (:width (:rect *node*)) 0)
+        h     (or (:height (:rect *node*)) 0)]
+    (core/point (/ w scale) (/ h scale))))
+
+(defn use-size []
+  (let [*size (signal/signal (core/point 0 0))]
+    {:before-draw
+     (fn []
+       (signal/reset! *size (node-size)))
+     :value *size}))

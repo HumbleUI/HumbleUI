@@ -16,11 +16,9 @@
     ; [io.github.humbleui.ui.button :as button]
     ; [io.github.humbleui.ui.canvas :as canvas]
     ; [io.github.humbleui.ui.checkbox :as checkbox]
-    ; [io.github.humbleui.ui.clip :as clip]
     ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
-    ; [io.github.humbleui.ui.image :as image]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.padding :as padding]
@@ -28,7 +26,6 @@
     ; [io.github.humbleui.ui.shadow :as shadow]
     ; [io.github.humbleui.ui.slider :as slider]
     ; [io.github.humbleui.ui.stack :as stack]
-    ; [io.github.humbleui.ui.svg :as svg]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
     ; [io.github.humbleui.ui.tooltip :as tooltip]
@@ -38,7 +35,7 @@
     )
   (:import
     [io.github.humbleui.jwm Window]
-    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]
+    [io.github.humbleui.skija Canvas Data Font FontMetrics Paint TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]))
 
@@ -50,6 +47,7 @@
 (load "/io/github/humbleui/ui/dynamic")
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/theme")
+(load "/io/github/humbleui/ui/sizing")
 
 (defmacro deflazy
   ([name arglists file]
@@ -62,26 +60,29 @@
         (load ~(str "/io/github/humbleui/ui/" file))
         ~name))))
 
-(deflazy gap    '([] [{:keys [width height]}]) "gap")
-(deflazy label  '([& texts]) "label")
+(deflazy gap   '([] [{:keys [width height]}]) "gap")
+(deflazy label '([& texts]) "label")
+(deflazy image '([src] [{:keys [sampling-mode]} src]) "image")
+(deflazy svg   '([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
 
-(deflazy padding '([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
-(deflazy rect '([{:keys [paint]} child]) "rect")
+(deflazy padding      '([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
+(deflazy rect         '([{:keys [paint]} child]) "rect")
 (deflazy rounded-rect '([{:keys [radius paint]} child]) "rect")
+(deflazy clip         '([child]) "clip")
+(deflazy clip-rrect   '([{:keys [radii]} child]) "clip")
 
 (deflazy halign '([{:keys [position child-position]} child]) "align")
 (deflazy valign '([{:keys [position child-position]} child]) "align")
 (deflazy center '([child]) "align")
-(deflazy width '([{:keys [width]} child]) "sizing")
-(deflazy height '([{:keys [height]} child]) "sizing")
 
 (deflazy vscroll    '([child] [opts child]) "scroll")
 (deflazy vscrollbar '([child] [opts child]) "scroll")
-(deflazy column '([& children] [opts & children]) "containers")
-(deflazy row '([& children] [opts & children]) "containers")
+(deflazy column     '([& children] [opts & children]) "containers")
+(deflazy row        '([& children] [opts & children]) "containers")
 
 (deflazy hoverable '([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable '([{:keys [on-click on-click-capture]} child]) "clickable")
+(deflazy button    '([{:keys [on-click]} child]) "button")
 
 (core/import-vars
   ; animation/animation
@@ -89,14 +90,11 @@
   ; button/button
   ; canvas/canvas
   ; checkbox/checkbox
-  ; clip/clip
-  ; clip/clip-rrect
   ; draggable/draggable
   ; focusable/focusable
   ; focusable/focus-controller
   ; gap/gap
   ; grid/grid
-  ; image/image
   ; image-snapshot/image-snapshot
   ; listeners/event-listener
   ; listeners/key-listener
@@ -109,7 +107,6 @@
   ; sizing/max-width
   ; slider/slider
   ; stack/stack
-  ; svg/svg
   ; text-field/text-input
   ; text-field/text-field
   ; toggle/toggle

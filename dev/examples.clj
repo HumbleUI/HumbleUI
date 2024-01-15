@@ -7,7 +7,7 @@
     ; [examples.backdrop]
     ; [examples.blur]
     ; [examples.bmi-calculator]
-    ; [examples.button]
+    [examples.button]
     ; [examples.calculator]
     ; [examples.canvas]
     ; [examples.canvas-shapes]
@@ -27,7 +27,7 @@
     ; [examples.slider]
     ; [examples.stack]
     [examples.state :as state]
-    ; [examples.svg]
+    [examples.svg]
     ; [examples.text-field]
     ; [examples.text-field-debug]
     ; [examples.todomvc]
@@ -52,7 +52,7 @@
     ; "Backdrop" examples.backdrop/ui
     ; "Blur" examples.blur/ui
     ; "BMI Calculator" examples.bmi-calculator/ui
-    ; "Button" examples.button/ui
+    "Button" examples.button/ui
     ; "Calculator" examples.calculator/ui
     ; "Canvas" examples.canvas/ui
     ; "Canvas Shapes" examples.canvas-shapes/ui
@@ -71,7 +71,7 @@
     ; "Settings" examples.settings/ui
     ; "Slider" examples.slider/ui
     ; "Stack" examples.stack/ui
-    ; "SVG" examples.svg/ui
+    "SVG" examples.svg/ui
     ; "Text Field" examples.text-field/ui
     ; "Text Field Debug" examples.text-field-debug/ui
     ; "Todo MVC" examples.todomvc/ui

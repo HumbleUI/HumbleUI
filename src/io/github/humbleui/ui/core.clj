@@ -474,28 +474,30 @@
   :extends ANode
   protocols/IComponent
   (-measure-impl [this ctx cs]
-    (when render
-      (set! rect (core/irect-xywh 0 0 (:width cs) (:height cs)))
-      (maybe-render this ctx))
-    (if user-measure
-      (binding [*ctx* ctx]
-        (user-measure child cs))
-      (measure child ctx cs)))
+    (binding [*node* this
+              *ctx*  ctx]
+      (when render
+        (set! rect (core/irect-xywh 0 0 (:width cs) (:height cs)))
+        (maybe-render this ctx))
+      (if user-measure
+        (user-measure child cs)
+        (measure child ctx cs))))
   
   (-draw [this ctx rect' canvas]
     (set! rect rect')
-    (when render
-      (maybe-render this ctx))
-    (core/invoke before-draw)
-    (binding [*ctx* ctx]
+    (binding [*node* this
+              *ctx*  ctx]
+      (when render
+        (maybe-render this ctx))
+      (core/invoke before-draw)
       (if user-draw
         (user-draw child rect canvas)
-        (protocols/-draw child ctx rect canvas)))
-    (core/invoke after-draw)
-    (when-not mounted?
-      (core/invoke after-mount)
-      (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
-      (set! mounted? true)))
+        (protocols/-draw child ctx rect canvas))
+      (core/invoke after-draw)
+      (when-not mounted?
+        (core/invoke after-mount)
+        (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
+        (set! mounted? true))))
     
   (-event-impl [this ctx event]
     (when render

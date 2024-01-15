@@ -4,7 +4,7 @@
     [io.github.humbleui.signal :as signal]))
 
 (def *example
-  (signal/signal "Container"))
+  (signal/signal "Button"))
 
 (def *todomvc-state
   (atom

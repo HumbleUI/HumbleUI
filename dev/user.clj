@@ -5,10 +5,7 @@
     [clojure.test :as t]
     [clojure.tools.namespace.repl :as ns]
     [clojure.tools.namespace.track :as track]
-    [state]
-    [io.github.humbleui.app :as app]
-    [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui])
+    [state])
   (:import
     [io.github.humbleui.skija ColorSpace]))
 
@@ -68,6 +65,11 @@
 
 (defn p [form]
   `(p-impl (p-pos) '~form ~form))
+
+(require
+  '[io.github.humbleui.app :as app]
+  '[io.github.humbleui.window :as window]
+  '[io.github.humbleui.ui :as ui])
 
 (defn set-floating! [window floating]
   (when window

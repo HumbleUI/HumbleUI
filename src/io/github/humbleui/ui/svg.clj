@@ -1,30 +1,7 @@
-(ns io.github.humbleui.ui.svg
-  (:require
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols])
-  (:import
-    [io.github.humbleui.skija Canvas Data]
-    [io.github.humbleui.skija.svg SVGDOM SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale]))
+(in-ns 'io.github.humbleui.ui)
+(import '[io.github.humbleui.skija.svg SVGDOM SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale])
 
-(core/deftype+ SVG [^SVGDOM dom ^SVGPreserveAspectRatio scaling]
-  :extends core/ATerminal
-  
-  protocols/IComponent
-  (-measure [_ _ctx cs]
-    cs)
-  
-  (-draw [_ _ctx rect ^Canvas canvas]
-    (let [root (.getRoot dom)
-          {:keys [x y width height]} rect]
-      (.setWidth root (SVGLength. width))
-      (.setHeight root (SVGLength. height))
-      (.setPreserveAspectRatio root scaling)
-      (canvas/with-canvas canvas
-        (canvas/translate canvas x y)
-        (.render dom canvas)))))
-
-(defn svg-opts->scaling [opts]
+(defn- ^SVGPreserveAspectRatio svg-opts->scaling [opts]
   (let [{:keys [preserve-aspect-ratio xpos ypos scale]
          :or {preserve-aspect-ratio true
               xpos :mid
@@ -52,12 +29,36 @@
         [:max :max :slice] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMAX  SVGPreserveAspectRatioScale/SLICE))
       (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET))))
 
+(core/deftype+ SVG [^SVGDOM dom]
+  :extends ATerminalNode
+  protocols/IComponent
+  (-measure-impl [_ _ctx cs]
+    cs)
+  
+  (-draw-impl [_ _ctx rect ^Canvas canvas]
+    (let [root (.getRoot dom)
+          {:keys [x y width height]} rect
+          [_ opts _] (parse-element element)
+          scaling    (svg-opts->scaling opts)]
+      (.setWidth root (SVGLength. width))
+      (.setHeight root (SVGLength. height))
+      (.setPreserveAspectRatio root scaling)
+      (canvas/with-canvas canvas
+        (canvas/translate canvas x y)
+        (.render dom canvas))))
+  
+  (-should-reconcile? [_this ctx new-element]
+    (let [[_ _ [src]] (parse-element element)
+          [_ _ [new-src]] (parse-element new-element)]
+      (= src new-src)))
+  
+  (-unmount-impl [this]
+    (.close dom)))
+
 (defn svg
-  ([src] (svg nil src))
+  ([src]
+   (svg {} src))
   ([opts src]
    (let [dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
-               (SVGDOM. data))
-         scaling (svg-opts->scaling opts)]
-     (map->SVG
-       {:dom dom
-        :scaling scaling}))))
+               (SVGDOM. data))]
+     (map->SVG {:dom dom}))))
