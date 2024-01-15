@@ -80,6 +80,7 @@
        (add-watch app ::redraw
          (fn [_ _ old new]
            (when-not (identical? old new)
+             (some-> @*app-node protocols/-unmount)
              (reset! *app-node (app-node (:theme opts) app))
              (window/request-frame window)))))
      window)))
