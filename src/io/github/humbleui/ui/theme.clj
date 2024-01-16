@@ -61,7 +61,6 @@
                          :hui.text-field/fill-text               fill-text
                          :hui.text-field/fill-placeholder        fill-gray
                          :hui.text-field/fill-cursor             fill-text
-                         :hui.text-field/fill-cursor-off         (paint/fill 0x40000000)
                          :hui.text-field/fill-selection-active   (paint/fill 0xFFB1D7FF)
                          :hui.text-field/fill-selection-inactive (paint/fill 0xFFDDDDDD)
                          :hui.text-field/fill-bg-active          (paint/fill 0xFFFFFFFF)
