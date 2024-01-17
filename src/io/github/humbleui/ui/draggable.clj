@@ -26,7 +26,7 @@
                           on-drop]
   protocols/IComponent
   (-measure [_ _ctx cs]
-    cs)
+    (core/measure child _ctx cs))
   
   (-draw [this ctx ^IRect rect ^Canvas canvas]
     (set! my-pos (IPoint. (:x rect) (:y rect)))
