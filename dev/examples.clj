@@ -117,3 +117,6 @@
 (def app
   (ui/default-theme {}
     (ui/make [app-impl])))
+
+(alter-meta! *ns* assoc :clojure.tools.namespace.repl/before-unload
+  #(alter-var-root #'app (constantly nil)))

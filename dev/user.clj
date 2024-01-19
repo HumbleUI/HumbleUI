@@ -14,35 +14,18 @@
 
 (ns/set-refresh-dirs "src" "dev" "test")
 
-(def *reloaded
-  (atom nil))
-
 (defn after-reload []
-  (reset! state/*app @(requiring-resolve (symbol @state/*ns "app")))
-  (let [cnt (count @*reloaded)]
-    (str "Reloaded " cnt " namespace" (when (> cnt 1) "s"))))
-
-(defn before-reload [nses]
-  (when-some [var (resolve 'io.github.humbleui.core/timer)]
-    (.cancel ^java.util.Timer @var)
-    (alter-var-root var (constantly (java.util.Timer. true))))
-  (when (contains? nses @state/*ns)
-    (when-some [var (resolve (symbol @state/*ns "app"))]
-      (protocols/-unmount @var)
-      (alter-var-root var (constantly nil)))))
-
-(add-watch #'ns/refresh-tracker ::watch
-  (fn [_ _ old new]
-    (when (empty? (::track/load new))
-      (before-reload (set (::track/load old)))
-      (reset! *reloaded (::track/load old)))))
+  (reset! state/*app @(requiring-resolve (symbol @state/*ns "app"))))
 
 (defn reload []
   (set! *warn-on-reflection* true)
-  (let [res (ns/refresh :after 'user/after-reload)]
-    (if (instance? Throwable res)
-      (throw res)
-      res)))
+  (let [tracker (ns/scan)
+        cnt     (count (::track/load tracker))
+        res     (ns/refresh-scanned)]
+    (when (instance? Throwable res)
+      (throw res))
+    (after-reload)
+    (str "Reloaded " cnt " namespace" (when (> cnt 1) "s"))))
 
 (def p-lock
   (Object.))

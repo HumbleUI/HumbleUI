@@ -2,6 +2,9 @@
 
 (defn- app-node [theme app]
   (cond
+    (nil? app)
+    nil
+    
     (and (instance? clojure.lang.IDeref app) (fn? @app))
     (default-theme theme
       (make [@app]))

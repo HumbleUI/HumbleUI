@@ -642,3 +642,6 @@
     `(def ~sym ~doc
        {:fields    (quote ~fields)
         :protocols (quote ~protocols)})))
+
+(alter-meta! *ns* assoc :clojure.tools.namespace.repl/before-unload
+  #(.cancel timer))

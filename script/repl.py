@@ -6,9 +6,10 @@ def main():
   classpath = common.deps() + [
     "dev",
     "test",
-    build_utils.fetch_maven("org.clojure", "tools.namespace", build_utils.deps_version("tools.namespace")),
+    build_utils.fetch_github("tonsky", "tools.namespace", build_utils.deps_version("tools.namespace"), path='src/main/clojure'),
     build_utils.fetch_maven("org.clojure", "java.classpath", "1.0.0"),
     build_utils.fetch_maven("org.clojure", "tools.reader", "1.3.6"),
+
     build_utils.fetch_maven("criterium", "criterium", build_utils.deps_version("criterium"), repo = common.clojars),
     build_utils.fetch_maven("com.clojure-goes-fast", "clj-async-profiler", build_utils.deps_version("clj-async-profiler"), repo = common.clojars),
   ]
