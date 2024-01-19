@@ -22,7 +22,7 @@
     [examples.label]
     ; [examples.oklch]
     ; [examples.paragraph]
-    ; [examples.scroll]
+    [examples.scroll]
     ; [examples.settings]
     ; [examples.slider]
     ; [examples.stack]
@@ -67,7 +67,7 @@
     "Label" examples.label/ui
     ; "OkLCH" examples.oklch/ui
     ; "Paragraph" examples.paragraph/ui
-    ; "Scroll" examples.scroll/ui
+    "Scroll" examples.scroll/ui
     ; "Settings" examples.settings/ui
     ; "Slider" examples.slider/ui
     ; "Stack" examples.stack/ui
@@ -103,10 +103,11 @@
              :else      label))]))))
 
 (ui/defcomp app-impl []
-  [ui/row {:gap 10}
-   [ui/column
-    (for [[name _] (sort-by first examples)]
-      [example-label name])]
+  [ui/row
+   [ui/vscrollbar
+    [ui/column
+     (for [[name _] (sort-by first examples)]
+       [example-label name])]]
     
    [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
     [ui/gap {:width 1}]]

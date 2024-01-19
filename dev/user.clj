@@ -5,8 +5,7 @@
     [clojure.test :as t]
     [clojure.tools.namespace.repl :as ns]
     [clojure.tools.namespace.track :as track]
-    [state]
-    [io.github.humbleui.protocols :as protocols])
+    [state])
   (:import
     [io.github.humbleui.skija ColorSpace]))
 
@@ -55,6 +54,7 @@
 
 (require
   '[io.github.humbleui.app :as app]
+  '[io.github.humbleui.protocols :as protocols]
   '[io.github.humbleui.window :as window]
   '[io.github.humbleui.ui :as ui])
 
@@ -79,7 +79,7 @@
                     :screen   (:id screen)
                     :width    800
                     :height   944
-                    :x        :right
+                    :x        :center
                     :y        :top}
                    state/*app)]
       ;; TODO load real monitor profile

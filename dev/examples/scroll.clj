@@ -1,63 +1,51 @@
 (ns examples.scroll
   (:require
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
-(def ui
-  (ui/dynamic ctx [{:keys [leading]} ctx]
-    (ui/halign 0.5
-      (ui/row
-        ;; 100 elements
-        (ui/vscrollbar
-          (ui/column
-            (for [i (range 0 100)
-                  :let [label (ui/padding 20 leading
-                                (ui/label i))]]
-              (ui/hoverable
-                (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                  (if hovered?
-                    (ui/rect (paint/fill 0xFFCFE8FC) label)
-                    label))))))
+(defn label
+  ([text]
+   (label 10 text))
+  ([height text]
+   (let [*hovered? (signal/signal false)]
+     (fn render
+       ([text]
+        (render 10 text))
+       ([height text]
+        (let [label [ui/padding
+                     {:horizontal 20
+                      :vertical height}
+                     [ui/label text]]]
+          [ui/hoverable {:*hovered? *hovered?}
+           (if @*hovered?
+             [ui/rect {:paint (paint/fill 0xFFCFE8FC)} label]
+             label)]))))))
+
+(ui/defcomp ui []
+  [ui/halign {:position 0.5}
+   [ui/row {:gap 10}
+    ;; 100 elements
+    [ui/vscrollbar
+     [ui/column
+      (for [i (range 0 100)]
+        [label i])]]
         
-        (ui/gap 10 0)
+    ;; 50 elements
+    [ui/padding {:vertical 50}
+     [ui/vscrollbar
+      [ui/column
+       (for [i (range 0 50)]
+         [label i])]]]
         
-        ;; 50 elements
-        (ui/padding 0 50
-          (ui/vscrollbar
-            (ui/column
-              (for [i (range 0 50)
-                    :let [label (ui/padding 20 leading
-                                  (ui/label i))]]
-                (ui/hoverable
-                  (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                    (if hovered?
-                      (ui/rect (paint/fill 0xFFCFE8FC) label)
-                      label)))))))
+    ;; 10 elements
+    [ui/vscrollbar
+     [ui/column
+      (for [i (range 0 10)]
+        [label i])]]
         
-        (ui/gap 10 0)
-        
-        ;; 10 elements
-        (ui/vscrollbar
-          (ui/column
-            (for [i (range 0 10)
-                  :let [label (ui/padding 20 leading
-                                (ui/label i))]]
-              (ui/hoverable
-                (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                  (if hovered?
-                    (ui/rect (paint/fill 0xFFCFE8FC) label)
-                    label))))))
-        
-        (ui/gap 10 0)
-        
-        ;; variable height
-        (ui/vscrollbar
-          (ui/column
-            (for [i (range 0 10)
-                  :let [label (ui/padding 20 (+ leading (* i 2))
-                                (ui/label i))]]
-              (ui/hoverable
-                (ui/dynamic ctx [hovered? (:hui/hovered? ctx)]
-                  (if hovered?
-                    (ui/rect (paint/fill 0xFFCFE8FC) label)
-                    label))))))))))
+    ;; variable height
+    [ui/vscrollbar
+     [ui/column
+      (for [i (range 0 10)]
+        [label (+ 10 (* i 2)) i])]]]])

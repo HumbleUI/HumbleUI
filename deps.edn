@@ -11,7 +11,7 @@
  :aliases
  {:dev
   {:extra-paths ["dev"]
-   :extra-deps  {io.github.tonsky/tools.namespace {:git/sha "18ae7d089b1283cb1a7941401f51a4d5e0721d7b"}
+   :extra-deps  {io.github.tonsky/tools.namespace {:git/sha "1d0fea8c6ff99c30bcb12492547b80e760f76e49"}
                  criterium/criterium {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
    :jvm-opts    ["-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}

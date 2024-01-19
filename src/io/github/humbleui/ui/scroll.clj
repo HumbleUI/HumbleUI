@@ -46,9 +46,9 @@
 
 (defn vscroll
   ([child]
-   (map->VScroll {}))
-  ([_opts child]
-   (map->VScroll {})))
+   (vscroll {} child))
+  ([opts child]
+   (map->VScroll (assoc opts :offset 0))))
 
 (core/deftype+ VScrollbar []
   :extends AWrapperNode
@@ -83,11 +83,14 @@
         (canvas/draw-rect canvas track fill-track)
         (canvas/draw-rect canvas thumb fill-thumb)))))
 
+(defn- vscrollbar-impl
+  ([child]
+   (vscrollbar-impl {} child))
+  ([opts child]
+   (map->VScrollbar {})))
+
 (defn vscrollbar
   ([child]
    (vscrollbar {} child))
   ([opts child]
-   (map->VScrollbar
-     {:child (map->VScroll
-               {:element [vscroll child]
-                :dirty?  true})})))
+   [vscrollbar-impl opts [vscroll child]]))
