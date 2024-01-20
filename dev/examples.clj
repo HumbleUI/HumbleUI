@@ -24,7 +24,7 @@
     ; [examples.paragraph]
     [examples.scroll]
     ; [examples.settings]
-    ; [examples.slider]
+    [examples.slider]
     ; [examples.stack]
     [examples.state :as state]
     [examples.svg]
@@ -69,7 +69,7 @@
     ; "Paragraph" examples.paragraph/ui
     "Scroll" examples.scroll/ui
     ; "Settings" examples.settings/ui
-    ; "Slider" examples.slider/ui
+    "Slider" examples.slider/ui
     ; "Stack" examples.stack/ui
     "SVG" examples.svg/ui
     ; "Text Field" examples.text-field/ui

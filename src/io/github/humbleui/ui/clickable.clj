@@ -12,7 +12,7 @@
       (set! clicks 0)
       (set! last-click 0))
     
-    (let [[_ opts _] (parse-element element)
+    (let [opts       (parse-opts element)
           *hovered?  (or (:*hovered? opts) *hovered?)
           *pressed?  (or (:*pressed? opts) *pressed?)
           *active?   (or (:*active? opts) *active?)
@@ -49,12 +49,15 @@
             (signal/reset-changed! *active? (and hovered?' pressed?'))
             (when (and clicked? on-click)
               (on-click event')
-              true)))))))
+              true))))))
+  
+  (-should-reconcile? [_this _ctx new-element]
+    (opts-match? [:*hovered? :*pressed? :*active?] element new-element)))
 
 (defn clickable [opts child]
   (map->Clickable
-    {:*hovered?  (signal/signal false)
-     :*pressed?  (signal/signal false)
-     :*active?   (signal/signal false)
+    {:*hovered?  (or (:*hovered? opts) (signal/signal false))
+     :*pressed?  (or (:*pressed? opts) (signal/signal false))
+     :*active?   (or (:*active?  opts) (signal/signal false))
      :clicks     0
      :last-click 0}))

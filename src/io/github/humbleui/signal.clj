@@ -178,6 +178,9 @@
   `(def ~name
      (signal* (quote ~name) (fn [~'_ ~'_] {:value (do ~@body)}))))
 
+(defn signal? [x]
+  (instance? Signal x))
+
 (defn maybe-read [signal-or-value]
   (if (instance? Signal signal-or-value)
     @signal-or-value

@@ -25,7 +25,6 @@
     ; [io.github.humbleui.ui.padding :as padding]
     ; [io.github.humbleui.ui.paragraph :as paragraph]
     ; [io.github.humbleui.ui.shadow :as shadow]
-    ; [io.github.humbleui.ui.slider :as slider]
     ; [io.github.humbleui.ui.stack :as stack]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
@@ -85,6 +84,7 @@
 (deflazy hoverable '([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable '([{:keys [on-click on-click-capture]} child]) "clickable")
 (deflazy button    '([{:keys [on-click]} child]) "button")
+(deflazy slider    '([{:keys [*value min max step]}]) "slider")
 
 (core/import-vars
   ; animation/animation
@@ -107,7 +107,6 @@
   ; shadow/shadow
   ; shadow/shadow-inset
   ; sizing/max-width
-  ; slider/slider
   ; stack/stack
   ; text-field/text-input
   ; text-field/text-field

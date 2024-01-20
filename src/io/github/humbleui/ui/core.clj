@@ -1,5 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
+(alias 'ui 'io.github.humbleui.ui)
+
 ;; utils
 
 (def ^Shaper shaper
@@ -69,6 +71,10 @@
   (if (map? (second vals))
     [(first vals) (second vals) (nnext vals)]
     [(first vals) {} (next vals)]))
+
+(defn parse-opts [element]
+  (let [[_ opts & _] (parse-element element)]
+    opts))
 
 (defn maybe-render [node ctx]
   (when (or
@@ -224,6 +230,16 @@
     (identical? (first (:element old-node)) (first new-el))
     (protocols/-should-reconcile? old-node ctx new-el)))
 
+(defn keys-match? [keys m1 m2]
+  (=
+    (select-keys m1 keys)
+    (select-keys m2 keys)))
+
+(defn opts-match? [keys element new-element]
+  (let [[_ opts _] (parse-element element)
+        [_ new-opts _] (parse-element new-element)]
+    (keys-match? keys opts new-opts)))
+
 (defn reconcile-many [ctx old-nodes new-els]
   (core/loop+ [old-nodes-keyed (reduce
                                  (fn [m n]
@@ -336,25 +352,25 @@
     ctx)
 
   (-measure [this ctx cs]
-    (binding [*node* this
-              *ctx*  ctx]
-      (maybe-render this ctx)
+    (binding [ui/*node* this
+              ui/*ctx*  ctx]
+      (ui/maybe-render this ctx)
       (protocols/-measure-impl this ctx cs)))
     
   (-draw [this ctx rect' canvas]
     (set! rect rect')
-    (binding [*node* this
-              *ctx*  ctx]
-      (maybe-render this ctx)
+    (binding [ui/*node* this
+              ui/*ctx*  ctx]
+      (ui/maybe-render this ctx)
       (protocols/-draw-impl this ctx rect' canvas))
     (when (and @protocols/*debug? (not mounted?))
-      (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ctor-border)
+      (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ui/ctor-border)
       (set! mounted? true)))
   
   (-event [this ctx event]
-    (binding [*node* this
-              *ctx*  ctx]
-      (maybe-render this ctx)
+    (binding [ui/*node* this
+              ui/*ctx*  ctx]
+      (ui/maybe-render this ctx)
       (protocols/-event-impl this ctx event)))
   
   (-event-impl [this ctx event]
@@ -571,8 +587,21 @@
         form))
     form))
 
-;; TODO handle all defn forms
-(defmacro defcomp [name args & body]
-  `(defn ~name ~args
-     (let [~'&node *node*]
-       ~@(auto-keys body))))
+(defmacro defcomp [name & fdecl]
+  (let [[m fdecl] (if (string? (first fdecl))
+                    [{:doc (first fdecl)} (next fdecl)]
+                    [{} fdecl])
+        [m fdecl] (if (map? (first fdecl))
+                    [(merge m (first fdecl)) (next fdecl)]
+                    [m fdecl])
+        fdecl     (if (vector? (first fdecl))
+                    (list fdecl)
+                    fdecl)
+        [m fdecl] (if (map? (last fdecl))
+                    [(merge m (last fdecl)) (butlast fdecl)]
+                    [m fdecl])]
+    `(defn ~(vary-meta name merge m)
+       ~@(for [[params & body] fdecl]
+           (list params
+             `(let [~'&node *node*]
+                ~@(auto-keys body)))))))

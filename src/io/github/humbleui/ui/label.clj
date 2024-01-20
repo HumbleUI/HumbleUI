@@ -15,7 +15,7 @@
   (-unmount-impl [this]
     (.close line)))
 
-(defn label [& texts]
+(defn label-impl [& texts]
   (let [[_ opts texts] (parse-element (cons nil texts))
         paint          (or (:paint opts) (:fill-text *ctx*))
         font           (or (:font opts) (:font-ui *ctx*))
@@ -33,3 +33,8 @@
       {:size  size
        :line  line
        :paint paint})))
+
+(defn label [& texts]
+  (vec
+    (cons label-impl
+      (map signal/maybe-read texts))))

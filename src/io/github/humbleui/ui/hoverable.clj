@@ -6,9 +6,7 @@
   protocols/IComponent
   (-event-impl [this ctx event]
     (core/when-some+ [{:keys [x y]} event]
-      (let [[_ opts _]                (parse-element element)
-            {:keys [on-hover on-out]} opts
-            *hovered?                 (or (:*hovered? opts) *hovered?)
+      (let [{:keys [on-hover on-out]} (parse-opts element)
             hovered?                  (core/rect-contains? rect (core/ipoint x y))]
         (cond
           (and @*hovered? (not hovered?))
@@ -24,7 +22,10 @@
             true)
           
           :else
-          false)))))
+          false))))
+  
+  (-should-reconcile? [_this _ctx new-element]
+    (opts-match? [:*hovered?] element new-element)))
 
 (defn hoverable
   "Enable the child element to respond to mouse hover events.
@@ -37,4 +38,5 @@
   ([child]
    (hoverable {} child))
   ([opts child]
-   (map->Hoverable {:*hovered? (signal/signal false)})))
+   (map->Hoverable
+     {:*hovered? (or (:*hovered? opts) (signal/signal false))})))

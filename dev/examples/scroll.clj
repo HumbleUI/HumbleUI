@@ -4,7 +4,7 @@
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
-(defn label
+(ui/defcomp label
   ([text]
    (label 10 text))
   ([height text]

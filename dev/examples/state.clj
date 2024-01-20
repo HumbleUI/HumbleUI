@@ -4,7 +4,7 @@
     [io.github.humbleui.signal :as signal]))
 
 (def *example
-  (signal/signal "Button"))
+  (signal/signal "Slider"))
 
 (def *todomvc-state
   (atom
