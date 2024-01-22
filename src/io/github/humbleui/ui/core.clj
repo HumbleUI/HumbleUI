@@ -583,7 +583,7 @@
         (let [m (meta form)]
           (if (contains? m :key)
             form
-            (vary-meta form assoc :key (vswap! *key inc))))
+            (vary-meta form assoc :key (str "io.github.humbleui.ui/" (vswap! *key inc)))))
         form))
     form))
 
