@@ -519,43 +519,20 @@
       (var? o)   (symbol o)
       :else      s)))
 
-(defn- update-method
-  "Fully qualifies all namespaced symbols in method bodies.
-   Converts typed argument lists to untyped ones + top-level let with tags"
-  [[name args & body]]
-  (let [remove-tag      #(vary-meta % dissoc :tag)
-        untyped-args    (mapv remove-tag args)
-        typed-args      (filter #(:tag (meta %)) args)
-        bindings        (vec (mapcat #(list % (remove-tag %)) typed-args))
-        qualified-body  (clojure.walk/postwalk
-                          (fn [x]
-                            (if (and (symbol? x) (namespace x))
-                              (qualify-symbol x)
-                              x))
-                          body)]
-    (if (empty? bindings)
-      (list* name untyped-args qualified-body)
-      (list
-        name untyped-args
-        (list* 'clojure.core/let bindings
-          qualified-body)))))
+(defn- untag-symbol [sym]
+  (vary-meta sym dissoc :tag))
 
-(defn- group-protos
-  "Converts flat list of protocols and methods into a map
-   {protocol -> {signature -> body}}"
-  [body]
-  (loop [body  body
-         res   {}
-         proto nil]
-    (if (empty? body)
-      res
-      (let [[head & tail] body]
-        (if (symbol? head)
-          (let [proto (qualify-symbol head)]
-            (recur tail res proto))
-          (let [method (update-method head)
-                sig    (signature method)]
-            (recur tail (update res proto assoc sig method) proto)))))))
+(defn- untag-method
+  "Converts typed argument lists to untyped ones + top-level let with tags"
+  [method]
+  (let [[name args & body] method]
+    (if-some [typed-args (filter #(:tag (meta %)) args)]
+      (let [untyped-args (mapv untag-symbol args)
+            bindings     (vec (mapcat #(list % (untag-symbol %)) typed-args))]
+        (list name untyped-args
+          (list* 'clojure.core/let bindings
+            body)))
+      method)))
 
 (defmacro deftype+
   "Same as deftype, but:
@@ -570,27 +547,38 @@
   (let [[parent body] (if (= :extends (first body))
                         (let [[_ sym & body'] body]
                           [(or (some-> sym resolve deref)
-                             (throw (ex-info (str "Can't resolve symbol: " sym) {:symbol sym})))
+                             (throw (ex-info (str "Can't resolve parent symbol: " sym) {:symbol sym})))
                            body'])
                         [nil body])
         update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
-        fields        (->> 
-                        (concat fields (:fields parent))
-                        (mapv update-field))
+        fields        (->> (concat fields (:fields parent))
+                        (map update-field)
+                        vec)
         mut-fields    (filter #(:unsynchronized-mutable (meta %)) fields)
-        protos        (->>
-                        (merge-with merge
-                          (:protocols parent)
-                          (group-protos body))
-                        (map-vals vals))
+        protocols     (->> body
+                        (filter symbol?)
+                        (map qualify-symbol)
+                        (set)
+                        (set/union (:protocols parent)))
+        methods       (->> body
+                        (remove symbol?)
+                        (map untag-method))
+        signatures    (set (map signature methods))
         value-sym     (gensym 'value)]
     `(do
-       (deftype ~name
-         ~(conj fields '__m)
-         
-         ~@(for [[proto methods] protos
-                 form (cons proto methods)]
-             form)
+       (deftype ~name ~(conj fields '__m)
+         ~@protocols
+
+         ;; all parent methods
+         ~@(for [[sig body] (:methods parent)
+                 :when (not (signatures sig))
+                 :let [[name cnt] sig
+                       args (vec (repeatedly cnt gensym))]]
+             `(~name ~args
+                (~body ~@args)))
+
+         ;; own methods
+         ~@methods
        
          clojure.lang.IMeta
          (meta [_] ~'__m)
@@ -626,6 +614,11 @@
     (protocols/-set! obj k v))
   obj)
 
+(defn- merge-parents [parent child]
+  {:fields    (vec (concat (:fields child) (:fields parent)))
+   :protocols (set/union (:protocols parent) (:protocols child))
+   :methods   (merge (:methods parent) (:methods child))})
+
 (defmacro defparent
   "Defines base “class” that deftype+ can extend from.
    Supports extra field and protocols which deftype+ can partially override.
@@ -634,14 +627,20 @@
   (let [[doc body]    (if (string? (first body)) [(first body) (next body)] ["" body])
         [fields body] [(first body) (next body)]
         [parent body] (if (= :extends (first body)) [(second body) (nnext body)] [nil body])
-        parent        (when parent
-                        (or (some-> parent resolve deref)
-                          (throw (ex-info (str "Can't resolve symbol: " parent) {:symbol symbol}))))
-        fields    (vec (concat (:fields parent) fields))
-        protocols (merge-with merge (:protocols parent) (group-protos body))]
-    `(def ~sym ~doc
-       {:fields    (quote ~fields)
-        :protocols (quote ~protocols)})))
+        protocols     (into (:protocols parent #{})
+                        (->> body (filter symbol?) (map qualify-symbol)))
+        methods       (->> body
+                        (remove symbol?)
+                        (map #(vector (list 'quote (signature %)) (cons 'fn %)))
+                        (into {}))
+        definition    {:fields    (list 'quote fields)
+                       :protocols (list 'quote protocols)
+                       :methods   methods}]
+    (if parent
+      `(def ~sym ~doc
+         (#'merge-parents ~parent ~definition))
+      `(def ~sym ~doc
+         ~definition))))
 
 (alter-meta! *ns* assoc :clojure.tools.namespace.repl/before-unload
   #(.cancel timer))

@@ -358,14 +358,14 @@
       (protocols/-measure-impl this ctx cs)))
     
   (-draw [this ctx rect' canvas]
-    (set! rect rect')
+    (protocols/-set! this :rect rect')
     (binding [ui/*node* this
               ui/*ctx*  ctx]
       (ui/maybe-render this ctx)
       (protocols/-draw-impl this ctx rect' canvas))
-    (when (and @protocols/*debug? (not mounted?))
+    (when (and @protocols/*debug? (not (:mounted? this)))
       (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ui/ctor-border)
-      (set! mounted? true)))
+      (protocols/-set! this :mounted? true)))
   
   (-event [this ctx event]
     (binding [ui/*node* this
@@ -379,11 +379,11 @@
   (-reconcile [this ctx new-element]
     (when (not (identical? (:element this) new-element))
       (protocols/-reconcile-impl this ctx new-element)
-      (set! element new-element))
+      (protocols/-set! this :element new-element))
     this)
   
-  (-reconcile-impl [_this _ctx element]
-    (throw (ex-info "Not implemented" {:element element})))
+  (-reconcile-impl [this _ctx element]
+    (throw (ex-info "Not implemented" {:element (:element this)})))
   
   (-should-reconcile? [_this _ctx _element]
     true)
@@ -411,35 +411,35 @@
   protocols/IComponent
   (-measure-impl [this ctx cs]
     (when-some [ctx' (protocols/-context this ctx)]
-      (measure child ctx' cs)))
+      (measure (:child this) ctx' cs)))
 
   (-draw-impl [this ctx rect canvas]
     (when-some [ctx' (protocols/-context this ctx)]
-      (draw-child child ctx' rect canvas)))
+      (draw-child (:child this) ctx' rect canvas)))
   
   (-event [this ctx event]
-    (when rect ;; TODO investigate why it might be nil
+    (when (:rect this) ;; TODO investigate why it might be nil
       (when-some [ctx' (protocols/-context this ctx)]
         (binding [*node* this
                   *ctx*  ctx']
           ; (maybe-render this ctx')
           (core/eager-or
-            (event-child child ctx' event)
+            (event-child (:child this) ctx' event)
             (protocols/-event-impl this ctx' event))))))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
       (when-some [ctx' (protocols/-context this ctx)]
-        (iterate-child child ctx' cb))))
+        (iterate-child (:child this) ctx' cb))))
   
-  (-reconcile-impl [_ ctx el']
+  (-reconcile-impl [this ctx el']
     (let [[_ _ [child-el]] (parse-element el')
-          [child']         (reconcile-many ctx [child] [child-el])]
-      (set! child child')))
+          [child']         (reconcile-many ctx [(:child this)] [child-el])]
+      (protocols/-set! this :child child')))
   
   (-unmount [this]
-    (unmount-child child)
+    (unmount-child (:child this))
     (protocols/-unmount-impl this)))
 
 (core/defparent AContainerNode
@@ -453,22 +453,22 @@
                 *ctx*  ctx']
         (maybe-render this ctx')
         (core/eager-or
-          (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil children)
+          (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
           (protocols/-event-impl this ctx' event)))))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (some #(iterate-child % ctx cb) children)))
+      (some #(iterate-child % ctx cb) (:children this))))
   
-  (-reconcile-impl [_ ctx el']
+  (-reconcile-impl [this ctx el']
     (let [[_ _ child-els] (parse-element el')
           child-els       (core/flatten child-els)
-          children'       (reconcile-many ctx children child-els)]
-      (set! children children')))
+          children'       (reconcile-many ctx (:children this) child-els)]
+      (protocols/-set! this :children children')))
   
   (-unmount [this]
-    (doseq [child children]
+    (doseq [child (:children this)]
       (unmount-child child))
     (protocols/-unmount-impl this)))
 

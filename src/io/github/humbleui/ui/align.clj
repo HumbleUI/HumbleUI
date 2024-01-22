@@ -38,5 +38,5 @@
 
 (defn center [child]
   [halign {:position 0.5}
-    [valign {:position 0.5}
-      child]])
+   [valign {:position 0.5}
+    child]])
