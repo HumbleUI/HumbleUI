@@ -1,8 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
 (core/deftype+ Padding []
-  :extends AWrapperNode
-  
+  :extends AWrapperNode  
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
@@ -33,5 +32,5 @@
                        height)]
       (draw-child child ctx child-rect canvas))))
 
-(defn padding [opts child]
+(defn- padding-ctor [opts child]
   (map->Padding {}))

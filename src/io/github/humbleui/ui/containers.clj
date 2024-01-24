@@ -51,7 +51,7 @@
             (draw-child child ctx child-rect canvas)
             (recur known' children' (+ height gap child-height))))))))
 
-(defn column [& children]
+(defn- column-ctor [& children]
   (map->Column {}))
 
 (core/deftype+ Row []
@@ -104,5 +104,5 @@
             (draw-child child ctx child-rect canvas)
             (recur known' children' (+ width gap child-width))))))))
 
-(defn row [& children]
+(defn- row-ctor [& children]
   (map->Row {}))

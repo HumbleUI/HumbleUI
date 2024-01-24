@@ -33,9 +33,9 @@
   (-unmount-impl [this]
     (.close image)))
 
-(defn image
+(defn- image-ctor
   ([src]
-   (image {} src))
+   (image-ctor {} src))
   ([opts src]
    (let [image  (Image/makeFromEncoded (core/slurp-bytes src))
          width  (.getWidth image)

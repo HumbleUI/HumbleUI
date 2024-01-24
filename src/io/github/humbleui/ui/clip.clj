@@ -8,7 +8,7 @@
       (canvas/clip-rect canvas rect)
       (draw child ctx rect canvas))))
 
-(defn clip [child]
+(defn- clip-ctor [child]
   (map->Clip {}))
 
 (core/deftype+ ClipRRect [radii]
@@ -23,5 +23,5 @@
         (.clipRRect canvas rrect true)
         (draw child ctx rect canvas)))))
 
-(defn clip-rrect [opts child]
+(defn- clip-rrect-ctor [opts child]
   (map->ClipRRect {}))

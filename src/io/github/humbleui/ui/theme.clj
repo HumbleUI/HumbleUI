@@ -21,7 +21,7 @@
                          :fill-text      fill-text
                          :fill-gray      fill-gray
                          
-                         :hui.button/bg-active      (paint/fill 0xFFA2C7EE)
+                         :hui.button/bg-pressed     (paint/fill 0xFFA2C7EE)
                          :hui.button/bg-hovered     (paint/fill 0xFFCFE8FC)
                          :hui.button/bg             (paint/fill 0xFFB2D7FE)
                          :hui.button/border-radius  4

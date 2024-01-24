@@ -55,9 +55,9 @@
   (-unmount-impl [this]
     (.close dom)))
 
-(defn svg
+(defn- svg-ctor
   ([src]
-   (svg {} src))
+   (svg-ctor {} src))
   ([opts src]
    (let [dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
                (SVGDOM. data))]

@@ -166,11 +166,10 @@
     (satisfies? protocols/IComponent el)
     el
     
-    :let [[f & args] el]
-    
-    (delay? f)
-    (recur (cons @f args))
-    
+    :let [[f & args] el
+          f (cond-> f
+              (delay? f) deref)]
+        
     :else
     (binding [*node* (map->FnNode {})]
       (let [res  (cond
@@ -368,10 +367,10 @@
       (protocols/-set! this :mounted? true)))
   
   (-event [this ctx event]
-    (binding [ui/*node* this
-              ui/*ctx*  ctx]
-      (ui/maybe-render this ctx)
-      (protocols/-event-impl this ctx event)))
+    (when-some [ctx' (protocols/-context this ctx)]
+      (binding [ui/*node* this
+                ui/*ctx*  ctx']
+        (protocols/-event-impl this ctx' event))))
   
   (-event-impl [this ctx event]
     nil)
@@ -417,15 +416,8 @@
     (when-some [ctx' (protocols/-context this ctx)]
       (draw-child (:child this) ctx' rect canvas)))
   
-  (-event [this ctx event]
-    (when (:rect this) ;; TODO investigate why it might be nil
-      (when-some [ctx' (protocols/-context this ctx)]
-        (binding [*node* this
-                  *ctx*  ctx']
-          ; (maybe-render this ctx')
-          (core/eager-or
-            (event-child (:child this) ctx' event)
-            (protocols/-event-impl this ctx' event))))))
+  (-event-impl [this ctx event]
+    (event-child (:child this) ctx event))
   
   (-iterate [this ctx cb]
     (or
@@ -451,7 +443,6 @@
     (when-some [ctx' (protocols/-context this ctx)]
       (binding [*node* this
                 *ctx*  ctx']
-        (maybe-render this ctx')
         (core/eager-or
           (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
           (protocols/-event-impl this ctx' event)))))
@@ -517,8 +508,7 @@
         (set! mounted? true))))
     
   (-event-impl [this ctx event]
-    (when render
-      (event-child child ctx event)))
+    (event-child child ctx event))
   
   (-iterate [this ctx cb]
     (or

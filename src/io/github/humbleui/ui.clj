@@ -49,42 +49,42 @@
 (load "/io/github/humbleui/ui/sizing")
 (load "/io/github/humbleui/ui/window")
 
-
 (defmacro deflazy
   ([name arglists file]
    `(deflazy ~name nil ~arglists ~file))
   ([name docstring arglists file]
-   `(def ~(vary-meta name assoc :arglists arglists)
+   `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
       ~@(if docstring [docstring] [])
       (delay
         (core/log "Loading" ~file)
         (load ~(str "/io/github/humbleui/ui/" file))
-        ~name))))
+        @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
-(deflazy gap   '([] [{:keys [width height]}]) "gap")
-(deflazy label '([& texts]) "label")
-(deflazy image '([src] [{:keys [sampling-mode]} src]) "image")
-(deflazy svg   '([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
+(deflazy gap   ([] [{:keys [width height]}]) "gap")
+(deflazy label ([& texts]) "label")
+(deflazy image ([src] [{:keys [sampling-mode]} src]) "image")
+(deflazy svg   ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
 
-(deflazy padding      '([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
-(deflazy rect         '([{:keys [paint]} child]) "rect")
-(deflazy rounded-rect '([{:keys [radius paint]} child]) "rect")
-(deflazy clip         '([child]) "clip")
-(deflazy clip-rrect   '([{:keys [radii]} child]) "clip")
+(deflazy padding      ([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
+(deflazy rect         ([{:keys [paint]} child]) "rect")
+(deflazy rounded-rect ([{:keys [radius paint]} child]) "rect")
+(deflazy clip         ([child]) "clip")
+(deflazy clip-rrect   ([{:keys [radii]} child]) "clip")
 
-(deflazy halign '([{:keys [position child-position]} child]) "align")
-(deflazy valign '([{:keys [position child-position]} child]) "align")
-(deflazy center '([child]) "align")
+(deflazy halign ([{:keys [position child-position]} child]) "align")
+(deflazy valign ([{:keys [position child-position]} child]) "align")
+(deflazy center ([child]) "align")
 
-(deflazy vscroll    '([child] [opts child]) "scroll")
-(deflazy vscrollbar '([child] [opts child]) "scroll")
-(deflazy column     '([& children] [opts & children]) "containers")
-(deflazy row        '([& children] [opts & children]) "containers")
+(deflazy vscroll    ([child] [opts child]) "scroll")
+(deflazy vscrollbar ([child] [opts child]) "scroll")
+(deflazy column     ([& children] [opts & children]) "containers")
+(deflazy row        ([& children] [opts & children]) "containers")
 
-(deflazy hoverable '([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
-(deflazy clickable '([{:keys [on-click on-click-capture]} child]) "clickable")
-(deflazy button    '([{:keys [on-click]} child]) "button")
-(deflazy slider    '([{:keys [*value min max step]}]) "slider")
+(deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
+(deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
+(deflazy button        ([{:keys [on-click]} child]) "button")
+(deflazy toggle-button ([{:keys [*value]} child]) "button")
+(deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
 (core/import-vars
   ; animation/animation

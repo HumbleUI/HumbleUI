@@ -12,8 +12,8 @@
   
   (-draw-impl [_this _ctx _rect _canvas]))
 
-(defn gap
+(defn- gap-ctor
   ([]
-   (gap {}))
+   (gap-ctor {}))
   ([opts]
    (map->Gap {})))

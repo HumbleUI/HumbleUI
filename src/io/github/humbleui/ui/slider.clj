@@ -142,7 +142,7 @@
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*value :track-active :track-inactive :thumb] element new-element)))
 
-(defn slider [opts]
+(defn- slider-ctor [opts]
   (let [*value         (or (:*value opts) (signal/signal (or (:min opts) 0)))
         track-active   (or (some-> (:track-active opts) make) (map->SliderTrack {:fill-key :hui.slider/fill-track-active}))
         track-inactive (or (some-> (:track-inactive opts) make) (map->SliderTrack {:fill-key :hui.slider/fill-track-inactive}))

@@ -44,9 +44,9 @@
       :else
       (event-child child ctx event))))
 
-(defn vscroll
+(defn- vscroll-ctor
   ([child]
-   (vscroll {} child))
+   (vscroll-ctor {} child))
   ([opts child]
    (map->VScroll (assoc opts :offset 0))))
 
@@ -89,8 +89,8 @@
   ([opts child]
    (map->VScrollbar {})))
 
-(defn vscrollbar
+(defn- vscrollbar-ctor
   ([child]
-   (vscrollbar {} child))
+   (vscrollbar-ctor {} child))
   ([opts child]
    [vscrollbar-impl opts [vscroll child]]))

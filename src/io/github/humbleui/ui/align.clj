@@ -15,7 +15,7 @@
           child-rect     (core/irect-xywh left (:y rect) (:width child-size) (:height rect))]
       (draw-child child ctx child-rect canvas))))
 
-(defn halign [opts child]
+(defn- halign-ctor [opts child]
   (map->HAlign {}))
 
 (core/deftype+ VAlign [child-position position]
@@ -33,10 +33,10 @@
           child-rect     (core/irect-xywh (:x rect) top (:width rect) (:height child-size))]
       (draw-child child ctx child-rect canvas))))
 
-(defn valign [opts child]
+(defn- valign-ctor [opts child]
   (map->VAlign {}))
 
-(defn center [child]
+(defn- center-ctor [child]
   [halign {:position 0.5}
    [valign {:position 0.5}
     child]])

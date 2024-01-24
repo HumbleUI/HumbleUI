@@ -9,7 +9,7 @@
       (canvas/draw-rect canvas rect paint)
       (draw-child child ctx rect canvas))))
 
-(defn rect [opts child]
+(defn- rect-ctor [opts child]
   (map->RectNode {}))
 
 (core/deftype+ RoundedRect []
@@ -22,5 +22,5 @@
       (canvas/draw-rect canvas rrect paint)
       (draw-child child ctx rect canvas))))
 
-(defn rounded-rect [opts child]
+(defn- rounded-rect-ctor [opts child]
   (map->RoundedRect {}))
