@@ -18,7 +18,7 @@
 
 (defn reload []
   (set! *warn-on-reflection* true)
-  (let [tracker (ns/scan)
+  (let [tracker (ns/scan {:only-active? true})
         cnt     (count (::track/load tracker))
         res     (ns/refresh-scanned)]
     (when (instance? Throwable res)

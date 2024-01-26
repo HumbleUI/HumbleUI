@@ -68,13 +68,13 @@
     (ctor {})))
 
 (defn collect [key xs]
-  (core/when-every [cbs (not-empty (vec (keep key xs)))]
+  (core/when-some+ [cbs (not-empty (vec (keep key xs)))]
     (fn [& args]
       (doseq [cb cbs]
         (apply cb args)))))
 
 (defn collect-bool [key xs]
-  (core/when-every [cbs (not-empty (vec (keep key xs)))]
+  (core/when-some+ [cbs (not-empty (vec (keep key xs)))]
     (fn [& args]
       (reduce #(or %1 (apply %2 args)) false cbs))))
 
@@ -565,7 +565,7 @@
             (= :mouse-button (:event event))
             (:pressed? event)
             (core/rect-contains? self-rect (core/ipoint (:x event) (:y event))))
-      (core/when-every [[opts _] (maybe-opts (next el))
+      (core/when-some+ [[opts _] (maybe-opts (next el))
                         {:keys [on-click]} opts]
         (on-click event)))
     (core/event-child child ctx event)))

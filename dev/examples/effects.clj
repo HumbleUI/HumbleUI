@@ -51,7 +51,7 @@
   (-event [this ctx event]
     (core/eager-or
       (when (= :mouse-move (:event event))
-        (core/when-every [{:keys [x y]} event]
+        (core/when-some+ [{:keys [x y]} event]
           (let [p         (core/ipoint x y)
                 hovered?' (core/rect-contains? child-rect p)]
             (when (not= hovered? hovered?')
@@ -120,7 +120,7 @@
   
   (-event [this ctx event]
     (core/eager-or
-      (core/when-every [{:keys [x y]} event]
+      (core/when-some+ [{:keys [x y]} event]
         (when (= :mouse-move (:event event))
           (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
             (core/eager-or

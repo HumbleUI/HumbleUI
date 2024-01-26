@@ -74,7 +74,7 @@
     (core/draw-child child ctx rect canvas))
   
   (-event [_ ctx event]
-    (core/when-every [{:keys [x y]} event]
+    (core/when-some+ [{:keys [x y]} event]
       (let [over?' (core/rect-contains? child-rect (core/ipoint x y))]
         (when (and (not over?) over?' on-over)
           (on-over event))
