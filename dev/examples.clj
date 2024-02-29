@@ -1,6 +1,7 @@
 (ns examples
   (:require
-    [clojure.core.server :as server]
+    [clojure.edn :as edn]
+    [clojure.java.io :as io]
     ; [examples.7guis-converter]
     [examples.align]
     ; [examples.animation]
@@ -26,7 +27,6 @@
     ; [examples.settings]
     [examples.slider]
     ; [examples.stack]
-    [examples.state :as state]
     [examples.svg]
     ; [examples.text-field]
     ; [examples.text-field-debug]
@@ -42,7 +42,10 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui])
+  (:import
+    [io.github.humbleui.jwm.skija LayerMetalSkija]
+    [io.github.humbleui.skija ColorSpace]))
 
 (def examples
   (sorted-map
@@ -82,6 +85,9 @@
     ; "Wordle" examples.wordle/ui
     ))
 
+(defonce *example
+  (signal/signal "Label"))
+
 (let [fill-selected (paint/fill 0xFFB2D7FE)
       fill-active   (paint/fill 0xFFA2C7EE)
       fill-hovered  (paint/fill 0xFFE1EFFA)]
@@ -90,12 +96,12 @@
           *active?  (signal/signal false)]
       (fn [name]
         [ui/clickable {:on-click  (fn [_]
-                                    (signal/reset! examples.state/*example name))
+                                    (signal/reset! *example name))
                        :*hovered? *hovered?
                        :*active?  *active?}
          (let [label     [ui/padding {:horizontal 20 :vertical 10}
                           [ui/label name]]
-               selected? (= name @examples.state/*example)]
+               selected? (= name @*example)]
            (cond
              selected?  [ui/rect {:paint fill-selected} label]
              @*active?  [ui/rect {:paint fill-active} label]
@@ -113,11 +119,60 @@
     [ui/gap {:width 1}]]
     
    ^{:stretch 1}
-   [(examples @examples.state/*example)]])
+   [(examples @*example)]])
 
-(def app
+(defonce *app
+  (atom nil))
+
+(reset! *app
   (ui/default-theme {}
     (ui/make [app-impl])))
 
-(alter-meta! *ns* assoc :clojure.tools.namespace.repl/before-unload
-  #(alter-var-root #'app (constantly nil)))
+(defn before-ns-unload []
+  (reset! *app nil))
+
+(defonce *window
+  (promise))
+
+(defn maybe-save-window-rect [window event]
+  (when (#{:window-move :window-resize} (:event event))
+    (let [rect (window/window-rect window)
+          {:keys [scale work-area]} (window/screen window)
+          x (-> rect :x (- (:x work-area)) (/ scale) int)
+          y (-> rect :y (- (:y work-area)) (/ scale) int)
+          w (-> rect :width (/ scale) int)
+          h (-> rect :height (/ scale) int)]
+      (spit ".window"
+        (pr-str {:x x, :y y, :width w, :height h})))))
+
+(defn restore-window-rect [screen]
+  (let [file (io/file ".window")
+        {:keys [work-area]} screen]
+    (when-some [rect (when (.exists file)
+                       (edn/read-string (slurp file)))]
+      (let [x (min (- (:right work-area) 500) (:x rect))
+            y (min (- (:bottom work-area) 500) (:y rect))
+            w (min (- (:right work-area) x)  (:width rect))
+            h (min (- (:bottom work-area) y) (:height rect))]
+        {:x x, :y y, :width w, :height h}))))
+
+(defn -main [& args]
+  ;; setup window
+  (ui/start-app!
+    (let [screen (first (app/screens))
+          rect   (restore-window-rect screen)
+          opts   {:title    "Humble 🐝 UI"
+                  :mac-icon "dev/images/icon.icns"
+                  :screen   (:id screen)
+                  :width    800
+                  :height   800
+                  :x        :center
+                  :y        :center
+                  :on-event #'maybe-save-window-rect}
+          window (ui/window (merge opts rect) *app)]
+      ;; TODO load real monitor profile
+      (when (= :macos app/platform)
+        (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))
+      ; (reset! debug/*debug? true)
+      (deliver *window window)))
+  @*window)

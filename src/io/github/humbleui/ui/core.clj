@@ -2,6 +2,9 @@
 
 (alias 'ui 'io.github.humbleui.ui)
 
+(require
+  '[io.github.humbleui.debug :as debug])
+
 ;; utils
 
 (def ^Shaper shaper
@@ -362,7 +365,7 @@
               ui/*ctx*  ctx]
       (ui/maybe-render this ctx)
       (protocols/-draw-impl this ctx rect' canvas))
-    (when (and @protocols/*debug? (not (:mounted? this)))
+    (when (and @debug/*debug? (not (:mounted? this)))
       (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ui/ctor-border)
       (protocols/-set! this :mounted? true)))
   
@@ -503,7 +506,7 @@
       (core/invoke after-draw)
       (when-not mounted?
         (core/invoke after-mount))
-      (when (and @protocols/*debug? (not mounted?))
+      (when (and @debug/*debug? (not mounted?))
         (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
         (set! mounted? true))))
     

@@ -6,6 +6,9 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]))
 
+(defonce *debug?
+  (atom false))
+
 (def width
   100)
 
@@ -29,7 +32,7 @@
   (vreset! (-> data tag :t0) (System/nanoTime)))
 
 (defmacro on-start [tag]
-  `(when @protocols/*debug?
+  `(when @*debug?
      (on-start-impl ~tag)))
 
 (defn on-end-impl [tag]
@@ -40,7 +43,7 @@
     (vswap! *idx #(-> % inc (mod width)))))
 
 (defmacro on-end [tag]
-  `(when @protocols/*debug?
+  `(when @*debug?
      (on-end-impl ~tag)))
 
 (defn draw-impl [canvas tag]
@@ -64,5 +67,5 @@
         (canvas/draw-rect canvas (core/irect-ltrb i (ms->y ms) (+ i 1) height) fg)))))
 
 (defmacro draw [canvas tag]
-  `(when @protocols/*debug?
+  `(when @*debug?
      (draw-impl ~canvas ~tag)))

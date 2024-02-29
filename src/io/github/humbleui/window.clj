@@ -1,11 +1,11 @@
 (ns io.github.humbleui.window
   (:require
     [clojure.java.io :as io]
+    [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
-    [io.github.humbleui.event :as event]
-    [io.github.humbleui.protocols :as protocols])
+    [io.github.humbleui.event :as event])
   (:import
     [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
@@ -21,6 +21,9 @@
 
 (defn scale [^Window window]
   (.getScale (.getScreen window)))
+
+(defn screen [^Window window]
+  (some-> window .getScreen (@#'app/screen->clj)))
 
 (defn window-rect [^Window window]
   (.getWindowRect window))
@@ -84,7 +87,7 @@
                                    (debug/on-start :paint)
                                    (on-paint window canvas)
                                    (debug/on-end :paint)
-                                   (when @protocols/*debug?
+                                   (when @debug/*debug?
                                      (canvas/with-canvas canvas
                                        (let [scale (scale window)
                                              rect  (content-rect window)]

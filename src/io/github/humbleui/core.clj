@@ -181,16 +181,6 @@
              (for [[pattern body] (partition 2 clauses)]
                [(gen-cond pattern) body]))))))
 
-(defmacro spy [msg & body]
-  `(let [ret# (do ~@body)]
-     (println (str ~msg ":") ret#)
-     ret#))
-
-(defmacro doto-some [x & forms]
-  `(let [x# ~x]
-     (when (some? x#)
-       (doto x# ~@forms))))
-
 (defn- loopr-rewrite-recurs [accs body]
   (walk/prewalk
     (fn [form]
@@ -348,16 +338,6 @@
 (defn repeatedlyv [n f]
   (into [] (repeatedly n f)))
 
-(defn without [pred coll]
-  (persistent!
-    (reduce
-      (fn [coll el]
-        (if (pred el)
-          coll
-          (conj! coll el)))
-      (transient (empty coll))
-      coll)))
-
 (defn slurp-bytes ^bytes [src]
   (if (bytes? src)
     src
@@ -492,7 +472,7 @@
   (Object.))
 
 (def t0
-  (System/currentTimeMillis))
+  (now))
 
 (defn log [& args]
   (locking lock
@@ -614,6 +594,9 @@
     (protocols/-set! obj k v))
   obj)
 
+(defn update!! [this key f & args]
+  (protocols/-set! this key (apply f (get this key) args)))
+
 (defn- merge-parents [parent child]
   {:fields    (vec (concat (:fields child) (:fields parent)))
    :protocols (set/union (:protocols parent) (:protocols child))
@@ -642,5 +625,5 @@
       `(def ~sym ~doc
          ~definition))))
 
-(alter-meta! *ns* assoc :clojure.tools.namespace.repl/before-unload
-  #(.cancel timer))
+(defn before-ns-unload []
+  (.cancel timer))

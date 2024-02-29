@@ -1,9 +1,19 @@
 (ns examples.settings
   (:require
-    [state :as state]
+    [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui :as ui]))
+
+; (defn set-floating! [window floating]
+;   (when window
+;     (app/doui
+;       (if floating
+;         (window/set-z-order window :floating)
+;         (window/set-z-order window :normal)))))
+
+; (add-watch state/*floating ::window
+;   (fn [_ _ _ floating]
+;     (set-floating! @state/*window floating)))
 
 (def ui
   (ui/with-scale scale
@@ -17,17 +27,17 @@
             (ui/rounded-rect {:radius 6} stroke-bg
               (ui/padding padding-inner padding-inner
                 (ui/column
-                  (ui/row
-                    (ui/valign 0.5
-                      (ui/label "On top"))
-                    [:stretch 1 nil]
-                    (ui/toggle state/*floating))
-                  (ui/gap 0 padding-inner)
-                  (ui/rect fill-delimiter
-                    (ui/gap 0 1))
-                  (ui/gap 0 padding-inner)
+                  ; (ui/row
+                  ;   (ui/valign 0.5
+                  ;     (ui/label "On top"))
+                  ;   [:stretch 1 nil]
+                  ;   (ui/toggle state/*floating))
+                  ; (ui/gap 0 padding-inner)
+                  ; (ui/rect fill-delimiter
+                  ;   (ui/gap 0 1))
+                  ; (ui/gap 0 padding-inner)
                   (ui/row
                     (ui/valign 0.5
                       (ui/label "Debug"))
                     [:stretch 1 nil]
-                    (ui/toggle protocols/*debug?)))))))))))
+                    (ui/toggle debug/*debug?)))))))))))

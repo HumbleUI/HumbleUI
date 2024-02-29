@@ -1,8 +1,6 @@
-(ns ^{:clojure.tools.namespace.repl/load false}
-  io.github.humbleui.signal
+(ns io.github.humbleui.signal
   (:refer-clojure :exclude [mapv reset! swap!])
   (:require
-    [io.github.humbleui.core :as core]
     [io.github.humbleui.protocols :as protocols]
     [extend-clj.core :as extend-clj])
   (:import
@@ -27,10 +25,25 @@
            :when (some? ~sym)]
      ~@body))
 
+(defn without [pred coll]
+  (persistent!
+    (reduce
+      (fn [coll el]
+        (if (pred el)
+          coll
+          (conj! coll el)))
+      (transient (empty coll))
+      coll)))
+
+(defn set!! [obj & kvs]
+  (doseq [[k v] (partition 2 kvs)]
+    (protocols/-set! obj k v))
+  obj)
+
 (defn disj-output [signal output]
   (let [outputs  (:outputs signal)
-        outputs' (core/without #(identical? (read-ref %) output) outputs)]
-    (protocols/-set! signal :outputs outputs')))
+        outputs' (without #(identical? (read-ref %) output) outputs)]
+    (set!! signal :outputs outputs')))
       
 (defn- set-state! [signal state]
   ; (core/log "set-state!" (:name signal) state)
@@ -40,17 +53,18 @@
           (not= :clean state))
     (vswap! *effects* conj signal))
   (when (not= state (:state signal))
-    (protocols/-set! signal :state state)
+    (set!! signal :state state)
     (when-not (= :clean state)
       (doouts [out (:outputs signal)]
         (set-state! out :check)))))
 
 (defn- reset-impl! [signal value' cache']
   ; (core/log "reset-impl!" (:name signal) value' cache')
-  (protocols/-set! signal :state :clean)
+  (set!! signal :state :clean)
   (when (not= (:value signal) value')
-    (protocols/-set! signal :value value')
-    (protocols/-set! signal :cache cache')
+    (set!! signal
+      :value value'
+      :cache cache')
     (doouts [out (:outputs signal)]
       (set-state! out :dirty)))
   value')
@@ -75,8 +89,8 @@
                 :when (not (inputs input))]
           (let [outputs  (:outputs input)
                 outputs' (conj outputs ref)]
-            (protocols/-set! input :outputs outputs')))
-        (protocols/-set! signal :inputs inputs')
+            (set!! input :outputs outputs')))
+        (set!! signal :inputs inputs')
         (reset-impl! signal value' cache')))))
 
 (defn- read-check [signal]
@@ -84,7 +98,7 @@
   (loop [inputs (:inputs signal)]
     (if (empty? inputs)
       (do
-        (protocols/-set! signal :state :clean)
+        (set!! signal :state :clean)
         (:value signal))
       (do
         (binding [*context* nil]
@@ -200,10 +214,10 @@
   (doseq [signal signals]
     (doseq [input (:inputs signal)]
       (disj-output input signal))
-    (doto signal
-      (protocols/-set! :state :disposed)
-      (protocols/-set! :value nil)
-      (protocols/-set! :cache nil)))
+    (set!! signal
+      :state :disposed
+      :value nil
+      :cache nil))
   nil)
 
 (defmacro effect-named [name inputs & body]
@@ -219,7 +233,7 @@
                     :type     :eager})]
      (doseq [input# inputs#
              :let [outputs# (:outputs input#)]]
-       (protocols/-set! input# :outputs (conj outputs# (make-ref signal#))))
+       (set!! input# :outputs (conj outputs# (make-ref signal#))))
      signal#))
 
 (defmacro effect [inputs & body]

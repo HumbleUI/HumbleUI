@@ -7,15 +7,12 @@
   io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}}
+  io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}
+  io.github.tonsky/clj-reload          {:mvn/version "0.3.0"}}
  :aliases
  {:dev
-  {:extra-paths ["dev"]
-   :extra-deps  {io.github.tonsky/tools.namespace {:git/sha "16d74dea5d7c211c34ea491107c91b9aa9105b3b"}
+  {:extra-paths ["dev" "test"]
+   :extra-deps  {io.github.tonsky/duti {:git/sha "1ed88c121b27c7980dc5a86cb6c445b8581e8d06"}
                  criterium/criterium {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
-   :jvm-opts    ["-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}
-  :test
-  {:extra-paths ["test"]
-   :main-opts   ["-m" "io.github.humbleui.test"]
-   :jvm-opts    ["-ea"]}}}
+   :jvm-opts    ["-ea" "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}

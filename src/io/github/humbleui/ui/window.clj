@@ -20,9 +20,9 @@
     app))
 
 (defn window
-  ([app] (window {} app))
-  ([opts app]
-   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color]
+  (^Window [app] (window {} app))
+  (^Window [opts app]
+   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color on-paint on-event]
           :or {exit-on-close? true
                title    "Humble 🐝 UI"
                width    800
@@ -40,12 +40,17 @@
                          :mouse-pos @*mouse-pos}))
          paint-fn   (fn [window canvas]
                       (canvas/clear canvas bg-color)
-                      (let [bounds (window/content-rect window)]
+                      (let [bounds (window/content-rect window)
+                            rect   (core/irect-xywh 0 0 (:width bounds) (:height bounds))]
+                        (when on-paint
+                          (on-paint window canvas))
                         (when-some [app @*app-node]
-                          (protocols/-draw app (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas))))
+                          (protocols/-draw app (ctx-fn window) rect canvas))))
          event-fn   (fn [window event]
                       (core/when-some+ [{:keys [x y]} event]
                         (vreset! *mouse-pos (core/ipoint x y)))
+                      (when on-event
+                        (on-event window event))
                       (when-some [app @*app-node]
                         (when-let [result (protocols/-event app (ctx-fn window) event)]
                           (window/request-frame window)

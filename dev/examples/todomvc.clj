@@ -2,7 +2,6 @@
   (:require
     [clojure.math :as math]
     [clojure.string :as str]
-    [examples.state :as state]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.cursor :as cursor]
@@ -12,8 +11,18 @@
   (:import
     [io.github.humbleui.skija Canvas FontMgr FontStyle]))
 
-(def *state
-  state/*todomvc-state)
+(defonce *state
+  (atom
+    {:new-todo {:placeholder "What needs to be done?"}
+     :mode     :all
+     :next-id  3
+     :todos    (sorted-map
+                 0 {:label "first"
+                    :completed? false}
+                 1 {:label "second"
+                    :completed? true}
+                 2 {:label "third"
+                    :completed? false})}))
 
 (def ^FontMgr font-mgr
   (FontMgr/getDefault))

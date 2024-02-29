@@ -1,14 +1,7 @@
-(ns ^{:clojure.tools.namespace.repl/load false}
-  io.github.humbleui.protocols)
-
-(def *debug?
-  (atom false))
+(ns io.github.humbleui.protocols)
 
 (defprotocol ISettable
   (-set! [_ key value]))
-
-(defn -update! [this key f & args]
-  (-set! this key (apply f (get this key) args)))
 
 (defprotocol IComponent
   (-context              [_ ctx])

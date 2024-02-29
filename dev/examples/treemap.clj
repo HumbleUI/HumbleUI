@@ -1,13 +1,11 @@
 (ns examples.treemap
   (:require
     [clojure.string :as str]
-    [examples.state]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui]
-    [state])
+    [io.github.humbleui.ui :as ui])
   (:import
     [java.io IOException]
     [java.nio.file Files FileVisitResult SimpleFileVisitor LinkOption Path]
@@ -15,6 +13,9 @@
     [java.util.concurrent Future]
     [io.github.humbleui.types IPoint]
     [io.github.humbleui.skija Canvas Paint]))
+
+(defonce *state
+  (atom nil))
 
 (def *path
   (atom
@@ -163,7 +164,7 @@
     (.cancel f true))
   (reset! *future
     (future
-      (reset! examples.state/*treemap-state (scan (:text @*path) *progress))
+      (reset! *state (scan (:text @*path) *progress))
       (window/request-frame @state/*window)
       (reset! *future nil))))
 
@@ -179,7 +180,7 @@
       (ui/gap 0 10)
       [:stretch 1
        (ui/dynamic _ [progress @*progress
-                      state    @examples.state/*treemap-state]
+                      state    @*state]
          (cond
            (= progress 0.0)
            nil
