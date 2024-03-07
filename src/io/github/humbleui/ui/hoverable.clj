@@ -5,7 +5,7 @@
   (-event-impl [this ctx event]
     (core/when-some+ [{:keys [x y]} event]
       (let [{:keys [on-hover on-out]} (parse-opts element)
-            state     *state
+            state     @*state
             hovered?  (= :hovered state)
             hovered?' (core/rect-contains? rect (core/ipoint x y))]
         (cond

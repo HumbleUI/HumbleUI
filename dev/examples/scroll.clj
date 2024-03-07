@@ -8,7 +8,7 @@
   ([text]
    (label 10 text))
   ([height text]
-   (let [*hovered? (signal/signal false)]
+   (let [*state (signal/signal false)]
      (fn render
        ([text]
         (render 10 text))
@@ -17,8 +17,8 @@
                      {:horizontal 20
                       :vertical height}
                      [ui/label text]]]
-          [ui/hoverable {:*hovered? *hovered?}
-           (if @*hovered?
+          [ui/hoverable {:*state *state}
+           (if (= :hovered @*state)
              [ui/rect {:paint (paint/fill 0xFFCFE8FC)} label]
              label)]))))))
 
@@ -27,6 +27,12 @@
    [ui/row {:gap 10}
     ;; 100 elements
     [ui/vscrollbar
+     [ui/column
+      (for [i (range 0 100)]
+        [label i])]]
+    
+    ;; 100 elements, no scrollbar
+    [ui/vscroll
      [ui/column
       (for [i (range 0 100)]
         [label i])]]

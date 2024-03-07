@@ -151,7 +151,10 @@
       :cache   (set! cache v)
       :inputs  (set! inputs v)
       :outputs (set! outputs v)
-      :state   (set! state v))))
+      :state   (set! state v)))
+  
+  (toString [this]
+    (str "#signal[name=" (or name (Integer/toHexString (System/identityHashCode this))) " value=" value "]")))
 
 (defn map->Signal [m]
   (->Signal
@@ -186,7 +189,7 @@
 (defmacro signal
   "Observable derived computation"
   [& body]
-  `(signal* "anon-signal" (fn [~'_ ~'_] {:value (do ~@body)})))
+  `(signal* nil (fn [~'_ ~'_] {:value (do ~@body)})))
 
 (defmacro defsignal [name & body]
   `(def ~name

@@ -79,7 +79,7 @@
   (map->Clickable
     {:*state     (or
                    (:*state opts)
-                   (signal/signal :enabled))
+                   (signal/signal :default))
      :pressed?   nil
      :clicks     0
      :last-click 0}))
