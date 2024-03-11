@@ -74,10 +74,10 @@
         [ui/label "Radio " *value]]])))
 
 (ui/defcomp custom-laf [state child]
-  [ui/padding {:padding (if (= :pressed state) 1 0)}
+  [ui/translate {:dy (if (= :pressed state) 2 0)}
    [ui/rounded-rect {:radius 15
                      :paint  (paint/fill 0xFF007BFF)}
-    [ui/padding {:padding (if (= :pressed state) 9 10)}
+    [ui/padding {:padding 10}
      (if (vector? child)
        child
        [ui/label {:paint (paint/fill 0xFFFFFFFF)} child])]]])

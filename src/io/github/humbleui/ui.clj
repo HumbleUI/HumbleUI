@@ -70,6 +70,7 @@
 (deflazy rounded-rect ([{:keys [radius paint]} child]) "rect")
 (deflazy clip         ([child]) "clip")
 (deflazy clip-rrect   ([{:keys [radii]} child]) "clip")
+(deflazy translate    ([{:keys [dx dy]} child]) "transform")
 
 (deflazy halign ([{:keys [position child-position]} child]) "align")
 (deflazy valign ([{:keys [position child-position]} child]) "align")

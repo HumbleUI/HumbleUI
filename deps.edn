@@ -12,7 +12,7 @@
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
-   :extra-deps  {io.github.tonsky/duti {:git/sha "1ed88c121b27c7980dc5a86cb6c445b8581e8d06"}
+   :extra-deps  {io.github.tonsky/duti {:git/sha "78bbf61953b9a685d02ff8cc63d04e4e8da81eb9"}
                  criterium/criterium {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
    :jvm-opts    ["-ea" "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}

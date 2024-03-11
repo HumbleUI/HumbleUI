@@ -29,7 +29,7 @@
 
 (defn test-all []
   (reload {:only #"io\.github\.humbleui\.[^\.]+-test"})
-  (duti/test-throw #"io\.github\.humbleui\..*-test"))
+  (duti/test #"io\.github\.humbleui\..*-test"))
 
 (defn -test-main [_]
   (reload {:only #"io\.github\.humbleui\.[^\.]+-test"})
