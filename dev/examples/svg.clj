@@ -23,20 +23,20 @@
            [ui/column {:gap step}
             [ui/row {:gap step}
              [ui/column {:gap step}
-              [svg (* 7 step) (* 3 step) :mid :mid :meet]
-              [svg (* 7 step) (* 3 step) :mid :min :slice]]
+              [svg (* 7 step) (* 3 step) 0.5 0.5 :fit]
+              [svg (* 7 step) (* 3 step) 0.5 0   :fill]]
              [ui/column {:gap step}
-              [svg (* 7 step) (* 3 step) :min :mid :meet]
-              [svg (* 7 step) (* 3 step) :mid :mid :slice]]
+              [svg (* 7 step) (* 3 step) 0   0.5 :fit]
+              [svg (* 7 step) (* 3 step) 0.5 0.5 :fill]]
              [ui/column {:gap step}
-              [svg (* 7 step) (* 3 step) :max :mid :meet]
-              [svg (* 7 step) (* 3 step) :mid :max :slice]]
-             [svg (* 3 step) (* 7 step) :mid :min :meet]
-             [svg (* 3 step) (* 7 step) :mid :mid :meet]
-             [svg (* 3 step) (* 7 step) :mid :max :meet]
-             [svg (* 3 step) (* 7 step) :min :mid :slice]
-             [svg (* 3 step) (* 7 step) :mid :mid :slice]
-             [svg (* 3 step) (* 7 step) :max :mid :slice]]
+              [svg (* 7 step) (* 3 step) 1   0.5 :fit]
+              [svg (* 7 step) (* 3 step) 0.5 1 :fill]]
+             [svg (* 3 step) (* 7 step) 0.5 0   :fit]
+             [svg (* 3 step) (* 7 step) 0.5 0.5 :fit]
+             [svg (* 3 step) (* 7 step) 0.5 1   :fit]
+             [svg (* 3 step) (* 7 step) 0   0.5 :fill]
+             [svg (* 3 step) (* 7 step) 0.5 0.5 :fill]
+             [svg (* 3 step) (* 7 step) 1   0.5 :fill]]
           
             [ui/clip
              [ui/rect {:paint (paint/fill 0xFF90DC48)}

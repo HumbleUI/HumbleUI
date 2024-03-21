@@ -1,5 +1,6 @@
 (ns io.github.humbleui.ui
   (:require
+    [clojure.java.io :as io]
     [clojure.math :as math]
     [clojure.string :as str]
     [clojure.walk :as walk]
@@ -12,17 +13,14 @@
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
-    ; [io.github.humbleui.ui.animation :as animation]
     ; [io.github.humbleui.ui.backdrop :as backdrop]
     ; [io.github.humbleui.ui.button :as button]
-    ; [io.github.humbleui.ui.canvas :as canvas]
     ; [io.github.humbleui.ui.checkbox :as checkbox]
     ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
-    ; [io.github.humbleui.ui.padding :as padding]
     ; [io.github.humbleui.ui.paragraph :as paragraph]
     ; [io.github.humbleui.ui.shadow :as shadow]
     ; [io.github.humbleui.ui.stack :as stack]
@@ -60,10 +58,12 @@
         (load ~(str "/io/github/humbleui/ui/" file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
-(deflazy gap   ([] [{:keys [width height]}]) "gap")
-(deflazy label ([& texts]) "label")
-(deflazy image ([src] [{:keys [sampling-mode]} src]) "image")
-(deflazy svg   ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
+(deflazy gap       ([] [{:keys [width height]}]) "gap")
+(deflazy label     ([& texts]) "label")
+(deflazy image     ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
+(deflazy animation ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
+(deflazy svg       ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
+(deflazy canvas    ([{:keys [on-paint on-event]}]) "canvas")
 
 (deflazy padding      ([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
 (deflazy rect         ([{:keys [paint]} child]) "rect")
@@ -88,10 +88,8 @@
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
 (core/import-vars
-  ; animation/animation
   ; backdrop/backdrop
   ; button/button
-  ; canvas/canvas
   ; checkbox/checkbox
   ; draggable/draggable
   ; focusable/focusable

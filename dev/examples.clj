@@ -4,13 +4,13 @@
     [clojure.java.io :as io]
     ; [examples.7guis-converter]
     [examples.align]
-    ; [examples.animation]
+    [examples.animation]
     ; [examples.backdrop]
     ; [examples.blur]
     ; [examples.bmi-calculator]
     [examples.button]
     ; [examples.calculator]
-    ; [examples.canvas]
+    [examples.canvas]
     ; [examples.canvas-shapes]
     ; [examples.checkbox]
     [examples.container]
@@ -19,6 +19,7 @@
     ; [examples.event-bubbling]
     ; [examples.framerate]
     ; [examples.grid]
+    [examples.image]
     ; [examples.image-snapshot]
     [examples.label]
     ; [examples.oklch]
@@ -51,13 +52,13 @@
   (sorted-map
     ; "7 GUIs: Converter" examples.7guis-converter/ui
     "Align" examples.align/ui
-    ; "Animation" examples.animation/ui
+    "Animation" examples.animation/ui
     ; "Backdrop" examples.backdrop/ui
     ; "Blur" examples.blur/ui
     ; "BMI Calculator" examples.bmi-calculator/ui
     "Button" examples.button/ui
     ; "Calculator" examples.calculator/ui
-    ; "Canvas" examples.canvas/ui
+    "Canvas" examples.canvas/ui
     ; "Canvas Shapes" examples.canvas-shapes/ui
     ; "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
@@ -66,6 +67,7 @@
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui
     ; "Grid" examples.grid/ui
+    "Image" examples.image/ui
     ; "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui
     ; "OkLCH" examples.oklch/ui
@@ -86,7 +88,7 @@
     ))
 
 (defonce *example
-  (signal/signal "Label"))
+  (signal/signal "Animation"))
 
 (let [fill-selected (paint/fill 0xFFB2D7FE)
       fill-active   (paint/fill 0xFFA2C7EE)
@@ -128,8 +130,8 @@
   (ui/default-theme {}
     (ui/make [app-impl])))
 
-(defn before-ns-unload []
-  (reset! *app nil))
+; (defn before-ns-unload []
+;   (reset! *app nil))
 
 (defonce *window
   (promise))

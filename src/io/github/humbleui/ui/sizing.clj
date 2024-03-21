@@ -24,6 +24,11 @@
 (defn height [opts child]
   (map->Height {}))
 
+(defn size [opts child]
+  [ui/width {:width (:width opts)}
+   [ui/height {:height (:height opts)}
+    child]])
+
 ; (core/deftype+ MaxWidth [probes]
 ;   :extends core/AWrapper
   

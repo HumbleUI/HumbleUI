@@ -62,6 +62,7 @@
           (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui fill-text)
           (recur (+ y (* 2 leading scale)) (next kv)))))))
 
-(def ui
-  (ui/canvas {:on-paint on-paint
-              :on-event on-event}))
+(defn ui []
+  [ui/canvas 
+   {:on-paint on-paint
+    :on-event on-event}])

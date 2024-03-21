@@ -30,7 +30,7 @@
 
 ;; state
 
-(defonce ^Timer timer
+(def ^Timer timer
   (Timer. true))
 
 (def ^{:arglists '([^Throwable t])} log-error
@@ -85,6 +85,10 @@
      (when (every? some? ~(bindings->syms bindings))
        ~@body)))
 
+(defn close [o]
+  (when (instance? AutoCloseable o)
+    (.close ^AutoCloseable o)))
+
 (defn memoize-last [ctor]
   (let [*state (volatile! nil)]
     (fn [& args']
@@ -92,8 +96,7 @@
         (when-some [[args value] @*state]
           (if (= args args')
             value
-            (when (instance? AutoCloseable value)
-              (.close ^AutoCloseable value))))
+            (close value)))
         (let [value' (try
                        (apply ctor args')
                        (catch Throwable t
