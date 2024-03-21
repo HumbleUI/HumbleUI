@@ -52,21 +52,15 @@
        [img {:w 170 :h 50 :scale :fit :xpos 0}]
        [img {:w 170 :h 50 :scale :fit :xpos 0.5}]
        [img {:w 170 :h 50 :scale :fit :xpos 1}]
-       [ui/row {:gap 10}
-        [img {:w 50 :h 170 :scale :fit :ypos 0}]
-        [img {:w 50 :h 170 :scale :fit :ypos 0.5}]
-        [img {:w 50 :h 170 :scale :fit :ypos 1}]]
        [ui/label ":fit"]]
+      [ui/gap]
       
       [ui/column {:gap 10}
        [img {:w 170 :h 50 :scale :fill :ypos 0}]
        [img {:w 170 :h 50 :scale :fill :ypos 0.5}]
        [img {:w 170 :h 50 :scale :fill :ypos 1}]
-       [ui/row {:gap 10}
-        [img {:w 50 :h 170 :scale :fill :xpos 0}]
-        [img {:w 50 :h 170 :scale :fill :xpos 0.5}]
-        [img {:w 50 :h 170 :scale :fill :xpos 1}]]
        [ui/label ":fill"]]
+      [ui/gap]
       
       [ui/column {:gap 10}
        [ui/row {:gap 10}
@@ -82,8 +76,32 @@
         [img {:w 50 :h 50 :scale 0.333 :xpos 0.5 :ypos 1}]
         [img {:w 50 :h 50 :scale 0.333 :xpos 1   :ypos 1}]]
        [ui/label ":scale 0.333"]]
+      [ui/gap]
       
       [ui/column {:gap 10}
+       [ui/image {:scale :content} "dev/images/face_100w.png"]
+       [ui/label ":content"]]]
+     [ui/gap]
+     
+     [ui/row {:gap 10}
+      [ui/column {:gap 10}
+       [ui/row {:gap 10}
+        [img {:w 50 :h 170 :scale :fit :ypos 0}]
+        [img {:w 50 :h 170 :scale :fit :ypos 0.5}]
+        [img {:w 50 :h 170 :scale :fit :ypos 1}]]
+       [ui/label ":fit"]]
+      [ui/gap]
+      
+      [ui/column {:gap 10}
+       [ui/row {:gap 10}
+        [img {:w 50 :h 170 :scale :fill :xpos 0}]
+        [img {:w 50 :h 170 :scale :fill :xpos 0.5}]
+        [img {:w 50 :h 170 :scale :fill :xpos 1}]]
+       [ui/label ":fill"]]
+      [ui/gap]
+      
+      [ui/column {:gap 10}
+      
        [ui/row {:gap 10}
         [img {:w 50 :h 50 :scale 1.5 :xpos 0   :ypos 0}]
         [img {:w 50 :h 50 :scale 1.5 :xpos 0.5 :ypos 0}]
@@ -96,8 +114,6 @@
         [img {:w 50 :h 50 :scale 1.5 :xpos 0   :ypos 1}]
         [img {:w 50 :h 50 :scale 1.5 :xpos 0.5 :ypos 1}]
         [img {:w 50 :h 50 :scale 1.5 :xpos 1   :ypos 1}]]
-       [ui/label ":scale 1.5"]]
+       [ui/label ":scale 1.5"]]]
       
-      [ui/column {:gap 10}
-       [ui/image {:scale :content} "dev/images/face_100w.png"]
-       [ui/label ":content"]]]]]])
+     ]]])
