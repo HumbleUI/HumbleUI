@@ -1,6 +1,6 @@
 .repl-port
 .nrepl-port
-.window
+.state
 hs_err_pid*.log
 .cpcache
 target
