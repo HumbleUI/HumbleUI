@@ -39,7 +39,7 @@
           (do
             (signal/reset-changed! *state
               (cond
-                hovered?' :hoverer
+                hovered?' :hovered
                 :else     :default)))
           ;; we have to handle this event
           (do

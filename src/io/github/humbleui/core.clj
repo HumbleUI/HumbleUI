@@ -289,6 +289,13 @@
 (defn consv [x xs]
   (vec (cons x xs)))
 
+(defn update-last [xs f & args]
+  (apply update xs (dec (count xs)) f args))
+
+(defn lastv [xs]
+  (when (> (count xs) 1)
+    (nth xs (dec (count xs)))))
+
 (defn between? [x from to]
   (and
     (<= from x)

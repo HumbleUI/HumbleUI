@@ -27,7 +27,7 @@
     [examples.scroll]
     ; [examples.settings]
     [examples.slider]
-    ; [examples.stack]
+    [examples.stack]
     [examples.svg]
     ; [examples.text-field]
     ; [examples.text-field-debug]
@@ -75,7 +75,7 @@
     "Scroll" examples.scroll/ui
     ; "Settings" examples.settings/ui
     "Slider" examples.slider/ui
-    ; "Stack" examples.stack/ui
+    "Stack" examples.stack/ui
     "SVG" examples.svg/ui
     ; "Text Field" examples.text-field/ui
     ; "Text Field Debug" examples.text-field-debug/ui
@@ -189,6 +189,6 @@
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
         (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))
-      ; (reset! debug/*debug? true)
+      (reset! debug/*debug? true)
       (deliver *window window)))
   @*window)

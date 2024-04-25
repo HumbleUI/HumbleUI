@@ -1,31 +1,33 @@
-(ns io.github.humbleui.ui.stack
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
 (core/deftype+ Stack []
-  :extends core/AContainer
+  :extends AContainerNode
   
   protocols/IComponent
-  (-measure [_ ctx cs]
+  (-measure-impl [_ ctx cs]
     (reduce
       (fn [size child]
-        (let [{:keys [width height]} (core/measure child ctx cs)]
-          (core/ipoint (max (:width size) width) (max (:height size) height))))
-      (core/ipoint 0 0) children))
+        (let [{:keys [width height]} (measure child ctx cs)]
+          (core/ipoint
+            (max (:width size) width)
+            (max (:height size) height))))
+      (core/ipoint 0 0)
+      children))
   
-  (-draw [_ ctx rect canvas]
+  (-draw-impl [_ ctx rect canvas]
     (doseq [child children]
-      (core/draw-child child ctx rect canvas)))
+      (draw-child child ctx rect canvas)))
   
-  (-event [_ ctx event]
-    (reduce 
-      (fn [_ child]
-        (when-let [res (core/event-child child ctx event)]
-          (reduced res)))
-      nil
-      (reverse children))))
+  (-event [this ctx event]
+    (when-some [ctx' (protocols/-context this ctx)]
+      (binding [*node* this
+                *ctx*  ctx']
+        (reduce 
+          (fn [_ child]
+            (when-let [res (event-child child ctx event)]
+              (reduced res)))
+          nil
+          (reverse children))))))
 
-(defn stack [& children]
-  (map->Stack
-    {:children (->> children flatten (remove nil?) vec)}))
+(defn- stack-ctor [& children]
+  (map->Stack {}))

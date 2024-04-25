@@ -59,7 +59,7 @@ def dev_deps():
     build_utils.fetch_maven("criterium", "criterium", build_utils.deps_version("criterium"), repo = clojars),
     build_utils.fetch_maven("com.clojure-goes-fast", "clj-async-profiler", build_utils.deps_version("clj-async-profiler"), repo = clojars),
 
-    build_utils.fetch_maven("io.github.tonsky", "clj-reload", build_utils.deps_version("clj-reload"), repo = clojars),
+    build_utils.fetch_maven("io.github.tonsky", "clj-reload", "0.5.0", repo = clojars),
     # "/Users/tonsky/ws/clj-reload/src",
     build_utils.fetch_github("tonsky", "duti", build_utils.deps_version("duti")),
     build_utils.fetch_maven("lambdaisland", "deep-diff2", "2.11.216", repo = clojars),

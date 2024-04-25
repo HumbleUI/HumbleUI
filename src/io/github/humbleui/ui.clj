@@ -23,7 +23,6 @@
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.paragraph :as paragraph]
     ; [io.github.humbleui.ui.shadow :as shadow]
-    ; [io.github.humbleui.ui.stack :as stack]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
     ; [io.github.humbleui.ui.tooltip :as tooltip]
@@ -76,10 +75,12 @@
 (deflazy valign ([{:keys [position child-position]} child]) "align")
 (deflazy center ([child]) "align")
 
+
 (deflazy vscroll    ([child] [opts child]) "scroll")
 (deflazy vscrollbar ([child] [opts child]) "scroll")
-(deflazy column     ([& children] [opts & children]) "containers")
-(deflazy row        ([& children] [opts & children]) "containers")
+(deflazy column     ([& children] [opts & children]) "column")
+(deflazy row        ([& children] [opts & children]) "row")
+(deflazy stack      ([& children]) "stack")
 
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
@@ -106,7 +107,6 @@
   ; shadow/shadow
   ; shadow/shadow-inset
   ; sizing/max-width
-  ; stack/stack
   ; text-field/text-input
   ; text-field/text-field
   ; toggle/toggle

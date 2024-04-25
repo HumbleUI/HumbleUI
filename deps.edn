@@ -7,12 +7,12 @@
   io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}
-  io.github.tonsky/clj-reload          {:mvn/version "0.4.3"}}
+  io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}}
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
-   :extra-deps  {io.github.tonsky/duti {:git/sha "78bbf61953b9a685d02ff8cc63d04e4e8da81eb9"}
+   :extra-deps  {io.github.tonsky/duti {:git/sha "0e934d934b0b5d1ab1a608f26b68f5467934b028"
+                                        #_#_:local/root "/Users/tonsky/ws/duti"}
                  criterium/criterium {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
    :jvm-opts    ["-ea" "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}

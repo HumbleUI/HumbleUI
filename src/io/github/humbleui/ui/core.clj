@@ -430,7 +430,8 @@
   
   (-reconcile-impl [this ctx el']
     (let [[_ _ [child-el]] (parse-element el')
-          [child']         (reconcile-many ctx [(:child this)] [child-el])]
+          ctx'             (protocols/-context this ctx)
+          [child']         (reconcile-many ctx' [(:child this)] [child-el])]
       (protocols/-set! this :child child')))
   
   (-unmount [this]
@@ -531,7 +532,8 @@
     (when render
       (core/invoke before-render)
       (try
-        (binding [signal/*context* (volatile! (transient #{}))]
+        (binding [signal/*context* (volatile! (transient #{}))
+                  *ctx*            ctx]
           (let [child-el (apply render (next new-element))
                 [child'] (reconcile-many ctx [child] [child-el])
                 _        (set! child child')
