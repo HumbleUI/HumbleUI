@@ -1,61 +1,62 @@
 (in-ns 'io.github.humbleui.ui)
 
+(def button-bg-pressed
+  (paint/fill 0xFFA2C7EE))
+
+(def button-bg-hovered
+  (paint/fill 0xFFCFE8FC))
+
+(def button-bg
+  (paint/fill 0xFFB2D7FE))
+
 (ui/defcomp button-laf [state child]
-  (let [{:hui.button/keys [bg
-                           bg-pressed
-                           bg-hovered
-                           border-radius
-                           padding-left
-                           padding-top
-                           padding-right
-                           padding-bottom]} *ctx*]
-    [clip-rrect {:radii [border-radius]}
+  (fn [state child]
+    [clip-rrect {:radii [4]}
      [rect {:paint (case state
-                     :pressed bg-pressed
-                     :hovered bg-hovered
-                     bg)}
-      [padding {:left   padding-left
-                :top    padding-top
-                :right  padding-right
-                :bottom padding-bottom}
+                     :selected button-bg-pressed
+                     :pressed  button-bg-pressed
+                     :hovered  button-bg-hovered
+                     #_else    button-bg)}
+      [padding {:horizontal (* 2 (:leading *ctx*))
+                :vertical   (:leading *ctx*)}
        [center
         (if (vector? child)
           child
           [label child])]]]]))
 
 (ui/defcomp button-ctor [opts child]
-  (let [*state (or (:*state opts) (signal/signal :default))
-        laf    (or (:laf opts) (:hui.button/laf *ctx*) button-laf)]
-    {:should-setup?
-     (fn [opts' child]
-       (not (keys-match? [:*state :laf] opts opts')))
-     :render
-     (fn [opts child]
-       [clickable (assoc opts :*state *state)
-        [laf @*state child]])}))
+  [clickable opts
+   (fn [state]
+     [(or (:hui.button/laf *ctx*) button-laf) state child])])
 
-(ui/defcomp toggle-button-ctor [opts child]
+(ui/defcomp toggleable [opts child-ctor-or-el]
   (let [value-pressed   (:value-pressed opts true)
         value-unpressed (:value-unpressed opts)
         *value          (or (:*value opts) (signal/signal value-unpressed))
-        *state          (or (:*state opts) (signal/signal :default))
         on-click        (fn [_]
                           (signal/reset-changed! *value
                             (if (= value-pressed @*value)
                               value-unpressed
-                              value-pressed)))
-        laf             (or (:laf opts) button-laf)]
+                              value-pressed)))]
+    {:should-setup?
+     (fn [opts' child-ctor-or-el]
+       (not (keys-match? [:value-pressed :value-unpressed :*value] opts opts')))
+     :render
+     (fn [opts child-ctor-or-el]
+       (let [value @*value]
+         [clickable {:on-click on-click}
+          (if (fn? child-ctor-or-el)
+            (fn [state]
+              (child-ctor-or-el (if (= value value-pressed) :selected state)))
+            child-ctor-or-el)]))}))
+
+(ui/defcomp toggle-button-ctor [opts child]
+  (let [value-pressed (:value-pressed opts true)]
     {:should-setup?
      (fn [opts' child]
-       (not (keys-match? [:value-pressed :value-unpressed :*value :*state :laf] opts opts')))
+       (not (keys-match? [:value-pressed] opts opts')))
      :render
      (fn [opts child]
-       (let [state @*state
-             value @*value]
-         [clickable {:*state *state
-                     :on-click on-click}
-          [laf
-           (if (= value-pressed @*value)
-             :pressed
-             @*state)
-           child]]))}))
+       [toggleable opts
+        (fn [state]
+          [(or (:hui.button/laf *ctx*) button-laf) state child])])}))

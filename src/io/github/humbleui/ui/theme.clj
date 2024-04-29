@@ -21,15 +21,6 @@
                          :fill-text      fill-text
                          :fill-gray      fill-gray
                          
-                         :hui.button/bg-pressed     (paint/fill 0xFFA2C7EE)
-                         :hui.button/bg-hovered     (paint/fill 0xFFCFE8FC)
-                         :hui.button/bg             (paint/fill 0xFFB2D7FE)
-                         :hui.button/border-radius  4
-                         :hui.button/padding-left   (* 2 leading)
-                         :hui.button/padding-top    leading
-                         :hui.button/padding-right  (* 2 leading)
-                         :hui.button/padding-bottom leading
-                         
                          :hui.scroll/fill-track     (paint/fill 0x10000000)
                          :hui.scroll/fill-thumb     (paint/fill 0x60000000)
                          

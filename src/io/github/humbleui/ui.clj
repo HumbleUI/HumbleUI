@@ -42,9 +42,7 @@
 (load "/io/github/humbleui/ui/core")
 (load "/io/github/humbleui/ui/dynamic")
 (load "/io/github/humbleui/ui/with_context")
-(load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/sizing")
-(load "/io/github/humbleui/ui/window")
 
 (defmacro deflazy
   ([name arglists file]
@@ -87,6 +85,9 @@
 (deflazy button        ([{:keys [on-click]} child]) "button")
 (deflazy toggle-button ([{:keys [*value]} child]) "button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
+
+(load "/io/github/humbleui/ui/theme")
+(load "/io/github/humbleui/ui/window")
 
 (core/import-vars
   ; backdrop/backdrop

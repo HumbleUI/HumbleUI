@@ -12,6 +12,7 @@
   (-event                [_ ctx event])
   (-event-impl           [_ ctx event])
   (-iterate              [_ ctx cb])
+  (-child-elements       [_ ctx new-el])
   (-reconcile            [_ ctx new-el])
   (-reconcile-impl       [_ ctx new-el])
   (-should-reconcile?    [_ ctx new-el])

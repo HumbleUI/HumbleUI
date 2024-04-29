@@ -377,7 +377,11 @@
   
   (-event-impl [this ctx event]
     nil)
-    
+
+  (-child-elements [this ctx new-element]
+    (let [[_ _ child-els] (parse-element new-element)]
+      child-els))
+  
   (-reconcile [this ctx new-element]
     (when (not (identical? (:element this) new-element))
       (protocols/-reconcile-impl this ctx new-element)
@@ -429,9 +433,9 @@
         (iterate-child (:child this) ctx' cb))))
   
   (-reconcile-impl [this ctx el']
-    (let [[_ _ [child-el]] (parse-element el')
-          ctx'             (protocols/-context this ctx)
-          [child']         (reconcile-many ctx' [(:child this)] [child-el])]
+    (let [[child-el] (protocols/-child-elements this ctx el')
+          ctx'       (protocols/-context this ctx)
+          [child']   (reconcile-many ctx' [(:child this)] [child-el])]
       (protocols/-set! this :child child')))
   
   (-unmount [this]
@@ -457,9 +461,9 @@
       (some #(iterate-child % ctx cb) (:children this))))
   
   (-reconcile-impl [this ctx el']
-    (let [[_ _ child-els] (parse-element el')
-          child-els       (core/flatten child-els)
-          children'       (reconcile-many ctx (:children this) child-els)]
+    (let [child-els (protocols/-child-elements this ctx el')
+          child-els (core/flatten child-els)
+          children' (reconcile-many ctx (:children this) child-els)]
       (protocols/-set! this :children children')))
   
   (-unmount [this]

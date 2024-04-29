@@ -73,19 +73,33 @@
        [ui/valign {:position 0.5}
         [ui/label "Radio " *value]]])))
 
+(def custom-button-bg
+  (paint/fill 0xFF007BFF))
+
+(def custom-button-text
+  (paint/fill 0xFFFFFFFF))
+
 (ui/defcomp custom-laf [state child]
   [ui/translate {:dy (if (= :pressed state) 2 0)}
    [ui/rounded-rect {:radius 15
-                     :paint  (paint/fill 0xFF007BFF)}
+                     :paint  custom-button-bg}
     [ui/padding {:padding 10}
      (if (vector? child)
        child
-       [ui/label {:paint (paint/fill 0xFFFFFFFF)} child])]]])
+       [ui/label {:paint custom-button-text} child])]]])
 
 (ui/defcomp custom []
-  [ui/button {:laf custom-laf
-              :on-click (fn [_] (swap! *clicks inc))}
-   "Custom LAF"])
+  [ui/row {:gap 5}
+   [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
+    (fn [state]
+      [custom-laf state "Reusable custom LAF"])]
+   [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
+    (fn [state]
+      [ui/translate {:dy (if (= :pressed state) 2 0)}
+       [ui/rounded-rect {:radius 15
+                         :paint  custom-button-bg}
+        [ui/padding {:padding 10}
+         [ui/label {:paint custom-button-text} "Inline custom LAF"]]]])]])
 
 (ui/defcomp ui []
   [ui/center
@@ -136,5 +150,4 @@
      [radio]]
     
     [ui/halign {:position 0}
-     [custom]]
-    ]])
+     [custom]]]])

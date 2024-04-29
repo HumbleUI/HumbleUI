@@ -18,6 +18,7 @@
     ; [examples.errors]
     ; [examples.event-bubbling]
     ; [examples.framerate]
+    [examples.graph]
     ; [examples.grid]
     [examples.image]
     ; [examples.image-snapshot]
@@ -48,6 +49,8 @@
     [io.github.humbleui.jwm.skija LayerMetalSkija]
     [io.github.humbleui.skija ColorSpace]))
 
+; TODO https://www.egui.rs/
+
 (def examples
   (sorted-map
     ; "7 GUIs: Converter" examples.7guis-converter/ui
@@ -66,6 +69,7 @@
     ; "Errors" examples.errors/ui
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui
+    "Graph" examples.graph/ui
     ; "Grid" examples.grid/ui
     "Image" examples.image/ui
     ; "Image Snapshot" examples.image-snapshot/ui
@@ -107,25 +111,23 @@
   (fn [_ _ _ new]
     (save-state {:example new})))
 
-(let [fill-selected (paint/fill 0xFFB2D7FE)
-      fill-active   (paint/fill 0xFFA2C7EE)
-      fill-hovered  (paint/fill 0xFFE1EFFA)]
-  (ui/defcomp example-label [name]
-    (let [*hovered? (signal/signal false)
-          *active?  (signal/signal false)]
-      (fn [name]
-        [ui/clickable {:on-click  (fn [_]
-                                    (signal/reset! *example name))
-                       :*hovered? *hovered?
-                       :*active?  *active?}
-         (let [label     [ui/padding {:horizontal 20 :vertical 10}
-                          [ui/label name]]
+(ui/defcomp example-label [name]
+  (let [fill-selected (paint/fill 0xFFB2D7FE)
+        fill-active   (paint/fill 0xFFA2C7EE)
+        fill-hovered  (paint/fill 0xFFE1EFFA)]
+    (fn [name]
+      [ui/clickable
+       {:on-click (fn [_]
+                    (signal/reset! *example name))}
+       (fn [state]
+         (let [label [ui/padding {:horizontal 20 :vertical 10}
+                      [ui/label name]]
                selected? (= name @*example)]
            (cond
-             selected?  [ui/rect {:paint fill-selected} label]
-             @*active?  [ui/rect {:paint fill-active} label]
-             @*hovered? [ui/rect {:paint fill-hovered} label]
-             :else      label))]))))
+             selected?          [ui/rect {:paint fill-selected} label]
+             (= :pressed state) [ui/rect {:paint fill-active} label]
+             (= :hovered state) [ui/rect {:paint fill-hovered} label]
+             :else              label)))])))
 
 (ui/defcomp app-impl []
   [ui/row

@@ -36,25 +36,39 @@
           true) ;; was false?
         (if (event-child child ctx event')
           ;; child have handled this event
-          (do
+          (when
             (signal/reset-changed! *state
               (cond
                 hovered?' :hovered
-                :else     :default)))
+                :else     :default))
+            (force-render this (:window ctx)))
           ;; we have to handle this event
           (do
             (set! pressed? pressed?')
-            (signal/reset-changed! *state
-              (cond
-                (and hovered?' pressed?') :pressed
-                hovered?'                 :hovered
-                :else                     :default))
+            (when
+              (signal/reset-changed! *state
+                (cond
+                  (and hovered?' pressed?') :pressed
+                  hovered?'                 :hovered
+                  :else                     :default))
+              (force-render this (:window ctx)))
             (when (and clicked? on-click)
               (core/invoke on-click event')
               true))))))
   
   (-should-reconcile? [_this _ctx new-element]
-    (opts-match? [:*state] element new-element)))
+    (opts-match? [:*state] element new-element))
+  
+  ; (-reconcile [this ctx new-element]
+  ;   (protocols/-reconcile-impl this ctx new-element)
+  ;   (protocols/-set! this :element new-element)
+  ;   this)
+  
+  (-child-elements [this ctx new-element]
+    (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
+      (if (fn? child-ctor-or-el)
+        [(child-ctor-or-el @*state)]
+        [child-ctor-or-el]))))
 
 (defn- clickable-ctor
   "Element that can be clicked. Supports nesting (innermost will be clicked).

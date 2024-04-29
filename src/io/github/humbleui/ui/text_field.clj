@@ -19,6 +19,9 @@
     [io.github.humbleui.skija BreakIterator Canvas Font FontMetrics TextLine]
     [io.github.humbleui.skija.shaper ShapingOptions]))
 
+;; https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/TextDefaultsBindings/TextDefaultsBindings.html
+;; https://github.com/davidbalbert/KeyBinding-Inspector
+
 (def undo-stack-depth 100)
 
 (defn- char-iter ^BreakIterator [state]
