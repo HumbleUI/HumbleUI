@@ -9,25 +9,24 @@
 (def button-bg
   (paint/fill 0xFFB2D7FE))
 
-(ui/defcomp button-laf [state child]
-  (fn [state child]
-    [clip-rrect {:radii [4]}
-     [rect {:paint (case state
-                     :selected button-bg-pressed
-                     :pressed  button-bg-pressed
-                     :hovered  button-bg-hovered
-                     #_else    button-bg)}
-      [padding {:horizontal (* 2 (:leading *ctx*))
-                :vertical   (:leading *ctx*)}
-       [center
-        (if (vector? child)
-          child
-          [label child])]]]]))
+(ui/defcomp button-look [state child]
+  [clip-rrect {:radii [4]}
+   [rect {:paint (case state
+                   :selected button-bg-pressed
+                   :pressed  button-bg-pressed
+                   :hovered  button-bg-hovered
+                   #_else    button-bg)}
+    [padding {:horizontal (* 2 (:leading *ctx*))
+              :vertical   (:leading *ctx*)}
+     [center
+      (if (vector? child)
+        child
+        [label child])]]]])
 
 (ui/defcomp button-ctor [opts child]
   [clickable opts
    (fn [state]
-     [(or (:hui.button/laf *ctx*) button-laf) state child])])
+     [(or (:hui.button/look *ctx*) button-look) state child])])
 
 (ui/defcomp toggleable [opts child-ctor-or-el]
   (let [value-pressed   (:value-pressed opts true)
@@ -59,4 +58,4 @@
      (fn [opts child]
        [toggleable opts
         (fn [state]
-          [(or (:hui.button/laf *ctx*) button-laf) state child])])}))
+          [(or (:hui.button/look *ctx*) button-look) state child])])}))

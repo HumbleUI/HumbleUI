@@ -5,7 +5,7 @@
 
 (defprotocol IComponent
   (-context              [_ ctx])
-  (-measure ^IPoint      [_ ctx ^IPoint cs])
+  (-measure      ^IPoint [_ ctx ^IPoint cs])
   (-measure-impl ^IPoint [_ ctx ^IPoint cs])
   (-draw                 [_ ctx ^IRect rect canvas])
   (-draw-impl            [_ ctx ^IRect rect canvas])

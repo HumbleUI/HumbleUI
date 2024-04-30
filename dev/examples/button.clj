@@ -79,7 +79,7 @@
 (def custom-button-text
   (paint/fill 0xFFFFFFFF))
 
-(ui/defcomp custom-laf [state child]
+(ui/defcomp custom-look [state child]
   [ui/translate {:dy (if (= :pressed state) 2 0)}
    [ui/rounded-rect {:radius 15
                      :paint  custom-button-bg}
@@ -92,14 +92,14 @@
   [ui/row {:gap 5}
    [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
     (fn [state]
-      [custom-laf state "Reusable custom LAF"])]
+      [custom-look state "Reusable custom look"])]
    [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
     (fn [state]
       [ui/translate {:dy (if (= :pressed state) 2 0)}
        [ui/rounded-rect {:radius 15
                          :paint  custom-button-bg}
         [ui/padding {:padding 10}
-         [ui/label {:paint custom-button-text} "Inline custom LAF"]]]])]])
+         [ui/label {:paint custom-button-text} "Inline custom look"]]]])]])
 
 (ui/defcomp ui []
   [ui/center
