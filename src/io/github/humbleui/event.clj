@@ -10,6 +10,10 @@
      EventMouseScroll
      EventTextInput
      EventTextInputMarked
+     EventTouchCancel
+     EventTouchEnd
+     EventTouchMove
+     EventTouchStart
      EventWindowClose
      EventWindowCloseRequest
      EventWindowFocusIn
@@ -21,7 +25,8 @@
      EventWindowScreenChange
      Key
      KeyLocation
-     MouseButton]
+     MouseButton
+     TouchType]
     [io.github.humbleui.jwm.skija
      EventFrameSkija]))
 
@@ -211,6 +216,32 @@
      :y           (.getY e)
      :modifiers   (modifiers->set (.-_modifiers e))}
 
+    EventTouchCancel
+    {:event :touch-cancel
+     :id    (.getId e)}
+    
+    EventTouchEnd
+    {:event :touch-end
+     :id    (.getId e)}
+
+    EventTouchMove
+    {:event  :touch-move
+     :id     (.getId e)
+     :frac-x (.getFracX e)
+     :frac-y (.getFracY e)}
+    
+    EventTouchStart
+    {:event         :touch-start
+     :id            (.getId e)
+     :frac-x        (.getFracX e)
+     :frac-y        (.getFracY e)
+     :device-id     (.getDeviceId e)
+     :device-width  (.getDeviceWidth e)
+     :device-height (.getDeviceHeight e)
+     :touch-type    (condp identical? (.getTouchType e)
+                      TouchType/DIRECT   :direct
+                      TouchType/INDIRECT :indirect)}
+
     EventTextInput
     {:event             :text-input
      :text              (.getText e)
@@ -262,5 +293,5 @@
     {:event :window-screen-change}
     
     (do
-      ; (println "Unrecognized event" e)
+      (println "Unrecognized event" e)
       nil)))
