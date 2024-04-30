@@ -9,6 +9,13 @@
 (defonce *debug?
   (atom false))
 
+(defonce *force-render?
+  (atom false))
+
+(comment
+  (reset! *force-render? true)
+  (reset! *force-render? false))
+
 (def width
   100)
 
@@ -18,54 +25,94 @@
 (def max-time-ms
   50)
 
-(def data
-  {:paint
-   {:times (make-array Long/TYPE width)
-    :idx   (volatile! 0)
-    :t0    (volatile! (System/nanoTime))}
-   :event
-   {:times (make-array Long/TYPE width)
-    :idx   (volatile! 0)
-    :t0    (volatile! (System/nanoTime))}})
+(def ^{:tag "[D"} frame-starts
+  (double-array width))
 
-(defn on-start-impl [tag]
-  (vreset! (-> data tag :t0) (System/nanoTime)))
+(def ^{:tag "[D"} frame-lengths
+  (double-array width))
 
-(defmacro on-start [tag]
+(def *frame-idx
+  (volatile! 0))
+
+(defmacro frame-get [array idx]
+  `(aget ~array (mod (+ ~idx @*frame-idx) width)))
+
+(def ^{:tag "[D"} event-starts
+  (double-array width))
+
+(def *event-idx
+  (volatile! 0))
+
+(defmacro event-get [array idx]
+  `(aget ~array (mod (+ ~idx @*event-idx) width)))
+
+(defmacro measure [& body]
+  `(if @*debug?
+     (let [t#   (System/nanoTime)
+           res# (do ~@body)
+           dt#  (- (System/nanoTime) t#)]
+       (aset frame-starts  @*frame-idx (/ t# 1000000.0))
+       (aset frame-lengths @*frame-idx (/ dt# 1000000.0))
+       (vswap! *frame-idx #(-> % inc (mod width)))
+       res#)
+     (do ~@body)))
+
+(defmacro on-event-start []
   `(when @*debug?
-     (on-start-impl ~tag)))
+     (let [t# (System/nanoTime)]
+       (aset event-starts @*event-idx (/ t# 1000000.0))
+       (vswap! *event-idx #(-> % inc (mod width))))))
 
-(defn on-end-impl [tag]
-  (let [dt           (- (System/nanoTime) @(-> data tag :t0))
-        ^longs times (-> data tag :times)
-        *idx         (-> data tag :idx)]
-    (aset times @*idx (long dt))
-    (vswap! *idx #(-> % inc (mod width)))))
-
-(defmacro on-end [tag]
-  `(when @*debug?
-     (on-end-impl ~tag)))
-
-(defn draw-impl [canvas tag]
+(defn draw-frames-impl [canvas]
   (with-open [bg   (paint/fill 0x4033CC33)
               fg   (paint/fill 0xFF33CC33)
               font (font/make-with-size nil 11)]
-    (let [ms->y        #(- height (-> % (* height) (/ max-time-ms)))
-          i0           @(-> data tag :idx)
-          ^longs times (-> data tag :times)
-          last         (-> times
-                         (aget (mod (+ i0 (- width 1)) width))
-                         (/ 1000000.0))]
+    (let [ms->y #(- height (-> % (* height) (/ max-time-ms)))
+          last  (frame-get frame-lengths (dec width))]
+      ;; paint times
       (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
-      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 16) width (+ (ms->y 16) 1)) bg)
-      (canvas/draw-string canvas (str (name tag) " " (format "%.2f ms" last)) 4 12 font fg)
-      (doseq [i (range width)
-              :let [idx (-> i (+ i0) (mod width))
-                    ms  (-> times
-                          (aget idx)
-                          (/ 1000000.0))]]
-        (canvas/draw-rect canvas (core/irect-ltrb i (ms->y ms) (+ i 1) height) fg)))))
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+      (canvas/draw-string canvas (format "paint %.2f ms" last) 4 12 font fg)
+      (doseq [i    (range width)
+              :let [ms (frame-get frame-lengths i)]]
+        (canvas/draw-rect canvas (core/irect-ltrb i (ms->y ms) (+ i 1) height) fg))
+      
+      ;; fps
+      (let [fps   (loop [i (dec width)]
+                    (if (<= i 1)
+                      0
+                      (let [dt (- (frame-get frame-starts i) (frame-get frame-starts (dec i)))]
+                        (if (> dt 50)
+                          (recur (dec i))
+                          (/ 1000.0 dt)))))]
+        (canvas/translate canvas (+ width 10) 0)
+        (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
+        (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+        (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+        (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+        (canvas/draw-string canvas (format "fps %.0f" fps) 4 12 font fg)
+        (doseq [i     (range 1 width)
+                :let  [dt (- (frame-get frame-starts i) (frame-get frame-starts (dec i)))
+                       y  (ms->y dt)]
+                :when (< dt 50)]
+          (canvas/draw-rect canvas (core/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg)))
+      
+      ;; events
+      (canvas/translate canvas (+ width 10) 0)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+      (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+      (canvas/draw-string canvas "events" 4 12 font fg)
+      (doseq [i     (range 1 width)
+              :let  [dt (- (event-get event-starts i) (event-get event-starts (dec i)))
+                     y  (ms->y dt)]
+              :when (< dt 50)]
+        (canvas/draw-rect canvas (core/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg)))))
+      
 
-(defmacro draw [canvas tag]
+(defmacro draw-frames [canvas]
   `(when @*debug?
-     (draw-impl ~canvas ~tag)))
+     (draw-frames-impl ~canvas)))
