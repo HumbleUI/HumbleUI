@@ -1,18 +1,22 @@
 {:paths ["src" "resources"]
  :deps
- {org.clojure/clojure                  {:mvn/version "1.11.1"}
+ {org.clojure/clojure                  {:mvn/version "1.11.3"}
   io.github.humbleui/types$clojure     {:mvn/version "0.2.0"}
-  io.github.humbleui/jwm               {:mvn/version "0.4.15"  :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-windows-x64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
-  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.1" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/jwm               {:mvn/version "0.4.17"  :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-windows-x64 {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/skija-macos-arm64 {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
   io.github.tonsky/extend-clj          {:mvn/version "0.1.0"}}
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
-   :extra-deps  {io.github.tonsky/duti {:git/sha "0e934d934b0b5d1ab1a608f26b68f5467934b028"
-                                        #_#_:local/root "/Users/tonsky/ws/duti"}
+   :extra-deps  {io.github.tonsky/duti {:git/sha "fc833a87a8687b67e66281e216eeee1ad6048168"
+                                        #_#_:local/root "/ws/duti"}
+                 io.github.tonsky/clj-reload {:mvn/version "0.7.0"
+                                              #_#_:local/root "/ws/clj-reload"}
                  criterium/criterium {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
-   :jvm-opts    ["-ea" "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}
+   :jvm-opts    ["-ea"
+                 "-Duser.language=en" "-Duser.country=US" "-Dfile.encoding=UTF-8"
+                 "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}

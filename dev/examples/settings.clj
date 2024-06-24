@@ -11,9 +11,9 @@
 ;         (window/set-z-order window :floating)
 ;         (window/set-z-order window :normal)))))
 
-; (add-watch state/*floating ::window
+; (add-watch common/*floating ::window
 ;   (fn [_ _ _ floating]
-;     (set-floating! @state/*window floating)))
+;     (set-floating! @common/*window floating)))
 
 (def ui
   (ui/with-scale scale
@@ -31,7 +31,7 @@
                   ;   (ui/valign 0.5
                   ;     (ui/label "On top"))
                   ;   [:stretch 1 nil]
-                  ;   (ui/toggle state/*floating))
+                  ;   (ui/toggle common/*floating))
                   ; (ui/gap 0 padding-inner)
                   ; (ui/rect fill-delimiter
                   ;   (ui/gap 0 1))

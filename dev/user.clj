@@ -12,11 +12,8 @@
                  io.github.humbleui.protocols
                  io.github.humbleui.signal}})
 
-(defn reload [& [opts]]
-  (set! *warn-on-reflection* true)
-  (let [res (reload/reload opts)
-        cnt (count (:loaded res))]
-    (str "Reloaded " cnt " namespace" (when (not= 1 cnt) "s"))))
+(def reload
+  duti/reload)
 
 (defn -main [& args]
   (let [args (apply array-map args)
@@ -28,9 +25,7 @@
         _    (duti/start-socket-repl {:port port})]))
 
 (defn test-all []
-  (reload {:only #"io\.github\.humbleui\.[^\.]+-test"})
   (duti/test #"io\.github\.humbleui\..*-test"))
 
 (defn -test-main [_]
-  (reload {:only #"io\.github\.humbleui\.[^\.]+-test"})
   (duti/test-exit #"io\.github\.humbleui\..*-test"))

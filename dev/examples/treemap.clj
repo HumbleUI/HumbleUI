@@ -27,7 +27,7 @@
 
 (add-watch *progress :progress
   (fn [_ _ _ new]
-    (state/request-frame)))
+    (common/request-frame)))
 
 (def *future
   (atom nil))
@@ -165,7 +165,7 @@
   (reset! *future
     (future
       (reset! *state (scan (:text @*path) *progress))
-      (window/request-frame @state/*window)
+      (window/request-frame @common/*window)
       (reset! *future nil))))
 
 (def ui
