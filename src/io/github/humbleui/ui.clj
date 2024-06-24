@@ -15,7 +15,6 @@
     [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.backdrop :as backdrop]
     ; [io.github.humbleui.ui.button :as button]
-    ; [io.github.humbleui.ui.checkbox :as checkbox]
     ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
@@ -44,14 +43,15 @@
 (load "/io/github/humbleui/ui/sizing")
 
 (defmacro deflazy
-  ([name arglists file]
-   `(deflazy ~name nil ~arglists ~file))
-  ([name docstring arglists file]
+  ([name arglists files]
+   `(deflazy ~name nil ~arglists ~files))
+  ([name docstring arglists files]
    `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
       ~@(if docstring [docstring] [])
       (delay
-        (core/log "Loading" ~file)
-        (load ~(str "/io/github/humbleui/ui/" file))
+        (doseq [file# (str/split ~files #"\s+")]
+          (core/log "Loading" file#)
+          (load (str "/io/github/humbleui/ui/" file#)))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
@@ -88,13 +88,14 @@
 (deflazy toggle-button ([{:keys [*value]} child]) "button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
+(deflazy checkbox      ([{:keys [*value]} label]) "button checkbox")
+
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/window")
 
 (core/import-vars
   ; backdrop/backdrop
   ; button/button
-  ; checkbox/checkbox
   ; draggable/draggable
   ; focusable/focusable
   ; focusable/focus-controller

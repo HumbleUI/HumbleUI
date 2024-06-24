@@ -1,17 +1,4 @@
-(ns io.github.humbleui.ui.checkbox
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.align :as align]
-    [io.github.humbleui.ui.clickable :as clickable]
-    [io.github.humbleui.ui.containers :as containers]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.gap :as gap]
-    [io.github.humbleui.ui.sizing :as sizing]
-    [io.github.humbleui.ui.svg :as svg]
-    [io.github.humbleui.ui.with-context :as with-context]))
+(in-ns 'io.github.humbleui.ui)
 
 (def ^:private checkbox-states
   {[true  false]          (core/lazy-resource "ui/checkbox/on.svg")
@@ -21,24 +8,39 @@
    [:indeterminate false] (core/lazy-resource "ui/checkbox/indeterminate.svg")
    [:indeterminate true]  (core/lazy-resource "ui/checkbox/indeterminate_active.svg")})
 
-(defn- checkbox-size [font]
-  (let [cap-height (:cap-height (font/metrics font))
+(defn- checkbox-size [ctx]
+  (let [font       (:font-ui ctx)
+        cap-height (:cap-height (font/metrics font))
         extra      (-> cap-height (/ 8) math/ceil (* 4))] ;; half cap-height but increased so that it’s divisible by 4
-    (+ cap-height extra)))
+    (/
+      (+ cap-height extra)
+      (:scale ctx))))
 
-(defn checkbox [*state label]
-  (clickable/clickable
-    {:on-click (fn [_] (swap! *state not))}
-    (dynamic/dynamic ctx [size (/ (checkbox-size (:font-ui ctx))
-                         (:scale ctx))]
-      (containers/row
-        (align/valign 0.5
-          (dynamic/dynamic ctx [state  @*state
-                        active (:hui/active? ctx)]
-            (sizing/width size
-              (sizing/height size
-                (svg/svg @(checkbox-states [state (boolean active)]))))))
-        (gap/gap (/ size 3) 0)
-        (align/valign 0.5
-          (with-context/with-context {:hui/checked? true}
-            label))))))
+(defn checkbox-ctor [opts child]
+  (let [value-checked   (:value-checked opts true)
+        value-unchecked (:value-unchecked opts)
+        *value          (or (:*value opts) (signal/signal value-unchecked))
+        on-click        (fn [_]
+                          (swap! *value #(not %)))]
+    {:should-setup?
+     (fn [opts' _]
+       (not (keys-match? [:value-checked :value-unchecked :*value] opts opts')))
+     :render
+     (fn [opts child]
+       (let [value @*value]
+         [clickable
+          {:on-click on-click}
+          (fn [state]
+            (let [size (checkbox-size *ctx*)]
+              [row
+               [valign {:position 0.5}
+                [width {:width size}
+                 [height {:height size}
+                  [svg @(checkbox-states [(cond
+                                            (= :indeterminate value) :indeterminate
+                                            (= value-checked value)  true
+                                            :else                    false)
+                                          (= :pressed state)])]]]]
+               [gap {:width (/ size 3)}]
+               [valign {:position 0.5}
+                child]]))]))}))

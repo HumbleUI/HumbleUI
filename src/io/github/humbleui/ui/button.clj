@@ -50,12 +50,6 @@
             child-ctor-or-el)]))}))
 
 (ui/defcomp toggle-button-ctor [opts child]
-  (let [value-pressed (:value-pressed opts true)]
-    {:should-setup?
-     (fn [opts' child]
-       (not (keys-match? [:value-pressed] opts opts')))
-     :render
-     (fn [opts child]
-       [toggleable opts
-        (fn [state]
-          [(or (:hui.button/look *ctx*) button-look) state child])])}))
+  [toggleable opts
+   (fn [state]
+     [(or (:hui.button/look *ctx*) button-look) state child])])

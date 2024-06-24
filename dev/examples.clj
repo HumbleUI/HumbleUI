@@ -12,7 +12,7 @@
     ; [examples.calculator]
     [examples.canvas]
     ; [examples.canvas-shapes]
-    ; [examples.checkbox]
+    [examples.checkbox]
     [examples.container]
     ; [examples.effects]
     ; [examples.errors]
@@ -63,7 +63,7 @@
     ; "Calculator" examples.calculator/ui
     "Canvas" examples.canvas/ui
     ; "Canvas Shapes" examples.canvas-shapes/ui
-    ; "Checkbox" examples.checkbox/ui
+    "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
     ; "Effects" examples.effects/ui
     ; "Errors" examples.errors/ui

@@ -59,4 +59,4 @@
                          :hui.text-field/padding-bottom          (-> cap-height math/round (/ scale) float)
                          :hui.text-field/padding-left            (-> cap-height (/ 2) math/round (/ scale) float)
                          :hui.text-field/padding-right           (-> cap-height (/ 2) math/round (/ scale) float)}]
-         (with-context (core/merge-some theme opts) comp))))))
+         (with-context-classic (core/merge-some theme opts) comp))))))

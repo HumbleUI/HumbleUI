@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithContext [data child ^:mut child-rect]
+(core/deftype+ WithContextClassic [data child ^:mut child-rect]
   protocols/IComponent
   (-context [_ ctx]
     (merge ctx data))
@@ -23,5 +23,15 @@
   (-unmount [_]
     (unmount-child child)))
 
-(defn with-context [data child]
-  (->WithContext data child nil))
+(defn with-context-classic [data child]
+  (->WithContextClassic data child nil))
+
+(core/deftype+ WithContext []
+  :extends AWrapperNode
+  protocols/IComponent
+  (-context [_ ctx]
+    (let [[_ overrides _ ] (parse-element element)]
+      (merge ctx overrides))))
+
+(defn with-context [overrides child]
+  (map->WithContext {}))
