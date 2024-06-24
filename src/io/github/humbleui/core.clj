@@ -354,6 +354,15 @@
     (with-open [is (io/input-stream src)]
       (.readAllBytes is))))
 
+(defn cached [*atom key value-fn]
+  (let [atom @*atom]
+    (if (= key (:key atom))
+      (:value atom)
+      (:value 
+        (reset! *atom
+          {:key key
+           :value (value-fn)})))))
+
 (defn lazy-resource [path]
   (delay
     (slurp-bytes

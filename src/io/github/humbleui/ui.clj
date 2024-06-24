@@ -21,7 +21,6 @@
     ; [io.github.humbleui.ui.grid :as grid]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
-    ; [io.github.humbleui.ui.paragraph :as paragraph]
     ; [io.github.humbleui.ui.shadow :as shadow]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
@@ -57,6 +56,7 @@
 
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
 (deflazy label     ([& texts]) "label")
+(deflazy paragraph ([text] [opts text]) "paragraph")
 (deflazy image     ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
 (deflazy animation ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
 (deflazy svg       ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
@@ -73,12 +73,14 @@
 (deflazy valign ([{:keys [position child-position]} child]) "align")
 (deflazy center ([child]) "align")
 
-
 (deflazy vscroll    ([child] [opts child]) "scroll")
 (deflazy vscrollbar ([child] [opts child]) "scroll")
 (deflazy column     ([& children] [opts & children]) "column")
 (deflazy row        ([& children] [opts & children]) "row")
 (deflazy stack      ([& children]) "stack")
+
+(deflazy shadow       ([opts] [opts child]) "shadow")
+(deflazy shadow-inset ([opts] [opts child]) "shadow")
 
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
@@ -104,7 +106,6 @@
   ; listeners/mouse-listener
   ; listeners/on-key-focused
   ; listeners/text-listener
-  ; paragraph/paragraph
   ; shadow/shadow
   ; shadow/shadow-inset
   ; sizing/max-width

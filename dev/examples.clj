@@ -24,7 +24,7 @@
     ; [examples.image-snapshot]
     [examples.label]
     ; [examples.oklch]
-    ; [examples.paragraph]
+    [examples.paragraph]
     [examples.scroll]
     ; [examples.settings]
     [examples.slider]
@@ -75,7 +75,7 @@
     ; "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui
     ; "OkLCH" examples.oklch/ui
-    ; "Paragraph" examples.paragraph/ui
+    "Paragraph" examples.paragraph/ui
     "Scroll" examples.scroll/ui
     ; "Settings" examples.settings/ui
     "Slider" examples.slider/ui

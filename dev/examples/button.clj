@@ -101,6 +101,15 @@
         [ui/padding {:padding 10}
          [ui/label {:paint custom-button-text} "Inline custom look"]]]])]])
 
+(ui/defcomp with-shadow []
+  [ui/row {:gap 10}
+   [ui/halign {:position 0}
+    [ui/shadow {:blur @*clicks}
+     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Outset shadow"]]]
+   [ui/halign {:position 0}
+    [ui/shadow-inset {:blur @*clicks}
+     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Inset shadow"]]]])
+
 (ui/defcomp ui []
   [ui/center
    [ui/column {:gap (:leading ui/*ctx*)}
@@ -109,8 +118,14 @@
      [ui/label "Clicks: " *clicks]]
         
     [ui/halign {:position 0}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
-      "Increment"]]
+     [ui/row {:gap 10}
+      [ui/button {:on-click (fn [_] (swap! *clicks inc))}
+       "Increment"]
+      [ui/button {:on-click (fn [_] (reset! *clicks 0))}
+       "Reset"]]]
+    
+    [ui/halign {:position 0}
+     [with-shadow]]
           
     [ui/halign {:position 0}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}

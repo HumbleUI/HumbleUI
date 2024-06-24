@@ -4,6 +4,9 @@
   :extends ATerminalNode
   
   protocols/IComponent
+  (-measure-impl [_ ctx cs]
+    (core/ipoint 0 0))
+  
   (-draw-impl [_ ctx rect ^Canvas canvas]
     (when on-paint
       (canvas/with-canvas canvas
