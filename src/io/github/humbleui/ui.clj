@@ -20,14 +20,13 @@
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.text-field :as text-field]
-    ; [io.github.humbleui.ui.toggle :as toggle]
     ; [io.github.humbleui.ui.tooltip :as tooltip]
     ; [io.github.humbleui.ui.with-bounds :as with-bounds]
     ; [io.github.humbleui.ui.with-cursor :as with-cursor]
     )
   (:import
     [io.github.humbleui.jwm Window]
-    [io.github.humbleui.skija Canvas Data Font FontMetrics Paint TextLine]
+    [io.github.humbleui.skija Canvas Color Data Font FontMetrics Paint TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]))
 
@@ -92,6 +91,7 @@
 (deflazy toggle-button ([{:keys [*value]} child]) "clickable button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
+(deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "clickable switch")
 (deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "clickable checkbox")
 
 (load "/io/github/humbleui/ui/theme")
@@ -112,7 +112,6 @@
   ; sizing/max-width
   ; text-field/text-input
   ; text-field/text-field
-  ; toggle/toggle
   ; tooltip/tooltip
   ; with-bounds/with-bounds
   ; with-cursor/with-cursor

@@ -23,14 +23,7 @@
                          
                          :hui.scroll/fill-track     (paint/fill 0x10000000)
                          :hui.scroll/fill-thumb     (paint/fill 0x60000000)
-                         
-                         :hui.toggle/fill-enabled         (paint/fill 0xFF0080FF)
-                         :hui.toggle/fill-disabled        (paint/fill 0xFFD9D9D9)
-                         :hui.toggle/fill-handle          (paint/fill 0xFFFFFFFF)
-                         :hui.toggle/fill-enabled-active  (paint/fill 0xFF0060E0)
-                         :hui.toggle/fill-disabled-active (paint/fill 0xFFBBBBBB)
-                         :hui.toggle/fill-handle-active   (paint/fill 0xFFE0E0E0)
-                         
+                                                  
                          :hui.slider/thumb-size           (* 16 scale)
                          :hui.slider/track-height         (* 2 scale)
                          :hui.slider/fill-track-active    (paint/fill 0xFF0080FF)

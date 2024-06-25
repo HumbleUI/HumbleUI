@@ -1,0 +1,44 @@
+(ns examples.switch
+  (:require
+    [io.github.humbleui.font :as font]
+    [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.ui :as ui]))
+
+(def *state-first
+  (signal/signal true))
+
+(def *state-second
+  (signal/signal false))
+
+(add-watch *state-first :watch
+  (fn [_ _ old new]
+    (when (not= old new)
+      (reset! *state-second (not new)))))
+
+(defn ui []
+  (let [{:keys [face-ui scale]} ui/*ctx*
+        padding-inner   12
+        fill-bg         (paint/fill 0xFFF2F2F2)
+        stroke-bg       (paint/stroke 0xFFE0E0E0 (* 0.5 scale))
+        fill-delimiter  (paint/fill 0xFFE7E7E7)
+        font            (font/make-with-cap-height face-ui (* 20 scale))]
+    [ui/padding {:padding 20}
+     [ui/valign {:position 0}
+      [ui/rounded-rect {:radius 6, :paint fill-bg}
+       [ui/rounded-rect {:radius 6, :paint stroke-bg}
+        [ui/padding {:padding padding-inner}
+         [ui/column {:gap padding-inner}
+          [ui/with-context {:font-ui font}
+           [ui/row
+            [ui/valign {:position 0.5}
+             [ui/label "First state"]]
+            ^{:stretch 1} [ui/gap]
+            [ui/switch {:value *state-first}]]]
+          [ui/rect {:paint fill-delimiter}
+           [ui/gap {:height 1}]]
+          [ui/row
+           [ui/valign {:position 0.5}
+            [ui/label "Second state"]]
+           ^{:stretch 1} [ui/gap]
+           [ui/switch {:value *state-second}]]]]]]]]))

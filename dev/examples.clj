@@ -30,10 +30,10 @@
     [examples.slider]
     [examples.stack]
     [examples.svg]
+    [examples.switch]
     ; [examples.text-field]
     ; [examples.text-field-debug]
     ; [examples.todomvc]
-    ; [examples.toggle]
     ; [examples.tooltip]
     ; [examples.tree]
     ; [examples.treemap]
@@ -84,7 +84,7 @@
     ; "Text Field" examples.text-field/ui
     ; "Text Field Debug" examples.text-field-debug/ui
     ; "Todo MVC" examples.todomvc/ui
-    ; "Toggle" examples.toggle/ui
+    "Switch" examples.switch/ui
     ; "Tooltip" examples.tooltip/ui
     ; "Tree" examples.tree/ui
     ; "Treemap" examples.treemap/ui

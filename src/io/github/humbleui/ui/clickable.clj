@@ -101,11 +101,13 @@
   (let [value-on  (:value-on opts true)
         value-off (:value-off opts)
         *value    (or (:*value opts) (signal/signal value-off))
-        on-click  (fn [_]
+        on-click  (:on-click opts)
+        on-click' (fn [event]
                     (signal/reset-changed! *value
                       (if (= value-on @*value)
                         value-off
-                        value-on)))]
+                        value-on))
+                    (core/invoke on-click event))]
     (when-some [on-change (:on-change opts)]
       (add-watch *value ::on-change
         (fn [_ _ old new]
@@ -120,7 +122,7 @@
      :render
      (fn [opts child-ctor-or-el]
        (let [value @*value]
-         [clickable {:on-click on-click}
+         [clickable {:on-click on-click'}
           (if (fn? child-ctor-or-el)
             (fn [state]
               (child-ctor-or-el
