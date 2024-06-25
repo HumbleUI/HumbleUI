@@ -12,7 +12,7 @@
     
     (let [{:keys [on-click on-click-capture]} (parse-opts element)
           state     @*state
-          hovered?  (= :hovered state)
+          hovered?  (:hovered state)
           hovered?' (core/if-some+ [{:keys [x y]} event]
                       (core/rect-contains? rect (core/ipoint x y))
                       hovered?)
@@ -39,8 +39,8 @@
           (when
             (signal/reset-changed! *state
               (cond
-                hovered?' :hovered
-                :else     :default))
+                hovered?' #{:hovered}
+                :else     #{}))
             (force-render this (:window ctx)))
           ;; we have to handle this event
           (do
@@ -48,9 +48,9 @@
             (when
               (signal/reset-changed! *state
                 (cond
-                  (and hovered?' pressed?') :pressed
-                  hovered?'                 :hovered
-                  :else                     :default))
+                  (and hovered?' pressed?') #{:hovered :pressed}
+                  hovered?'                 #{:hovered}
+                  :else                     #{}))
               (force-render this (:window ctx)))
             (when (and clicked? on-click)
               (core/invoke on-click event')
@@ -84,16 +84,46 @@
    
    :clicks  :: long, number of consequitive clicks
    
-   Possible *state values:
+   *state contains a set that might include:
    
-   :default :: default state
    :hovered :: mouse hovers over object
    :pressed :: mouse is held over object"
   [opts child]
   (map->Clickable
     {:*state     (or
                    (:*state opts)
-                   (signal/signal :default))
+                   (signal/signal #{}))
      :pressed?   nil
      :clicks     0
      :last-click 0}))
+
+(ui/defcomp toggleable [opts child-ctor-or-el]
+  (let [value-on  (:value-on opts true)
+        value-off (:value-off opts)
+        *value    (or (:*value opts) (signal/signal value-off))
+        on-click  (fn [_]
+                    (signal/reset-changed! *value
+                      (if (= value-on @*value)
+                        value-off
+                        value-on)))]
+    (when-some [on-change (:on-change opts)]
+      (add-watch *value ::on-change
+        (fn [_ _ old new]
+          (when (not= old new)
+            (on-change new)))))
+    {:should-setup?
+     (fn [opts' child-ctor-or-el]
+       (not (keys-match? [:value-on :value-off :*value] opts opts')))
+     :after-unmount
+     (fn []
+       (remove-watch *value ::on-change))
+     :render
+     (fn [opts child-ctor-or-el]
+       (let [value @*value]
+         [clickable {:on-click on-click}
+          (if (fn? child-ctor-or-el)
+            (fn [state]
+              (child-ctor-or-el
+                (cond-> state
+                  (= value value-on) (conj :selected))))
+            child-ctor-or-el)]))}))

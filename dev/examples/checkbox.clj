@@ -27,16 +27,7 @@
         (cond
           (every? true? [new @*state-second])  true
           (every? false? [new @*state-second]) false
-          :else                                :indeterminate)))))
-
-(add-watch *state-second :watch
-  (fn [_ _ old new]
-    (when (not= old new)
-      (reset! *state-group
-        (cond
-          (every? true? [@*state-first new])  true
-          (every? false? [@*state-first new]) false
-          :else                               :indeterminate)))))
+          :else                                :mixed)))))
 
 (defn ui []
   (let [{:keys [face-ui scale]} ui/*ctx*
@@ -47,4 +38,13 @@
         [ui/with-context {:font-ui font}
          [ui/checkbox {:*value *state-group} [ui/label "Group state"]]]
         [ui/checkbox {:*value *state-first} [ui/label "First state"]]
-        [ui/checkbox {:*value *state-second} [ui/label "Second state"]]]])))
+        ;; on-change
+        ;; string label
+        [ui/checkbox {:*value *state-second
+                      :on-change
+                      (fn [state-second]
+                        (condp = [@*state-first state-second]
+                          [true true]   (reset! *state-group true)
+                          [false false] (reset! *state-group false)
+                          #_else        (reset! *state-group :mixed)))}
+         "Second state"]]])))

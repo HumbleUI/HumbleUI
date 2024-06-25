@@ -14,13 +14,11 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.backdrop :as backdrop]
-    ; [io.github.humbleui.ui.button :as button]
     ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
-    ; [io.github.humbleui.ui.shadow :as shadow]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.toggle :as toggle]
     ; [io.github.humbleui.ui.tooltip :as tooltip]
@@ -42,6 +40,9 @@
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/sizing")
 
+(def *loaded
+  (atom #{}))
+
 (defmacro deflazy
   ([name arglists files]
    `(deflazy ~name nil ~arglists ~files))
@@ -49,9 +50,11 @@
    `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
       ~@(if docstring [docstring] [])
       (delay
-        (doseq [file# (str/split ~files #"\s+")]
+        (doseq [file# (str/split ~files #"\s+")
+                :when (not (@*loaded file#))]
           (core/log "Loading" file#)
-          (load (str "/io/github/humbleui/ui/" file#)))
+          (load (str "/io/github/humbleui/ui/" file#))
+          (swap! *loaded conj file#))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
@@ -84,22 +87,21 @@
 
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
-(deflazy button        ([{:keys [on-click]} child]) "button")
-(deflazy toggle-button ([{:keys [*value]} child]) "button")
+(deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "clickable")
+(deflazy button        ([{:keys [on-click]} child]) "clickable button")
+(deflazy toggle-button ([{:keys [*value]} child]) "clickable button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
-(deflazy checkbox      ([{:keys [*value]} label]) "button checkbox")
+(deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "clickable checkbox")
 
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/window")
 
 (core/import-vars
   ; backdrop/backdrop
-  ; button/button
   ; draggable/draggable
   ; focusable/focusable
   ; focusable/focus-controller
-  ; gap/gap
   ; grid/grid
   ; image-snapshot/image-snapshot
   ; listeners/event-listener
@@ -107,8 +109,6 @@
   ; listeners/mouse-listener
   ; listeners/on-key-focused
   ; listeners/text-listener
-  ; shadow/shadow
-  ; shadow/shadow-inset
   ; sizing/max-width
   ; text-field/text-input
   ; text-field/text-field

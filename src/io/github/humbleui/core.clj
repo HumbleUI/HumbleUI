@@ -286,6 +286,9 @@
           m))
       (transient {}) (partition 2 args))))
 
+(defn some-set [& args]
+  (into #{} (filter some?) args))
+
 (defn consv [x xs]
   (vec (cons x xs)))
 

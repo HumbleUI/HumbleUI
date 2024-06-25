@@ -62,13 +62,13 @@
     (fn []
       [ui/row {:gap 10}
        [ui/toggle-button {:*value *value
-                          :value-pressed :one}
+                          :value-on :one}
         "One"]
        [ui/toggle-button {:*value *value
-                          :value-pressed :two}
+                          :value-on :two}
         "Two"]
        [ui/toggle-button {:*value *value
-                          :value-pressed :three}
+                          :value-on :three}
         "Three"]
        [ui/valign {:position 0.5}
         [ui/label "Radio " *value]]])))

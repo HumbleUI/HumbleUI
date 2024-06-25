@@ -1,12 +1,12 @@
 (in-ns 'io.github.humbleui.ui)
 
 (def ^:private checkbox-states
-  {[true  false]          (core/lazy-resource "ui/checkbox/on.svg")
-   [true  true]           (core/lazy-resource "ui/checkbox/on_active.svg")
-   [false false]          (core/lazy-resource "ui/checkbox/off.svg")
-   [false true]           (core/lazy-resource "ui/checkbox/off_active.svg")
-   [:indeterminate false] (core/lazy-resource "ui/checkbox/indeterminate.svg")
-   [:indeterminate true]  (core/lazy-resource "ui/checkbox/indeterminate_active.svg")})
+  {[true  false]  (core/lazy-resource "ui/checkbox/on.svg")
+   [true  true]   (core/lazy-resource "ui/checkbox/on_pressed.svg")
+   [false false]  (core/lazy-resource "ui/checkbox/off.svg")
+   [false true]   (core/lazy-resource "ui/checkbox/off_pressed.svg")
+   [:mixed false] (core/lazy-resource "ui/checkbox/mixed.svg")
+   [:mixed true]  (core/lazy-resource "ui/checkbox/mixed_pressed.svg")})
 
 (defn- checkbox-size [ctx]
   (let [font       (:font-ui ctx)
@@ -17,19 +17,20 @@
       (:scale ctx))))
 
 (defn checkbox-ctor [opts child]
-  (let [value-checked   (:value-checked opts true)
-        value-unchecked (:value-unchecked opts)
-        *value          (or (:*value opts) (signal/signal value-unchecked))
-        on-click        (fn [_]
-                          (swap! *value #(not %)))]
+  (let [value-on  (or (:value-on opts) true)
+        value-off (or (:value-off opts) false)
+        *value    (or (:*value opts) (signal/signal value-off))]
     {:should-setup?
-     (fn [opts' _]
-       (not (keys-match? [:value-checked :value-unchecked :*value] opts opts')))
+     (fn [opts' child-ctor-or-el]
+       (not (keys-match? [:value-on :value-off :*value] opts opts')))
      :render
      (fn [opts child]
        (let [value @*value]
-         [clickable
-          {:on-click on-click}
+         [toggleable (assoc opts
+                       :value-on  value-on
+                       :value-off value-off
+                       :*value    *value)
+       
           (fn [state]
             (let [size (checkbox-size *ctx*)]
               [row
@@ -37,10 +38,12 @@
                 [width {:width size}
                  [height {:height size}
                   [svg @(checkbox-states [(cond
-                                            (= :indeterminate value) :indeterminate
-                                            (= value-checked value)  true
-                                            :else                    false)
-                                          (= :pressed state)])]]]]
+                                            (= :mixed value)  :mixed
+                                            (:selected state) true
+                                            :else             false)
+                                          (boolean (:pressed state))])]]]]
                [gap {:width (/ size 3)}]
                [valign {:position 0.5}
-                child]]))]))}))
+                (if (vector? child)
+                  child
+                  [label child])]]))]))}))
