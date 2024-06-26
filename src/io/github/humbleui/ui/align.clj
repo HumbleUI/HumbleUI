@@ -6,7 +6,7 @@
   protocols/IComponent  
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _]     element
-          position       (:position opts)
+          position       (core/checked-get opts :position number?)
           child-position (or (:child-position opts) position)
           child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
           left           (+ (:x rect)
@@ -24,7 +24,7 @@
   protocols/IComponent  
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _]     element
-          position       (:position opts)
+          position       (core/checked-get opts :position number?)
           child-position (or (:child-position opts) position)
           child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
           top            (+ (:y rect)

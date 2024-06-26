@@ -316,6 +316,12 @@
       (assoc m k (f v)))
     {} m))
 
+(defmacro checked-get [m k pred]
+  `(let [v# (get ~m ~k)]
+     (if (~pred v#)
+       v#
+       (throw (ex-info (str ~(str "Getting (" k " " m "), expected: " pred ", got: ") (pr-str v#)) {})))))
+
 (defn map-by [f xs]
   (reduce
     (fn [m x]

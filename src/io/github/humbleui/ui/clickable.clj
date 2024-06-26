@@ -41,7 +41,7 @@
               (cond
                 hovered?' #{:hovered}
                 :else     #{}))
-            (force-render this (:window ctx)))
+            (force-render this (:window ctx))) ;; TODO better way?
           ;; we have to handle this event
           (do
             (set! pressed? pressed?')
@@ -51,7 +51,7 @@
                   (and hovered?' pressed?') #{:hovered :pressed}
                   hovered?'                 #{:hovered}
                   :else                     #{}))
-              (force-render this (:window ctx)))
+              (force-render this (:window ctx))) ;; TODO better way?
             (when (and clicked? on-click)
               (core/invoke on-click event')
               true))))))

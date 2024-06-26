@@ -47,7 +47,11 @@
          (fn [_# _# _# new#]
            (save-state {~key new#}))))))
 
-(restore-durable-signal debug/*graphs?)
+(restore-durable-signal debug/*paint?)
+
+(restore-durable-signal debug/*pacing?)
+
+(restore-durable-signal debug/*events?)
 
 (restore-durable-signal debug/*outlines?)
 

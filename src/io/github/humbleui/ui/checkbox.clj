@@ -28,25 +28,28 @@
                      :value-off value-off
                      :*value    *value)]
      {:should-setup?
-      (fn [opts' child-ctor-or-el]
+      (fn [opts' child]
         (not (keys-match? [:value-on :value-off :*value] opts opts')))
       :render
-      (fn [opts child]
-        (let [value @*value]
-          [toggleable opts'
-           (fn [state]
-             (let [size (checkbox-size *ctx*)]
-               [row
-                [valign {:position 0.5}
-                 [width {:width size}
-                  [height {:height size}
-                   [svg @(checkbox-states [(cond
-                                             (= :mixed value)  :mixed
-                                             (:selected state) true
-                                             :else             false)
-                                           (boolean (:pressed state))])]]]]
-                [gap {:width (/ size 3)}]
-                [valign {:position 0.5}
-                 (if (vector? child)
-                   child
-                   [label child])]]))]))})))
+      (fn render
+        ([child]
+         (render {} child))
+        ([opts child]
+         (let [value @*value]
+           [toggleable opts'
+            (fn [state]
+              (let [size (checkbox-size *ctx*)]
+                [row
+                 [valign {:position 0.5}
+                  [width {:width size}
+                   [height {:height size}
+                    [svg @(checkbox-states [(cond
+                                              (= :mixed value)  :mixed
+                                              (:selected state) true
+                                              :else             false)
+                                            (boolean (:pressed state))])]]]]
+                 [gap {:width (/ size 3)}]
+                 [valign {:position 0.5}
+                  (if (vector? child)
+                    child
+                    [label child])]]))])))})))

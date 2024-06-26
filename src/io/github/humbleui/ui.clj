@@ -67,6 +67,7 @@
 (deflazy clip         ([child]) "clip")
 (deflazy clip-rrect   ([{:keys [radii]} child]) "clip")
 (deflazy translate    ([{:keys [dx dy]} child]) "transform")
+(deflazy with-bounds  ([child-ctor]) "with_bounds")
 (deflazy backdrop     ([{:keys [dx dy]} child]) "backdrop")
 
 (deflazy halign ([{:keys [position child-position]} child]) "align")

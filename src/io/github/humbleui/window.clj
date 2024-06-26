@@ -86,15 +86,7 @@
                                  (try
                                    (debug/measure
                                      (on-paint window canvas))
-                                   (when @debug/*graphs?
-                                     (canvas/with-canvas canvas
-                                       (let [scale (scale window)
-                                             rect  (content-rect window)]
-                                         (canvas/translate canvas
-                                           (- (:width rect) (* scale 3 (+ debug/width 10)))
-                                           (- (:height rect) (* scale (+ debug/height 10))))
-                                         (canvas/scale canvas scale)
-                                         (debug/draw-frames canvas))))
+                                   (debug/draw-frames canvas window)
                                    (catch Throwable e
                                      (core/log-error e)
                                      (.clear canvas (unchecked-int 0xFFCC3333)))

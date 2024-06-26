@@ -9,7 +9,7 @@
     ; [examples.blur]
     ; [examples.bmi-calculator]
     [examples.button]
-    ; [examples.calculator]
+    [examples.calculator]
     [examples.canvas]
     ; [examples.canvas-shapes]
     [examples.checkbox]
@@ -18,7 +18,6 @@
     ; [examples.errors]
     ; [examples.event-bubbling]
     ; [examples.framerate]
-    [examples.graph]
     [examples.grid]
     [examples.image]
     ; [examples.image-snapshot]
@@ -61,7 +60,7 @@
     ; "Blur" examples.blur/ui
     ; "BMI Calculator" examples.bmi-calculator/ui
     "Button" examples.button/ui
-    ; "Calculator" examples.calculator/ui
+    "Calculator" examples.calculator/ui
     "Canvas" examples.canvas/ui
     ; "Canvas Shapes" examples.canvas-shapes/ui
     "Checkbox" examples.checkbox/ui
@@ -70,7 +69,6 @@
     ; "Errors" examples.errors/ui
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui
-    "Graph" examples.graph/ui
     "Grid" examples.grid/ui
     "Image" examples.image/ui
     ; "Image Snapshot" examples.image-snapshot/ui
@@ -109,10 +107,10 @@
                       [ui/label name]]
                selected? (= name @*example)]
            (cond
-             selected?          [ui/rect {:paint fill-selected} label]
-             (= :pressed state) [ui/rect {:paint fill-active} label]
-             (= :hovered state) [ui/rect {:paint fill-hovered} label]
-             :else              label)))])))
+             selected?        [ui/rect {:paint fill-selected} label]
+             (:pressed state) [ui/rect {:paint fill-active} label]
+             (:hovered state) [ui/rect {:paint fill-hovered} label]
+             :else            label)))])))
 
 (ui/defcomp app-impl []
   [ui/row
