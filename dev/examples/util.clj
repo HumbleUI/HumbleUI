@@ -6,7 +6,12 @@
     [io.github.humbleui.app :as app]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]))
+
+(def *face-bold
+  (delay
+    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf")))
 
 (defn load-state []
   (let [file (io/file ".state")]

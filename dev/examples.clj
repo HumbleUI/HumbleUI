@@ -14,7 +14,7 @@
     ; [examples.canvas-shapes]
     [examples.checkbox]
     [examples.container]
-    ; [examples.effects]
+    [examples.effects]
     ; [examples.errors]
     ; [examples.event-bubbling]
     ; [examples.framerate]
@@ -65,7 +65,7 @@
     ; "Canvas Shapes" examples.canvas-shapes/ui
     "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
-    ; "Effects" examples.effects/ui
+    "Effects" examples.effects/ui
     ; "Errors" examples.errors/ui
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui

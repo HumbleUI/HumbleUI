@@ -1,14 +1,12 @@
 (ns examples.grid
   (:require
+    [examples.util :as util]
     [clojure.string :as str]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]))
-
-(def face-bold
-  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
 
 (let [[head & tail]
       (->> (slurp "dev/examples/currency.csv")
@@ -45,7 +43,7 @@
 
 (defn ui []
   (let [{:keys [scale]}    ui/*ctx*
-        font-bold          (font/make-with-cap-height face-bold (* scale 10))
+        font-bold          (font/make-with-cap-height @util/*face-bold (* scale 10))
         {:keys [currencies
                 sort-col
                 sort-dir]} @*state]
