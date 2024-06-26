@@ -34,11 +34,11 @@
             [ui/valign {:position 0.5}
              [ui/label "First state"]]
             ^{:stretch 1} [ui/gap]
-            [ui/switch {:value *state-first}]]]
+            [ui/switch {:*value *state-first}]]]
           [ui/rect {:paint fill-delimiter}
            [ui/gap {:height 1}]]
           [ui/row
            [ui/valign {:position 0.5}
             [ui/label "Second state"]]
            ^{:stretch 1} [ui/gap]
-           [ui/switch {:value *state-second}]]]]]]]]))
+           [ui/switch {:*value *state-second}]]]]]]]]))

@@ -13,8 +13,6 @@
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
-    ; [io.github.humbleui.ui.backdrop :as backdrop]
-    ; [io.github.humbleui.ui.draggable :as draggable]
     ; [io.github.humbleui.ui.focusable :as focusable]
     ; [io.github.humbleui.ui.grid :as grid]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
@@ -70,6 +68,7 @@
 (deflazy clip         ([child]) "clip")
 (deflazy clip-rrect   ([{:keys [radii]} child]) "clip")
 (deflazy translate    ([{:keys [dx dy]} child]) "transform")
+(deflazy backdrop     ([{:keys [dx dy]} child]) "backdrop")
 
 (deflazy halign ([{:keys [position child-position]} child]) "align")
 (deflazy valign ([{:keys [position child-position]} child]) "align")
@@ -87,6 +86,7 @@
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
 (deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "clickable")
+(deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
 (deflazy button        ([{:keys [on-click]} child]) "clickable button")
 (deflazy toggle-button ([{:keys [*value]} child]) "clickable button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
@@ -98,8 +98,6 @@
 (load "/io/github/humbleui/ui/window")
 
 (core/import-vars
-  ; backdrop/backdrop
-  ; draggable/draggable
   ; focusable/focusable
   ; focusable/focus-controller
   ; grid/grid

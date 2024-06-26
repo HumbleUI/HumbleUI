@@ -4,17 +4,17 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]))
+    [io.github.humbleui.protocols :as protocols]
+    [io.github.humbleui.signal :as signal]))
 
-(defonce *debug?
-  (atom false))
+(defonce *graphs?
+  (signal/signal false))
 
-(defonce *force-render?
-  (atom false))
+(defonce *outlines?
+  (signal/signal false))
 
-(comment
-  (reset! *force-render? true)
-  (reset! *force-render? false))
+(defonce *continuous-render?
+  (signal/signal false))
 
 (def width
   100)
@@ -47,7 +47,7 @@
   `(aget ~array (mod (+ ~idx @*event-idx) width)))
 
 (defmacro measure [& body]
-  `(if @*debug?
+  `(if @*graphs?
      (let [t#   (System/nanoTime)
            res# (do ~@body)
            dt#  (- (System/nanoTime) t#)]
@@ -58,7 +58,7 @@
      (do ~@body)))
 
 (defmacro on-event-start []
-  `(when @*debug?
+  `(when @*graphs?
      (let [t# (System/nanoTime)]
        (aset event-starts @*event-idx (/ t# 1000000.0))
        (vswap! *event-idx #(-> % inc (mod width))))))
@@ -114,5 +114,5 @@
       
 
 (defmacro draw-frames [canvas]
-  `(when @*debug?
+  `(when @*graphs?
      (draw-frames-impl ~canvas)))

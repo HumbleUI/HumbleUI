@@ -49,6 +49,8 @@
   (-draw-impl [this ctx rect canvas]
     (let [{x :x, y :y, w :width, h :height} rect
           [_ on? pressed?] element
+          _                (when (nil? on?-cached)
+                             (set! on?-cached on?))
           _                (when (not= on? on?-cached)
                              (switch-start-animation this)
                              (set! on?-cached on?))
@@ -61,7 +63,7 @@
                                  switch-fill-disabled (if pressed?
                                                         switch-fill-disabled-active
                                                         switch-fill-disabled)]
-                             (condp = [(boolean on?) (boolean animating?)]
+                             (condp = [on? animating?]
                                [true  true] (paint/fill
                                               (Color/makeLerp
                                                 (.getColor switch-fill-enabled)
@@ -94,7 +96,10 @@
     {:animation-length 50
      :animation-start  0}))
 
-(defn- switch-ctor [opts]
-  [toggleable opts
-   (fn [state]
-     [switch-impl (:selected state) (:pressed state)])])
+(defn- switch-ctor
+  ([]
+   (switch-ctor {}))
+  ([opts]
+   [toggleable opts
+    (fn [state]
+      [switch-impl (boolean (:selected state)) (boolean (:pressed state))])]))

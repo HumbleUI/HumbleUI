@@ -5,7 +5,7 @@
     ; [examples.7guis-converter]
     [examples.align]
     [examples.animation]
-    ; [examples.backdrop]
+    [examples.backdrop]
     ; [examples.blur]
     ; [examples.bmi-calculator]
     [examples.button]
@@ -26,7 +26,7 @@
     ; [examples.oklch]
     [examples.paragraph]
     [examples.scroll]
-    ; [examples.settings]
+    [examples.settings]
     [examples.slider]
     [examples.stack]
     [examples.svg]
@@ -37,6 +37,7 @@
     ; [examples.tooltip]
     ; [examples.tree]
     ; [examples.treemap]
+    [examples.util :as util]
     ; [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.core :as core]
@@ -56,7 +57,7 @@
     ; "7 GUIs: Converter" examples.7guis-converter/ui
     "Align" examples.align/ui
     "Animation" examples.animation/ui
-    ; "Backdrop" examples.backdrop/ui
+    "Backdrop" examples.backdrop/ui
     ; "Blur" examples.blur/ui
     ; "BMI Calculator" examples.bmi-calculator/ui
     "Button" examples.button/ui
@@ -77,7 +78,7 @@
     ; "OkLCH" examples.oklch/ui
     "Paragraph" examples.paragraph/ui
     "Scroll" examples.scroll/ui
-    ; "Settings" examples.settings/ui
+    "Settings" examples.settings/ui
     "Slider" examples.slider/ui
     "Stack" examples.stack/ui
     "SVG" examples.svg/ui
@@ -91,25 +92,9 @@
     ; "Wordle" examples.wordle/ui
     ))
 
-(defn load-state []
-  (let [file (io/file ".state")]
-    (when (.exists file)
-      (edn/read-string (slurp file)))))
-
-(defn save-state [m]
-  (let [file   (io/file ".state")
-        state  (or (load-state) {})
-        state' (merge state m)]
-    (spit file (pr-str state'))))
-
-(defonce *example
-  (signal/signal
-    (or (:example (load-state))
-      (first (keys examples)))))
-
-(add-watch *example :save-state
-  (fn [_ _ _ new]
-    (save-state {:example new})))
+^:clj-reload/keep
+(util/def-durable-signal *example
+  (first (keys examples)))
 
 (ui/defcomp example-label [name]
   (let [fill-selected (paint/fill 0xFFB2D7FE)
@@ -152,9 +137,6 @@
 ; (defn before-ns-unload []
 ;   (reset! *app nil))
 
-(defonce *window
-  (promise))
-
 (defn maybe-save-window-rect [window event]
   (when (#{:window-move :window-resize} (:event event))
     (let [rect (window/window-rect window)
@@ -163,11 +145,11 @@
           y (-> rect :y (- (:y work-area)) (/ scale) int)
           w (-> rect :width (/ scale) int)
           h (-> rect :height (/ scale) int)]
-      (save-state {:x x, :y y, :width w, :height h}))))
+      (util/save-state {:x x, :y y, :width w, :height h}))))
 
 (defn restore-window-rect [screen]
   (let [{:keys [work-area]} screen]
-    (core/when-some+ [{:keys [x y width height]} (load-state)]
+    (core/when-some+ [{:keys [x y width height]} (util/load-state)]
       (let [x      (min (- (:right work-area) 500) x)
             y      (min (- (:bottom work-area) 500) y)
             width  (min (- (:right work-area) x) width)
@@ -191,6 +173,6 @@
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
         (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))
-      (reset! debug/*debug? true)
-      (deliver *window window)))
-  @*window)
+      (util/set-floating! window @util/*floating?)
+      (deliver util/*window window)))
+  @util/*window)

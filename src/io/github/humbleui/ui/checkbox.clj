@@ -16,34 +16,37 @@
       (+ cap-height extra)
       (:scale ctx))))
 
-(defn checkbox-ctor [opts child]
-  (let [value-on  (if (contains? opts :value-on) (:value-on opts) true)
-        value-off (if (contains? opts :value-off) (:value-off opts) false)
-        *value    (or (:*value opts) (signal/signal value-off))
-        opts'     (assoc opts
-                    :value-on  value-on
-                    :value-off value-off
-                    :*value    *value)]
-    {:should-setup?
-     (fn [opts' child-ctor-or-el]
-       (not (keys-match? [:value-on :value-off :*value] opts opts')))
-     :render
-     (fn [opts child]
-       (let [value @*value]
-         [toggleable opts'
-          (fn [state]
-            (let [size (checkbox-size *ctx*)]
-              [row
-               [valign {:position 0.5}
-                [width {:width size}
-                 [height {:height size}
-                  [svg @(checkbox-states [(cond
-                                            (= :mixed value)  :mixed
-                                            (:selected state) true
-                                            :else             false)
-                                          (boolean (:pressed state))])]]]]
-               [gap {:width (/ size 3)}]
-               [valign {:position 0.5}
-                (if (vector? child)
-                  child
-                  [label child])]]))]))}))
+(defn checkbox-ctor
+  ([child]
+   (checkbox-ctor {} child))
+  ([opts child]
+   (let [value-on  (if (contains? opts :value-on) (:value-on opts) true)
+         value-off (if (contains? opts :value-off) (:value-off opts) false)
+         *value    (or (:*value opts) (signal/signal value-off))
+         opts'     (assoc opts
+                     :value-on  value-on
+                     :value-off value-off
+                     :*value    *value)]
+     {:should-setup?
+      (fn [opts' child-ctor-or-el]
+        (not (keys-match? [:value-on :value-off :*value] opts opts')))
+      :render
+      (fn [opts child]
+        (let [value @*value]
+          [toggleable opts'
+           (fn [state]
+             (let [size (checkbox-size *ctx*)]
+               [row
+                [valign {:position 0.5}
+                 [width {:width size}
+                  [height {:height size}
+                   [svg @(checkbox-states [(cond
+                                             (= :mixed value)  :mixed
+                                             (:selected state) true
+                                             :else             false)
+                                           (boolean (:pressed state))])]]]]
+                [gap {:width (/ size 3)}]
+                [valign {:position 0.5}
+                 (if (vector? child)
+                   child
+                   [label child])]]))]))})))

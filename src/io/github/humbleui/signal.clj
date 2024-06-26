@@ -251,3 +251,20 @@
             xs'     (clojure.core/mapv #(or (mapping %) (binding [*context* nil] (f %))) xs)]
         {:cache xs
          :value xs'}))))
+
+(def ^:dynamic *internal*
+  false)
+
+(defn- link-ref [*atom]
+  (let [*signal (signal @*atom)]
+    (add-watch *atom ::sync
+      (fn [_ _ _ new]
+        (when-not *internal*
+          (binding [*internal* true]
+            (reset! *signal new)))))
+    (add-watch *signal ::sync
+      (fn [_ _ _ new]
+        (when-not *internal*
+          (binding [*internal* true]
+            (reset! *atom new)))))
+    *signal))

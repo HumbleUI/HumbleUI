@@ -86,7 +86,7 @@
                                  (try
                                    (debug/measure
                                      (on-paint window canvas))
-                                   (when @debug/*debug?
+                                   (when @debug/*graphs?
                                      (canvas/with-canvas canvas
                                        (let [scale (scale window)
                                              rect  (content-rect window)]
@@ -100,7 +100,7 @@
                                      (.clear canvas (unchecked-int 0xFFCC3333)))
                                    (finally
                                      (.restoreToCount canvas layer))))
-                               (when @debug/*force-render?
+                               (when @debug/*continuous-render?
                                  (.requestFrame ^Window window)))
                              
                              nil))))
