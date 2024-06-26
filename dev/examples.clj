@@ -19,7 +19,7 @@
     ; [examples.event-bubbling]
     ; [examples.framerate]
     [examples.graph]
-    ; [examples.grid]
+    [examples.grid]
     [examples.image]
     ; [examples.image-snapshot]
     [examples.label]
@@ -71,7 +71,7 @@
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui
     "Graph" examples.graph/ui
-    ; "Grid" examples.grid/ui
+    "Grid" examples.grid/ui
     "Image" examples.image/ui
     ; "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui

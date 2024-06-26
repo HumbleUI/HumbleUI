@@ -14,7 +14,6 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.focusable :as focusable]
-    ; [io.github.humbleui.ui.grid :as grid]
     ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.text-field :as text-field]
@@ -79,20 +78,21 @@
 (deflazy column     ([& children] [opts & children]) "column")
 (deflazy row        ([& children] [opts & children]) "row")
 (deflazy stack      ([& children]) "stack")
+(deflazy grid       ([{:keys [rows cols]} & children]) "grid")
 
 (deflazy shadow       ([opts] [opts child]) "shadow")
 (deflazy shadow-inset ([opts] [opts child]) "shadow")
 
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
-(deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "clickable")
+(deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "clickable toggleable")
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
 (deflazy button        ([{:keys [on-click]} child]) "clickable button")
-(deflazy toggle-button ([{:keys [*value]} child]) "clickable button")
+(deflazy toggle-button ([{:keys [*value]} child]) "clickable toggleable button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
-(deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "clickable switch")
-(deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "clickable checkbox")
+(deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "clickable toggleable switch")
+(deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "clickable toggleable checkbox")
 
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/window")
@@ -100,7 +100,6 @@
 (core/import-vars
   ; focusable/focusable
   ; focusable/focus-controller
-  ; grid/grid
   ; image-snapshot/image-snapshot
   ; listeners/event-listener
   ; listeners/key-listener
