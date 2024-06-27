@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(ui/defcomp toggleable [opts child-ctor-or-el]
+(ui/defcomp toggleable-ctor [opts child-ctor-or-el]
   (let [value-on  (:value-on opts true)
         value-off (:value-off opts)
         *value    (or (:*value opts) (signal/signal value-off))

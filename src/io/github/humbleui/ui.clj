@@ -36,21 +36,16 @@
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/sizing")
 
-(def *loaded
-  (atom #{}))
 
 (defmacro deflazy
-  ([name arglists files]
-   `(deflazy ~name nil ~arglists ~files))
-  ([name docstring arglists files]
+  ([name arglists file]
+   `(deflazy ~name nil ~arglists ~file))
+  ([name docstring arglists file]
    `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
       ~@(if docstring [docstring] [])
       (delay
-        (doseq [file# (str/split ~files #"\s+")
-                :when (not (@*loaded file#))]
-          (core/log "Loading" file#)
-          (load (str "/io/github/humbleui/ui/" file#))
-          (swap! *loaded conj file#))
+        (core/log "Loading" ~file)
+        (load (str "/io/github/humbleui/ui/" ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
@@ -86,14 +81,16 @@
 
 (deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
-(deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "clickable toggleable")
+(deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "toggleable")
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
-(deflazy button        ([{:keys [on-click]} child]) "clickable button")
-(deflazy toggle-button ([{:keys [*value]} child]) "clickable toggleable button")
+(deflazy button        ([{:keys [on-click]} child]) "button")
+(deflazy toggle-button ([{:keys [*value]} child]) "button")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
-(deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "clickable toggleable switch")
-(deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "clickable toggleable checkbox")
+(deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "switch")
+(deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "checkbox")
+
+(deflazy error         ([throwable]) "error")
 
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/window")

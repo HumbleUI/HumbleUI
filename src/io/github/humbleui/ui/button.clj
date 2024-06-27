@@ -22,9 +22,7 @@
     [padding {:horizontal (* 2 (:leading *ctx*))
               :vertical   (:leading *ctx*)}
      [center
-      (if (vector? child)
-        child
-        [label child])]]]])
+      child]]]])
 
 (ui/defcomp button-ctor [opts child]
   [clickable opts

@@ -15,7 +15,7 @@
     [examples.checkbox]
     [examples.container]
     [examples.effects]
-    ; [examples.errors]
+    [examples.errors]
     ; [examples.event-bubbling]
     ; [examples.framerate]
     [examples.grid]
@@ -66,7 +66,7 @@
     "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
     "Effects" examples.effects/ui
-    ; "Errors" examples.errors/ui
+    "Errors" examples.errors/ui
     ; "Event Bubbling" examples.event-bubbling/ui
     ; "Framerate" examples.framerate/ui
     "Grid" examples.grid/ui

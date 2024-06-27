@@ -164,10 +164,13 @@
       `(with ~(nnext bindings)
          ~@body))))
 
-(defn make [el]
+(defn make-impl [el]
   (core/cond+
     (satisfies? protocols/IComponent el)
     el
+    
+    (string? el)
+    (recur [@(resolve 'io.github.humbleui.ui/label) el])
     
     :let [[f & args] el
           f (cond-> f
@@ -225,6 +228,13 @@
         (when-some [ref (:ref (meta el))]
           (reset! ref node))
         node))))
+
+(defn make [el]
+  (try
+    (make-impl el)
+    (catch Exception e
+      (core/log-error e)
+      (make-impl [@(resolve 'io.github.humbleui.ui/error) e]))))
 
 (defn should-reconcile? [ctx old-node new-el]
   (and 

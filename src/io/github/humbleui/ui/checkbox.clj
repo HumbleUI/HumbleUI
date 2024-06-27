@@ -50,6 +50,4 @@
                                             (boolean (:pressed state))])]]]]
                  [gap {:width (/ size 3)}]
                  [valign {:position 0.5}
-                  (if (vector? child)
-                    child
-                    [label child])]]))])))})))
+                  child]]))])))})))

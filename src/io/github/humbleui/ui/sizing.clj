@@ -5,7 +5,7 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          width'     (dimension (core/checked-get opts :width number?) cs ctx)
+          width'     (dimension (core/checked-get opts :width (some-fn number? fn?)) cs ctx)
           child-size (measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width'))))
 
@@ -17,7 +17,7 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          height'    (dimension (core/checked-get opts :height number?) cs ctx)
+          height'    (dimension (core/checked-get opts :height (some-fn number? fn?)) cs ctx)
           child-size (measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height'))))
 
