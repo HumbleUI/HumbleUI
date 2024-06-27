@@ -16,8 +16,7 @@
     [examples.container]
     [examples.effects]
     [examples.errors]
-    ; [examples.event-bubbling]
-    ; [examples.framerate]
+    [examples.framerate]
     [examples.grid]
     [examples.image]
     ; [examples.image-snapshot]
@@ -67,8 +66,7 @@
     "Container" examples.container/ui
     "Effects" examples.effects/ui
     "Errors" examples.errors/ui
-    ; "Event Bubbling" examples.event-bubbling/ui
-    ; "Framerate" examples.framerate/ui
+    "Framerate" examples.framerate/ui
     "Grid" examples.grid/ui
     "Image" examples.image/ui
     ; "Image Snapshot" examples.image-snapshot/ui

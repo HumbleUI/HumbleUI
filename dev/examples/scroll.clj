@@ -54,4 +54,24 @@
     [ui/vscrollbar
      [ui/column
       (for [i (range 0 10)]
-        [label (+ 10 (* i 2)) i])]]]])
+        [label (+ 10 (* i 2)) i])]]
+    
+    ;; nested
+    [ui/vscrollbar
+     [ui/column
+      (for [i (range 1 10)]
+        [ui/padding {:horizontal 20 :vertical 10}
+         [ui/label (str "Item " i)]])
+              
+      [ui/height {:height 130}
+       [ui/padding {:bottom 12}
+        [ui/rect {:paint (paint/stroke 0xFF000000 1)}
+         [ui/vscrollbar
+          [ui/column
+           (for [ch (map str "ABCDEFGHIJKLMN")]
+             [ui/padding {:horizontal 20 :vertical 10}
+              [ui/label (str "Nested " ch)]])]]]]]
+
+      (for [i (range 10 20)]
+        [ui/padding {:horizontal 20 :vertical 10}
+         [ui/label (str "Item " i)]])]]]])
