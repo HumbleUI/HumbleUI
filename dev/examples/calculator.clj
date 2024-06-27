@@ -214,4 +214,6 @@
               ^{:stretch 1} [button "=" color-op]]]]]]))}))
 
 (ui/defcomp ui []
-  [ui/with-bounds calc-ui])
+  [ui/with-bounds 
+   (fn [bounds]
+     [calc-ui bounds])])

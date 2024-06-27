@@ -9,7 +9,7 @@
           width  (/ (:width rect) scale)
           height (/ (:height rect) scale)]
       (if (fn? child-ctor-or-el)
-        [[child-ctor-or-el (core/ipoint width height)]]
+        [(child-ctor-or-el (core/ipoint width height))]
         [child-ctor-or-el])))
   
   (-draw-impl [this ctx rect canvas]
