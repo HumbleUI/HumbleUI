@@ -8,7 +8,6 @@
     [io.github.humbleui.types IPoint Point]
     [io.github.humbleui.skija Canvas]))
 
-
 (def grid-seq
   (into []
     cat
@@ -232,20 +231,20 @@
            (canvas/draw-string canvas "shifted inner [60 360 50 30 5]" (:x srrect-1) (- (:y srrect-1) 8) font-ui fill-text)
            (canvas/draw-double-rrect canvas srrect-1 srrect-2 fill)))))})
 
-(def ui
-  (ui/vscrollbar
-    (ui/halign 0.5
-      (ui/grid
-        (partition-all 3
-          (for [paint-kw [:paint-point :paint-points :paint-lines
-                          :paint-polygon :paint-line :paint-arc
-                          :paint-rect :paint-oval :paint-circle
-                          :paint-rrect :paint-drrect]]
-            (ui/padding 10
-              (ui/column
-                (ui/label (pr-str paint-kw))
-                (ui/gap 0 10)
-                (ui/width 250
-                  (ui/height 250
-                    (ui/canvas {:on-paint (fn [ctx ^Canvas canvas ^IPoint size]
-                                            (on-paint (paint-kw->fn paint-kw) ctx canvas size))})))))))))))
+(defn ui []
+  [ui/vscrollbar
+   [ui/halign {:position 0.5}
+    [ui/grid {:cols 3}
+     (for [paint-kw [:paint-point :paint-points :paint-lines
+                     :paint-polygon :paint-line :paint-arc
+                     :paint-rect :paint-oval :paint-circle
+                     :paint-rrect :paint-drrect]]
+       [ui/padding {:padding 10}
+        [ui/column {:gap 10}
+         [ui/label (pr-str paint-kw)]
+         [ui/width {:width 250}
+          [ui/height {:height 250}
+           [ui/canvas
+            {:on-paint
+             (fn [ctx ^Canvas canvas ^IPoint size]
+               (on-paint (paint-kw->fn paint-kw) ctx canvas size))}]]]]])]]])

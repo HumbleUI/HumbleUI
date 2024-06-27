@@ -7,7 +7,10 @@
     :content (core/ipoint
                (math/ceil (* width (:scale ctx)))
                (math/ceil (* height (:scale ctx))))
-    :fit     cs
+    :fit     (let [aspect (/ width height)]
+               (core/ipoint
+                 (min (:width cs) (* (:height cs) aspect))
+                 (min (/ (:width cs) aspect) (:height cs))))
     :fill    cs
     #_else   cs))
 

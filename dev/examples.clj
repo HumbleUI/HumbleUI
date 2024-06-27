@@ -6,12 +6,12 @@
     [examples.align]
     [examples.animation]
     [examples.backdrop]
-    ; [examples.blur]
-    ; [examples.bmi-calculator]
+    [examples.blur]
+    [examples.bmi-calculator]
     [examples.button]
     [examples.calculator]
     [examples.canvas]
-    ; [examples.canvas-shapes]
+    [examples.canvas-shapes]
     [examples.checkbox]
     [examples.container]
     [examples.effects]
@@ -57,12 +57,12 @@
     "Align" examples.align/ui
     "Animation" examples.animation/ui
     "Backdrop" examples.backdrop/ui
-    ; "Blur" examples.blur/ui
-    ; "BMI Calculator" examples.bmi-calculator/ui
+    "Blur" examples.blur/ui
+    "BMI Calculator" examples.bmi-calculator/ui
     "Button" examples.button/ui
     "Calculator" examples.calculator/ui
     "Canvas" examples.canvas/ui
-    ; "Canvas Shapes" examples.canvas-shapes/ui
+    "Canvas Shapes" examples.canvas-shapes/ui
     "Checkbox" examples.checkbox/ui
     "Container" examples.container/ui
     "Effects" examples.effects/ui

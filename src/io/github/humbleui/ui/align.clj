@@ -6,6 +6,7 @@
   protocols/IComponent  
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _]     element
+          _              (assert (map? opts) (str "Expected: (map? opts), got: " opts))
           position       (core/checked-get opts :position number?)
           child-position (or (:child-position opts) position)
           child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
@@ -24,6 +25,7 @@
   protocols/IComponent  
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _]     element
+          _              (assert (map? opts) (str "Expected: (map? opts), got: " opts))
           position       (core/checked-get opts :position number?)
           child-position (or (:child-position opts) position)
           child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))

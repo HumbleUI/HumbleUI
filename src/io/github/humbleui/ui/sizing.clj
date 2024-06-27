@@ -5,7 +5,7 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          width'     (dimension (:width opts) cs ctx)
+          width'     (dimension (core/checked-get opts :width number?) cs ctx)
           child-size (measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width'))))
 
@@ -17,7 +17,7 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          height'    (dimension (:height opts) cs ctx)
+          height'    (dimension (core/checked-get opts :height number?) cs ctx)
           child-size (measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height'))))
 
@@ -35,7 +35,7 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          probes     (:probes opts)
+          probes     (core/checked-get opts :probes sequential?)
           width      (->> probes
                        (map #(-> % make (measure ctx cs) :width))
                        (reduce max 0))
