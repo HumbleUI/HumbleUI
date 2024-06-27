@@ -33,10 +33,9 @@
     ; [examples.text-field-debug]
     ; [examples.todomvc]
     [examples.tooltip]
-    ; [examples.tree]
     ; [examples.treemap]
     [examples.util :as util]
-    ; [examples.wordle]
+    [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
@@ -83,9 +82,8 @@
     ; "Todo MVC" examples.todomvc/ui
     "Switch" examples.switch/ui
     "Tooltip" examples.tooltip/ui
-    ; "Tree" examples.tree/ui
     ; "Treemap" examples.treemap/ui
-    ; "Wordle" examples.wordle/ui
+    "Wordle" examples.wordle/ui
     ))
 
 ^:clj-reload/keep

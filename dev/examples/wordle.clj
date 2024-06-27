@@ -2,37 +2,35 @@
   (:refer-clojure :exclude [key type])
   (:require
     [clojure.string :as str]
+    [examples.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.typeface :as typeface]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.skija Typeface]))
-
-(def ^Typeface typeface
-  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
+    [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.ui :as ui]))
 
 (def padding 4)
 
 ;; https://github.com/AllValley/WordleDictionary
-(def dictionary
-  (->> (slurp "dev/examples/wordle_dictionary.txt")
-    (str/split-lines)
-    (map str/upper-case)
-    (set)))
+(def *dictionary
+  (delay
+    (->> (slurp "dev/examples/wordle_dictionary.txt")
+      (str/split-lines)
+      (map str/upper-case)
+      (set))))
 
-(def solutions
-  (->> (slurp "dev/examples/wordle_solutions.txt")
-    (str/split-lines)
-    (mapv str/upper-case)))
+(def *solutions
+  (delay
+    (->> (slurp "dev/examples/wordle_solutions.txt")
+      (str/split-lines)
+      (mapv str/upper-case))))
 
 (defn empty-state []
-  {:word    (rand-nth solutions)
+  {:word    (rand-nth @*solutions)
    :guesses []
    :typing  ""})
 
 (def *state
-  (atom (empty-state)
+  (signal/signal (empty-state)
     #_{:word    "QUART"
        :guesses ["CRANE" "START"]
        :typing  "SSRAT"}))
@@ -52,7 +50,7 @@
         (swap! *state update :typing subs 0 (dec typed))
         
         (and (= 5 typed) (= :enter code))
-        (when (contains? dictionary typing)
+        (when (contains? @*dictionary typing)
           (swap! *state #(-> % (assoc :typing "") (update :guesses conj typing))))))))
 
 (defn color [word letter idx]
@@ -75,127 +73,126 @@
           [letter idx] (map vector guess (range))]
       {(str letter) (color word letter idx)})))
 
-(def field
-  (ui/dynamic ctx [{:keys [font-large stroke-light-gray stroke-dark-gray fill-green fill-yellow fill-dark-gray fill-white fill-black]} ctx
-                   {:keys [word guesses typing] :as state} @*state]
-    (let [fill (fn [letter idx]
-                 (case (color word letter idx)
-                   :green  fill-green
-                   :yellow fill-yellow
-                   :gray   fill-dark-gray))]
-      (ui/column
-        (interpose (ui/gap 0 padding)
-          (for [guess guesses]
-            (ui/row
-              (interpose (ui/gap padding 0)
-                (for [[letter idx] (map vector guess (range))]
-                  (ui/rect (fill letter idx)
-                    (ui/width 50
-                      (ui/halign 0.5
-                        (ui/height 50
-                          (ui/valign 0.5
-                            (ui/label {:font font-large :paint fill-white} letter)))))))))))
-        (when-not (won? state)
-          (let [colors (colors word guesses)]        
-            (list
-              (ui/gap 0 padding)
-              (ui/row
-                (interpose (ui/gap padding 0)
-                  (for [idx (range 0 5)]
-                    (if-some [letter (when (< idx (count typing))
-                                       (str (nth typing idx)))]
-                      (ui/rect stroke-dark-gray
-                        (ui/width 50
-                          (ui/halign 0.5
-                            (ui/height 50
-                              (ui/valign 0.5
-                                (let [color (cond
-                                              (= :gray (colors letter))
-                                              fill-dark-gray
+(defn field []
+  (let [{:keys [font-large stroke-light-gray stroke-dark-gray fill-green fill-yellow fill-dark-gray fill-white fill-black]} ui/*ctx*
+        {:keys [word guesses typing] :as state} @*state
+        fill (fn [letter idx]
+               (case (color word letter idx)
+                 :green  fill-green
+                 :yellow fill-yellow
+                 :gray   fill-dark-gray))]
+    [ui/column {:gap padding}
+     (for [guess guesses]
+       [ui/row {:gap padding}
+        (for [[letter idx] (map vector guess (range))]
+          [ui/rect {:paint (fill letter idx)}
+           [ui/width {:width 50}
+            [ui/halign {:position 0.5}
+             [ui/height {:height 50}
+              [ui/valign {:position 0.5}
+               [ui/label {:font font-large :paint fill-white} letter]]]]]])])
+     (when-not (won? state)
+       (let [colors (colors word guesses)]        
+         (list
+           [ui/gap {:height padding}]
+           [ui/row {:gap padding}
+            (for [idx (range 0 5)]
+              (if-some [letter (when (< idx (count typing))
+                                 (str (nth typing idx)))]
+                [ui/rect {:paint stroke-dark-gray}
+                 [ui/width {:width 50}
+                  [ui/halign {:position 0.5}
+                   [ui/height {:height 50}
+                    [ui/valign {:position 0.5}
+                     (let [color (cond
+                                   (= :gray (colors letter))
+                                   fill-dark-gray
                                             
-                                              (some #(= (str (nth % idx)) letter) guesses)
-                                              (fill letter idx)
+                                   (some #(= (str (nth % idx)) letter) guesses)
+                                   (fill letter idx)
                                               
-                                              (some? (colors letter))
-                                              fill-yellow
+                                   (some? (colors letter))
+                                   fill-yellow
                                             
-                                              :else
-                                              fill-black)]
-                                  (ui/label {:font font-large :paint color} letter)))))))
-                      (ui/rect stroke-light-gray
-                        (ui/gap 50 50)))))))))))))
+                                   :else
+                                   fill-black)]
+                       [ui/label {:font font-large :paint color} letter])]]]]]
+                [ui/rect {:paint stroke-light-gray}
+                 [ui/gap {:width 50 :height 50}]]))])))]))
 
 (defn key
-  ([char] (key char {:width 25 :code char}))
-  ([char {:keys [width code]}]
-   (ui/clickable
-     {:on-click (fn [_] (type! code))}
-     (ui/dynamic ctx [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ctx
-                      color (get (:colors ctx) char)]
-       (ui/rect
-         (case color
-           :green  fill-green
-           :yellow fill-yellow
-           :gray   fill-dark-gray
-           nil     fill-light-gray)
-         (ui/width width
-           (ui/halign 0.5
-             (ui/height 35
-               (ui/valign 0.5
-                 (ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char))))))))))
+  ([char]
+   (key {:width 25 :code char} char))
+  ([{:keys [width code]} char]
+   [ui/clickable
+    {:on-click (fn [_] (type! code))}
+    (let [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ui/*ctx*
+          color (get (:colors ui/*ctx*) char)]
+      [ui/rect {:paint (case color
+                         :green  fill-green
+                         :yellow fill-yellow
+                         :gray   fill-dark-gray
+                         nil     fill-light-gray)}
+       [ui/width {:width width}
+        [ui/halign {:position 0.5}
+         [ui/height {:height 35}
+          [ui/valign {:position 0.5}
+           [ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char]]]]]])]))
   
-(def keyboard
-  (ui/dynamic _ [{:keys [word guesses]} @*state]
-    (ui/with-context {:colors (colors word guesses)}    
-      (ui/column
-        (ui/gap 0 padding)
-        (ui/halign 0.5
-          (ui/row
-            (interpose (ui/gap padding 0)
-              (map #(key (str %)) "ABCDEFGHIJ"))))
-        (ui/gap 0 padding)
-        (ui/halign 0.5
-          (ui/row
-            (interpose (ui/gap padding 0)
-              (map #(key (str %)) "KLMNOPQRST"))))
-        (ui/gap 0 padding)
-        (ui/halign 0.5
-          (ui/row
-            (key "⏎" {:width (+ (* 2 25) padding), :code :enter})
-            (ui/gap padding 0)
-            (interpose (ui/gap padding 0)
-              (map #(key (str %)) "UVWXYZ"))
-            (ui/gap padding 0)
-            (key "⌫" {:width (+ (* 2 25) padding), :code :backspace})))))))
+(defn keyboard []
+  (let [{:keys [word guesses]} @*state]
+    [ui/with-context {:colors (colors word guesses)}
+     [ui/column {:gap padding}
+      [ui/halign {:position 0.5}
+       [ui/row  {:gap padding}
+        (map (fn [%] [key (str %)]) "ABCDEFGHIJ")]]
+      [ui/halign {:position 0.5}
+       [ui/row  {:gap padding}
+        (map (fn [%] [key (str %)]) "KLMNOPQRST")]]
+      [ui/halign {:position 0.5}
+       [ui/row  {:gap padding}
+        [key {:width (+ (* 2 25) padding), :code :enter} "⏎"]
+        (map (fn [%] [key (str %)]) "UVWXYZ")
+        [key {:width (+ (* 2 25) padding), :code :backspace} "⌫"]]]]]))
 
-(def ui
-  (ui/key-listener {:on-key-down #(type! (:key %))}
-    (ui/text-listener {:on-input #(type! (str/upper-case %))}
-      (ui/padding padding padding
-        (ui/with-scale scale
-          (let [font-small      (font/make-with-cap-height typeface (float (* scale 9)))
-                fill-black      (paint/fill 0xFF000000)
-                fill-light-gray (paint/fill 0xFFD4D6DA)]
-            (ui/with-context
-              {:font-large      (font/make-with-cap-height typeface (float (* scale 18)))
-               :font-small      font-small
-               :fill-white      (paint/fill 0xFFFFFFFF)
-               :fill-black      fill-black
-               :fill-light-gray fill-light-gray
-               :fill-dark-gray  (paint/fill 0xFF777C7E)
-               :fill-green      (paint/fill 0xFF6AAA64)
-               :fill-yellow     (paint/fill 0xFFC9B457)
-               :stroke-light-gray (paint/stroke 0xFFD4D6DA (* 2 scale))
-               :stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))}
-              (ui/column
-                (ui/halign 0.5
-                  (ui/clickable
-                    {:on-click (fn [_] (reset! *state (empty-state)))}
-                    (ui/padding 10 10
-                      (ui/label {:font font-small :paint fill-black} "↻ Reset"))))
-                (ui/gap 0 padding)
-                [:stretch 1 nil]
-                (ui/halign 0.5 field)
-                [:stretch 1 nil]
-                (ui/gap 0 padding)
-                (ui/halign 0.5 keyboard)))))))))
+(defn ui []
+  (let [scale             (:scale ui/*ctx*)
+        font-large        (font/make-with-cap-height @util/*face-bold (float (* scale 18)))
+        font-small        (font/make-with-cap-height @util/*face-bold (float (* scale 9)))
+        fill-black        (paint/fill 0xFF000000)
+        fill-white        (paint/fill 0xFFFFFFFF)
+        fill-light-gray   (paint/fill 0xFFD4D6DA)
+        fill-dark-gray    (paint/fill 0xFF777C7E)
+        fill-green        (paint/fill 0xFF6AAA64)
+        fill-yellow       (paint/fill 0xFFC9B457)
+        stroke-light-gray (paint/stroke 0xFFD4D6DA (* 2 scale))
+        stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))]
+    (fn []
+      [ui/with-context
+       {:font-large        font-large
+        :font-small        font-small
+        :fill-white        fill-white
+        :fill-black        fill-black
+        :fill-light-gray   fill-light-gray
+        :fill-dark-gray    fill-dark-gray
+        :fill-green        fill-green
+        :fill-yellow       fill-yellow
+        :stroke-light-gray stroke-light-gray
+        :stroke-dark-gray  stroke-dark-gray}
+       [ui/key-listener {:on-key-down #(type! (:key %))}
+        [ui/text-listener {:on-input #(type! (str/upper-case %))}
+         [ui/padding {:padding padding}
+          [ui/column
+           [ui/halign {:position 0.5}
+            [ui/clickable
+             {:on-click (fn [_] (reset! *state (empty-state)))}
+             [ui/padding {:padding 10}
+              [ui/label {:font font-small :paint fill-black} "↻ Reset"]]]]
+           [ui/gap {:height padding}]
+           ^{:stretch 1} [ui/gap]
+           [ui/halign {:position 0.5}
+            [field]]
+           ^{:stretch 1} [ui/gap]
+           [ui/gap {:height padding}]
+           [ui/halign {:position 0.5}
+            [keyboard]]]]]]])))

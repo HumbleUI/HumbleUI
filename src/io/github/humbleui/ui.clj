@@ -14,7 +14,6 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.focusable :as focusable]
-    ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.text-field :as text-field]
     ; [io.github.humbleui.ui.with-cursor :as with-cursor]
     )
@@ -33,6 +32,8 @@
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/sizing")
 
+(def *loaded
+  (atom #{}))
 
 (defmacro deflazy
   ([name arglists file]
@@ -41,8 +42,10 @@
    `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
       ~@(if docstring [docstring] [])
       (delay
-        (core/log "Loading" ~file)
-        (load (str "/io/github/humbleui/ui/" ~file))
+        (when-not (@*loaded ~file)
+          (core/log "Loading" ~file)
+          (load (str "/io/github/humbleui/ui/" ~file))
+          (swap! *loaded conj ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
@@ -89,6 +92,12 @@
 (deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "checkbox")
 (deflazy tooltip       ([{:keys [tip left up anchor shackle]} child]) "tooltip")
 
+(deflazy event-listener ([{:keys [event on-event capture?]} child]) "listeners")
+(deflazy on-key-focused ([{:keys [keymap]} child]) "listeners")
+(deflazy key-listener   ([{:keys [on-key-up on-key-down]} child]) "listeners")
+(deflazy mouse-listener ([{:keys [on-move on-scroll on-button on-over on-out]} child]) "listeners")
+(deflazy text-listener  ([{:keys [on-input]} child]) "listeners")
+
 (deflazy error         ([throwable]) "error")
 
 (load "/io/github/humbleui/ui/theme")
@@ -97,11 +106,6 @@
 (core/import-vars
   ; focusable/focusable
   ; focusable/focus-controller
-  ; listeners/event-listener
-  ; listeners/key-listener
-  ; listeners/mouse-listener
-  ; listeners/on-key-focused
-  ; listeners/text-listener
   ; text-field/text-input
   ; text-field/text-field
   ; with-cursor/with-cursor

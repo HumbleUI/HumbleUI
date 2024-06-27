@@ -5,7 +5,7 @@
   protocols/IComponent
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _ ] (parse-element element)
-          {:keys [paint]} opts]
+          paint       (core/checked-get opts :paint #(instance? Paint %))]
       (canvas/draw-rect canvas rect paint)
       (draw-child child ctx rect canvas))))
 
@@ -17,8 +17,9 @@
   protocols/IComponent
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _ ] (parse-element element)
-          {:keys [radius paint]} opts
-          rrect (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx)))]
+          radius      (core/checked-get opts :radius (every-pred number? pos?))
+          paint       (core/checked-get opts :paint #(instance? Paint %))          
+          rrect       (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx)))]
       (canvas/draw-rect canvas rrect paint)
       (draw-child child ctx rect canvas))))
 
