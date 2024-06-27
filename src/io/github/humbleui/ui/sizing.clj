@@ -29,21 +29,26 @@
    [ui/height {:height (:height opts)}
     child]])
 
-(core/deftype+ MaxWidth []
+(core/deftype+ ReserveWidth [^:mut probes]
   :extends AWrapperNode
   
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [[_ opts _] (parse-element element)
-          probes     (core/checked-get opts :probes sequential?)
-          width      (->> probes
-                       (map #(-> % make (measure ctx cs) :width))
+    (let [width      (->> probes
+                       (map #(-> % (measure ctx cs) :width))
                        (reduce max 0))
           child-size (measure child ctx cs)]
-      (assoc child-size :width width))))
+      (assoc child-size :width width)))
+  
+  (-reconcile-impl [this ctx el']
+    (let [[_ opts [child-el]] (parse-element el')
+          probes'             (reconcile-many ctx probes (core/checked-get opts :probes sequential?))
+          [child']            (reconcile-many ctx [child] [child-el])]
+      (set! probes probes')
+      (set! child child'))))
 
-(defn max-width [opts child]
-  (map->MaxWidth {}))
+(defn reserve-width [opts child]
+  (map->ReserveWidth {}))
 
 (defn node-size []
   (let [scale (or (:scale *ctx*) 1)

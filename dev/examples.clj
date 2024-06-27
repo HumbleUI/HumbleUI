@@ -19,9 +19,9 @@
     [examples.framerate]
     [examples.grid]
     [examples.image]
-    ; [examples.image-snapshot]
+    [examples.image-snapshot]
     [examples.label]
-    ; [examples.oklch]
+    [examples.oklch]
     [examples.paragraph]
     [examples.scroll]
     [examples.settings]
@@ -32,7 +32,7 @@
     ; [examples.text-field]
     ; [examples.text-field-debug]
     ; [examples.todomvc]
-    ; [examples.tooltip]
+    [examples.tooltip]
     ; [examples.tree]
     ; [examples.treemap]
     [examples.util :as util]
@@ -69,9 +69,9 @@
     "Framerate" examples.framerate/ui
     "Grid" examples.grid/ui
     "Image" examples.image/ui
-    ; "Image Snapshot" examples.image-snapshot/ui
+    "Image Snapshot" examples.image-snapshot/ui
     "Label" examples.label/ui
-    ; "OkLCH" examples.oklch/ui
+    "OkLCH" examples.oklch/ui
     "Paragraph" examples.paragraph/ui
     "Scroll" examples.scroll/ui
     "Settings" examples.settings/ui
@@ -82,7 +82,7 @@
     ; "Text Field Debug" examples.text-field-debug/ui
     ; "Todo MVC" examples.todomvc/ui
     "Switch" examples.switch/ui
-    ; "Tooltip" examples.tooltip/ui
+    "Tooltip" examples.tooltip/ui
     ; "Tree" examples.tree/ui
     ; "Treemap" examples.treemap/ui
     ; "Wordle" examples.wordle/ui
@@ -121,7 +121,8 @@
     [ui/gap {:width 1}]]
     
    ^{:stretch 1}
-   [(examples @*example)]])
+   [ui/clip
+    [(examples @*example)]]])
 
 (defonce *app
   (atom nil))

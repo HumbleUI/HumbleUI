@@ -4,25 +4,31 @@
   (:import
     [io.github.humbleui.skija Paint Shader]))
 
-(def ui
-  (ui/with-bounds ::bounds
-    (ui/dynamic ctx [{:keys [scale] ::keys [bounds]} ctx
-                     {:keys [height]} bounds] 
-      (let [shader (Shader/makeLinearGradient
-                     (float 0)
-                     (float 0)
-                     (float 0)
-                     (float (* height 2 scale))
-                     (int-array [(unchecked-int 0xFF277da1)
-                                 (unchecked-int 0xFFffba08)]))
-            paint  (-> (Paint.) (.setShader shader))]
-        (ui/vscrollbar
-          (ui/height (* height 2)
-            (ui/row
-              (ui/gap 10 0)
-              [:stretch 1 (ui/rect paint (ui/gap 0 0))]
-              (ui/gap 10 0)
-              [:stretch 1
-               (ui/image-snapshot
-                 (ui/rect paint (ui/gap 0 0)))]
-              (ui/gap 10 0))))))))
+(defn ui-impl [bounds]
+  (let [scale (:scale ui/*ctx*)
+        height (:height bounds)
+        shader (Shader/makeLinearGradient
+                 (float 0)
+                 (float 0)
+                 (float 0)
+                 (float (* height 2 scale))
+                 (int-array [(unchecked-int 0xFF277da1)
+                             (unchecked-int 0xFFffba08)]))
+        paint  (-> (Paint.) (.setShader shader))]
+    (fn [_]
+      [ui/vscrollbar
+       [ui/height {:height (* height 2)}
+        [ui/row
+         [ui/gap {:width 10}]
+         ^{:stretch 1}
+         [ui/rect {:paint paint} [ui/gap]]
+         [ui/gap {:width 10}]
+         ^{:stretch 1}
+         [ui/image-snapshot
+          [ui/rect {:paint paint} [ui/gap]]]
+         [ui/gap {:width 10}]]]])))
+
+(ui/defcomp ui []
+  [ui/with-bounds 
+   (fn [bounds]
+     [ui-impl bounds])])

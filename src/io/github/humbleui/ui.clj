@@ -14,11 +14,8 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window]
     ; [io.github.humbleui.ui.focusable :as focusable]
-    ; [io.github.humbleui.ui.image-snapshot :as image-snapshot]
     ; [io.github.humbleui.ui.listeners :as listeners]
     ; [io.github.humbleui.ui.text-field :as text-field]
-    ; [io.github.humbleui.ui.tooltip :as tooltip]
-    ; [io.github.humbleui.ui.with-bounds :as with-bounds]
     ; [io.github.humbleui.ui.with-cursor :as with-cursor]
     )
   (:import
@@ -56,14 +53,15 @@
 (deflazy svg       ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
 (deflazy canvas    ([{:keys [on-paint on-event]}]) "canvas")
 
-(deflazy padding      ([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
-(deflazy rect         ([{:keys [paint]} child]) "rect")
-(deflazy rounded-rect ([{:keys [radius paint]} child]) "rect")
-(deflazy clip         ([child]) "clip")
-(deflazy clip-rrect   ([{:keys [radii]} child]) "clip")
-(deflazy translate    ([{:keys [dx dy]} child]) "transform")
-(deflazy with-bounds  ([child-ctor]) "with_bounds")
-(deflazy backdrop     ([{:keys [dx dy]} child]) "backdrop")
+(deflazy padding        ([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")
+(deflazy rect           ([{:keys [paint]} child]) "rect")
+(deflazy rounded-rect   ([{:keys [radius paint]} child]) "rect")
+(deflazy clip           ([child]) "clip")
+(deflazy clip-rrect     ([{:keys [radii]} child]) "clip")
+(deflazy translate      ([{:keys [dx dy]} child]) "transform")
+(deflazy with-bounds    ([child-ctor]) "with_bounds")
+(deflazy backdrop       ([{:keys [dx dy]} child]) "backdrop")
+(deflazy image-snapshot ([{:keys [dx dy]} child]) "image_snapshot")
 
 (deflazy halign ([{:keys [position child-position]} child]) "align")
 (deflazy valign ([{:keys [position child-position]} child]) "align")
@@ -89,6 +87,7 @@
 
 (deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "switch")
 (deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "checkbox")
+(deflazy tooltip       ([{:keys [tip left up anchor shackle]} child]) "tooltip")
 
 (deflazy error         ([throwable]) "error")
 
@@ -98,17 +97,13 @@
 (core/import-vars
   ; focusable/focusable
   ; focusable/focus-controller
-  ; image-snapshot/image-snapshot
   ; listeners/event-listener
   ; listeners/key-listener
   ; listeners/mouse-listener
   ; listeners/on-key-focused
   ; listeners/text-listener
-  ; sizing/max-width
   ; text-field/text-input
   ; text-field/text-field
-  ; tooltip/tooltip
-  ; with-bounds/with-bounds
   ; with-cursor/with-cursor
   )
 

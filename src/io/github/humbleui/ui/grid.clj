@@ -64,5 +64,5 @@
 (defn- grid-ctor
   ([opts]
    (grid-ctor opts []))
-  ([opts children]
+  ([opts & children]
    (map->Grid {})))

@@ -57,7 +57,7 @@
             {:on-click (on-click i)}
             [ui/padding {:padding 10}
              [ui/with-context {:font-ui font-bold}
-              [ui/max-width
+              [ui/reserve-width
                {:probes [[ui/label (str th " ⏶")]
                          [ui/label (str th " ⏷")]]}
                [ui/halign {:position 0}

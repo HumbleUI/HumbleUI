@@ -1,25 +1,19 @@
-(ns io.github.humbleui.ui.tooltip
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.align :as align]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.hoverable :as hoverable]
-    [io.github.humbleui.ui.gap :as gap]))
-    
-(core/deftype+ RelativeRect [relative opts]
-  :extends core/AWrapper
+(in-ns 'io.github.humbleui.ui)
+
+(core/deftype+ RelativeRect [^:mut relative]
+  :extends AWrapperNode
   
   protocols/IComponent
-  (-draw [_ ctx rect ^Canvas canvas]
-    (let [{:keys [left up anchor shackle]
-           :or {left 0 up 0
-                anchor :top-left shackle :top-right}} opts
-          child-size    (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
+  (-draw-impl [_ ctx rect ^Canvas canvas]
+    (let [[_ opts _]    (parse-element element)
+          {:keys [left up anchor shackle]
+           :or {left    0 
+                up      0
+                anchor  :top-left
+                shackle :top-right}} opts
+          child-size    (measure child ctx (core/ipoint (:width rect) (:height rect)))
           child-rect    (core/irect-xywh (:x rect) (:y rect) (:width child-size) (:height child-size))
-          rel-cs        (core/measure relative ctx (core/ipoint 0 0))
+          rel-cs        (measure relative ctx (core/ipoint 0 0))
           rel-cs-width  (:width rel-cs)
           rel-cs-height (:height rel-cs)
           rel-rect      (condp = [anchor shackle]
@@ -39,27 +33,31 @@
                           [:top-right :bottom-left]     (core/irect-xywh (- (:x child-rect) rel-cs-width left) (+ (:y child-rect) (- (:height child-rect) up)) rel-cs-width rel-cs-height)
                           [:bottom-left :bottom-left]   (core/irect-xywh (- (:x child-rect) left) (+ (:y child-rect) (- (:height child-rect) rel-cs-height up)) rel-cs-width rel-cs-height)
                           [:bottom-right :bottom-left]  (core/irect-xywh (- (:x child-rect) rel-cs-width left) (+ (:y child-rect) (- (:height child-rect) rel-cs-height up)) rel-cs-width rel-cs-height))]
-      (core/draw-child child ctx child-rect canvas)
-      (core/draw-child relative ctx rel-rect canvas))))
+      (draw-child child ctx child-rect canvas)
+      (draw-child relative ctx rel-rect canvas))) ;; TODO draw in tooltip overlay
+  
+  (-reconcile-impl [this ctx el']
+    (let [[_ opts [child-el]] (parse-element el')
+          [relative']         (reconcile-many ctx [relative] [(:relative opts)])
+          [child']            (reconcile-many ctx [child] [child-el])]
+      (set! relative relative')
+      (set! child child'))))
 
-(defn relative-rect
+(defn relative-rect-ctor
   ([relative child]
-   (relative-rect {} relative child))
+   (relative-rect-ctor {} relative child))
   ([opts relative child]
-   (map->RelativeRect
-     {:relative relative
-      :opts     opts
-      :child    child})))
+   (map->RelativeRect {})))
 
-(defn tooltip
-  ([tip child] (tooltip {} tip child))
-  ([opts tip child]
-   (align/valign 0
-     (align/halign 0
-       (hoverable/hoverable
-         (dynamic/dynamic ctx [{:hui/keys [active? hovered?]} ctx]
-           (let [tip' (cond
-                        active?  tip
-                        hovered? tip
-                        :else    (gap/gap 0 0))]
-             (relative-rect opts tip' child))))))))
+(defn tooltip-ctor [opts child]
+  [valign {:position 0}
+   [halign {:position 0}
+    [hoverable
+     (fn [state]
+       (let [opts (cond-> opts
+                    true 
+                    (clojure.set/rename-keys {:tip :relative})
+                    
+                    (not (:hovered state))
+                    (assoc :relative [gap]))]
+         [relative-rect-ctor opts child]))]]])
