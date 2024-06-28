@@ -17,7 +17,7 @@
   protocols/IComponent
   (-draw-impl [_ ctx rect canvas]
     (let [[_ opts _ ] (parse-element element)
-          radius      (core/checked-get opts :radius (every-pred number? pos?))
+          radius      (core/checked-get opts :radius number?)
           paint       (core/checked-get opts :paint #(instance? Paint %))          
           rrect       (RRect/makeXYWH (:x rect) (:y rect) (:width rect) (:height rect) (* radius (:scale ctx)))]
       (canvas/draw-rect canvas rrect paint)

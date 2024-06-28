@@ -12,11 +12,7 @@
     [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
-    [io.github.humbleui.window :as window]
-    ; [io.github.humbleui.ui.focusable :as focusable]
-    ; [io.github.humbleui.ui.text-field :as text-field]
-    ; [io.github.humbleui.ui.with-cursor :as with-cursor]
-    )
+    [io.github.humbleui.window :as window])
   (:import
     [io.github.humbleui.jwm Window]
     [io.github.humbleui.skija Canvas Color Data Font FontMetrics Paint TextLine]
@@ -98,18 +94,16 @@
 (deflazy mouse-listener ([{:keys [on-move on-scroll on-button on-over on-out]} child]) "listeners")
 (deflazy text-listener  ([{:keys [on-input]} child]) "listeners")
 
+(deflazy focusable        ([{:keys [focused on-focus on-blur]} child]) "focusable")
+(deflazy focus-controller ([child]) "focusable")
+(deflazy with-cursor      ([{:keys [cursor]}]) "with_cursor")
+(deflazy text-input       ([] [{:keys [*value *state on-change]}]) "text_field")
+(deflazy text-field       ([] [{:keys [*value *state on-change focused on-focus on-blur keymap]}]) "text_field")
+
 (deflazy error         ([throwable]) "error")
 
 (load "/io/github/humbleui/ui/theme")
 (load "/io/github/humbleui/ui/window")
-
-(core/import-vars
-  ; focusable/focusable
-  ; focusable/focus-controller
-  ; text-field/text-input
-  ; text-field/text-field
-  ; with-cursor/with-cursor
-  )
 
 (defmacro start-app! [& body]
   `(core/thread

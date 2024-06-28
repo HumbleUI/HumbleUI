@@ -2,7 +2,7 @@
   (:require
     [clojure.edn :as edn]
     [clojure.java.io :as io]
-    ; [examples.7guis-converter]
+    [examples.7guis-converter]
     [examples.align]
     [examples.animation]
     [examples.backdrop]
@@ -29,8 +29,8 @@
     [examples.stack]
     [examples.svg]
     [examples.switch]
-    ; [examples.text-field]
-    ; [examples.text-field-debug]
+    [examples.text-field]
+    [examples.text-field-debug]
     ; [examples.todomvc]
     [examples.tooltip]
     ; [examples.treemap]
@@ -51,7 +51,7 @@
 
 (def examples
   (sorted-map
-    ; "7 GUIs: Converter" examples.7guis-converter/ui
+    "7 GUIs: Converter" examples.7guis-converter/ui
     "Align" examples.align/ui
     "Animation" examples.animation/ui
     "Backdrop" examples.backdrop/ui
@@ -77,8 +77,8 @@
     "Slider" examples.slider/ui
     "Stack" examples.stack/ui
     "SVG" examples.svg/ui
-    ; "Text Field" examples.text-field/ui
-    ; "Text Field Debug" examples.text-field-debug/ui
+    "Text Field" examples.text-field/ui
+    "Text Field Debug" examples.text-field-debug/ui
     ; "Todo MVC" examples.todomvc/ui
     "Switch" examples.switch/ui
     "Tooltip" examples.tooltip/ui

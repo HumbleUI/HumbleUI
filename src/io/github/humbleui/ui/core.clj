@@ -62,6 +62,12 @@
   (when comp
     (protocols/-unmount comp)))
 
+(declare parse-element)
+
+(defn invoke-callback [comp key & args]
+  (let [[_ opts _] (parse-element (:element comp))]
+    (apply core/invoke (key opts) args)))
+
 ;; vdom
 
 (def ^:dynamic *ctx*)

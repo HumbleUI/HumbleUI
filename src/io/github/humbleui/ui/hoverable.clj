@@ -3,28 +3,29 @@
 (core/deftype+ Hoverable [*state]
   :extends AWrapperNode
   (-event-impl [this ctx event]
-    (core/when-some+ [{:keys [x y]} event]
-      (let [{:keys [on-hover on-out]} (parse-opts element)
-            state     @*state
-            hovered?  (:hovered state)
-            hovered?' (core/rect-contains? rect (core/ipoint x y))]
-        (cond
-          (and (not hovered?) hovered?')
-          (do
-            (reset! *state #{:hovered})
-            (force-render this (:window ctx))
-            (core/invoke on-hover event)
-            true)
+    (core/eager-or
+      (core/when-some+ [{:keys [x y]} event]
+        (let [state     @*state
+              hovered?  (:hovered state)
+              hovered?' (core/rect-contains? rect (core/ipoint x y))]
+          (cond
+            (and (not hovered?) hovered?')
+            (do
+              (reset! *state #{:hovered})
+              (force-render this (:window ctx))
+              (invoke-callback this :on-hover event)
+              true)
           
-          (and hovered? (not hovered?'))
-          (do
-            (reset! *state #{})
-            (force-render this (:window ctx))
-            (core/invoke on-out event)
-            true)
+            (and hovered? (not hovered?'))
+            (do
+              (reset! *state #{})
+              (force-render this (:window ctx))
+              (invoke-callback this :on-out event)
+              true)
           
-          :else
-          false))))
+            :else
+            false)))
+      (event-child child ctx event)))
   
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*state] element new-element))

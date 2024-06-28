@@ -2,15 +2,18 @@
   (:require
     [clojure.string :as str]
     [io.github.humbleui.core :as core]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def *celsius
-  (atom {:text "5"
-         :from 1
-         :to   1}))
+  (signal/signal
+    {:text "5"
+     :from 1
+     :to   1}))
 
 (def *fahrenheit
-  (atom {:text "41"}))
+  (signal/signal
+    {:text "41"}))
 
 (def ^:dynamic *editing* false)
 
@@ -49,22 +52,22 @@
 ; C = (F - 32) * (5/9)
 ; F = C * (9/5) + 32
 
-(def ui
-  (ui/focus-controller
-    (ui/center
-      (ui/with-context
-        {:hui.text-field/padding-top    10
-         :hui.text-field/padding-bottom 10
-         :hui.text-field/padding-left   5
-         :hui.text-field/padding-right  5}
-        (ui/row
-          (ui/width 50
-            (ui/text-field {:focused (core/now)} *celsius))
-          (ui/gap 5 0)
-          (ui/valign 0.5
-            (ui/label "Celsius = "))
-          (ui/width 50
-            (ui/text-field *fahrenheit))  
-          (ui/gap 5 0)
-          (ui/valign 0.5
-            (ui/label "Fahrenheit")))))))
+(defn ui []
+  [ui/focus-controller
+   [ui/center
+    [ui/with-context
+     {:hui.text-field/padding-top    10
+      :hui.text-field/padding-bottom 10
+      :hui.text-field/padding-left   5
+      :hui.text-field/padding-right  5}
+     [ui/row
+      [ui/width {:width 50}
+       [ui/text-field {:focused (core/now), :*state *celsius}]]
+      [ui/gap {:width 5}]
+      [ui/valign {:position 0.5}
+       [ui/label "Celsius = "]]
+      [ui/width {:width 50}
+       [ui/text-field {:*state *fahrenheit}]]
+      [ui/gap {:width 5}]
+      [ui/valign {:position 0.5}
+       [ui/label "Fahrenheit"]]]]]])

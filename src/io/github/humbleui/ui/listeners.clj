@@ -21,16 +21,16 @@
   (map->EventListener {}))
 
 (defn on-key-focused-ctor [opts child]
-  (event-listener
-    {:event    :key
-     :on-event
-     (fn [e ctx]
-       (when (and (:hui/focused? ctx) (:pressed? e)) ;; FIXME hui/focused?
-         (when-some [callback (-> opts :keymap (get (:key e)))]
-           (callback)
-           true)))
-     :capture? true}
-    child))
+  [event-listener-ctor
+   {:event    :key
+    :on-event
+    (fn [e ctx]
+      (when (and (:hui/focused? ctx) (:pressed? e)) ;; FIXME hui/focused?
+        (when-some [callback (-> opts :keymap (get (:key e)))]
+          (callback)
+          true)))
+    :capture? true}
+   child])
 
 (core/deftype+ KeyListener [on-key-down on-key-up]
   :extends AWrapperNode
