@@ -33,7 +33,7 @@
     [examples.text-field-debug]
     ; [examples.todomvc]
     [examples.tooltip]
-    ; [examples.treemap]
+    [examples.treemap]
     [examples.util :as util]
     [examples.wordle]
     [io.github.humbleui.app :as app]
@@ -82,7 +82,7 @@
     ; "Todo MVC" examples.todomvc/ui
     "Switch" examples.switch/ui
     "Tooltip" examples.tooltip/ui
-    ; "Treemap" examples.treemap/ui
+    "Treemap" examples.treemap/ui
     "Wordle" examples.wordle/ui
     ))
 

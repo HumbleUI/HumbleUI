@@ -601,7 +601,8 @@
                      (:hui.text-field/fill-placeholder ctx)
                      (:hui.text-field/fill-text ctx))]
           (when line
-            ; (core/log "(.isClosed line)" (.isClosed line) line)
+            (when (.isClosed line)
+              (core/log "(.isClosed line)" (.isClosed line) line))
             (.drawTextLine canvas line x y fill)))
         
         ;; composing region
