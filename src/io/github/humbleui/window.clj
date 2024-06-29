@@ -1,11 +1,11 @@
 (ns io.github.humbleui.window
   (:require
     [clojure.java.io :as io]
+    [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
-    [io.github.humbleui.event :as event]
-    [io.github.humbleui.protocols :as protocols])
+    [io.github.humbleui.event :as event])
   (:import
     [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
@@ -21,6 +21,9 @@
 
 (defn scale [^Window window]
   (.getScale (.getScreen window)))
+
+(defn screen [^Window window]
+  (some-> window .getScreen (@#'app/screen->clj)))
 
 (defn window-rect [^Window window]
   (.getWindowRect window))
@@ -46,8 +49,8 @@
                        (accept [_ jwm-event]
                          (let [e    (event/event->map jwm-event)
                                type (:event e)]
-                           (when (not= :frame-skija type)
-                             (debug/on-start :event))
+                           (when-not (#{nil :frame :frame-skija} type)
+                             (debug/on-event-start))
                            
                            (when on-event
                              (when e
@@ -81,29 +84,18 @@
                                (let [canvas (.getCanvas ^Surface (:surface e))
                                      layer  (.save canvas)]
                                  (try
-                                   (debug/on-start :paint)
-                                   (on-paint window canvas)
-                                   (debug/on-end :paint)
-                                   (when @protocols/*debug?
-                                     (canvas/with-canvas canvas
-                                       (let [scale (scale window)
-                                             rect  (content-rect window)]
-                                         (canvas/translate canvas
-                                           (- (:width rect) (* scale (+ debug/width 5 debug/width 10)))
-                                           (- (:height rect) (* scale (+ debug/height 10))))
-                                         (canvas/scale canvas scale)
-                                         (debug/draw canvas :paint)
-                                         (canvas/translate canvas (+ debug/width 10) 0)
-                                         (debug/draw canvas :event))))
+                                   (debug/measure
+                                     (on-paint window canvas))
+                                   (debug/draw-frames canvas window)
                                    (catch Throwable e
                                      (core/log-error e)
                                      (.clear canvas (unchecked-int 0xFFCC3333)))
                                    (finally
-                                     (.restoreToCount canvas layer)))))
+                                     (.restoreToCount canvas layer))))
+                               (when @debug/*continuous-render?
+                                 (.requestFrame ^Window window)))
                              
-                             nil)
-                           (when (not= :frame-skija type)
-                             (debug/on-end :event)))))
+                             nil))))
         input-client-fn #(when on-event
                            (on-event window {:event :get-text-input-client}))
         input-client (reify TextInputClient

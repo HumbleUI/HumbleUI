@@ -6,7 +6,7 @@
    io.github.humbleui.core/cond+         hooks.cond+/cond+-hook}}
  :lint-as
  {io.github.humbleui.core/deftype+          clojure.core/deftype
-  io.github.humbleui.core/when-every        clojure.core/when-some
+  io.github.humbleui.core/when-some+        clojure.core/when-some
   io.github.humbleui.core/defn-memoize-last clojure.core/defn
   io.github.humbleui.core/for-vec           clojure.core/for
   io.github.humbleui.core/for-map           clojure.core/for

@@ -3,27 +3,20 @@ import argparse, build_utils, common, os, platform, subprocess, sys
 
 def main():
   os.chdir(common.basedir)
-  classpath = common.deps() + [
-    "dev",
-    "test",
-    build_utils.fetch_maven("org.clojure", "tools.namespace", build_utils.deps_version("tools.namespace")),
-    build_utils.fetch_maven("org.clojure", "java.classpath", "1.0.0"),
-    build_utils.fetch_maven("org.clojure", "tools.reader", "1.3.6"),
-    build_utils.fetch_maven("criterium", "criterium", build_utils.deps_version("criterium"), repo = common.clojars),
-    build_utils.fetch_maven("com.clojure-goes-fast", "clj-async-profiler", build_utils.deps_version("clj-async-profiler"), repo = common.clojars),
-  ]
-  
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--ns', default='examples')
-  (args, _) = parser.parse_known_args()
+  classpath = common.deps() + common.dev_deps()
 
-  return subprocess.call(["java",
+  return subprocess.run(["java",
     "--class-path", build_utils.classpath_join(classpath),
     "-ea",
+    "-Duser.language=en",
+    "-Duser.country=US",
+    "-Dfile.encoding=UTF-8",
     "-Djdk.attach.allowAttachSelf",
     # "-XX:+UnlockDiagnosticVMOptions",
     # "-XX:+DebugNonSafepoints",
-    "clojure.main", "--report", "stderr", "-m", "user", "--ns", args.ns])
+    "clojure.main", "--report", "stderr", "-m", "user"],
+    # env = {"MTL_HUD_ENABLED": "1"}
+    ).returncode
 
 if __name__ == '__main__':
   sys.exit(main())

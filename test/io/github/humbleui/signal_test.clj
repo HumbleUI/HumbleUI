@@ -8,7 +8,9 @@
   (let [*a (s/signal 10)]
     (is (= 10 @*a))
     (s/reset! *a 20)
-    (is (= 20 @*a))))
+    (is (= 20 @*a))
+    (reset! *a 30)
+    (is (= 30 @*a))))
   
 (deftest depth-1
   (let [*a (s/signal 3)

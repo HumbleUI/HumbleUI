@@ -3,13 +3,15 @@
     [clojure.string :as str]
     [clojure.test :as test :refer [are deftest]]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Font Typeface]))
 
 (def *state
-  (atom {:b "0"
-         :screen :b}))
+  (signal/signal
+    {:b "0"
+     :screen :b}))
 
 (defn stringify [n]
   (let [s (str n)]
@@ -18,7 +20,8 @@
       s)))
 
 (defn on-click
-  ([s] (swap! *state on-click s))
+  ([s]
+   (swap! *state on-click s))
   ([state s]
    (let [{:keys [a op b screen]} state]
      (case s
@@ -98,95 +101,119 @@
     ".1×10=" "1"
     "1÷2="   "0.5"
     "1+2=4"  "4"))
-    ; "1+2=4+" "4"
+; "1+2=4+" "4"
     
 
 (comment (test/run-test test-logic))
 
 (defn button [text color]
-  (ui/clickable
-    {:on-click (fn [_] (on-click text))}
-    (ui/dynamic ctx [{:keys [hui/active? font-btn]} ctx]
-      (let [color' (if active?
-                     (bit-or 0x80000000 (bit-and 0xFFFFFF color))
-                     color)]
-        (ui/rect (paint/fill color')
-          (ui/center
-            (ui/label {:font font-btn :features ["tnum"]} text)))))))
+  [ui/clickable
+   {:on-click (fn [_]
+                (on-click text))}
+   (fn [state]
+     (let [color' (if (:pressed state)
+                    (bit-or 0x80000000 (bit-and 0xFFFFFF color))
+                    color)
+           font-btn (:font-btn ui/*ctx*)]
+       [ui/rect {:paint (paint/fill color')}
+        [ui/center
+         [ui/label {:font font-btn :features ["tnum"]} text]]]))])
 
-(def color-digit   0xFF797979)
-(def color-op      0xFFFF9F0A)
-(def color-clear   0xFF646464)
-(def color-display 0xFF4E4E4E)
-(def padding 1)
+(def color-digit
+  0xFF797979)
+
+(def color-op
+  0xFFFF9F0A)
+
+(def color-clear
+  0xFF646464)
+
+(def color-display
+  0xFF4E4E4E)
+
+(def padding
+  1)
 
 (defn scale-font [^Font font cap-height']
   (let [size       (.getSize font)
         cap-height (-> font .getMetrics .getCapHeight)]
     (-> size (/ cap-height) (* cap-height'))))
 
-(def ui
-  (ui/with-bounds ::bounds
-    (ui/dynamic ctx [{:keys [face-ui font-ui scale]} ctx
-                     height (:height (::bounds ctx))]
-      (let [face-ui        ^Typeface face-ui
-            btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
-            cap-height'    (-> btn-height (/ 3) (* scale) (Math/floor))
-            display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
-            cap-height''   (-> display-height (/ 3) (* scale) (Math/floor))]
-        (ui/dynamic _ [size'  (scale-font font-ui cap-height')
-                       size'' (scale-font font-ui cap-height'')]
-          (ui/with-context {:font-btn     (Font. face-ui (float size'))
-                            :font-display (Font. face-ui (float size''))
-                            :fill-text    (paint/fill 0xFFEBEBEB)}
-            (ui/rect (paint/fill color-display)
-              (ui/padding padding padding
-                (ui/column
-                  [:stretch 3 (ui/rect (paint/fill 0xFF404040)
-                                (ui/padding #(/ (:height %) 3) 0
-                                  (ui/halign 1
-                                    (ui/valign 0.5
-                                      (ui/dynamic ctx [{:keys [font-display]} ctx
-                                                       val (get @*state (:screen @*state))]
-                                        (ui/label {:font font-display :features ["tnum"]} val))))))]
-                  (ui/gap 0 padding)
-                  [:stretch 2 (ui/row
-                                (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "C" color-clear))
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "±" color-clear)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "÷" color-op)])]
-                  (ui/gap 0 padding)
-                  [:stretch 2 (ui/row
-                                [:stretch 1 (button "7" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "8" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "9" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "×" color-op)])]
-                  (ui/gap 0 padding)
-                  [:stretch 2 (ui/row
-                                [:stretch 1 (button "4" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "5" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "6" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "−" color-op)])]
-                  (ui/gap 0 padding)
-                  [:stretch 2 (ui/row
-                                [:stretch 1 (button "1" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "2" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "3" color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "+" color-op)])]
-                  (ui/gap 0 padding)
-                  [:stretch 2 (ui/row
-                                (ui/width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding)) (button "0" color-digit))
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "." color-digit)]
-                                (ui/gap padding 0)
-                                [:stretch 1 (button "=" color-op)])])))))))))
+(defn calc-ui [bounds]
+  (let [{:keys [face-ui font-ui scale]} ui/*ctx*
+        height         (:height bounds)
+        face-ui        ^Typeface face-ui
+        btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
+        cap-height'    (-> btn-height (/ 3) (* scale) (Math/floor))
+        display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
+        cap-height''   (-> display-height (/ 3) (* scale) (Math/floor))
+        size'          (scale-font font-ui cap-height')
+        size''         (scale-font font-ui cap-height'')
+        font-display   (Font. face-ui (float size''))
+        font-btn       (Font. face-ui (float size'))]
+    {:should-setup?
+     (fn [bounds']
+       (not= (:height bounds) (:height bounds')))
+     :render
+     (fn [bounds]
+       (let [state @*state]
+         [ui/with-context
+          {:font-btn  font-btn
+           :fill-text (paint/fill 0xFFEBEBEB)}
+          [ui/rect {:paint (paint/fill color-display)}
+           [ui/padding {:padding padding}
+          
+            [ui/column {:gap padding}
+             ;; display
+             ^{:stretch 3}
+             [ui/rect {:paint (paint/fill 0xFF404040)}
+              [ui/padding {:horizontal #(/ (:height %) 3)}
+               [ui/halign {:position 1}
+                [ui/valign {:position 0.5}
+                 (let [val (get state (:screen state))]
+                   [ui/label {:font font-display :features ["tnum"]} val])]]]]
+          
+             ;; ops row
+             ^{:stretch 2}
+             [ui/row {:gap padding}
+              [ui/width {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
+               [button "C" color-clear]]
+              ^{:stretch 1} [button "±" color-clear]
+              ^{:stretch 1} [button "÷" color-op]]
+         
+             ;; top digits row
+             ^{:stretch 2}
+             [ui/row {:gap padding}
+              ^{:stretch 1} [button "7" color-digit]
+              ^{:stretch 1} [button "8" color-digit]
+              ^{:stretch 1} [button "9" color-digit]
+              ^{:stretch 1} [button "×" color-op]]
+          
+             ;; middle digits row
+             ^{:stretch 2}
+             [ui/row {:gap padding}
+              ^{:stretch 1} [button "4" color-digit]
+              ^{:stretch 1} [button "5" color-digit]
+              ^{:stretch 1} [button "6" color-digit]
+              ^{:stretch 1} [button "−" color-op]]
+          
+             ;; bottom digits row
+             ^{:stretch 2}
+             [ui/row {:gap padding}
+              ^{:stretch 1} [button "1" color-digit]
+              ^{:stretch 1} [button "2" color-digit]
+              ^{:stretch 1} [button "3" color-digit]
+              ^{:stretch 1} [button "+" color-op]]
+          
+             ;; bottom row
+             ^{:stretch 2}
+             [ui/row {:gap padding}
+              [ui/width {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
+               [button "0" color-digit]]
+              ^{:stretch 1} [button "." color-digit]
+              ^{:stretch 1} [button "=" color-op]]]]]]))}))
+
+(ui/defcomp ui []
+  [ui/with-bounds 
+   (fn [bounds]
+     [calc-ui bounds])])

@@ -1,37 +1,40 @@
-(ns io.github.humbleui.ui.label
-  (:require
-    [clojure.math :as math]
-    [clojure.string :as str]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.dynamic :as dynamic])
-  (:import
-    [io.github.humbleui.skija Canvas Font FontMetrics Paint TextLine]
-    [io.github.humbleui.skija.shaper ShapingOptions]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Label [^Paint paint ^TextLine line ^FontMetrics metrics]
-  :extends core/ATerminal
+(core/deftype+ Label [size ^TextLine line ^Paint paint]
+  :extends ATerminalNode
   protocols/IComponent
-  (-measure [_ _ctx _cs]
-    (core/ipoint
-      (Math/ceil (.getWidth line))
-      (Math/ceil (.getCapHeight metrics))))
+  (-measure-impl [this ctx cs]
+    size)
   
-  (-draw [_ _ctx rect ^Canvas canvas]
-    (.drawTextLine canvas line (:x rect) (+ (:y rect) (math/ceil (.getCapHeight metrics))) paint)))
+  (-draw-impl [this ctx rect ^Canvas canvas]
+    (.drawTextLine canvas line (:x rect) (+ (:y rect) (:height size)) paint))
+  
+  (-should-reconcile? [_this ctx new-element]
+    (= element new-element))
+  
+  (-unmount-impl [this]
+    (.close line)))
 
-(defn label
-  ([text]
-   (label nil text))
-  ([opts text]
-   (dynamic/dynamic ctx [^Font font (or (:font opts) (:font-ui ctx))
-                         paint (or (:paint opts) (:fill-text ctx))]
-     (let [text     (str text)
-           features (cond-> ShapingOptions/DEFAULT
-                      (not (empty? (:features opts)))
-                      (.withFeatures (str/join " " (:features opts))))
-           line     (.shapeLine core/shaper text font ^ShapingOptions features)]
-       (map->Label
-         {:paint   paint
-          :line    line
-          :metrics (.getMetrics font)})))))
+(defn- label-impl [& texts]
+  (let [[_ opts texts] (parse-element (cons nil texts))
+        paint          (or (:paint opts) (:fill-text *ctx*))
+        font           (or (:font opts) (:font-ui *ctx*))
+        features       (cond-> ShapingOptions/DEFAULT
+                         (not (empty? (:font-features *ctx*)))
+                         (.withFeatures (str/join " " (:font-features *ctx*)))
+                         (not (empty? (:features opts)))
+                         (.withFeatures (str/join " " (:features opts))))
+        line           (.shapeLine shaper (str/join texts) font features)
+        metrics        (.getMetrics font)
+        size           (core/ipoint
+                         (math/ceil (.getWidth line))
+                         (math/ceil (.getCapHeight metrics)))]
+    (map->Label 
+      {:size  size
+       :line  line
+       :paint paint})))
+
+(defn- label-ctor [& texts]
+  (vec
+    (cons label-impl
+      (map signal/maybe-read texts))))

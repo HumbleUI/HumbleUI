@@ -1,15 +1,28 @@
-(ns io.github.humbleui.ui.window
-  (:require
-    [io.github.humbleui.app :as app]
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.window :as window]))
+(in-ns 'io.github.humbleui.ui)
+
+(defn- app-node [theme app]
+  (cond
+    (nil? app)
+    nil
+    
+    (and (instance? clojure.lang.IDeref app) (fn? @app))
+    (default-theme theme
+      (make [@app]))
+
+    (fn? app)
+    (default-theme theme
+      (make [app]))
+
+    (instance? clojure.lang.IDeref app)
+    @app
+
+    :else
+    app))
 
 (defn window
-  ([app] (window {} app))
-  ([opts app]
-   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color]
+  (^Window [app] (window {} app))
+  (^Window [opts app]
+   (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color on-paint on-event]
           :or {exit-on-close? true
                title    "Humble 🐝 UI"
                width    800
@@ -19,11 +32,7 @@
                bg-color 0xFFF6F6F6}} opts
          *mouse-pos (volatile! (core/ipoint 0 0))
          ref?       (instance? clojure.lang.IRef app)
-         app-fn     (fn []
-                      (cond
-                        (instance? clojure.lang.IDeref app) @app
-                        (fn? app) (app)
-                        :else app))
+         *app-node  (atom (app-node (:theme opts) app))
          ctx-fn     (fn [window]
                       (when-not (window/closed? window)
                         {:window    window
@@ -31,14 +40,19 @@
                          :mouse-pos @*mouse-pos}))
          paint-fn   (fn [window canvas]
                       (canvas/clear canvas bg-color)
-                      (let [bounds (window/content-rect window)]
-                        (when-some [app (app-fn)]
-                          (core/draw app (ctx-fn window) (core/irect-xywh 0 0 (:width bounds) (:height bounds)) canvas))))
+                      (let [bounds (window/content-rect window)
+                            rect   (core/irect-xywh 0 0 (:width bounds) (:height bounds))]
+                        (when on-paint
+                          (on-paint window canvas))
+                        (when-some [app @*app-node]
+                          (protocols/-draw app (ctx-fn window) rect canvas))))
          event-fn   (fn [window event]
-                      (core/when-every [{:keys [x y]} event]
+                      (core/when-some+ [{:keys [x y]} event]
                         (vreset! *mouse-pos (core/ipoint x y)))
-                      (when-some [app (app-fn)]
-                        (when-let [result (core/event app (ctx-fn window) event)]
+                      (when on-event
+                        (on-event window event))
+                      (when-some [app @*app-node]
+                        (when-let [result (protocols/-event app (ctx-fn window) event)]
                           (window/request-frame window)
                           result)))
          window     (window/make
@@ -74,5 +88,7 @@
        (add-watch app ::redraw
          (fn [_ _ old new]
            (when-not (identical? old new)
+             (some-> @*app-node protocols/-unmount)
+             (reset! *app-node (app-node (:theme opts) app))
              (window/request-frame window)))))
      window)))

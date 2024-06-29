@@ -1,33 +1,36 @@
 (ns examples.settings
   (:require
-    [state :as state]
+    [examples.util :as util]
+    [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.ui :as ui]))
 
-(def ui
-  (ui/with-scale scale
-    (let [padding-inner  12
-          fill-bg        (paint/fill 0xFFF2F2F2)
-          stroke-bg      (paint/stroke 0xFFE0E0E0 (* 0.5 scale))
-          fill-delimiter (paint/fill 0xFFE7E7E7)]
-      (ui/padding 20 20
-        (ui/valign 0
-          (ui/rounded-rect {:radius 6} fill-bg
-            (ui/rounded-rect {:radius 6} stroke-bg
-              (ui/padding padding-inner padding-inner
-                (ui/column
-                  (ui/row
-                    (ui/valign 0.5
-                      (ui/label "On top"))
-                    [:stretch 1 nil]
-                    (ui/toggle state/*floating))
-                  (ui/gap 0 padding-inner)
-                  (ui/rect fill-delimiter
-                    (ui/gap 0 1))
-                  (ui/gap 0 padding-inner)
-                  (ui/row
-                    (ui/valign 0.5
-                      (ui/label "Debug"))
-                    [:stretch 1 nil]
-                    (ui/toggle protocols/*debug?)))))))))))
+(defn setting [name signal]
+  [ui/row
+   [ui/valign {:position 0.5}
+    [ui/label name]]
+   ^{:stretch 1} [ui/gap]
+   [ui/switch {:*value signal}]])
+
+(ui/defcomp ui []
+  (let [{:keys [window scale]} ui/*ctx*
+        padding-inner  12
+        fill-bg        (paint/fill 0xFFF2F2F2)
+        stroke-bg      (paint/stroke 0xFFE0E0E0 (* 0.5 scale))
+        fill-delimiter (paint/fill 0xFFE7E7E7)
+        delimeter      [ui/rect {:paint fill-delimiter}
+                        [ui/gap {:height 1}]]]
+    [ui/padding {:padding 20}
+     [ui/valign {:position 0}
+      [ui/rounded-rect {:radius 6, :paint fill-bg}
+       [ui/rounded-rect {:radius 6, :paint stroke-bg}
+        [ui/padding {:padding padding-inner}
+         [ui/column {:gap padding-inner}
+          (interpose delimeter
+            (list
+              [setting "Always on top" util/*floating?]
+              [setting "Frame paint time" debug/*paint?]
+              [setting "Frame pacing" debug/*pacing?]
+              [setting "Event handling time" debug/*events?]
+              [setting "Outlines" debug/*outlines?]
+              [setting "Continuous render" debug/*continuous-render?]))]]]]]]))

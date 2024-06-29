@@ -1,13 +1,12 @@
 (ns examples.treemap
   (:require
     [clojure.string :as str]
-    [examples.state]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui]
-    [state])
+    [io.github.humbleui.ui :as ui])
   (:import
     [java.io IOException]
     [java.nio.file Files FileVisitResult SimpleFileVisitor LinkOption Path]
@@ -16,20 +15,19 @@
     [io.github.humbleui.types IPoint]
     [io.github.humbleui.skija Canvas Paint]))
 
+(defonce *state
+  (signal/signal nil))
+
 (def *path
-  (atom
+  (signal/signal
     {:text (System/getProperty "user.home")
      :placeholder "Path to scan"}))
 
 (def *progress
-  (atom 0.0))
-
-(add-watch *progress :progress
-  (fn [_ _ _ new]
-    (state/request-frame)))
+  (signal/signal 0.0))
 
 (def *future
-  (atom nil))
+  (signal/signal nil))
 
 (def link-options
   (into-array LinkOption [LinkOption/NOFOLLOW_LINKS]))
@@ -163,44 +161,41 @@
     (.cancel f true))
   (reset! *future
     (future
-      (reset! examples.state/*treemap-state (scan (:text @*path) *progress))
-      (window/request-frame @state/*window)
+      (reset! *state (scan (:text @*path) *progress))
       (reset! *future nil))))
 
-(def ui
-  (ui/padding 10
-    (ui/column
-      (ui/row
-        [:stretch 1
-         (ui/text-field *path)]
-        (ui/gap 10 0)
-        (ui/button rescan
-          (ui/label "Scan")))
-      (ui/gap 0 10)
-      [:stretch 1
-       (ui/dynamic _ [progress @*progress
-                      state    @examples.state/*treemap-state]
-         (cond
-           (= progress 0.0)
-           nil
+(defn ui []
+  (let [state    @*state
+        progress @*progress]
+    [ui/padding {:padding 10}
+     [ui/column {:gap 10}
+      [ui/row {:gap 10}
+       ^{:stretch 1}
+       [ui/text-field {:*state *path}]
+       [ui/button {:on-click (fn [_] (rescan))} "Scan"]]
+      
+      (cond
+        (= progress 0.0)
+        ^{:stretch 1} [ui/gap]
          
-           (< progress 1.0)
-           (ui/center
-             (ui/width #(max 200 (* 0.25 (:width %)))
-               (ui/column
-                 (ui/row
-                   [:stretch progress
-                    (ui/rect (paint/fill 0xFF33CC33)
-                      (ui/gap 0 10))]
-                   [:stretch (- 1 progress)
-                    (ui/rect (paint/fill 0xFFCCCCCC)
-                      (ui/gap 0 10))])
-                 (ui/gap 0 10)
-                 (ui/label (str "Scanning " (-> progress (* 100) int (str "%")))))))
+        (< progress 1.0)
+        ^{:stretch 1} 
+        [ui/center
+         [ui/width {:width #(max 200 (* 0.25 (:width %)))}
+          [ui/column {:gap 10}
+           [ui/row
+            ^{:stretch progress}
+            [ui/rect {:paint (paint/fill 0xFF33CC33)}
+             [ui/gap {:height 10}]]
+            ^{:stretch (- 1 progress)}
+            [ui/rect {:paint (paint/fill 0xFFCCCCCC)}
+             [ui/gap {:height 10}]]]
+           [ui/label (str "Scanning " (-> progress (* 100) int (str "%")))]]]]
          
-           :else
-           (ui/image-snapshot
-             (ui/canvas
-               {:on-paint
-                (fn [_ canvas size]
-                  (paint [state] canvas size size))}))))])))
+        :else
+        ^{:stretch 1}
+        [ui/image-snapshot
+         [ui/canvas
+          {:on-paint
+           (fn [_ canvas size]
+             (paint [state] canvas size size))}]])]]))

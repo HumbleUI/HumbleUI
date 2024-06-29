@@ -8,17 +8,17 @@
 (defn blur [radius]
   (ImageFilter/makeBlur radius radius FilterTileMode/CLAMP))
 
-(def ui
-  (ui/stack
-    (ui/vscrollbar
-      (ui/image "dev/images/blur.webp"))
+(defn ui []
+  [ui/stack
+   [ui/vscrollbar
+    [ui/image {:scale :fit} "dev/images/blur.webp"]]
     
-    (ui/valign 0
-      (ui/column
-        (ui/backdrop (blur 30)
-          (ui/rect (paint/fill 0x20FFFFFF)
-            (ui/gap 0 80)))
+   [ui/valign {:position 0}
+    [ui/column
+     [ui/backdrop {:filter (blur 30)}
+      [ui/rect {:paint (paint/fill 0x20FFFFFF)}
+       [ui/gap {:height 80}]]]
         
-        (ui/backdrop (blur 90)
-          (ui/rect (paint/fill 0x20FFFFFF)
-            (ui/gap 0 2)))))))
+     [ui/backdrop {:filter (blur 90)}
+      [ui/rect {:paint (paint/fill 0x20FFFFFF)}
+       [ui/gap {:height 2}]]]]]])

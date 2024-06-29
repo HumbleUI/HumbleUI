@@ -1,16 +1,8 @@
-(ns io.github.humbleui.ui.paragraph
-  (:require
-    [clojure.math :as math]
-    [clojure.string :as str]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.dynamic :as dynamic])
-  (:import
-    [io.github.humbleui.skija BreakIterator Canvas Font FontMetrics Paint TextLine]
-    [io.github.humbleui.skija.shaper ShapingOptions]))
+(in-ns 'io.github.humbleui.ui)
 
-(defn- layout [tokens max-width cap-height line-height]
+(import '[io.github.humbleui.skija BreakIterator])
+
+(defn- paragraph-layout [tokens max-width cap-height line-height]
   (core/loopr [positions (transient [])
                x         0
                y         0
@@ -39,32 +31,38 @@
      :width     width
      :height    height}))
 
-(core/deftype+ Paragraph [^Paint paint
-                          tokens
-                          line-height
-                          metrics]
-  :extends core/ATerminal
+(core/deftype+ Paragraph [^Paint paint tokens *layout line-height metrics]
+  :extends ATerminalNode
   protocols/IComponent
-  (-measure [_ _ctx cs]
-    (let [layout (layout tokens (:width cs) (:cap-height metrics) line-height)]
+  (-measure-impl [_ _ctx cs]
+    (let [layout (core/cached *layout (:width cs)
+                   #(paragraph-layout tokens (:width cs) (:cap-height metrics) line-height))]
       (core/ipoint
         (math/ceil (:width layout))
         (:height layout))))
   
-  (-draw [_ _ctx rect ^Canvas canvas]
-    (let [layout (layout tokens (:width rect) (:cap-height metrics) line-height)]
+  (-draw-impl [_ _ctx rect ^Canvas canvas]
+    (let [layout (core/cached *layout (:width rect)
+                   #(paragraph-layout tokens (:width rect) (:cap-height metrics) line-height))]
       (doseq [[pos token] (core/zip (:positions layout) tokens)
               :when pos]
-        (.drawTextLine canvas (:shaped token) (+ (:x rect) (:x pos)) (+ (:y rect) (:y pos)) paint)))))
+        (.drawTextLine canvas (:shaped token) (+ (:x rect) (:x pos)) (+ (:y rect) (:y pos)) paint))))
+  
+  (-should-reconcile? [_this ctx new-element]
+    (= element new-element))
+  
+  (-unmount-impl [this]
+    (doseq [token tokens]
+      (.close (:shaped ^TextLine token)))))
 
-(defn- split-whitespace [s]
+(defn- paragraph-split-whitespace [s]
   (let [trimmed (str/trimr s)
         space   (subs s (count trimmed))]
     (if (pos? (count space))
       [trimmed space]
       [s])))
 
-(defn- words [text]
+(defn- paragraph-words [text]
   (with-open [iter (BreakIterator/makeLineInstance)]
     (.setText iter text)
     (loop [words (transient [])
@@ -72,32 +70,30 @@
       (let [end (.next iter)]
         (if (= BreakIterator/DONE end)
           (persistent! words)
-          (recur (reduce conj! words (split-whitespace (subs text start end))) end))))))
+          (recur (reduce conj! words (paragraph-split-whitespace (subs text start end))) end))))))
 
-(comment
-  (words "A word,   then: “another-word” one"))
-
-(defn paragraph
+(defn- paragraph-ctor
   ([text]
-   (paragraph nil text))
+   (paragraph-ctor nil text))
   ([opts text]
-   (dynamic/dynamic ctx [^Font font  (or (:font opts) (:font-ui ctx))
-                         paint       (or (:paint opts) (:fill-text ctx))
-                         line-height (Math/ceil
-                                       (or (some-> opts :line-height (* (:scale ctx)))
-                                         (* 2 (:cap-height (font/metrics font)))))]
-     (let [text     (str text)
-           features (cond-> ShapingOptions/DEFAULT
-                      (not (empty? (:features opts)))
-                      (.withFeatures (str/join " " (:features opts))))
-           tokens   (mapv
-                      (fn [token]
-                        {:text   token
-                         :shaped (.shapeLine core/shaper token font ^ShapingOptions features)
-                         :blank? (str/blank? token)})
-                      (words text))]
-       (map->Paragraph
-         {:paint       paint
-          :tokens      tokens
-          :line-height line-height
-          :metrics     (font/metrics font)})))))
+   (let [^Font font  (or (:font opts) (:font-ui *ctx*))
+         paint       (or (:paint opts) (:fill-text *ctx*))
+         line-height (Math/ceil
+                       (or (some-> opts :line-height (* (:scale *ctx*)))
+                         (* 2 (:cap-height (font/metrics font)))))
+         text        (str text)
+         features    (cond-> ShapingOptions/DEFAULT
+                       (not (empty? (:features opts)))
+                       (.withFeatures (str/join " " (:features opts))))
+         tokens      (mapv
+                       (fn [token]
+                         {:text   token
+                          :shaped (.shapeLine shaper token font ^ShapingOptions features)
+                          :blank? (str/blank? token)})
+                       (paragraph-words text))]
+     (map->Paragraph
+       {:paint       paint
+        :tokens      tokens
+        :*layout     (atom nil)
+        :line-height line-height
+        :metrics     (font/metrics font)}))))

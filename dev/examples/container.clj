@@ -3,53 +3,40 @@
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
-(defn label [text]
-  (ui/dynamic ctx [{:keys [leading]} ctx]
-    (ui/rect (paint/fill 0xFFB2D7FE)
-      (ui/center
-        (ui/padding 10 leading
-          (ui/label text))))))
+(ui/defcomp label [text]
+  [ui/rect {:paint (paint/fill 0xFFB2D7FE)}
+   [ui/center
+    [ui/padding {:padding 10}
+     [ui/label text]]]])
 
-(def ui
-  (ui/dynamic ctx [{:keys [leading]} ctx]
-    (ui/center
-      (ui/column
-        (ui/padding 0 leading
-          (ui/label "Hug"))
-        (ui/row
-          (label "Ok")
-          (ui/gap 10 0)
-          (label "Cancel")
-          (ui/gap 10 0)
-          (label "Abort request"))
-        (ui/gap 0 leading)
+(ui/defcomp ui []
+  [ui/center
+   [ui/column {:gap 10}
+    [ui/padding {:top 10}
+     [ui/label "Hug"]]
+    [ui/row {:gap 10}
+     [label "Ok"]
+     [label "Cancel"]
+     [label "Abort request"]]
           
-        (ui/padding 0 leading
-          (ui/label "Stretch 1-1-1"))
-        (ui/row
-          [:stretch 1 (label "Ok")]
-          (ui/gap 10 0)
-          [:stretch 1 (label "Cancel")]
-          (ui/gap 10 0)
-          [:stretch 1 (label "Abort request")])
-        (ui/gap 0 leading)
+    [ui/padding {:top 10}
+     [ui/label "Stretch 1-1-1"]]
+    [ui/row {:gap 10}
+     ^{:stretch 1} [label "Ok"]
+     ^{:stretch 1} [label "Cancel"]
+     ^{:stretch 1} [label "Abort request"]]
           
-        (ui/padding 0 leading
-          (ui/label "Stretch 3-2-1"))
-        (ui/row
-          [:stretch 3 (label "Ok")]
-          (ui/gap 10 0)
-          [:stretch 2 (label "Cancel")]
-          (ui/gap 10 0)
-          [:stretch 1 (label "Abort request")])
-        (ui/gap 0 leading)
+    [ui/padding {:top 10}
+     [ui/label "Stretch 3-2-1"]]
+    [ui/row {:gap 10}
+     ^{:stretch 3} [label "Ok"]
+     ^{:stretch 2} [label "Cancel"]
+     ^{:stretch 1} [label "Abort request"]]
           
-        (ui/padding 0 leading
-          (ui/label "Hug 20%-30%-40%"))
-        (ui/row
-          (ui/width #(* 0.2 (:width %)) (label "Ok"))
-          (ui/gap 10 0)
-          (ui/width #(* 0.3 (:width %)) (label "Cancel"))
-          (ui/gap 10 0)
-          (ui/width #(* 0.4 (:width %)) (label "Abort request")))
-        (ui/gap 0 leading)))))
+    [ui/padding {:top 10}
+      [ui/label "Hug 20%-30%-40%"]]
+    [ui/row {:gap 10}
+      [ui/width {:width #(* 0.2 (:width %))} [label "Ok"]]
+      [ui/width {:width #(* 0.3 (:width %))} [label "Cancel"]]
+      [ui/width {:width #(* 0.4 (:width %))} [label "Abort request"]]]
+    ]])

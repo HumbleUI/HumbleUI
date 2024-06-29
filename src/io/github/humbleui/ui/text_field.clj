@@ -1,25 +1,18 @@
-(ns io.github.humbleui.ui.text-field
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.app :as app]
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.clipboard :as clipboard]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.focusable :as focusable]
-    [io.github.humbleui.ui.listeners :as listeners]
-    [io.github.humbleui.ui.rect :as rect]
-    [io.github.humbleui.ui.with-cursor :as with-cursor]
-    [io.github.humbleui.window :as window])
-  (:import
-    [java.lang AutoCloseable]
-    [io.github.humbleui.jwm TextInputClient]
-    [io.github.humbleui.skija BreakIterator Canvas Font FontMetrics TextLine]
-    [io.github.humbleui.skija.shaper ShapingOptions]))
+(in-ns 'io.github.humbleui.ui)
 
-(def undo-stack-depth 100)
+(require
+  '[io.github.humbleui.clipboard :as clipboard])
+
+(import
+  '[io.github.humbleui.jwm TextInputClient]
+  '[io.github.humbleui.skija BreakIterator Canvas Font FontMetrics TextLine]
+  '[io.github.humbleui.skija.shaper ShapingOptions])
+  
+;; https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/TextDefaultsBindings/TextDefaultsBindings.html
+;; https://github.com/davidbalbert/KeyBinding-Inspector
+
+(def undo-stack-depth
+  100)
 
 (defn- char-iter ^BreakIterator [state]
   (or (:char-iter state)
@@ -461,8 +454,7 @@
       (when (= source source-cached)
         derived-cached)
       (let [derived (fn source state)]
-        (when (instance? AutoCloseable derived-cached)
-          (.close ^AutoCloseable derived-cached))
+        (core/close derived-cached)
         (swap! *state assoc
           key-source-cached source
           key-derived       derived)
@@ -471,7 +463,7 @@
 (defn- text-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :text :cached/text :line
     (fn [text state]
-      (.shapeLine core/shaper text (:font state) (:features text-field)))))
+      (.shapeLine shaper text (:font state) (:features text-field)))))
 
 (defn- placeholder-line ^TextLine [text-field ctx]
   (get-cached text-field ctx :placeholder :cached/placeholder :line-placeholder
@@ -479,7 +471,7 @@
       (let [font (or 
                    (:hui.text-field/font-placeholder ctx)
                    (:font state))]
-        (.shapeLine core/shaper placeholder font (:features text-field))))))
+        (.shapeLine shaper placeholder font (:features text-field))))))
 
 (defn- coord-to [text-field ctx]
   (get-cached text-field ctx :to :cached/to :coord-to
@@ -488,7 +480,7 @@
         (math/round (.getCoordAtOffset line to))))))
 
 (defn- correct-offset! [text-field ctx]
-  (let [{:keys [*state my-rect]} text-field
+  (let [{:keys [*state rect]} text-field
         state  @*state
         {:keys [offset]} state
         {:keys [scale]
@@ -496,7 +488,7 @@
         line          (text-line text-field ctx)
         coord-to      (coord-to text-field ctx)
         line-width    (.getWidth line)
-        rect-width    (:width my-rect)
+        rect-width    (:width rect)
         padding-left  (* scale padding-left)
         padding-right (* scale (+ cursor-width padding-right))
         min-offset    (- padding-left)
@@ -527,14 +519,12 @@
       (when (> (key state) len)
         (swap! *state assoc key len)))))
 
-(core/deftype+ TextInput [*state
-                          on-change
-                          ^ShapingOptions features
-                          ^:mut           my-rect]
-  :extends core/ATerminal
-  
+(core/deftype+ TextInput [*value
+                          *state
+                          ^ShapingOptions features]
+  :extends ATerminalNode  
   protocols/IComponent
-  (-measure [this ctx cs]
+  (-measure-impl [this ctx cs]
     (let [{:keys                [scale]
            :hui.text-field/keys [cursor-width
                                  padding-left
@@ -566,8 +556,7 @@
   ;                                       
   ; ├────────────────────────────────────┤
   ;            (.getWidth line)           
-  (-draw [this ctx rect ^Canvas canvas]
-    (set! my-rect rect)
+  (-draw-impl [this ctx rect ^Canvas canvas]
     (correct-ranges! *state)
     (correct-offset! this ctx)
     
@@ -612,6 +601,8 @@
                      (:hui.text-field/fill-placeholder ctx)
                      (:hui.text-field/fill-text ctx))]
           (when line
+            (when (.isClosed line)
+              (core/log "(.isClosed line)" (.isClosed line) line))
             (.drawTextLine canvas line x y fill)))
         
         ;; composing region
@@ -651,7 +642,7 @@
                 (- cursor-blink-interval
                   (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
         
-  (-event [this ctx event]
+  (-event-impl [this ctx event]
     ; (when-not (#{:frame :frame-skija :window-focus-in :window-focus-out :mouse-move} (:event event))
     ;   (println (:hui/focused? ctx) event))
     (when (:hui/focused? ctx)
@@ -667,10 +658,10 @@
             (= :mouse-button (:event event))
             (= :primary (:button event))
             (:pressed? event)
-            my-rect
-            (core/rect-contains? my-rect (core/ipoint (:x event) (:y event))))
+            rect
+            (core/rect-contains? rect (core/ipoint (:x event) (:y event))))
           (let [x             (-> (:x event)
-                                (- (:x my-rect))
+                                (- (:x rect))
                                 (+ offset))
                 offset'       (.getOffsetAtCoord line x)
                 now           (core/now)
@@ -708,16 +699,16 @@
             (= :mouse-move (:event event))
             (:selecting? state))
           (let [x (-> (:x event)
-                    (- (:x my-rect))
+                    (- (:x rect))
                     (+ offset))]
             (cond
-              (core/rect-contains? my-rect (core/ipoint (:x event) (:y event)))
+              (core/rect-contains? rect (core/ipoint (:x event) (:y event)))
               (swap! *state edit :expand-to-position (.getOffsetAtCoord line x))
               
-              (< (:y event) (:y my-rect))
+              (< (:y event) (:y rect))
               (swap! *state edit :expand-to-position 0)
               
-              (>= (:y event) (:bottom my-rect))
+              (>= (:y event) (:bottom rect))
               (swap! *state edit :expand-to-position (count (:text state))))
             true)
           
@@ -743,10 +734,10 @@
                               (edit state :kill nil)
                               state)]
                   (edit state :insert (:text event)))))
-            (and on-change
-              (try (on-change @*state)
-                (catch Throwable e
-                  (core/log-error e))))
+            (try
+              (invoke-callback this :on-change (:text @*state))
+              (catch Throwable e
+                (core/log-error e)))
             true)
           
           ;; composing region
@@ -897,7 +888,7 @@
                 (swap! *state
                   (fn [state]
                     (reduce #(edit %1 %2 nil) state ops)))
-                (and on-change (on-change @*state))
+                (invoke-callback this :on-change (:text @*state))
                 true)
               (some #{:letter :digit :whitespace} (:key-types event))))
           
@@ -918,10 +909,10 @@
                        left
                        (.getCoordAtOffset line (or marked-to to)))]
       (core/irect-ltrb
-        (+ (:x my-rect) (- offset) left)
-        (+ (:y my-rect) padding-top (- ascent))
-        (+ (:x my-rect) (- offset) right)
-        (+ (:y my-rect) baseline descent))))
+        (+ (:x rect) (- offset) left)
+        (+ (:y rect) padding-top (- ascent))
+        (+ (:x rect) (- offset) right)
+        (+ (:y rect) baseline descent))))
   
   (getSelectedRange [_]
     (let [{:keys [from to]} @*state]
@@ -938,67 +929,74 @@
           end   (min end start)]
       (subs text start end))))
 
-(defn text-input
-  ([*state]
-   (text-input nil *state))
-  ([{:keys [on-change] :as _opts} *state]
-   (dynamic/dynamic ctx [font     (or
-                                    (:hui.text-field/font ctx)
-                                    (:font-ui ctx))
-                         metrics  (font/metrics font)
-                         features (:hui.text-field/font-features ctx)]
-     (let [features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)]
-       (swap! *state #(core/merge-some
-                        {:text               ""
-                         :font               font
-                         :metrics            metrics
-                         :cached/text        nil
-                         :line               nil
+(defn text-input-ctor
+  ([]
+   (text-input-ctor {}))
+  ([{:keys [*value *state on-change] :as opts}]
+   (let [font     (or
+                    (:hui.text-field/font *ctx*)
+                    (:font-ui *ctx*))
+         metrics  (font/metrics font)
+         features (:hui.text-field/font-features *ctx*)
+         features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)
+         *value   (or
+                    (:*value opts)
+                    (signal/signal ""))
+         *state   (or
+                    (:*state opts)
+                    (signal/signal {}))]
+     (swap! *value #(or % ""))
+     (swap! *state #(core/merge-some
+                      {:text               ""
+                       :font               font
+                       :metrics            metrics
+                       :cached/text        nil
+                       :line               nil
                          
-                         :placeholder        ""
-                         :cached/placeholder nil
-                         :line-placeholder   nil
+                       :placeholder        ""
+                       :cached/placeholder nil
+                       :line-placeholder   nil
                          
-                         :from               0
-                         :to                 0
-                         :cached/to          nil
-                         :coord-to           nil
+                       :from               0
+                       :to                 0
+                       :cached/to          nil
+                       :coord-to           nil
                          
-                         :last-change-cmd    nil
-                         :last-change-to     nil
-                         :marked-from        nil
-                         :marked-to          nil
-                         :word-iter          nil
-                         :char-iter          nil
-                         :undo               nil
-                         :redo               nil
-                         :cursor-blink-pivot (core/now)
-                         :offset             nil
-                         :selecting?         false
-                         :mouse-clicks       0
-                         :last-mouse-click   0}
-                        %))
-       (map->TextInput
-         {:*state *state
-          :on-change on-change
-          :features features})))))
+                       :last-change-cmd    nil
+                       :last-change-to     nil
+                       :marked-from        nil
+                       :marked-to          nil
+                       :word-iter          nil
+                       :char-iter          nil
+                       :undo               nil
+                       :redo               nil
+                       :cursor-blink-pivot (core/now)
+                       :offset             nil
+                       :selecting?         false
+                       :mouse-clicks       0
+                       :last-mouse-click   0}
+                      %))
+     (map->TextInput
+       {:*value *value
+        :*state *state
+        :features features}))))
 
-(defn text-field
-  ([*state]
-   (text-field nil *state))
-  ([opts *state]
-   (focusable/focusable opts
-     (listeners/on-key-focused
-       (:keymap opts)
-       (with-cursor/with-cursor :ibeam
-         (dynamic/dynamic ctx [active? (:hui/focused? ctx)
-                               stroke  (if active?
-                                         (:hui.text-field/border-active ctx)
-                                         (:hui.text-field/border-inactive ctx))
-                               bg      (if active?
-                                         (:hui.text-field/fill-bg-active ctx)
-                                         (:hui.text-field/fill-bg-inactive ctx))
-                               radius  (:hui.text-field/border-radius ctx)]
-           (rect/rounded-rect {:radius radius} bg
-             (rect/rounded-rect {:radius radius} stroke
-               (text-input opts *state)))))))))
+(defn text-field-ctor
+  ([]
+   (text-field-ctor {}))
+  ([opts]
+   [focusable opts
+    [on-key-focused
+     opts
+     [with-cursor {:cursor :ibeam}
+      (let [active? (:focused? *ctx*)
+            stroke  (if active?
+                      (:hui.text-field/border-active *ctx*)
+                      (:hui.text-field/border-inactive *ctx*))
+            bg      (if active?
+                      (:hui.text-field/fill-bg-active *ctx*)
+                      (:hui.text-field/fill-bg-inactive *ctx*))
+            radius  (:hui.text-field/border-radius *ctx*)]
+        [rounded-rect {:radius radius, :paint bg}
+         [rounded-rect {:radius radius, :paint stroke}
+          [text-input-ctor opts]]])]]]))

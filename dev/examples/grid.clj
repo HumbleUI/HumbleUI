@@ -1,13 +1,12 @@
 (ns examples.grid
   (:require
+    [examples.util :as util]
     [clojure.string :as str]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]))
-
-(def face-bold
-  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
 
 (let [[head & tail]
       (->> (slurp "dev/examples/currency.csv")
@@ -17,7 +16,7 @@
   (def currencies tail))
 
 (def *state
-  (atom
+  (signal/signal
     {:sort-col   0
      :sort-dir   :asc
      :currencies currencies}))
@@ -42,32 +41,34 @@
            :sort-dir   :asc
            :currencies (->> currencies (sort-by #(nth % i)))})))))
 
-(def ui
-  (ui/with-scale scale
-    (let [font-bold (font/make-with-cap-height face-bold (* scale 10))]
-      (ui/vscrollbar
-        (ui/halign 0.5
-          (ui/dynamic _ [{:keys [currencies sort-col sort-dir]} @*state]
-            (ui/grid
-              (concat
-                [(for [[th i] (core/zip header (range))]
-                   (ui/clickable
-                     {:on-click (on-click i)}
-                     (ui/padding 10
-                       (ui/with-context
-                         {:font-ui font-bold}
-                         (ui/max-width
-                           [(ui/label (str th " ⏶"))
-                            (ui/label (str th " ⏷"))]
-                           (ui/halign 0
-                             (ui/label
-                               (str th
-                                 (case (when (= i sort-col)
-                                         sort-dir)
-                                   :asc  " ⏶"
-                                   :desc " ⏷"
-                                   nil   "")))))))))]
-                (for [row currencies]
-                  (for [s row]
-                    (ui/padding 10
-                      (ui/label s))))))))))))
+(defn ui []
+  (let [{:keys [scale]}    ui/*ctx*
+        font-bold          (font/make-with-cap-height @util/*face-bold (* scale 10))
+        {:keys [currencies
+                sort-col
+                sort-dir]} @*state]
+    [ui/vscrollbar
+     [ui/halign {:position 0.5}
+      [ui/grid {:cols (count header)
+                :rows (inc (count currencies))}
+       (concat
+         (for [[th i] (core/zip header (range))]
+           [ui/clickable
+            {:on-click (on-click i)}
+            [ui/padding {:padding 10}
+             [ui/with-context {:font-ui font-bold}
+              [ui/reserve-width
+               {:probes [[ui/label (str th " ⏶")]
+                         [ui/label (str th " ⏷")]]}
+               [ui/halign {:position 0}
+                [ui/label
+                 (str th
+                   (case (when (= i sort-col)
+                           sort-dir)
+                     :asc  " ⏶"
+                     :desc " ⏷"
+                     nil   ""))]]]]]])
+         (for [row currencies
+               s   row]
+           [ui/padding {:padding 10}
+            [ui/label s]]))]]]))

@@ -25,8 +25,8 @@
   (and
     (= (.getClassName prev-el) (.getClassName el))
     (= (.getFileName prev-el) (.getFileName el))
-    (= "invokeStatic" (.getMethodName prev-el))
-    (#{"invoke" "doInvoke"} (.getMethodName el))))
+    (#{"invokeStatic"} (.getMethodName prev-el))
+    (#{"invoke" "doInvoke" "invokePrim"} (.getMethodName el))))
 
 (defn- clear-duplicates [els]
   (for [[prev-el el] (map vector (cons nil els) els)
@@ -41,13 +41,12 @@
   (let [path (-> (.getClassName el)
                (str/split #"\$")
                (first)
-               (str/split #"\."))]
+               (str/split #"\."))
+        file (.getFileName el)]
     (some identity
-      (for [base [(str/join "/" path)
-                  (str/join "/" (butlast path))]
-            dir  ["src" "dev"]
-            ext  ["clj" "cljc"]]
-        (exists? (str dir "/" base "." ext))))))
+      (for [base [path (butlast path)]
+            dir  ["src" "dev"]]
+        (exists? (str dir "/" (str/join "/" base) "/" file))))))
 
 (defn- trace-element [^StackTraceElement el]
   (let [file     (.getFileName el)

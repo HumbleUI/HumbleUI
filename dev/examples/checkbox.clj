@@ -1,16 +1,17 @@
 (ns examples.checkbox
   (:require
     [io.github.humbleui.font :as font]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def *state-group
-  (atom false))
+  (signal/signal false))
 
 (def *state-first
-  (atom false))
+  (signal/signal false))
 
 (def *state-second
-  (atom false))
+  (signal/signal false))
 
 (add-watch *state-group :watch
   (fn [_ _ old new]
@@ -26,25 +27,24 @@
         (cond
           (every? true? [new @*state-second])  true
           (every? false? [new @*state-second]) false
-          :else                                :indeterminate)))))
+          :else                                :mixed)))))
 
-(add-watch *state-second :watch
-  (fn [_ _ old new]
-    (when (not= old new)
-      (reset! *state-group
-        (cond
-          (every? true? [@*state-first new])  true
-          (every? false? [@*state-first new]) false
-          :else                               :indeterminate)))))
-
-(def ui
-  (ui/center
-    (ui/column
-      (ui/dynamic ctx [{:keys [face-ui scale]} ctx]
-        (ui/with-context
-          {:font-ui (font/make-with-cap-height face-ui (* 20 scale))}
-          (ui/checkbox *state-group (ui/label "Group state"))))
-      (ui/gap 0 10)
-      (ui/checkbox *state-first (ui/label "First state"))
-      (ui/gap 0 10)
-      (ui/checkbox *state-second (ui/label "Second state")))))
+(defn ui []
+  (let [{:keys [face-ui scale]} ui/*ctx*
+        font (font/make-with-cap-height face-ui (* 20 scale))]
+    (fn []
+      [ui/center
+       [ui/column {:gap 10}
+        [ui/with-context {:font-ui font}
+         [ui/checkbox {:*value *state-group} [ui/label "Group state"]]]
+        [ui/checkbox {:*value *state-first} [ui/label "First state"]]
+        ;; on-change
+        ;; string label
+        [ui/checkbox {:*value *state-second
+                      :on-change
+                      (fn [state-second]
+                        (condp = [@*state-first state-second]
+                          [true true]   (reset! *state-group true)
+                          [false false] (reset! *state-group false)
+                          #_else        (reset! *state-group :mixed)))}
+         "Second state"]]])))

@@ -1,37 +1,47 @@
-(ns io.github.humbleui.ui.shadow
-  (:require
-    [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.canvas :as ui.canvas]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.gap :as gap]
-    [io.github.humbleui.ui.rect :as rect]
-    [io.github.humbleui.ui.stack :as stack])
-  (:import
-    [io.github.humbleui.skija Canvas FilterBlurMode ImageFilter MaskFilter Path PathDirection]))
+(in-ns 'io.github.humbleui.ui)
 
-(defn shadow 
+(import '[io.github.humbleui.skija FilterBlurMode ImageFilter MaskFilter Path PathDirection])
+
+(defn shadow-ctor
   ([opts]
-   (shadow opts (gap/gap 0 0)))
-  ([{:keys [dx dy blur color fill]
-     :or {dx 0, dy 0, blur 0, color 0x80000000}}
-    child]
-   (dynamic/dynamic ctx [{:keys [scale]} ctx]
-     (let [r      (core/radius->sigma (* blur scale))
-           shadow (if fill
-                    (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
-                    (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
-           paint  (-> (paint/fill (or fill 0xFFFFFFFF))
-                    (paint/set-image-filter shadow))]
-       (rect/rect paint
-         child)))))
+   (shadow-ctor opts [gap]))
+  ([opts child]
+   (let [opts'  (merge {:dx 0
+                        :dy 0
+                        :blur 0
+                        :color (unchecked-int 0x80000000)} opts)
+         {:keys [dx dy blur color fill]} opts'
+         {:keys [scale]} *ctx*
+         r      (core/radius->sigma (* blur scale))
+         shadow (if fill
+                  (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
+                  (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
+         paint  (-> (paint/fill (or fill 0xFFFFFFFF))
+                  (paint/set-image-filter shadow))]
+     {:should-setup?
+      (fn 
+        ([opts']
+         (not= opts opts'))
+        ([opts' child]
+         (not= opts opts'))) ;; FIXME should not recreate children!
+      :render
+      (fn
+        ([_]
+         [rect {:paint paint}
+          [gap]])
+        ([_ child]
+         [rect {:paint paint}
+          child]))})))
 
-(defn shadow-inset [{:keys [dx dy blur color]
-                     :or {dx 0, dy 0, blur 0, color 0x80000000}} child]
-  (stack/stack
-    (ui.canvas/canvas
+(defn shadow-inset-ctor [opts child]
+  (let [{:keys [dx dy blur color]
+         :or {dx 0
+              dy 0
+              blur 0
+              color (unchecked-int 0x80000000)}} opts]
+    [stack
+     child
+     [canvas
       {:on-paint
        (fn [ctx ^Canvas canvas size]
          (let [{:keys [width height]} size
@@ -50,5 +60,4 @@
              (.addRect path inner PathDirection/COUNTER_CLOCKWISE)
              (paint/set-mask-filter paint filter)
              (canvas/translate canvas (* dx scale) (* dy scale))
-             (.drawPath canvas path paint))))})
-    child))
+             (.drawPath canvas path paint))))}]]))

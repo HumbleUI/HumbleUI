@@ -1,44 +1,53 @@
-(ns io.github.humbleui.ui.checkbox
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.align :as align]
-    [io.github.humbleui.ui.clickable :as clickable]
-    [io.github.humbleui.ui.containers :as containers]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.gap :as gap]
-    [io.github.humbleui.ui.sizing :as sizing]
-    [io.github.humbleui.ui.svg :as svg]
-    [io.github.humbleui.ui.with-context :as with-context]))
+(in-ns 'io.github.humbleui.ui)
 
 (def ^:private checkbox-states
-  {[true  false]          (core/lazy-resource "ui/checkbox/on.svg")
-   [true  true]           (core/lazy-resource "ui/checkbox/on_active.svg")
-   [false false]          (core/lazy-resource "ui/checkbox/off.svg")
-   [false true]           (core/lazy-resource "ui/checkbox/off_active.svg")
-   [:indeterminate false] (core/lazy-resource "ui/checkbox/indeterminate.svg")
-   [:indeterminate true]  (core/lazy-resource "ui/checkbox/indeterminate_active.svg")})
+  {[true  false]  (core/lazy-resource "ui/checkbox/on.svg")
+   [true  true]   (core/lazy-resource "ui/checkbox/on_pressed.svg")
+   [false false]  (core/lazy-resource "ui/checkbox/off.svg")
+   [false true]   (core/lazy-resource "ui/checkbox/off_pressed.svg")
+   [:mixed false] (core/lazy-resource "ui/checkbox/mixed.svg")
+   [:mixed true]  (core/lazy-resource "ui/checkbox/mixed_pressed.svg")})
 
-(defn- checkbox-size [font]
-  (let [cap-height (:cap-height (font/metrics font))
+(defn- checkbox-size [ctx]
+  (let [font       (:font-ui ctx)
+        cap-height (:cap-height (font/metrics font))
         extra      (-> cap-height (/ 8) math/ceil (* 4))] ;; half cap-height but increased so that it’s divisible by 4
-    (+ cap-height extra)))
+    (/
+      (+ cap-height extra)
+      (:scale ctx))))
 
-(defn checkbox [*state label]
-  (clickable/clickable
-    {:on-click (fn [_] (swap! *state not))}
-    (dynamic/dynamic ctx [size (/ (checkbox-size (:font-ui ctx))
-                         (:scale ctx))]
-      (containers/row
-        (align/valign 0.5
-          (dynamic/dynamic ctx [state  @*state
-                        active (:hui/active? ctx)]
-            (sizing/width size
-              (sizing/height size
-                (svg/svg @(checkbox-states [state (boolean active)]))))))
-        (gap/gap (/ size 3) 0)
-        (align/valign 0.5
-          (with-context/with-context {:hui/checked? true}
-            label))))))
+(defn checkbox-ctor
+  ([child]
+   (checkbox-ctor {} child))
+  ([opts child]
+   (let [value-on  (if (contains? opts :value-on) (:value-on opts) true)
+         value-off (if (contains? opts :value-off) (:value-off opts) false)
+         *value    (or (:*value opts) (signal/signal value-off))
+         opts'     (assoc opts
+                     :value-on  value-on
+                     :value-off value-off
+                     :*value    *value)]
+     {:should-setup?
+      (fn [opts' child]
+        (not (keys-match? [:value-on :value-off :*value] opts opts')))
+      :render
+      (fn render
+        ([child]
+         (render {} child))
+        ([opts child]
+         (let [value @*value]
+           [toggleable opts'
+            (fn [state]
+              (let [size (checkbox-size *ctx*)]
+                [row
+                 [valign {:position 0.5}
+                  [width {:width size}
+                   [height {:height size}
+                    [svg @(checkbox-states [(cond
+                                              (= :mixed value)  :mixed
+                                              (:selected state) true
+                                              :else             false)
+                                            (boolean (:pressed state))])]]]]
+                 [gap {:width (/ size 3)}]
+                 [valign {:position 0.5}
+                  child]]))])))})))

@@ -1,39 +1,23 @@
-(ns io.github.humbleui.ui.with-bounds
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithBounds [key]
-  :extends core/AWrapper
-  protocols/IContext
-  (-context [_ ctx]
-    (when-some [scale (:scale ctx)]
-      (when-some [width (:width child-rect)]
-        (when-some [height (:height child-rect)]
-          (assoc ctx key (core/ipoint (/ width scale) (/ height scale)))))))
+(core/deftype+ WithBounds [^:mut last-bounds]
+  :extends AWrapperNode
+  protocols/IComponent  
+  (-child-elements [this ctx new-element]
+    (let [[_ _ [child-ctor-or-el]] (parse-element new-element)
+          scale  (:scale ctx)
+          width  (/ (:width rect) scale)
+          height (/ (:height rect) scale)]
+      (if (fn? child-ctor-or-el)
+        [(child-ctor-or-el (core/ipoint width height))]
+        [child-ctor-or-el])))
   
-  protocols/IComponent
-  (-measure [_ ctx cs]
-    (let [width  (-> (:width cs) (/ (:scale ctx)))
-          height (-> (:height cs) (/ (:scale ctx)))]
-      (core/measure child (assoc ctx key (core/ipoint width height)) cs)))
-  
-  (-draw [this ctx rect canvas]
-    (set! child-rect rect)
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/draw-child child ctx' child-rect canvas)))
-  
-  (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/event-child child ctx' event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (when-some [ctx' (protocols/-context this ctx)]
-        (protocols/-iterate child ctx' cb)))))
+  (-draw-impl [this ctx rect canvas]
+    (let [bounds (core/ipoint (:width rect) (:height rect))]
+      (when (not= last-bounds bounds)
+        (set! last-bounds bounds)
+        (force-render this (:window ctx))) ;; TODO better way?
+      (draw-child (:child this) ctx rect canvas))))
 
-(defn with-bounds [key child]
-  (map->WithBounds
-    {:key   key
-     :child child}))
+(defn with-bounds-ctor [child-ctor-or-el]
+  (map->WithBounds {}))

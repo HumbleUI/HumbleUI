@@ -5,6 +5,7 @@
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [java.nio ByteBuffer ByteOrder]
@@ -42,29 +43,20 @@
         (Color/makeRGB r g b)))))
 
 (def *l
-  (atom {:value 0.65
-         :min   0.0
-         :max   1.0
-         :step  0.01}))
+  (signal/signal 0.65))
 
 (def *c
-  (atom {:value 0.1
-         :min   0.0
-         :max   0.35
-         :step  0.01}))
+  (signal/signal 0.1))
 
 (def *h
-  (atom {:value 180
-         :min   0
-         :max   360
-         :step  1}))
+  (signal/signal 180))
 
 (defn on-paint [ctx canvas size]
   (let [{:keys [width height]} size
         steps 100
         dx    (max 1 (/ width steps))
         dy    (max 1 (/ height steps))
-        l     (:value @*l)]
+        l     @*l]
     (with-open [fill (paint/fill 0xFFFFFFFF)]
       (doseq [y (range 0.0 height dy)
               :let [c (-> y (/ height) (->> (- 1.0)) (* 0.35))]
@@ -145,7 +137,7 @@
 
 (defn on-paint-shader [^RuntimeEffect effect value ctx canvas size]
   (let [{:keys [width height]} size
-        l (:value @*l)
+        l  @*l
         bb (doto (ByteBuffer/allocate 4)
              (.order (ByteOrder/nativeOrder))
              (.putFloat (float value)))]
@@ -160,40 +152,38 @@
   (DecimalFormat. "0.##" (doto (DecimalFormatSymbols.)
                            (.setDecimalSeparator \.))))
 
-(defn row [name *atom]
-  [(ui/width 300
-     (ui/slider *atom))
-   (ui/gap 10 0)
-   (ui/valign 0.5
-     (ui/max-width
-       [(ui/label (str name ": 0.999"))]
-       (ui/dynamic _ [value (:value @*atom)]
-         (ui/label (format "%s: %s" name (.format decimal-format (double value)))))))])
+(defn row [name opts]
+  (list
+    ;; TODO stretch cols
+    [ui/width {:width 300}
+     [ui/slider opts]]
+    [ui/gap {:width 10}]
+    [ui/valign {:position 0.5}
+     [ui/reserve-width
+      {:probes [[ui/label (str name ": 0.999")]]}
+      [ui/label (format "%s: %s" name (.format decimal-format (double @(:*value opts))))]]]))
 
-(def ui
-  (ui/padding 20
-    (ui/column
-      [:stretch 1
-       (ui/row
-         [:stretch 1
-          (ui/dynamic _ [h (:value @*h)]
-            (ui/canvas {:on-paint (partial on-paint-shader effect-for-h h)}))]
-         (ui/gap 10 0)
-         [:stretch 1
-          (ui/dynamic _ [l (:value @*l)]
-            (ui/canvas {:on-paint (partial on-paint-shader effect-for-l l)}))])]
-      (ui/gap 0 10)
-      [:stretch 1
-       (ui/row
-         [:stretch 1
-          (ui/center
-            (ui/grid
-              [(row "Lightness" *l)
-               [(ui/gap 0 20)]
-               (row "Chroma" *c)
-               [(ui/gap 0 20)]
-               (row "Hue" *h)]))]
-         (ui/gap 10 0)
-         [:stretch 1
-          (ui/dynamic _ [c (:value @*c)]
-            (ui/canvas {:on-paint (partial on-paint-shader effect-for-c c)}))])])))
+(defn ui []
+  [ui/padding {:padding 20}
+   [ui/column {:gap 10}
+    ^{:stretch 1}
+    [ui/row {:gap 10}
+     ^{:stretch 1}
+     [ui/canvas {:on-paint (partial on-paint-shader effect-for-h @*h)}]
+     ^{:stretch 1}
+     [ui/canvas {:on-paint (partial on-paint-shader effect-for-l @*l)}]]
+    
+    ^{:stretch 1}
+    [ui/row {:gap 10}
+     
+     ^{:stretch 1}
+     [ui/center
+      [ui/grid {:cols 3}
+       (row "Lightness" {:*value *l, :min 0.0, :max 1.0, :step  0.01})
+       (repeat 3 [ui/gap {:height 20}])
+       (row "Chroma" {:*value *c, :min 0.0, :max 0.35, :step 0.01})
+       (repeat 3 [ui/gap {:height 20}])
+       (row "Hue" {:*value *h, :min 0, :max 360, :step 1})]]
+     
+     ^{:stretch 1}
+     [ui/canvas {:on-paint (partial on-paint-shader effect-for-c @*c)}]]]])

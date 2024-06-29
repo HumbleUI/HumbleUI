@@ -1,15 +1,16 @@
 (ns io.github.humbleui.core
-  (:refer-clojure :exclude [find])
+  (:refer-clojure :exclude [find flatten])
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]
     [clojure.set :as set]
     [clojure.walk :as walk]
+    [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.error :as error]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.skija Canvas]
-    [io.github.humbleui.skija.shaper Shaper]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]
     [java.lang AutoCloseable]
     [java.util Timer TimerTask]))
@@ -29,10 +30,7 @@
 
 ;; state
 
-(def ^Shaper shaper
-  (Shaper/makeShapeDontWrapOrReorder))
-
-(defonce ^Timer timer
+(def ^Timer timer
   (Timer. true))
 
 (def ^{:arglists '([^Throwable t])} log-error
@@ -76,10 +74,20 @@
     (disj % '& '_)
     (vec %)))
 
-(defmacro when-every [bindings & body]
+(defmacro if-some+ [bindings then else]
+  `(let ~bindings
+     (if (every? some? ~(bindings->syms bindings))
+       ~then
+       ~else)))
+
+(defmacro when-some+ [bindings & body]
   `(let ~bindings
      (when (every? some? ~(bindings->syms bindings))
        ~@body)))
+
+(defn close [o]
+  (when (instance? AutoCloseable o)
+    (.close ^AutoCloseable o)))
 
 (defn memoize-last [ctor]
   (let [*state (volatile! nil)]
@@ -88,8 +96,7 @@
         (when-some [[args value] @*state]
           (if (= args args')
             value
-            (when (instance? AutoCloseable value)
-              (.close ^AutoCloseable value))))
+            (close value)))
         (let [value' (try
                        (apply ctor args')
                        (catch Throwable t
@@ -177,16 +184,6 @@
              (for [[pattern body] (partition 2 clauses)]
                [(gen-cond pattern) body]))))))
 
-(defmacro spy [msg & body]
-  `(let [ret# (do ~@body)]
-     (println (str ~msg ":") ret#)
-     ret#))
-
-(defmacro doto-some [x & forms]
-  `(let [x# ~x]
-     (when (some? x#)
-       (doto x# ~@forms))))
-
 (defn- loopr-rewrite-recurs [accs body]
   (walk/prewalk
     (fn [form]
@@ -269,9 +266,9 @@
   ([x y z & rest]
    (reduce #(or %1 %2) (or x y z) rest)))
 
-(defn invoke [f]
+(defn invoke [f & args]
   (when f
-    (f)))
+    (apply f args)))
 
 (defn clamp [x from to]
   (min (max x from) to))
@@ -289,8 +286,18 @@
           m))
       (transient {}) (partition 2 args))))
 
+(defn some-set [& args]
+  (into #{} (filter some?) args))
+
 (defn consv [x xs]
   (vec (cons x xs)))
+
+(defn update-last [xs f & args]
+  (apply update xs (dec (count xs)) f args))
+
+(defn lastv [xs]
+  (when (> (count xs) 1)
+    (nth xs (dec (count xs)))))
 
 (defn between? [x from to]
   (and
@@ -309,6 +316,12 @@
       (assoc m k (f v)))
     {} m))
 
+(defmacro checked-get [m k pred]
+  `(let [v# (get ~m ~k)]
+     (if (~pred v#)
+       v#
+       (throw (ex-info (str ~(str "Getting (" k " " m "), expected: " pred ", got: ") (pr-str v#)) {})))))
+
 (defn map-by [f xs]
   (reduce
     (fn [m x]
@@ -317,6 +330,15 @@
 
 (defn zip [& xs]
   (apply map vector xs))
+
+(defn flatten [xs]
+  (mapcat
+    #(cond
+       (nil? %)        []
+       (vector? %)     [%]
+       (sequential? %) (flatten %)
+       :else           [%])
+    xs))
 
 (defn conjv-limited [xs x limit]
   (if (>= (count xs) limit)
@@ -335,21 +357,20 @@
 (defn repeatedlyv [n f]
   (into [] (repeatedly n f)))
 
-(defn without [pred coll]
-  (persistent!
-    (reduce
-      (fn [coll el]
-        (if (pred el)
-          coll
-          (conj! coll el)))
-      (transient (empty coll))
-      coll)))
-
 (defn slurp-bytes ^bytes [src]
   (if (bytes? src)
     src
     (with-open [is (io/input-stream src)]
       (.readAllBytes is))))
+
+(defn cached [*atom key value-fn]
+  (let [atom @*atom]
+    (if (= key (:key atom))
+      (:value atom)
+      (:value 
+        (reset! *atom
+          {:key key
+           :value (value-fn)})))))
 
 (defn lazy-resource [path]
   (delay
@@ -413,18 +434,6 @@
     (< (:x point) (:right rect))
     (<= (:y rect) (:y point))
     (< (:y point) (:bottom rect))))
-
-(defn dimension ^long [size cs ctx]
-  (let [scale (:scale ctx)]
-    (->
-      (if (fn? size)
-        (* scale
-          (size {:width  (/ (:width cs) scale)
-                 :height (/ (:height cs) scale)
-                 :scale  scale}))
-        (* scale size))
-      (math/round)
-      (long))))
 
 (defn arities [f]
   (let [methods  (.getDeclaredMethods (class f))
@@ -491,7 +500,7 @@
   (Object.))
 
 (def t0
-  (System/currentTimeMillis))
+  (now))
 
 (defn log [& args]
   (locking lock
@@ -518,43 +527,20 @@
       (var? o)   (symbol o)
       :else      s)))
 
-(defn- update-method
-  "Fully qualifies all namespaced symbols in method bodies.
-   Converts typed argument lists to untyped ones + top-level let with tags"
-  [[name args & body]]
-  (let [remove-tag      #(vary-meta % dissoc :tag)
-        untyped-args    (mapv remove-tag args)
-        typed-args      (filter #(:tag (meta %)) args)
-        bindings        (vec (mapcat #(list % (remove-tag %)) typed-args))
-        qualified-body  (clojure.walk/postwalk
-                          (fn [x]
-                            (if (and (symbol? x) (namespace x))
-                              (qualify-symbol x)
-                              x))
-                          body)]
-    (if (empty? bindings)
-      (list* name untyped-args qualified-body)
-      (list
-        name untyped-args
-        (list* 'clojure.core/let bindings
-          qualified-body)))))
+(defn- untag-symbol [sym]
+  (vary-meta sym dissoc :tag))
 
-(defn- group-protos
-  "Converts flat list of protocols and methods into a map
-   {protocol -> {signature -> body}}"
-  [body]
-  (loop [body  body
-         res   {}
-         proto nil]
-    (if (empty? body)
-      res
-      (let [[head & tail] body]
-        (if (symbol? head)
-          (let [proto (qualify-symbol head)]
-            (recur tail res proto))
-          (let [method (update-method head)
-                sig    (signature method)]
-            (recur tail (update res proto assoc sig method) proto)))))))
+(defn- untag-method
+  "Converts typed argument lists to untyped ones + top-level let with tags"
+  [method]
+  (let [[name args & body] method]
+    (if-some [typed-args (filter #(:tag (meta %)) args)]
+      (let [untyped-args (mapv untag-symbol args)
+            bindings     (vec (mapcat #(list % (untag-symbol %)) typed-args))]
+        (list name untyped-args
+          (list* 'clojure.core/let bindings
+            body)))
+      method)))
 
 (defmacro deftype+
   "Same as deftype, but:
@@ -569,27 +555,38 @@
   (let [[parent body] (if (= :extends (first body))
                         (let [[_ sym & body'] body]
                           [(or (some-> sym resolve deref)
-                             (throw (ex-info (str "Can't resolve symbol: " sym) {:symbol sym})))
+                             (throw (ex-info (str "Can't resolve parent symbol: " sym) {:symbol sym})))
                            body'])
                         [nil body])
         update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
-        fields        (->> 
-                        (concat fields (:fields parent))
-                        (mapv update-field))
+        fields        (->> (concat fields (:fields parent))
+                        (map update-field)
+                        vec)
         mut-fields    (filter #(:unsynchronized-mutable (meta %)) fields)
-        protos        (->>
-                        (merge-with merge
-                          (:protocols parent)
-                          (group-protos body))
-                        (map-vals vals))
+        protocols     (->> body
+                        (filter symbol?)
+                        (map qualify-symbol)
+                        (set)
+                        (set/union (:protocols parent)))
+        methods       (->> body
+                        (remove symbol?)
+                        (map untag-method))
+        signatures    (set (map signature methods))
         value-sym     (gensym 'value)]
     `(do
-       (deftype ~name
-         ~(conj fields '__m)
-         
-         ~@(for [[proto methods] protos
-                 form (cons proto methods)]
-             form)
+       (deftype ~name ~(conj fields '__m)
+         ~@protocols
+
+         ;; all parent methods
+         ~@(for [[sig body] (:methods parent)
+                 :when (not (signatures sig))
+                 :let [[name cnt] sig
+                       args (vec (repeatedly cnt gensym))]]
+             `(~name ~args
+                (~body ~@args)))
+
+         ;; own methods
+         ~@methods
        
          clojure.lang.IMeta
          (meta [_] ~'__m)
@@ -625,38 +622,13 @@
     (protocols/-set! obj k v))
   obj)
 
-(defn measure [comp ctx ^IPoint cs]
-  {:pre  [(instance? IPoint cs)]
-   :post [(instance? IPoint %)]}
-  (when comp
-    (protocols/-measure comp ctx cs)))
+(defn update!! [this key f & args]
+  (protocols/-set! this key (apply f (get this key) args)))
 
-(defn draw [comp ctx ^IRect rect ^Canvas canvas]
-  {:pre [(instance? IRect rect)]}
-  (protocols/-draw comp ctx rect canvas))
-
-(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
-  (when comp
-    (let [count (.getSaveCount canvas)]
-      (try
-        (draw comp ctx rect canvas)
-        (finally
-          (.restoreToCount canvas count))))))
-
-(defn event [comp ctx event]
-  (protocols/-event comp ctx event))
-
-(defn event-child [comp ctx event]
-  (when comp
-    (protocols/-event comp ctx event)))
-
-(defn iterate-child [comp ctx cb]
-  (when comp
-    (protocols/-iterate comp ctx cb)))
-
-(defn child-close [child]
-  (when (instance? AutoCloseable child)
-    (.close ^AutoCloseable child)))
+(defn- merge-parents [parent child]
+  {:fields    (vec (concat (:fields child) (:fields parent)))
+   :protocols (set/union (:protocols parent) (:protocols child))
+   :methods   (merge (:methods parent) (:methods child))})
 
 (defmacro defparent
   "Defines base “class” that deftype+ can extend from.
@@ -666,77 +638,20 @@
   (let [[doc body]    (if (string? (first body)) [(first body) (next body)] ["" body])
         [fields body] [(first body) (next body)]
         [parent body] (if (= :extends (first body)) [(second body) (nnext body)] [nil body])
-        parent        (when parent
-                        (or (some-> parent resolve deref)
-                          (throw (ex-info (str "Can't resolve symbol: " parent) {:symbol symbol}))))
-        fields    (vec (concat (:fields parent) fields))
-        protocols (merge-with merge (:protocols parent) (group-protos body))]
-    `(def ~sym ~doc
-       {:fields    (quote ~fields)
-        :protocols (quote ~protocols)})))
+        protocols     (into (:protocols parent #{})
+                        (->> body (filter symbol?) (map qualify-symbol)))
+        methods       (->> body
+                        (remove symbol?)
+                        (map #(vector (list 'quote (signature %)) (cons 'fn %)))
+                        (into {}))
+        definition    {:fields    (list 'quote fields)
+                       :protocols (list 'quote protocols)
+                       :methods   methods}]
+    (if parent
+      `(def ~sym ~doc
+         (#'merge-parents ~parent ~definition))
+      `(def ~sym ~doc
+         ~definition))))
 
-(alias 'core 'io.github.humbleui.core)
-
-(defparent ATerminal
-  "Simple component that has no children"
-  []
-  protocols/IComponent
-  (-measure [_ _ cs]
-    (core/ipoint 0 0))
-  (-draw [_ _ _ _])
-  (-event [_ _ _])
-  (-iterate [this _ cb]
-    (cb this)))
-
-(defparent AWrapper
-  "A component that has exactly one child"
-  [child ^:mut child-rect]
-  protocols/IContext
-  (-context [_ ctx]
-    ctx)
-
-  protocols/IComponent
-  (-measure [this ctx cs]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/measure child ctx' cs)))
-  
-  (-draw [this ctx rect canvas]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (set! child-rect rect)
-      (core/draw-child child ctx' rect canvas)))
-
-  (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (core/event-child child ctx' event)))
-
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (when-some [ctx' (protocols/-context this ctx)]
-        (core/iterate-child child ctx' cb))))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defparent AContainer
-  "A component that has multiple children"
-  [children]
-  protocols/IComponent
-  (-event [this ctx event]
-    (reduce
-      (fn [acc child]
-        (core/eager-or acc
-          (core/event-child child ctx event)))
-      false
-      children))
-
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (some #(core/iterate-child % ctx cb) children)))
-  
-  AutoCloseable
-  (close [_]
-    (doseq [child children]
-      (core/child-close child))))
+(defn before-ns-unload []
+  (.cancel timer))

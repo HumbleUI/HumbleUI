@@ -2,39 +2,40 @@
   (:require
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
-
-(def *state (atom {:text "" :placeholder "Type here"}))
 
 (defn render-form [form]
   (cond
     (map? form)
-    (ui/column
-      (interpose (ui/gap 0 10)
-        (map (fn [[k v]] (ui/row (ui/label k) (ui/gap 4 0) (render-form v))) form)))
+    [ui/column {:gap 10}
+     (for [[k v] form]
+       [ui/row {:gap 4}
+        [ui/label k]
+        [render-form v]])]
     
     (sequential? form)
-    (ui/column
-      (interpose (ui/gap 0 10)
-        (map render-form form)))
+    [ui/column {:gap 10}
+     (map #(vector render-form %) form)]
     
     :else
-    (ui/label form)))
+    [ui/label form]))
 
-(def ui
-  (ui/focus-controller
-    (ui/dynamic _ [text (:text @*state)]
-      (ui/padding 10 10
-        (ui/column
-          (ui/with-context
-            {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
-             :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
-             :hui.text-field/cursor-width   2}
-            (ui/text-field {:focused (core/now)} *state))
-          (ui/gap 0 10)
-          (ui/label (str "\"" text "\""))
-          (ui/gap 0 10)
-          [:stretch 1
-           (ui/vscrollbar
-             (ui/dynamic _ [state @*state]
-               (render-form state)))])))))
+(def *state
+  (signal/signal {:text ""}))
+
+(defn ui []
+  [ui/focus-controller
+   [ui/padding {:padding 10}
+    [ui/column {:gap 10}
+     [ui/with-context
+      {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
+       :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
+       :hui.text-field/cursor-width   2}
+      [ui/text-field {:focused (core/now)
+                      :*state *state
+                      :placeholder "Type here"}]]
+     [ui/label (str "\"" (:text @*state) "\"")]
+     ^{:stretch 1}
+     [ui/vscrollbar
+      [render-form @*state]]]]])

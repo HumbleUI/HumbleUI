@@ -1,49 +1,64 @@
-(ns io.github.humbleui.ui.sizing
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Width [value]
-  :extends core/AWrapper
-  
+(core/deftype+ Width []
+  :extends AWrapperNode
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (let [width'     (core/dimension value cs ctx)
-          child-size (core/measure child ctx (assoc cs :width width'))]
+  (-measure-impl [_ ctx cs]
+    (let [[_ opts _] (parse-element element)
+          width'     (dimension (core/checked-get opts :width (some-fn number? fn?)) cs ctx)
+          child-size (measure child ctx (assoc cs :width width'))]
       (assoc child-size :width width'))))
 
-(defn width [value child]
-  (map->Width 
-    {:value value
-     :child child}))
+(defn width [opts child]
+  (map->Width {}))
 
-(core/deftype+ Height [value]
-  :extends core/AWrapper
-  
+(core/deftype+ Height []
+  :extends AWrapperNode
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (let [height'    (core/dimension value cs ctx)
-          child-size (core/measure child ctx (assoc cs :height height'))]
+  (-measure-impl [_ ctx cs]
+    (let [[_ opts _] (parse-element element)
+          height'    (dimension (core/checked-get opts :height (some-fn number? fn?)) cs ctx)
+          child-size (measure child ctx (assoc cs :height height'))]
       (assoc child-size :height height'))))
 
-(defn height [value child]
-  (map->Height
-    {:value value
-     :child child}))
+(defn height [opts child]
+  (map->Height {}))
 
-(core/deftype+ MaxWidth [probes]
-  :extends core/AWrapper
+(defn size [opts child]
+  [ui/width {:width (:width opts)}
+   [ui/height {:height (:height opts)}
+    child]])
+
+(core/deftype+ ReserveWidth [^:mut probes]
+  :extends AWrapperNode
   
   protocols/IComponent
-  (-measure [_ ctx cs]
-    (let [width (->> probes
-                  (map #(:width (core/measure % ctx cs)))
-                  (reduce max 0))
-          child-size (core/measure child ctx cs)]
-      (assoc child-size :width width))))
+  (-measure-impl [_ ctx cs]
+    (let [width      (->> probes
+                       (map #(-> % (measure ctx cs) :width))
+                       (reduce max 0))
+          child-size (measure child ctx cs)]
+      (assoc child-size :width width)))
+  
+  (-reconcile-impl [this ctx el']
+    (let [[_ opts [child-el]] (parse-element el')
+          probes'             (reconcile-many ctx probes (core/checked-get opts :probes sequential?))
+          [child']            (reconcile-many ctx [child] [child-el])]
+      (set! probes probes')
+      (set! child child'))))
 
-(defn max-width [probes child]
-  (map->MaxWidth
-    {:probes probes
-     :child  child}))
+(defn reserve-width [opts child]
+  (map->ReserveWidth {}))
 
+(defn node-size []
+  (let [scale (or (:scale *ctx*) 1)
+        w     (or (:width (:rect *node*)) 0)
+        h     (or (:height (:rect *node*)) 0)]
+    (core/point (/ w scale) (/ h scale))))
+
+(defn use-size []
+  (let [*size (signal/signal (core/point 0 0))]
+    {:before-draw
+     (fn []
+       (signal/reset! *size (node-size)))
+     :value *size}))

@@ -1,33 +1,35 @@
-(ns io.github.humbleui.ui.button
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.align :as align]
-    [io.github.humbleui.ui.clickable :as clickable]
-    [io.github.humbleui.ui.clip :as clip]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.padding :as padding]
-    [io.github.humbleui.ui.rect :as rect]
-    [io.github.humbleui.ui.with-context :as with-context]))
+(in-ns 'io.github.humbleui.ui)
 
-(defn button
-  ([on-click child]
-   (button on-click nil child))
-  ([on-click _opts child]
-   (dynamic/dynamic ctx [{:hui.button/keys [bg bg-active bg-hovered border-radius padding-left padding-top padding-right padding-bottom]} ctx]
-     (clickable/clickable
-       {:on-click (when on-click
-                    (fn [_] (on-click)))}
-       (clip/clip-rrect border-radius
-         (dynamic/dynamic ctx [{:hui/keys [hovered? active?]} ctx]
-           (rect/rect
-             (cond
-               active?  bg-active
-               hovered? bg-hovered
-               :else    bg)
-             (padding/padding padding-left padding-top padding-right padding-bottom
-               (align/center
-                 (with-context/with-context
-                   {:hui/active? false
-                    :hui/hovered? false}
-                   child))))))))))
+(def button-bg-pressed
+  (paint/fill 0xFFA2C7EE))
+
+(def button-bg-hovered
+  (paint/fill 0xFFCFE8FC))
+
+(def button-bg
+  (paint/fill 0xFFB2D7FE))
+
+(ui/defcomp button-look [state child]
+  [clip-rrect {:radii [4]}
+   [rect {:paint (cond
+                   (and 
+                     (:selected state)
+                     (:pressed state)) button-bg-hovered
+                   (:selected state)   button-bg-pressed
+                   (:pressed state)    button-bg-pressed
+                   (:hovered state)    button-bg-hovered
+                   :else               button-bg)}
+    [padding {:horizontal (* 2 (:leading *ctx*))
+              :vertical   (:leading *ctx*)}
+     [center
+      child]]]])
+
+(ui/defcomp button-ctor [opts child]
+  [clickable opts
+   (fn [state]
+     [(or (:hui.button/look *ctx*) button-look) state child])])
+
+(ui/defcomp toggle-button-ctor [opts child]
+  [toggleable opts
+   (fn [state]
+     [(or (:hui.button/look *ctx*) button-look) state child])])

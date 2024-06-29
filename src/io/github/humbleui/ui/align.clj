@@ -1,51 +1,44 @@
-(ns io.github.humbleui.ui.align
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ HAlign [child-coeff coeff]
-  :extends core/AWrapper
+(core/deftype+ HAlign []
+  :extends AWrapperNode
   
   protocols/IComponent  
-  (-draw [_ ctx rect canvas]
-    (let [child-size (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
-          left       (+ (:x rect)
-                       (* (:width rect) coeff)
-                       (- (* (:width child-size) child-coeff)))
-          child-rect (core/irect-xywh left (:y rect) (:width child-size) (:height rect))]
-      (core/draw-child child ctx child-rect canvas))))
+  (-draw-impl [_ ctx rect canvas]
+    (let [[_ opts _]     element
+          _              (assert (map? opts) (str "Expected: (map? opts), got: " opts))
+          position       (core/checked-get opts :position number?)
+          child-position (or (:child-position opts) position)
+          child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
+          left           (+ (:x rect)
+                           (* (:width rect) position)
+                           (- (* (:width child-size) child-position)))
+          child-rect     (core/irect-xywh left (:y rect) (:width child-size) (:height rect))]
+      (draw-child child ctx child-rect canvas))))
 
-(defn halign
-  ([coeff child]
-   (halign coeff coeff child))
-  ([child-coeff coeff child]
-   (map->HAlign
-     {:child-coeff child-coeff
-      :coeff coeff
-      :child child})))
+(defn- halign-ctor [opts child]
+  (map->HAlign {}))
 
-(core/deftype+ VAlign [child-coeff coeff]
-  :extends core/AWrapper
+(core/deftype+ VAlign [child-position position]
+  :extends AWrapperNode
   
   protocols/IComponent  
-  (-draw [_ ctx rect canvas]
-    (let [child-size (core/measure child ctx (core/ipoint (:width rect) (:height rect)))
-          top        (+ (:y rect)
-                       (* (:height rect) coeff)
-                       (- (* (:height child-size) child-coeff)))
-          child-rect (core/irect-xywh (:x rect) top (:width rect) (:height child-size))]
-      (core/draw-child child ctx child-rect canvas))))
+  (-draw-impl [_ ctx rect canvas]
+    (let [[_ opts _]     element
+          _              (assert (map? opts) (str "Expected: (map? opts), got: " opts))
+          position       (core/checked-get opts :position number?)
+          child-position (or (:child-position opts) position)
+          child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
+          top            (+ (:y rect)
+                           (* (:height rect) position)
+                           (- (* (:height child-size) child-position)))
+          child-rect     (core/irect-xywh (:x rect) top (:width rect) (:height child-size))]
+      (draw-child child ctx child-rect canvas))))
 
-(defn valign
-  ([coeff child]
-   (valign coeff coeff child))
-  ([child-coeff coeff child]
-   (map->VAlign
-     {:child-coeff child-coeff
-      :coeff coeff
-      :child child})))
+(defn- valign-ctor [opts child]
+  (map->VAlign {}))
 
-(defn center [child]
-  (halign 0.5
-    (valign 0.5
-      child)))
+(defn- center-ctor [child]
+  [halign {:position 0.5}
+   [valign {:position 0.5}
+    child]])

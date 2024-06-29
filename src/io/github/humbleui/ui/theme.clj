@@ -1,12 +1,4 @@
-(ns io.github.humbleui.ui.theme
-  (:require
-    [clojure.math :as math]
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.typeface :as typeface]
-    [io.github.humbleui.ui.dynamic :as dynamic]
-    [io.github.humbleui.ui.with-context :as with-context]))
+(in-ns 'io.github.humbleui.ui)
 
 (defn default-theme
   ([comp] (default-theme {} comp))
@@ -15,7 +7,7 @@
                    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Regular.ttf"))]
      ; face-italic  (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Italic.ttf")
      ; face-bold    (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf")
-     (dynamic/dynamic ctx [scale (:scale ctx)]
+     (dynamic ctx [scale (:scale ctx)]
        (let [font-ui    (if-some [size (:font-size opts)]
                           (font/make-with-size face-ui (* scale size))
                           (font/make-with-cap-height face-ui (* scale (or (:cap-height opts) 10))))
@@ -29,22 +21,9 @@
                          :fill-text      fill-text
                          :fill-gray      fill-gray
                          
-                         :hui.button/bg-active      (paint/fill 0xFFA2C7EE)
-                         :hui.button/bg-hovered     (paint/fill 0xFFCFE8FC)
-                         :hui.button/bg             (paint/fill 0xFFB2D7FE)
-                         :hui.button/border-radius  4
-                         :hui.button/padding-left   (* 2 leading)
-                         :hui.button/padding-top    leading
-                         :hui.button/padding-right  (* 2 leading)
-                         :hui.button/padding-bottom leading
-                         
-                         :hui.toggle/fill-enabled         (paint/fill 0xFF0080FF)
-                         :hui.toggle/fill-disabled        (paint/fill 0xFFD9D9D9)
-                         :hui.toggle/fill-handle          (paint/fill 0xFFFFFFFF)
-                         :hui.toggle/fill-enabled-active  (paint/fill 0xFF0060E0)
-                         :hui.toggle/fill-disabled-active (paint/fill 0xFFBBBBBB)
-                         :hui.toggle/fill-handle-active   (paint/fill 0xFFE0E0E0)
-                         
+                         :hui.scroll/fill-track     (paint/fill 0x10000000)
+                         :hui.scroll/fill-thumb     (paint/fill 0x60000000)
+                                                  
                          :hui.slider/thumb-size           (* 16 scale)
                          :hui.slider/track-height         (* 2 scale)
                          :hui.slider/fill-track-active    (paint/fill 0xFF0080FF)
@@ -73,6 +52,4 @@
                          :hui.text-field/padding-bottom          (-> cap-height math/round (/ scale) float)
                          :hui.text-field/padding-left            (-> cap-height (/ 2) math/round (/ scale) float)
                          :hui.text-field/padding-right           (-> cap-height (/ 2) math/round (/ scale) float)}]
-         (with-context/with-context (core/merge-some theme opts) comp))))))
-
-; (require 'user :reload)
+         (with-context-classic (core/merge-some theme opts) comp))))))

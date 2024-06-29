@@ -2,85 +2,77 @@
   (:require
     [clojure.math :as math]
     [io.github.humbleui.core :as core]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def ^:dynamic *editing*
   false)
 
 (def *height
-  (atom {:value 180
-         :min   100
-         :max   250}))
+  (signal/signal 180))
 
 (def *weight
-  (atom {:value 80
-         :min   30
-         :max   150}))
+  (signal/signal 80))
 
 ; 30 / 2.2 / 2.2
 ; 6..150
 ; 80 / 1.8 / 1.8
 
 (def *bmi
-  (atom {:value 25
-         :min   5
-         :max   150}))
+  (signal/signal 25))
 
 (add-watch *height ::update
   (fn [_ _ old new]
-    (when-not *editing*
-      (binding [*editing* true]
-        (when (not= (:value old) (:value new))
-          (let [height (/ (:value new) 100)
-                weight (:value @*weight)]
-            (swap! *bmi assoc
-              :value (math/round (/ weight (* height height))))))))))
+    (when (not= old new)
+      (when-not *editing*
+      
+        (binding [*editing* true]
+        
+          (let [height (/ new 100)
+                weight @*weight]
+            (reset! *bmi (math/round (/ weight (* height height))))))))))
 
 (add-watch *weight ::update
   (fn [_ _ old new]
-    (when-not *editing*
-      (binding [*editing* true]
-        (when (not= (:value old) (:value new))
-          (let [height (/ (:value @*height) 100)
-                weight (:value new)]
-            (swap! *bmi assoc
-              :value (math/round (/ weight (* height height))))))))))
+    (when (not= old new)
+      (when-not *editing*
+        (binding [*editing* true]
+          (let [height (/ @*height 100)
+                weight new]
+            (reset! *bmi (math/round (/ weight (* height height))))))))))
 
 (add-watch *bmi ::update
   (fn [_ _ old new]
-    (when-not *editing*
-      (binding [*editing* true]
-        (when (not= (:value old) (:value new))
-          (let [height  (/ (:value @*height) 100)
-                bmi     (:value new)
+    (when (not= old new)
+      (when-not *editing*
+        (binding [*editing* true]
+          (let [height  (/ @*height 100)
+                bmi     new
                 weight  (core/clamp (* bmi height height) 30 150)
                 height' (* (math/sqrt (/ weight bmi)) 100)]
-            (swap! *weight assoc :value (math/round weight))
-            (swap! *height assoc :value (math/round height'))))))))
+            (reset! *weight (math/round weight))
+            (reset! *height (math/round height'))))))))
 
-(defn slider [label *state unit]
-  (ui/row
-    (ui/valign 0.5
-      (ui/width 60
-        (ui/label label)))
-    [:stretch 1 (ui/slider *state)]
-    (ui/valign 0.5
-      (ui/width 40
-        (ui/halign 1
-          (ui/dynamic _ [value (:value @*state)]
-            (ui/label value)))))
-    (ui/gap 5 0)
-    (ui/valign 0.5
-      (ui/width 20
-        (ui/halign 0
-          (ui/label unit))))))
+(defn slider [label *state min max unit]
+  [ui/row
+   [ui/valign {:position 0.5}
+    [ui/width {:width 60}
+     [ui/label label]]]
+   ^{:stretch 1} [ui/slider {:*value *state :min min :max max}]
+   [ui/valign {:position 0.5}
+    [ui/width {:width 40}
+     [ui/halign {:position 1}
+      [ui/label *state]]]]
+   [ui/gap {:width 5}]
+   [ui/valign {:position 0.5}
+    [ui/width {:width 20}
+     [ui/halign {:position 0}
+      [ui/label unit]]]]])
 
-(def ui
-  (ui/padding 20 20
-    (ui/valign 0.5
-      (ui/column
-        (slider "Height" *height "cm")
-        (ui/gap 0 10)
-        (slider "Weight" *weight "kg")
-        (ui/gap 0 10)
-        (slider "BMI" *bmi "")))))
+(defn ui []
+  [ui/padding {:padding 20}
+   [ui/valign {:position 0.5}
+    [ui/column {:gap 10}
+     [slider "Height" *height 100 250 "cm"]
+     [slider "Weight" *weight  30 150 "kg"]
+     [slider "BMI"    *bmi      5 150 ""]]]])

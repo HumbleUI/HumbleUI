@@ -1,95 +1,73 @@
-(ns io.github.humbleui.ui.draggable
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols]
-    [io.github.humbleui.ui.dynamic :as dynamic])
-  (:import
-    [io.github.humbleui.types IPoint IRect]
-    [io.github.humbleui.skija Canvas]
-    [java.lang AutoCloseable]))
+(in-ns 'io.github.humbleui.ui)
 
-(defn child-rect ^IRect [draggable]
+(defn- draggable-child-rect [draggable]
   (let [{:keys [my-pos child-pos child-size]} draggable]
-    (IRect/makeXYWH
+    (core/irect-xywh
       (+ (:x my-pos) (:x child-pos))
       (+ (:y my-pos) (:y child-pos))
       (:width child-size)
       (:height child-size))))
 
-(core/deftype+ Draggable [child
-                          ^:mut ^IPoint my-pos
-                          ^:mut ^IPoint child-pos
-                          ^:mut ^IPoint child-size
-                          ^:mut ^IPoint mouse-start
-                          ^:mut ^Boolean dragged
-                          on-dragging
-                          on-drop]
+(core/deftype+ Draggable [^:mut my-pos
+                          ^:mut child-pos
+                          ^:mut child-size
+                          ^:mut mouse-start
+                          ^:mut dragged]
+  :extends AWrapperNode
   protocols/IComponent
-  (-measure [_ _ctx cs]
+  (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw [this ctx ^IRect rect ^Canvas canvas]
-    (set! my-pos (IPoint. (:x rect) (:y rect)))
-    (set! child-size (core/measure child ctx (IPoint. (:width rect) (:height rect))))
-    (core/draw-child child ctx (child-rect this) canvas))
+  (-draw-impl [this ctx rect canvas]
+    (set! my-pos (core/ipoint (:x rect) (:y rect)))
+    (set! child-size (measure child ctx (core/ipoint (:width rect) (:height rect))))
+    (draw-child child ctx (draggable-child-rect this) canvas))
   
-  (-event [this ctx event]
-    (when (and
-            (= :mouse-button (:event event))
-            (= :primary (:button event))
-            (:pressed? event)
-            (core/rect-contains? (child-rect this) (core/ipoint (:x event) (:y event))))
-      (set! mouse-start
-        (IPoint.
-          (- (:x child-pos) (:x event))
-          (- (:y child-pos) (:y event)))))
-    
-    (when (and
-            (= :mouse-button (:event event))
-            (= :primary (:button event))
-            (not (:pressed? event)))
+  (-event-impl [this ctx event]
+    (let [[_ opts _] (parse-element element)
+          {:keys [on-dragging on-drop]} opts]
       (when (and
-             on-drop
-             mouse-start
-             dragged)
-        (on-drop (IPoint.
-                  (+ (:x mouse-start) (:x event))
-                  (+ (:y mouse-start) (:y event)))))
-      (set! dragged false)
-      (set! mouse-start nil))
+              (= :mouse-button (:event event))
+              (= :primary (:button event))
+              (:pressed? event)
+              (core/rect-contains? (draggable-child-rect this) (core/ipoint (:x event) (:y event))))
+        (set! mouse-start
+          (core/ipoint
+            (- (:x child-pos) (:x event))
+            (- (:y child-pos) (:y event)))))
     
-    (core/eager-or
       (when (and
-              (= :mouse-move (:event event))
-              mouse-start)
-        (let [p (IPoint.
-                 (+ (:x mouse-start) (:x event))
-                 (+ (:y mouse-start) (:y event)))]
-          (when on-dragging (on-dragging p))
-          (set! dragged true)
-          (set! child-pos p))
-        true)
-      (core/event-child child ctx event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child ctx cb)))
-  
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
+              (= :mouse-button (:event event))
+              (= :primary (:button event))
+              (not (:pressed? event)))
+        (when (and
+                on-drop
+                mouse-start
+                dragged)
+          (on-drop (core/ipoint
+                     (+ (:x mouse-start) (:x event))
+                     (+ (:y mouse-start) (:y event)))))
+        (set! dragged false)
+        (set! mouse-start nil))
+    
+      (core/eager-or
+        (when (and
+                (= :mouse-move (:event event))
+                mouse-start)
+          (let [p (core/ipoint
+                    (+ (:x mouse-start) (:x event))
+                    (+ (:y mouse-start) (:y event)))]
+            (when on-dragging (on-dragging p))
+            (set! dragged true)
+            (set! child-pos p))
+          true)
+        (event-child child ctx event)))))
 
-(defn draggable
+(defn draggable-ctor
   ([child]
-   (draggable {} child))
+   (draggable-ctor {} child))
   ([opts child]
-   (dynamic/dynamic ctx [{:keys [scale]} ctx]
-     (->Draggable child
-       nil
-       (or (some-> ^IPoint (:pos opts) (.scale scale)) IPoint/ZERO)
-       nil
-       nil
-       false
-       (:on-dragging opts)
-       (:on-drop opts)))))
+   (let [scale (:scale *ctx*)]
+     (map->Draggable
+       {:child-pos (or (some-> ^IPoint (:pos opts) (.scale scale)) IPoint/ZERO)
+        :dragged   false}))))

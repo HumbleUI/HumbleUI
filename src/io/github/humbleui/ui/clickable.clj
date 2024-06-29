@@ -1,83 +1,98 @@
-(ns io.github.humbleui.ui.clickable
-  (:require
-    [io.github.humbleui.core :as core]
-    [io.github.humbleui.protocols :as protocols])
-  (:import
-    [java.lang AutoCloseable]))
+(in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Clickable [on-click
-                          on-click-capture
-                          child
-                          ^:mut child-rect
-                          ^:mut hovered?
+(core/deftype+ Clickable [*state
                           ^:mut pressed?
                           ^:mut clicks
                           ^:mut last-click]
-  protocols/IContext
-  (-context [_ ctx]
-    (cond-> ctx
-      hovered?                (assoc :hui/hovered? true)
-      (and pressed? hovered?) (assoc :hui/active? true)))
-
-  protocols/IComponent
-  (-measure [this ctx cs]
-    (core/measure child (protocols/-context this ctx) cs))
-
-  (-draw [this ctx rect canvas]
-    (set! child-rect rect)
-    (set! hovered? (core/rect-contains? child-rect (:mouse-pos ctx)))
-    (core/draw-child child (protocols/-context this ctx) child-rect canvas))
-
-  (-event [this ctx event]
+  :extends AWrapperNode
+  (-event-impl [this ctx event]
     (when (= :mouse-move (:event event))
       (set! clicks 0)
       (set! last-click 0))
-          
-    (core/eager-or
-      (core/when-every [{:keys [x y]} event]
-        (let [hovered?' (core/rect-contains? child-rect (core/ipoint x y))]
-          (when (not= hovered? hovered?')
-            (set! hovered? hovered?')
-            true)))
-      (let [pressed?' (if (= :mouse-button (:event event))
-                        (if (:pressed? event)
-                          hovered?
-                          false)
-                        pressed?)
-            clicked? (and pressed? (not pressed?') hovered?)
-            now      (core/now)
-            _        (when clicked?
-                       (when (> (- now last-click) core/double-click-threshold-ms)
-                         (set! clicks 0))
-                       (set! clicks (inc clicks))
-                       (set! last-click now))
-            event'   (cond-> event
-                       clicked? (assoc :clicks clicks))]
-        (core/eager-or
-          (when (and clicked? on-click-capture)
-            (on-click-capture event')
-            false)
-          (or
-            (core/event-child child (protocols/-context this ctx) event')
-            (core/eager-or
-              (when (and clicked? on-click)
-                (on-click event')
-                true)
-              (when (not= pressed? pressed?')
-                (set! pressed? pressed?')
-                true)))))))
+    
+    (let [{:keys [on-click on-click-capture]} (parse-opts element)
+          state     @*state
+          hovered?  (:hovered state)
+          hovered?' (core/if-some+ [{:keys [x y]} event]
+                      (core/rect-contains? rect (core/ipoint x y))
+                      hovered?)
+          pressed?' (if (= :mouse-button (:event event))
+                      (if (:pressed? event)
+                        hovered?'
+                        false)
+                      pressed?)
+          clicked?  (and hovered?' pressed? (not pressed?'))
+          now       (core/now)
+          _         (when clicked?
+                      (when (> (- now last-click) core/double-click-threshold-ms)
+                        (set! clicks 0))
+                      (set! clicks (inc clicks))
+                      (set! last-click now))
+          event'    (cond-> event
+                      clicked? (assoc :clicks clicks))]
+      (core/eager-or
+        (when (and clicked? on-click-capture)
+          (core/invoke on-click-capture event')
+          true) ;; was false?
+        (if (event-child child ctx event')
+          ;; child have handled this event
+          (when
+            (signal/reset-changed! *state
+              (cond
+                hovered?' #{:hovered}
+                :else     #{}))
+            (force-render this (:window ctx))) ;; TODO better way?
+          ;; we have to handle this event
+          (do
+            (set! pressed? pressed?')
+            (when
+              (signal/reset-changed! *state
+                (cond
+                  (and hovered?' pressed?') #{:hovered :pressed}
+                  hovered?'                 #{:hovered}
+                  :else                     #{}))
+              (force-render this (:window ctx))) ;; TODO better way?
+            (when (and clicked? on-click)
+              (core/invoke on-click event')
+              true))))))
+  
+  (-should-reconcile? [_this _ctx new-element]
+    (opts-match? [:*state] element new-element))
+  
+  ; (-reconcile [this ctx new-element]
+  ;   (protocols/-reconcile-impl this ctx new-element)
+  ;   (protocols/-set! this :element new-element)
+  ;   this)
+  
+  (-child-elements [this ctx new-element]
+    (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
+      (if (fn? child-ctor-or-el)
+        [(child-ctor-or-el @*state)]
+        [child-ctor-or-el]))))
 
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (protocols/-iterate child (protocols/-context this ctx) cb)))
-
-  AutoCloseable
-  (close [_]
-    (core/child-close child)))
-
-(defn clickable [opts child]
-  (when-not (map? opts)
-    (throw (ex-info (str "Expected: map, got: " opts) {:arg opts})))
-  (let [{:keys [on-click on-click-capture]} opts]
-    (->Clickable on-click on-click-capture child nil false false 0 0)))
+(defn- clickable-ctor
+  "Element that can be clicked. Supports nesting (innermost will be clicked).
+   
+   Options are:
+   
+   :on-click         :: (fn [event]), what to do on click
+   :on-click-capture :: (fn [event]), what to do on click before children
+                        have a chance to handle it
+   :*state           :: signal, controls/represent state
+   
+   Event is map with keys:
+   
+   :clicks  :: long, number of consequitive clicks
+   
+   *state contains a set that might include:
+   
+   :hovered :: mouse hovers over object
+   :pressed :: mouse is held over object"
+  [opts child]
+  (map->Clickable
+    {:*state     (or
+                   (:*state opts)
+                   (signal/signal #{}))
+     :pressed?   nil
+     :clicks     0
+     :last-click 0}))

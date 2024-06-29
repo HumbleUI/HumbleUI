@@ -20,6 +20,8 @@ def deps_version(name):
     for line in f.readlines():
       if m := re.search(re.escape(name) + '\\s*{\\s*:mvn/version\\s*"([0-9.]+)"', line):
         return m.group(1)
+      if m := re.search(re.escape(name) + '\\s*{\\s*:git/sha\\s*"([0-9a-f]+)"', line):
+        return m.group(1)
 
 def classpath_join(entries):
   return classpath_separator.join(entries)
@@ -97,6 +99,19 @@ def fetch_maven(group, name, version, classifier=None, repo='https://repo1.maven
   file = os.path.join(os.path.expanduser('~'), '.m2', 'repository', path)
   fetch(repo + '/' + path, file)
   return file
+
+def fetch_github(org, name, sha, path = 'src'):
+  lib = os.path.join(os.path.expanduser('~'), '.gitlibs', 'libs', f'io.github.{org}', name, sha)
+  if not os.path.exists(lib):
+    repo = os.path.join(os.path.expanduser('~'), '.gitlibs', '_repos', 'https', 'github.com', org, name)
+    url = f'https://github.com/{org}/{name}.git'
+    if not os.path.exists(repo):
+      print('Cloning:', url, flush=True)
+      check_call(['git', 'clone', '--quiet', '--mirror', url, repo])
+    check_call(['git', '--git-dir', repo, 'fetch', '--quiet', '--all', '--tags', '--prune', '--prune-tags'])
+    print('Checking out:', url, 'at', sha, flush=True)
+    check_call(['git', '--git-dir', repo, 'worktree', 'add', '--force', '--detach', lib, sha])
+  return os.path.join(lib, path)
 
 def check_call(args):
   res = subprocess.call(args)
