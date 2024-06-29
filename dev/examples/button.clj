@@ -80,7 +80,7 @@
   (paint/fill 0xFFFFFFFF))
 
 (ui/defcomp custom-look [state child]
-  [ui/translate {:dy (if (= :pressed state) 2 0)}
+  [ui/translate {:dy (if (:pressed state) 2 0)}
    [ui/rounded-rect {:radius 15
                      :paint  custom-button-bg}
     [ui/padding {:padding 10}
@@ -95,7 +95,7 @@
       [custom-look state "Reusable custom look"])]
    [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
     (fn [state]
-      [ui/translate {:dy (if (= :pressed state) 2 0)}
+      [ui/translate {:dy (if (:pressed state) 2 0)}
        [ui/rounded-rect {:radius 15
                          :paint  custom-button-bg}
         [ui/padding {:padding 10}
