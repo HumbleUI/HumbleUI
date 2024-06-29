@@ -6,11 +6,11 @@
   ([opts]
    (shadow-ctor opts [gap]))
   ([opts child]
-   (let [opts   (merge {:dx 0
+   (let [opts'  (merge {:dx 0
                         :dy 0
                         :blur 0
                         :color (unchecked-int 0x80000000)} opts)
-         {:keys [dx dy blur color fill]} opts
+         {:keys [dx dy blur color fill]} opts'
          {:keys [scale]} *ctx*
          r      (core/radius->sigma (* blur scale))
          shadow (if fill
@@ -19,8 +19,11 @@
          paint  (-> (paint/fill (or fill 0xFFFFFFFF))
                   (paint/set-image-filter shadow))]
      {:should-setup?
-      (fn [opts' child-ctor-or-el]
-        (not= opts opts'))
+      (fn 
+        ([opts']
+         (not= opts opts'))
+        ([opts' child]
+         (not= opts opts'))) ;; FIXME should not recreate children!
       :render
       (fn
         ([_]

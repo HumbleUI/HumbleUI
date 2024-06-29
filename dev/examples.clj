@@ -31,7 +31,7 @@
     [examples.switch]
     [examples.text-field]
     [examples.text-field-debug]
-    ; [examples.todomvc]
+    [examples.todomvc]
     [examples.tooltip]
     [examples.treemap]
     [examples.util :as util]
@@ -79,12 +79,11 @@
     "SVG" examples.svg/ui
     "Text Field" examples.text-field/ui
     "Text Field Debug" examples.text-field-debug/ui
-    ; "Todo MVC" examples.todomvc/ui
+    "Todo MVC" examples.todomvc/ui
     "Switch" examples.switch/ui
     "Tooltip" examples.tooltip/ui
     "Treemap" examples.treemap/ui
-    "Wordle" examples.wordle/ui
-    ))
+    "Wordle" examples.wordle/ui))
 
 ^:clj-reload/keep
 (util/def-durable-signal *example

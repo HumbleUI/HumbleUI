@@ -37,7 +37,7 @@
   ([child]
    (map->Focusable {}))
   ([{:keys [focused on-focus on-blur] :as opts} child]
-   (map->Focusable {})))
+   (map->Focusable {:focused focused})))
 
 (defn focused [this ctx]
   (let [*acc (volatile! [])]

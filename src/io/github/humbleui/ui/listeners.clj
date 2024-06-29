@@ -11,7 +11,7 @@
       (or
         (when (and capture?
                 (= event-type (:event event)))
-          (callback event ctx))
+          (callback event ctx)) ;; FIXME need context?
         (event-child child ctx event)
         (when (and (not capture?)
                 (= event-type (:event event)))
