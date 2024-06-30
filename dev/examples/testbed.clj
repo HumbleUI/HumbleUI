@@ -5,9 +5,10 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  [ui/center
-   [ui/column {:gap 10}
-    [ui/hoverable
-     [ui/label "With label"]]
-    [ui/hoverable
-     "Without label"]]])
+  (let [*s (signal/signal 0)]
+    [ui/center
+     [ui/column {:gap 10}
+      [ui/label *s]
+      [ui/button {:on-click (fn [_] (swap! *s inc))} "Click me"]
+      [ui/button {:on-click (fn [_] (swap! *s inc))} "Click me"]
+      [ui/button {:on-click (fn [_] (swap! *s inc))} "Click me"]]]))

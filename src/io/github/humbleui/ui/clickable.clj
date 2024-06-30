@@ -1,10 +1,17 @@
 (in-ns 'io.github.humbleui.ui)
 
 (core/deftype+ Clickable [*state
+                          ^:mut pressed-pending?
                           ^:mut pressed?
                           ^:mut clicks
                           ^:mut last-click]
   :extends AWrapperNode
+  (-draw-impl [this ctx rect canvas]
+    (draw-child (:child this) ctx rect canvas)
+    (when pressed-pending?
+      (set! pressed-pending? nil)
+      (force-render this (:window ctx))))
+
   (-event-impl [this ctx event]
     (when (= :mouse-move (:event event))
       (set! clicks 0)
@@ -44,6 +51,8 @@
             (force-render this (:window ctx))) ;; TODO better way?
           ;; we have to handle this event
           (do
+            (when (and (not pressed?) pressed?')
+              (set! pressed-pending? true))
             (set! pressed? pressed?')
             (when
               (signal/reset-changed! *state
@@ -67,7 +76,9 @@
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
       (if (fn? child-ctor-or-el)
-        [[child-ctor-or-el @*state]]
+        [[child-ctor-or-el (cond-> @*state
+                             pressed-pending?
+                             (conj :pressed))]]
         [child-ctor-or-el]))))
 
 (defn- clickable-ctor

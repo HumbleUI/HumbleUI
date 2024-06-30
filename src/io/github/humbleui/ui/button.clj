@@ -24,10 +24,13 @@
      [center
       child]]]])
 
-(ui/defcomp button-ctor [opts child]
-  [clickable opts
-   (fn [state]
-     [(or (:hui.button/look *ctx*) button-look) state child])])
+(ui/defcomp button-ctor
+  ([child]
+   (button-ctor {} child))
+  ([opts child]
+   [clickable opts
+    (fn [state]
+      [(or (:hui.button/look *ctx*) button-look) state child])]))
 
 (ui/defcomp toggle-button-ctor [opts child]
   [toggleable opts
