@@ -106,7 +106,25 @@
           value')))))
 
 (defmacro defn-memoize-last [name & body]
-  `(def ~name (memoize-last (fn ~@body))))
+  `(def ~name
+     (memoize-last
+       (fn ~@body))))
+
+(defmacro memo-fn [bindings & body]
+  (let [syms-left  (mapv first (partition 2 bindings))
+        syms-right (mapv second (partition 2 bindings))
+        syms       (bindings->syms bindings)]
+    `(let [*state# (atom nil)]
+       (fn ~syms-right
+         (let ~bindings
+           (let [state#         @*state#
+                 [args# value#] state#]
+             (if (= args# ~syms)
+               value#
+               (let [_#     (close value#)
+                     value# (do ~@body)]
+                 (reset! *state# [~syms value#])
+                 value#))))))))
 
 (defmacro cond+ [& clauses]
   (when-some [[test expr & rest] clauses]

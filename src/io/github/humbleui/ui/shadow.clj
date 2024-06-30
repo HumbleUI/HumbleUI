@@ -6,32 +6,23 @@
   ([opts]
    (shadow-ctor opts [gap]))
   ([opts child]
-   (let [opts'  (merge {:dx 0
-                        :dy 0
-                        :blur 0
-                        :color (unchecked-int 0x80000000)} opts)
-         {:keys [dx dy blur color fill]} opts'
-         {:keys [scale]} *ctx*
-         r      (core/radius->sigma (* blur scale))
-         shadow (if fill
-                  (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
-                  (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
-         paint  (-> (paint/fill (or fill 0xFFFFFFFF))
-                  (paint/set-image-filter shadow))]
-     {:should-setup?
-      (fn 
-        ([opts']
-         (not= opts opts'))
-        ([opts' child]
-         (not= opts opts'))) ;; FIXME should not recreate children!
-      :render
-      (fn
-        ([_]
-         [rect {:paint paint}
-          [gap]])
-        ([_ child]
-         [rect {:paint paint}
-          child]))})))
+   (let [paint-fn (core/memo-fn [{:keys [dx dy blur color fill]
+                                  :or {dx 0 dy 0 blur 0 color (unchecked-int 0x80000000)}} opts
+                                 {:keys [scale]} *ctx*]
+                    (println dx dy blur color fill)
+                    (let [r      (core/radius->sigma (* blur scale))
+                          shadow (if fill
+                                   (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
+                                   (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
+                          paint  (-> (paint/fill (or fill 0xFFFFFFFF))
+                                   (paint/set-image-filter shadow))]
+                      paint))]
+     (fn render
+       ([opts]
+        (render opts [gap]))
+       ([opts child]
+        [rect {:paint (paint-fn opts *ctx*)}
+         child])))))
 
 (defn shadow-inset-ctor [opts child]
   (let [{:keys [dx dy blur color]
