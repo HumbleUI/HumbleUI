@@ -39,9 +39,8 @@
     [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.debug :as debug]
+    [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -51,45 +50,54 @@
 ; TODO https://www.egui.rs/
 
 (def examples
-  (sorted-map
-    "7 GUIs: Converter" examples.7guis-converter/ui
-    "Align" examples.align/ui
-    "Animation" examples.animation/ui
-    "Backdrop" examples.backdrop/ui
-    "Blur" examples.blur/ui
-    "BMI Calculator" examples.bmi-calculator/ui
-    "Button" examples.button/ui
-    "Calculator" examples.calculator/ui
-    "Canvas" examples.canvas/ui
-    "Canvas Shapes" examples.canvas-shapes/ui
-    "Checkbox" examples.checkbox/ui
-    "Container" examples.container/ui
-    "Effects" examples.effects/ui
-    "Errors" examples.errors/ui
-    "Framerate" examples.framerate/ui
-    "Grid" examples.grid/ui
-    "Image" examples.image/ui
-    "Image Snapshot" examples.image-snapshot/ui
-    "Label" examples.label/ui
-    "OkLCH" examples.oklch/ui
-    "Paragraph" examples.paragraph/ui
-    "Scroll" examples.scroll/ui
-    "Settings" examples.settings/ui
-    "Slider" examples.slider/ui
-    "Stack" examples.stack/ui
-    "SVG" examples.svg/ui
-    "Testbed" examples.testbed/ui
-    "Text Field" examples.text-field/ui
-    "Text Field Debug" examples.text-field-debug/ui
-    "Todo MVC" examples.todomvc/ui
-    "Switch" examples.switch/ui
-    "Tooltip" examples.tooltip/ui
-    "Treemap" examples.treemap/ui
-    "Wordle" examples.wordle/ui))
+  [["Components"
+    [["Align" examples.align/ui]
+     ["Animation" examples.animation/ui]
+     ["Backdrop" examples.backdrop/ui]
+     ["Button" examples.button/ui]
+     ["Canvas" examples.canvas/ui]
+     ["Canvas Shapes" examples.canvas-shapes/ui]
+     ["Checkbox" examples.checkbox/ui]
+     ["Container" examples.container/ui]
+     ["Errors" examples.errors/ui]
+     ["Grid" examples.grid/ui]
+     ["Image" examples.image/ui]
+     ["Image Snapshot" examples.image-snapshot/ui]
+     ["Label" examples.label/ui]
+     ["Paragraph" examples.paragraph/ui]
+     ["Scroll" examples.scroll/ui]
+     ["Slider" examples.slider/ui]
+     ["Stack" examples.stack/ui]
+     ["SVG" examples.svg/ui]
+     ["Text Field" examples.text-field/ui]
+     ["Text Field Debug" examples.text-field-debug/ui]
+     ["Switch" examples.switch/ui]
+     ["Tooltip" examples.tooltip/ui]]]
+   ["Demos"
+    [["7 GUIs: Converter" examples.7guis-converter/ui]
+     ["Blur" examples.blur/ui]
+     ["BMI Calculator" examples.bmi-calculator/ui]
+     ["Calculator" examples.calculator/ui]
+     ["Effects" examples.effects/ui]
+     ["Framerate" examples.framerate/ui]
+     ["OkLCH" examples.oklch/ui]
+     ["Todo MVC" examples.todomvc/ui]
+     ["Treemap" examples.treemap/ui]
+     ["Wordle" examples.wordle/ui]]]
+   ["Other"
+    [["Settings" examples.settings/ui]
+     ["Testbed" examples.testbed/ui]]]])
 
 ^:clj-reload/keep
 (util/def-durable-signal *example
-  (first (keys examples)))
+  (ffirst (keys examples)))
+
+(core/defn-memoize-last font-bold [size]
+  (font/make-with-cap-height @util/*face-bold size))
+
+(ui/defcomp example-header [name]
+  [ui/padding {:horizontal 20 :vertical 10}
+   [ui/label {:font (font-bold (core/iceil (* 10 (:scale ui/*ctx*))))} name]])
 
 (ui/defcomp example-label [name]
   (let [fill-selected (paint/fill 0xFFB2D7FE)
@@ -98,7 +106,7 @@
     (fn [name]
       [ui/clickable
        {:on-click (fn [_]
-                    (signal/reset! *example name))}
+                    (reset! *example name))}
        (fn [state]
          (let [label [ui/padding {:horizontal 20 :vertical 10}
                       [ui/label name]]
@@ -110,18 +118,26 @@
              :else            label)))])))
 
 (ui/defcomp app-impl []
-  [ui/row
-   [ui/vscrollbar
-    [ui/column
-     (for [[name _] (sort-by first examples)]
-       [example-label name])]]
+  (let [examples-map (->> examples
+                       (mapcat second)
+                       (into {}))]
+    (fn []
+      [ui/row
+       [ui/vscrollbar
+        [ui/column
+         (for [[section examples] examples]
+           (list
+             [example-header section]
+             (for [[name _] (sort-by first examples)]
+               [example-label name])
+             [ui/gap {:height 10}]))]]
     
-   [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
-    [ui/gap {:width 1}]]
+       [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
+        [ui/gap {:width 1}]]
     
-   ^{:stretch 1}
-   [ui/clip
-    [(examples @*example)]]])
+       ^{:stretch 1}
+       [ui/clip
+        [(examples-map @*example)]]])))
 
 (defonce *app
   (atom nil))

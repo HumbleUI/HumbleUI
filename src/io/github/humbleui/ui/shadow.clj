@@ -9,7 +9,6 @@
    (let [paint-fn (core/memo-fn [{:keys [dx dy blur color fill]
                                   :or {dx 0 dy 0 blur 0 color (unchecked-int 0x80000000)}} opts
                                  {:keys [scale]} *ctx*]
-                    (println dx dy blur color fill)
                     (let [r      (core/radius->sigma (* blur scale))
                           shadow (if fill
                                    (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
