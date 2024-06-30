@@ -40,11 +40,12 @@
         [ui/checkbox {:*value *state-first} [ui/label "First state"]]
         ;; on-change
         ;; string label
-        [ui/checkbox {:*value *state-second
-                      :on-change
-                      (fn [state-second]
-                        (condp = [@*state-first state-second]
-                          [true true]   (reset! *state-group true)
-                          [false false] (reset! *state-group false)
-                          #_else        (reset! *state-group :mixed)))}
+        [ui/checkbox
+         {:*value *state-second
+          :on-change
+          (fn [state-second]
+            (condp = [@*state-first state-second]
+              [true true]   (reset! *state-group true)
+              [false false] (reset! *state-group false)
+              #_else        (reset! *state-group :mixed)))}
          "Second state"]]])))

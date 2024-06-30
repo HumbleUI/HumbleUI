@@ -30,7 +30,7 @@
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
       (if (fn? child-ctor-or-el)
-        [(child-ctor-or-el (if focused #{:focused} #{}))]
+        [[child-ctor-or-el (if focused #{:focused} #{})]]
         [child-ctor-or-el]))))
 
 (defn focusable-ctor

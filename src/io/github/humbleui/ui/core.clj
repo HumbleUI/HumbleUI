@@ -170,70 +170,73 @@
       `(with ~(nnext bindings)
          ~@body))))
 
-(defn make-impl [el]
-  (core/cond+
-    (satisfies? protocols/IComponent el)
-    el
+(defn make-impl
+  ([el]
+   (make-impl (map->FnNode {}) el))
+  ([start-node el]
+
+   (core/cond+
+     (satisfies? protocols/IComponent el)
+     el
     
-    (string? el)
-    (recur [@(resolve 'io.github.humbleui.ui/label) el])
+     (string? el)
+     (recur start-node [@(resolve 'io.github.humbleui.ui/label) el])
     
-    :let [[f & args] el
-          f (cond-> f
-              (delay? f) deref)]
+     :let [[f & args] el
+           f (core/maybe-deref f)]
         
-    :else
-    (binding [*node* (map->FnNode {})]
-      (let [res  (cond
-                   (fn? f)    (apply f args)
-                   (class? f) (make-record f))
-            node (loop [res res]
-                   (core/cond+
-                     (fn? res)
-                     (do
-                       (assert-arities f res)
-                       (core/set!! *node* :render res)
-                       *node*)
+     :else
+     (binding [*node* start-node]
+       (let [res  (cond
+                    (fn? f)    (apply f args)
+                    (class? f) (make-record f))
+             node (loop [res res]
+                    (core/cond+
+                      (fn? res)
+                      (do
+                        (assert-arities f res)
+                        (core/set!! *node* :render res)
+                        *node*)
                
-                     (satisfies? protocols/IComponent res)
-                     res
+                      (satisfies? protocols/IComponent res)
+                      res
                    
-                     (map? res)
-                     (let [render (:render res)]
-                       (when render
-                         (assert-arities f render))
-                       (core/set!! *node*
-                         :user-measure   (:measure res)
-                         :user-draw      (:draw res)
-                         :render         render
-                         :should-setup?  (:should-setup? res)
-                         :should-render? (:should-render? res)
-                         :before-draw    (:before-draw res)
-                         :after-draw     (:after-draw res)
-                         :before-render  (:before-render res)
-                         :after-render   (:after-render res)
-                         :after-mount    (:after-mount res)
-                         :after-unmount  (:after-unmount res))
-                       *node*)
+                      (map? res)
+                      (let [render (:render res)]
+                        (when render
+                          (assert-arities f render))
+                        (core/set!! *node*
+                          :user-measure   (:measure res)
+                          :user-draw      (:draw res)
+                          :render         render
+                          :should-setup?  (:should-setup? res)
+                          :should-render? (:should-render? res)
+                          :before-draw    (:before-draw res)
+                          :after-draw     (:after-draw res)
+                          :before-render  (:before-render res)
+                          :after-render   (:after-render res)
+                          :after-mount    (:after-mount res)
+                          :after-unmount  (:after-unmount res))
+                        *node*)
                
-                     (and (sequential? res) (map? (first res)))
-                     (recur (reduce merge-mixins res))
+                      (and (sequential? res) (map? (first res)))
+                      (recur (reduce merge-mixins res))
                    
-                     (sequential? res)
-                     (do
-                       (core/set!! *node* :render f)
-                       *node*)
+                      (sequential? res)
+                      (do
+                        (core/set!! *node* :render f)
+                        *node*)
                      
-                     :else
-                     (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
-        (core/set!! node
-          :element el
-          :dirty? true)
-        (when-some [key (:key (meta el))]
-          (core/set!! node :key key))
-        (when-some [ref (:ref (meta el))]
-          (reset! ref node))
-        node))))
+                      :else
+                      (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
+         (core/set!! node
+           :element el
+           :dirty? true)
+         (when-some [key (:key (meta el))]
+           (core/set!! node :key key))
+         (when-some [ref (:ref (meta el))]
+           (reset! ref node))
+         node)))))
 
 (defn make [el]
   (try
@@ -245,7 +248,14 @@
 (defn should-reconcile? [ctx old-node new-el]
   (and 
     old-node
-    (identical? (first (:element old-node)) (first new-el))
+    (let [left  (core/maybe-deref (first (:element old-node)))
+          right (core/maybe-deref (first new-el))]
+      (or
+        (identical? left right)
+        ;; same lambdas with different captured vars still should reconcile
+        (and
+          (and (fn? left) (fn? right))
+          (identical? (class left) (class right)))))
     (protocols/-should-reconcile? old-node ctx new-el)))
 
 (defn keys-match? [keys m1 m2]
@@ -549,6 +559,8 @@
     this)
   
   (-reconcile-impl [this ctx new-element]
+    (when-not (identical? (first element) (first new-element))
+      (make-impl this new-element))
     (when render
       (core/invoke before-render)
       (try

@@ -24,11 +24,10 @@
        (remove-watch *value ::on-change))
      :render
      (fn [opts child-ctor-or-el]
-       (let [value @*value]
-         [clickable {:on-click on-click'}
-          (if (fn? child-ctor-or-el)
-            (fn [state]
-              (child-ctor-or-el
-                (cond-> state
-                  (= value value-on) (conj :selected))))
-            child-ctor-or-el)]))}))
+       [clickable {:on-click on-click'}
+        (if (fn? child-ctor-or-el)
+          (fn [state]
+            (child-ctor-or-el
+              (cond-> state
+                (= @*value value-on) (conj :selected))))
+          child-ctor-or-el)])}))

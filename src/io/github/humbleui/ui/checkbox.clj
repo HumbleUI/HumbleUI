@@ -35,19 +35,18 @@
         ([child]
          (render {} child))
         ([opts child]
-         (let [value @*value]
-           [toggleable opts'
-            (fn [state]
-              (let [size (checkbox-size *ctx*)]
-                [row
-                 [valign {:position 0.5}
-                  [width {:width size}
-                   [height {:height size}
-                    [svg @(checkbox-states [(cond
-                                              (= :mixed value)  :mixed
-                                              (:selected state) true
-                                              :else             false)
-                                            (boolean (:pressed state))])]]]]
-                 [gap {:width (/ size 3)}]
-                 [valign {:position 0.5}
-                  child]]))])))})))
+         [toggleable opts'
+          (fn [state]
+            (let [size (checkbox-size *ctx*)]
+              [row
+               [valign {:position 0.5}
+                [width {:width size}
+                 [height {:height size}
+                  [svg @(checkbox-states [(cond
+                                            (= :mixed @*value) :mixed
+                                            (:selected state)  true
+                                            :else              false)
+                                          (boolean (:pressed state))])]]]]
+               [gap {:width (/ size 3)}]
+               [valign {:position 0.5}
+                child]]))]))})))

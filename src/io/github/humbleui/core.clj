@@ -377,6 +377,11 @@
     (slurp-bytes
       (io/resource (str "io/github/humbleui/" path)))))
 
+(defn maybe-deref [x]
+  (if (instance? clojure.lang.IDeref x)
+    (deref x)
+    x))
+
 (defn ipoint ^IPoint [^long x ^long y]
   (IPoint. x y))
 

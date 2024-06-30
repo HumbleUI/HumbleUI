@@ -8,9 +8,7 @@
           scale  (:scale ctx)
           width  (/ (:width rect) scale)
           height (/ (:height rect) scale)]
-      (if (fn? child-ctor-or-el)
-        [(child-ctor-or-el (core/ipoint width height))]
-        [child-ctor-or-el])))
+      [[child-ctor-or-el (core/ipoint width height)]]))
   
   (-draw-impl [this ctx rect canvas]
     (let [bounds (core/ipoint (:width rect) (:height rect))]
