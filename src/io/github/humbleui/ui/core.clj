@@ -178,10 +178,7 @@
    (core/cond+
      (satisfies? protocols/IComponent el)
      el
-    
-     (string? el)
-     (recur start-node [@(resolve 'io.github.humbleui.ui/label) el])
-    
+
      :let [[f & args] el
            f (core/maybe-deref f)]
         
@@ -268,6 +265,14 @@
         [_ new-opts _] (parse-element new-element)]
     (keys-match? keys opts new-opts)))
 
+(defn autoconvert [el]
+  (cond
+    (string? el)
+    [@(resolve 'io.github.humbleui.ui/label) el]
+    
+    :else
+    el))
+
 (defn reconcile-many [ctx old-nodes new-els]
   (core/loop+ [old-nodes-keyed (reduce
                                  (fn [m n]
@@ -291,6 +296,7 @@
       
       :let [[old-node & old-nodes'] old-nodes
             [new-el & new-els']     new-els
+            new-el                  (autoconvert new-el)
             key                     (:key (meta new-el))]
       
       key

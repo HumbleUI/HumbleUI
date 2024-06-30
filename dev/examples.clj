@@ -29,6 +29,7 @@
     [examples.stack]
     [examples.svg]
     [examples.switch]
+    [examples.testbed]
     [examples.text-field]
     [examples.text-field-debug]
     [examples.todomvc]
@@ -77,6 +78,7 @@
     "Slider" examples.slider/ui
     "Stack" examples.stack/ui
     "SVG" examples.svg/ui
+    "Testbed" examples.testbed/ui
     "Text Field" examples.text-field/ui
     "Text Field Debug" examples.text-field-debug/ui
     "Todo MVC" examples.todomvc/ui

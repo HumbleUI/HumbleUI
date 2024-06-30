@@ -45,9 +45,8 @@
    :on-out   :: (fn [event])
    :*state   :: signal
    
-   Possible *state values:
+   *state is a set containing:
    
-   :default :: default state
    :hovered :: mouse hovers over object"
   ([child]
    (hoverable-ctor {} child))
