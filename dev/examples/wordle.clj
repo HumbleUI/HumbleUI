@@ -32,7 +32,7 @@
 (def *state
   (signal/signal (empty-state)
     #_{:word    "QUART"
-       :guesses ["CRANE" "START"]
+       :guesses ["CRANE" "START" ...]
        :typing  "SSRAT"}))
 
 (defn won? [{:keys [word guesses]}]

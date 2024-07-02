@@ -565,7 +565,9 @@
     this)
   
   (-reconcile-impl [this ctx new-element]
-    (when-not (identical? (first element) (first new-element))
+    (when (or
+            (not (identical? (first element) (first new-element)))
+            (apply core/invoke should-setup? (next new-element)))
       (make-impl this new-element))
     (when render
       (core/invoke before-render)
@@ -585,11 +587,6 @@
                   (force-render this window))))))
         (finally
           (core/invoke after-render)))))
-  
-  (-should-reconcile? [_this _ctx new-element]
-    (if should-setup?
-      (not (apply should-setup? (next new-element)))
-      true))
   
   (-unmount [this]
     (unmount-child child)

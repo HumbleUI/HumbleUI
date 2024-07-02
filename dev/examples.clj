@@ -160,12 +160,14 @@
       (util/save-state {:x x, :y y, :width w, :height h}))))
 
 (defn restore-window-rect [screen]
-  (let [{:keys [work-area]} screen]
-    (core/when-some+ [{:keys [x y width height]} (util/load-state)]
-      (let [x      (min (- (:right work-area) 500) x)
-            y      (min (- (:bottom work-area) 500) y)
-            width  (min (- (:right work-area) x) width)
-            height (min (- (:bottom work-area) y) height)]
+  (let [{:keys [scale work-area]} screen
+        right  (-> (:right work-area) (/ scale) int)
+        bottom (-> (:bottom work-area) (/ scale) int)]
+    (core/when-some+ [{:keys [x y width height]} #p (util/load-state)]
+      (let [x      (min (- right 500) x)
+            y      (min (- bottom 500) y)
+            width  (min (- right x) width)
+            height (min (- bottom y) height)]
         {:x x, :y y, :width width, :height height}))))
 
 (defn -main [& args]
