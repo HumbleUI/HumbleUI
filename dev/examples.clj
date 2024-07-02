@@ -25,6 +25,7 @@
     [examples.paragraph]
     [examples.scroll]
     [examples.settings]
+    [examples.size]
     [examples.slider]
     [examples.stack]
     [examples.svg]
@@ -66,6 +67,7 @@
      ["Label" examples.label/ui]
      ["Paragraph" examples.paragraph/ui]
      ["Scroll" examples.scroll/ui]
+     ["Size" examples.size/ui]
      ["Slider" examples.slider/ui]
      ["Stack" examples.stack/ui]
      ["SVG" examples.svg/ui]
@@ -120,31 +122,39 @@
 (ui/defcomp app-impl []
   (let [examples-map (->> examples
                        (mapcat second)
-                       (into {}))]
+                       (into {}))
+        font-mono    (font/make-with-cap-height @util/*face-mono (ui/scaled 8.5))
+        font-bold    (font/make-with-cap-height @util/*face-bold (ui/scaled 10))]
     (fn []
-      [ui/row
-       [ui/vscrollbar
-        [ui/column
-         (for [[section examples] examples]
-           (list
-             [example-header section]
-             (for [[name _] (sort-by first examples)]
-               [example-label name])
-             [ui/gap {:height 10}]))]]
+      [ui/with-context
+       {:font-mono font-mono
+        :font-bold font-bold}
+       [ui/row
+        [ui/vscrollbar
+         [ui/column
+          (for [[section examples] examples]
+            (list
+              [example-header section]
+              (for [[name _] (sort-by first examples)]
+                [example-label name])
+              [ui/gap {:height 10}]))]]
     
-       [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
-        [ui/gap {:width 1}]]
+        [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
+         [ui/gap {:width 1}]]
     
-       ^{:stretch 1}
-       [ui/clip
-        [(examples-map @*example)]]])))
+        ^{:stretch 1}
+        [ui/clip
+         [(examples-map @*example)]]]])))
+
+(defn app-wrapper []
+  [app-impl])
 
 (defonce *app
   (atom nil))
 
 (reset! *app
   (ui/default-theme {}
-    (ui/make [app-impl])))
+    (ui/make [app-wrapper])))
 
 ; (defn before-ns-unload []
 ;   (reset! *app nil))

@@ -74,6 +74,15 @@
 
 (def ^:dynamic *node*)
 
+(defn scale
+  ([]
+   (:scale *ctx*))
+  ([ctx]
+   (:scale ctx)))
+
+(defn scaled [x]
+  (* x (:scale *ctx*)))
+  
 (declare map->FnNode)
 
 (defn parse-element [vals]
@@ -465,9 +474,9 @@
         (iterate-child (:child this) ctx' cb))))
   
   (-reconcile-impl [this ctx el']
-    (let [[child-el] (protocols/-child-elements this ctx el')
-          ctx'       (protocols/-context this ctx)
-          [child']   (reconcile-many ctx' [(:child this)] [child-el])]
+    (let [child-els (protocols/-child-elements this ctx el')
+          ctx'      (protocols/-context this ctx)
+          [child']  (reconcile-many ctx' [(:child this)] child-els)]
       (protocols/-set! this :child child')))
   
   (-unmount [this]

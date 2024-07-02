@@ -3,15 +3,24 @@
     [clj-reload.core :as reload]
     [clojure.java.io :as io]
     [clojure.edn :as edn]
+    [clojure.pprint :as pprint]
+    [clojure.string :as str]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.debug :as debug]
+    [io.github.humbleui.font :as font]
+    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
+    [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]))
 
 (def *face-bold
   (delay
     (typeface/make-from-resource "io/github/humbleui/fonts/Inter-Bold.ttf")))
+
+(def *face-mono
+  (delay
+    (typeface/make-from-resource "io/github/humbleui/fonts/FiraCode-Regular.ttf")))
 
 (defn load-state []
   (let [file (io/file ".state")]
@@ -80,3 +89,22 @@
   (fn [_ _ _ new]
     (set-floating! @*window new)))
 
+(defmacro table [& rows]
+  `[ui/padding {:padding 10}
+    [ui/grid {:cols 2}
+     ~@(for [[name row] (partition 2 rows)
+             :let [left ['ui/padding {:padding 11}
+                         ['ui/halign {:position 0}
+                          ['ui/valign {:position 0}
+                           row]]]
+                   right ['ui/padding {:padding 11}
+                          ['ui/column {:gap (* 9 1.2)}
+                           ['ui/label {:font '(:font-bold ui/*ctx*)} name]
+                           (cons 'list
+                             (-> (with-out-str
+                                   (binding [pprint/*print-right-margin* 40]
+                                     (pprint/pprint row)))
+                               (str/split #"\n")
+                               (->> (map #(vector 'ui/label {:font '(:font-mono ui/*ctx*)} %)))))]]]
+             cell [left right]]
+         cell)]])

@@ -6,7 +6,9 @@
   protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [[_ opts _] (parse-element element)
-          gap        (* (:scale ctx) (:gap opts 0))]
+          gap        (-> (:gap opts 0)
+                       (* (:scale ctx))
+                       (core/iceil))]
       (core/loopr [width  0
                    height 0]
         [child children]
@@ -20,7 +22,9 @@
   
   (-draw-impl [_ ctx rect ^Canvas canvas]
     (let [[_ opts _]    (parse-element element)
-          gap           (* (:scale ctx) (:gap opts 0))
+          gap           (-> (:gap opts 0)
+                          (* (:scale ctx))
+                          (core/iceil))
           cs            (core/ipoint (:width rect) (:height rect))
           known         (for [child children]
                           (let [meta (meta (:element child))]
