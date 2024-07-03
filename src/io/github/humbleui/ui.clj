@@ -39,7 +39,7 @@
       ~@(if docstring [docstring] [])
       (delay
         (when-not (@*loaded ~file)
-          (core/log "Loading" ~file)
+          (core/log (str "Loading ui/" ~file))
           (load (str "/io/github/humbleui/ui/" ~file))
           (swap! *loaded conj ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))

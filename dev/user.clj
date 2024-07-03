@@ -12,8 +12,16 @@
                  io.github.humbleui.protocols
                  io.github.humbleui.signal}})
 
-(def reload
-  duti/reload)
+(defn reload []
+  (or
+    (try
+      (when-some [window @@(requiring-resolve 'examples.util/*window)]
+        ;; do not reload in the middle of the frame
+        (locking window
+          (duti/reload)))
+      (catch Exception e
+        nil))
+    (duti/reload)))
 
 (defn -main [& args]
   (let [args (apply array-map args)

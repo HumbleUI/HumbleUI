@@ -60,7 +60,6 @@
      ["Canvas Shapes" examples.canvas-shapes/ui]
      ["Checkbox" examples.checkbox/ui]
      ["Container" examples.container/ui]
-     ["Errors" examples.errors/ui]
      ["Grid" examples.grid/ui]
      ["Image" examples.image/ui]
      ["Image Snapshot" examples.image-snapshot/ui]
@@ -87,7 +86,8 @@
      ["Treemap" examples.treemap/ui]
      ["Wordle" examples.wordle/ui]]]
    ["Other"
-    [["Settings" examples.settings/ui]
+    [["Error Handling" examples.errors/ui]
+     ["Settings" examples.settings/ui]
      ["Testbed" examples.testbed/ui]]]])
 
 ^:clj-reload/keep
@@ -99,25 +99,34 @@
 
 (ui/defcomp example-header [name]
   [ui/padding {:horizontal 20 :vertical 10}
-   [ui/label {:font (font-bold (core/iceil (* 10 (:scale ui/*ctx*))))} name]])
+   [ui/label {:font (:font-bold ui/*ctx*)} name]])
 
 (ui/defcomp example-label [name]
   (let [fill-selected (paint/fill 0xFFB2D7FE)
         fill-active   (paint/fill 0xFFA2C7EE)
         fill-hovered  (paint/fill 0xFFE1EFFA)]
     (fn [name]
-      [ui/clickable
-       {:on-click (fn [_]
-                    (reset! *example name))}
-       (fn [state]
-         (let [label [ui/padding {:horizontal 20 :vertical 10}
-                      [ui/label name]]
-               selected? (= name @*example)]
-           (cond
-             selected?        [ui/rect {:paint fill-selected} label]
-             (:pressed state) [ui/rect {:paint fill-active} label]
-             (:hovered state) [ui/rect {:paint fill-hovered} label]
-             :else            label)))])))
+      [ui/hoverable
+       {:on-hover
+        (fn [e]
+          (when
+            (if (= :macos app/platform)
+              (:mac-command (:modifiers e))
+              (:control (:modifiers e)))
+            (reset! *example name)))}
+       [ui/clickable
+        {:on-click
+         (fn [_]
+           (reset! *example name))}
+        (fn [state]
+          (let [label [ui/padding {:horizontal 20 :vertical 10}
+                       [ui/label name]]
+                selected? (= name @*example)]
+            (cond
+              selected?        [ui/rect {:paint fill-selected} label]
+              (:pressed state) [ui/rect {:paint fill-active} label]
+              (:hovered state) [ui/rect {:paint fill-hovered} label]
+              :else            label)))]])))
 
 (ui/defcomp app-impl []
   (let [examples-map (->> examples
@@ -173,7 +182,7 @@
   (let [{:keys [scale work-area]} screen
         right  (-> (:right work-area) (/ scale) int)
         bottom (-> (:bottom work-area) (/ scale) int)]
-    (core/when-some+ [{:keys [x y width height]} #p (util/load-state)]
+    (core/when-some+ [{:keys [x y width height]} (util/load-state)]
       (let [x      (min (- right 500) x)
             y      (min (- bottom 500) y)
             width  (min (- right x) width)
