@@ -176,7 +176,7 @@
              ;; ops row
              ^{:stretch 2}
              [ui/row {:gap padding}
-              [ui/width {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
+              [ui/size {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
                [button "C" color-clear]]
               ^{:stretch 1} [button "±" color-clear]
               ^{:stretch 1} [button "÷" color-op]]
@@ -208,7 +208,7 @@
              ;; bottom row
              ^{:stretch 2}
              [ui/row {:gap padding}
-              [ui/width {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
+              [ui/size {:width #(-> (:width %) (- (* 3 padding)) (/ 2) (+ padding))}
                [button "0" color-digit]]
               ^{:stretch 1} [button "." color-digit]
               ^{:stretch 1} [button "=" color-op]]]]]]))}))

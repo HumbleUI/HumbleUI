@@ -7,9 +7,8 @@
 (ui/defcomp svg [width height xpos ypos scale]
   [ui/clip
    [ui/rect {:paint (paint/fill 0xFF90DC48)}
-    [ui/width {:width width}
-     [ui/height {:height height}
-      [ui/svg {:xpos xpos :ypos ypos :scale scale} "dev/images/ratio.svg"]]]]])
+    [ui/size {:width width, :height height}
+     [ui/svg {:xpos xpos :ypos ypos :scale scale} "dev/images/ratio.svg"]]]])
 
 (ui/defcomp ui []
   (ui/with [*size (ui/use-size)]
@@ -40,6 +39,5 @@
           
             [ui/clip
              [ui/rect {:paint (paint/fill 0xFF90DC48)}
-              [ui/width {:width (* 47 step)}
-               [ui/height {:height (* 7 step)}
-                [ui/svg {:preserve-aspect-ratio false} "dev/images/ratio.svg"]]]]]]])))))
+              [ui/size {:width (* 47 step), :height (* 7 step)}
+               [ui/svg {:preserve-aspect-ratio false} "dev/images/ratio.svg"]]]]]])))))

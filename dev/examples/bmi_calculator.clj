@@ -56,16 +56,16 @@
 (defn slider [label *state min max unit]
   [ui/row
    [ui/valign {:position 0.5}
-    [ui/width {:width 60}
+    [ui/size {:width 60}
      [ui/label label]]]
    ^{:stretch 1} [ui/slider {:*value *state :min min :max max}]
    [ui/valign {:position 0.5}
-    [ui/width {:width 40}
+    [ui/size {:width 40}
      [ui/halign {:position 1}
       [ui/label *state]]]]
    [ui/gap {:width 5}]
    [ui/valign {:position 0.5}
-    [ui/width {:width 20}
+    [ui/size {:width 20}
      [ui/halign {:position 0}
       [ui/label unit]]]]])
 

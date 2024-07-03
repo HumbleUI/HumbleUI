@@ -242,9 +242,8 @@
        [ui/padding {:padding 10}
         [ui/column {:gap 10}
          [ui/label (pr-str paint-kw)]
-         [ui/width {:width 250}
-          [ui/height {:height 250}
-           [ui/canvas
-            {:on-paint
-             (fn [ctx ^Canvas canvas ^IPoint size]
-               (on-paint (paint-kw->fn paint-kw) ctx canvas size))}]]]]])]]])
+         [ui/size {:width 250, :height 250}
+          [ui/canvas
+           {:on-paint
+            (fn [ctx ^Canvas canvas ^IPoint size]
+              (on-paint (paint-kw->fn paint-kw) ctx canvas size))}]]]])]]])

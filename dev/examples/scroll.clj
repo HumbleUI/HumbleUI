@@ -63,7 +63,7 @@
         [ui/padding {:horizontal 20 :vertical 10}
          [ui/label (str "Item " i)]])
               
-      [ui/height {:height 130}
+      [ui/size {:height 130}
        [ui/padding {:bottom 12}
         [ui/rect {:paint (paint/stroke 0xFF000000 1)}
          [ui/vscrollbar

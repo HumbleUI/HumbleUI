@@ -181,7 +181,7 @@
         (< progress 1.0)
         ^{:stretch 1} 
         [ui/center
-         [ui/width {:width #(max 200 (* 0.25 (:width %)))}
+         [ui/size {:width #(max 200 (* 0.25 (:width %)))}
           [ui/column {:gap 10}
            [ui/row
             ^{:stretch progress}

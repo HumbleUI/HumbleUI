@@ -86,11 +86,10 @@
        [ui/row {:gap padding}
         (for [[letter idx] (map vector guess (range))]
           [ui/rect {:paint (fill letter idx)}
-           [ui/width {:width 50}
+           [ui/size {:width 50, :height 50}
             [ui/halign {:position 0.5}
-             [ui/height {:height 50}
-              [ui/valign {:position 0.5}
-               [ui/label {:font font-large :paint fill-white} letter]]]]]])])
+             [ui/valign {:position 0.5}
+              [ui/label {:font font-large :paint fill-white} letter]]]]])])
      (when-not (won? state)
        (let [colors (colors word guesses)]        
          (list
@@ -100,23 +99,22 @@
               (if-some [letter (when (< idx (count typing))
                                  (str (nth typing idx)))]
                 [ui/rect {:paint stroke-dark-gray}
-                 [ui/width {:width 50}
+                 [ui/size {:width 50, :height 50}
                   [ui/halign {:position 0.5}
-                   [ui/height {:height 50}
-                    [ui/valign {:position 0.5}
-                     (let [color (cond
-                                   (= :gray (colors letter))
-                                   fill-dark-gray
+                   [ui/valign {:position 0.5}
+                    (let [color (cond
+                                  (= :gray (colors letter))
+                                  fill-dark-gray
                                             
-                                   (some #(= (str (nth % idx)) letter) guesses)
-                                   (fill letter idx)
+                                  (some #(= (str (nth % idx)) letter) guesses)
+                                  (fill letter idx)
                                               
-                                   (some? (colors letter))
-                                   fill-yellow
+                                  (some? (colors letter))
+                                  fill-yellow
                                             
-                                   :else
-                                   fill-black)]
-                       [ui/label {:font font-large :paint color} letter])]]]]]
+                                  :else
+                                  fill-black)]
+                      [ui/label {:font font-large :paint color} letter])]]]]
                 [ui/rect {:paint stroke-light-gray}
                  [ui/gap {:width 50 :height 50}]]))])))]))
 
@@ -133,11 +131,10 @@
                          :yellow fill-yellow
                          :gray   fill-dark-gray
                          nil     fill-light-gray)}
-       [ui/width {:width width}
+       [ui/size {:width width, :height 35}
         [ui/halign {:position 0.5}
-         [ui/height {:height 35}
-          [ui/valign {:position 0.5}
-           [ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char]]]]]])]))
+         [ui/valign {:position 0.5}
+          [ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char]]]]])]))
   
 (defn keyboard []
   (let [{:keys [word guesses]} @*state]

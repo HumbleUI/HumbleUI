@@ -130,18 +130,16 @@
     [ui/halign {:position 0}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
       [ui/row {:gap 5}
-       [ui/width {:width 14}
-        [ui/height {:height 14}
-         [ui/image "dev/images/add.png"]]]
+       [ui/size {:width 14, :height 14}
+        [ui/image "dev/images/add.png"]]
        [ui/valign {:position 0.5}
         [ui/label "With PNG icon"]]]]]
 
     [ui/halign {:position 0}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
       [ui/row {:gap 5}
-       [ui/width {:width 14}
-        [ui/height {:height 14}
-         [ui/svg "dev/images/add.svg"]]]
+       [ui/size {:width 14, :height 14}
+        [ui/svg "dev/images/add.svg"]]
        [ui/valign {:position 0.5}
         [ui/label "With SVG icon"]]]]]
                     

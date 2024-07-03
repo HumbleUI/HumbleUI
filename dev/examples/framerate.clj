@@ -128,7 +128,7 @@
              (->> table
                (map (fn [row]
                       (->> row
-                        (map (fn [%] [ui/width {:width s} [ui/height {:height s} %]]))
+                        (map (fn [%] [ui/size {:width s, :height s} %]))
                         (interpose [ui/gap {:width gap}]))))
                (interpose
                  (repeat (-> cols (* 2) dec)

@@ -155,7 +155,7 @@
 (defn row [name opts]
   (list
     ;; TODO stretch cols
-    [ui/width {:width 300}
+    [ui/size {:width 300}
      [ui/slider opts]]
     [ui/gap {:width 10}]
     [ui/valign {:position 0.5}

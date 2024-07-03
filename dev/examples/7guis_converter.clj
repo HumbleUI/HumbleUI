@@ -61,12 +61,12 @@
       :hui.text-field/padding-left   5
       :hui.text-field/padding-right  5}
      [ui/row
-      [ui/width {:width 50}
+      [ui/size {:width 50}
        [ui/text-field {:focused (core/now), :*state *celsius}]]
       [ui/gap {:width 5}]
       [ui/valign {:position 0.5}
        [ui/label "Celsius = "]]
-      [ui/width {:width 50}
+      [ui/size {:width 50}
        [ui/text-field {:*state *fahrenheit}]]
       [ui/gap {:width 5}]
       [ui/valign {:position 0.5}

@@ -37,16 +37,15 @@
         ([opts child]
          [toggleable opts'
           (fn [state]
-            (let [size (checkbox-size *ctx*)]
+            (let [checkbox-size (checkbox-size *ctx*)]
               [row
                [valign {:position 0.5}
-                [width {:width size}
-                 [height {:height size}
-                  [svg @(checkbox-states [(cond
-                                            (= :mixed @*value) :mixed
-                                            (:selected state)  true
-                                            :else              false)
-                                          (boolean (:pressed state))])]]]]
-               [gap {:width (/ size 3)}]
+                [size {:width checkbox-size, :height checkbox-size}
+                 [svg @(checkbox-states [(cond
+                                           (= :mixed @*value) :mixed
+                                           (:selected state)  true
+                                           :else              false)
+                                         (boolean (:pressed state))])]]]
+               [gap {:width (/ checkbox-size 3)}]
                [valign {:position 0.5}
                 child]]))]))})))

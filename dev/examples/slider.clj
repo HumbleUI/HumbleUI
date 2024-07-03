@@ -81,7 +81,7 @@
      [ui/rect {:paint (paint/fill 0xFFFFFFFF)}
       slider]
      [ui/valign {:position 0.5}
-      [ui/width {:width 100}
+      [ui/size {:width 100}
        [ui/halign {:position 1}
         [ui/label *value " / " max]]]]]))
 

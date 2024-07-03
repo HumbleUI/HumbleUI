@@ -17,7 +17,7 @@
         paint  (-> (Paint.) (.setShader shader))]
     (fn [_]
       [ui/vscrollbar
-       [ui/height {:height (* height 2)}
+       [ui/size {:height (* height 2)}
         [ui/row
          [ui/gap {:width 10}]
          ^{:stretch 1}

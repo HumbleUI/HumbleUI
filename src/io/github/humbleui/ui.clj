@@ -26,7 +26,7 @@
 (load "/io/github/humbleui/ui/core")
 (load "/io/github/humbleui/ui/dynamic")
 (load "/io/github/humbleui/ui/with_context")
-(load "/io/github/humbleui/ui/sizing")
+(load "/io/github/humbleui/ui/size")
 
 (def *loaded
   (atom #{}))
@@ -61,6 +61,7 @@
 (deflazy with-bounds    ([child-ctor]) "with_bounds")
 (deflazy backdrop       ([{:keys [dx dy]} child]) "backdrop")
 (deflazy image-snapshot ([{:keys [dx dy]} child]) "image_snapshot")
+(deflazy reserve-width  ([{:keys [probes]} child]) "reserve_width")
 
 (deflazy halign ([{:keys [position child-position]} child]) "align")
 (deflazy valign ([{:keys [position child-position]} child]) "align")

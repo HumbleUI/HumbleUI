@@ -36,7 +36,7 @@
     [ui/padding {:top 10}
       [ui/label "Hug 20%-30%-40%"]]
     [ui/row {:gap 10}
-      [ui/width {:width #(* 0.2 (:width %))} [label "Ok"]]
-      [ui/width {:width #(* 0.3 (:width %))} [label "Cancel"]]
-      [ui/width {:width #(* 0.4 (:width %))} [label "Abort request"]]]
+      [ui/size {:width #(* 0.2 (:width %))} [label "Ok"]]
+      [ui/size {:width #(* 0.3 (:width %))} [label "Cancel"]]
+      [ui/size {:width #(* 0.4 (:width %))} [label "Abort request"]]]
     ]])

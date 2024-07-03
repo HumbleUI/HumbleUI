@@ -182,18 +182,17 @@
          (fn [_]
            (complete-all (not (completed-all?)))
            true)}
-        [ui/width {:width 40}
-         [ui/height {:height 40}
-          (if-let [state (completed-all?)]
-            [ui/svg "dev/images/todomvc/uncheck-all.svg"]
-            [ui/svg "dev/images/todomvc/check-all.svg"])]]]))])
+        [ui/size {:width 40, :height 40}
+         (if-let [state (completed-all?)]
+           [ui/svg "dev/images/todomvc/uncheck-all.svg"]
+           [ui/svg "dev/images/todomvc/check-all.svg"])]]))])
 
 (def *new-todo
   (cursor *state :new-todo))
 
 (defn new-todo []
   [ui/rect {:paint (paint/fill 0xFFFEFEFE)}
-   [ui/height {:height 66}
+   [ui/size {:height 66}
     [ui/shadow-inset {:dy -2, :blur 1, :color 0x08000000}
      [ui/row
       [ui/valign {:position 0.5}
@@ -212,11 +211,10 @@
      (fn [_]
        (swap! *state not)
        true)}
-    [ui/width {:width 40}
-     [ui/height {:height 40}
-      (if-let [state @*state]
-        [ui/svg "dev/images/todomvc/checked.svg"]
-        [ui/svg "dev/images/todomvc/unchecked.svg"])]]]])
+    [ui/size {:width 40, :height 40}
+     (if-let [state @*state]
+       [ui/svg "dev/images/todomvc/checked.svg"]
+       [ui/svg "dev/images/todomvc/unchecked.svg"])]]])
 
 (defn todo-delete [hovered? id]
   [ui/padding {:padding 10}
@@ -227,17 +225,16 @@
          (swap! *state update :todos dissoc id)
          true)}
       (fn [state]
-        [ui/width {:width 40}
-         [ui/height {:height 40}
-          (if (:hovered state)
-            [ui/svg "dev/images/todomvc/delete-hovered.svg"]
-            [ui/svg "dev/images/todomvc/delete.svg"])]])]
+        [ui/size {:width 40, :height 40}
+         (if (:hovered state)
+           [ui/svg "dev/images/todomvc/delete-hovered.svg"]
+           [ui/svg "dev/images/todomvc/delete.svg"])])]
      [ui/gap {:width 40 :height 40}])])
 
 (defn todo [id]
   [ui/hoverable
    (fn [state]
-     [ui/height {:height 60}
+     [ui/size {:height 60}
       [ui/row
        [todo-toggle
         (cursor-in *state [:todos id :completed?])]
@@ -260,7 +257,7 @@
        [todo-delete (:hovered state) id]]])])
 
 (defn todo-edit [id]
-  [ui/height {:height 60}
+  [ui/size {:height 60}
    [ui/row
     [ui/gap {:width 45}]
     ^{:stretch 1}
@@ -355,7 +352,7 @@
 (defn footer []
   (let [font-footer (font/make-with-size typeface-300 (* 14 (:scale ui/*ctx*)))]
     (fn []
-      [ui/height {:height 40}
+      [ui/size {:height 40}
        [ui/with-context
         {:font-ui   font-footer
          :fill-text paint-footer}
@@ -387,7 +384,7 @@
          [ui/vscrollbar
           [ui/halign {:position 0.5}
            [ui/padding {:vertical 30}
-            [ui/width {:width #(core/clamp (:width %) 230 550)}
+            [ui/size {:width #(core/clamp (:width %) 230 550)}
              [ui/column
               [title]
               [ui/gap {:height 25}]
