@@ -92,7 +92,7 @@
 
 ^:clj-reload/keep
 (util/def-durable-signal *example
-  (ffirst (keys examples)))
+  (-> examples first second first first))
 
 (core/defn-memoize-last font-bold [size]
   (font/make-with-cap-height @util/*face-bold size))
