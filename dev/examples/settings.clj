@@ -7,7 +7,7 @@
 
 (defn setting [name signal]
   [ui/row
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     [ui/label name]]
    ^{:stretch 1} [ui/gap]
    [ui/switch {:*value signal}]])
@@ -21,7 +21,7 @@
         delimeter      [ui/rect {:paint fill-delimiter}
                         [ui/gap {:height 1}]]]
     [ui/padding {:padding 20}
-     [ui/valign {:position 0}
+     [ui/align {:y :top}
       [ui/rounded-rect {:radius 6, :paint fill-bg}
        [ui/rounded-rect {:radius 6, :paint stroke-bg}
         [ui/padding {:padding padding-inner}

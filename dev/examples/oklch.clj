@@ -158,7 +158,7 @@
     [ui/size {:width 300}
      [ui/slider opts]]
     [ui/gap {:width 10}]
-    [ui/valign {:position 0.5}
+    [ui/align {:y :center}
      [ui/reserve-width
       {:probes [[ui/label (str name ": 0.999")]]}
       [ui/label (format "%s: %s" name (.format decimal-format (double @(:*value opts))))]]]))

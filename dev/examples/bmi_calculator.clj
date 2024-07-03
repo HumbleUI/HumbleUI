@@ -55,23 +55,23 @@
 
 (defn slider [label *state min max unit]
   [ui/row
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     [ui/size {:width 60}
      [ui/label label]]]
    ^{:stretch 1} [ui/slider {:*value *state :min min :max max}]
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     [ui/size {:width 40}
-     [ui/halign {:position 1}
+     [ui/align {:x :right}
       [ui/label *state]]]]
    [ui/gap {:width 5}]
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     [ui/size {:width 20}
-     [ui/halign {:position 0}
+     [ui/align {:x :left}
       [ui/label unit]]]]])
 
 (defn ui []
   [ui/padding {:padding 20}
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     [ui/column {:gap 10}
      [slider "Height" *height 100 250 "cm"]
      [slider "Weight" *weight  30 150 "kg"]

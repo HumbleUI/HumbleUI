@@ -80,14 +80,14 @@
      ^{:stretch 1}
      [ui/rect {:paint (paint/fill 0xFFFFFFFF)}
       slider]
-     [ui/valign {:position 0.5}
+     [ui/align {:y :center}
       [ui/size {:width 100}
-       [ui/halign {:position 1}
+       [ui/align {:x :right}
         [ui/label *value " / " max]]]]]))
 
 (ui/defcomp ui []
   [ui/padding {:padding 20}
-   [ui/valign {:position 0.5}
+   [ui/align {:y :center}
     (let [*state0 (signal/signal 500)]
       [ui/column {:gap 10}
        [with-slider 

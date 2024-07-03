@@ -94,12 +94,11 @@
     [ui/grid {:cols 2}
      ~@(for [[name row] (partition 2 rows)
              :let [left ['ui/padding {:padding 11}
-                         ['ui/halign {:position 0}
-                          ['ui/valign {:position 0}
-                           row]]]
+                         ['ui/align {:x :left :y :top}
+                          row]]
                    right ['ui/padding {:padding 11}
                           ['ui/column {:gap (* 9 1.2)}
-                           ['ui/label {:font '(:font-bold ui/*ctx*)} name]
+                           ['ui/paragraph {:font '(:font-bold ui/*ctx*)} name]
                            (cons 'list
                              (-> (with-out-str
                                    (binding [pprint/*print-right-margin* 40]

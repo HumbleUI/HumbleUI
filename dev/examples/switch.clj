@@ -24,21 +24,21 @@
         fill-delimiter  (paint/fill 0xFFE7E7E7)
         font            (font/make-with-cap-height face-ui (* 20 scale))]
     [ui/padding {:padding 20}
-     [ui/valign {:position 0}
+     [ui/align {:y :top}
       [ui/rounded-rect {:radius 6, :paint fill-bg}
        [ui/rounded-rect {:radius 6, :paint stroke-bg}
         [ui/padding {:padding padding-inner}
          [ui/column {:gap padding-inner}
           [ui/with-context {:font-ui font}
            [ui/row
-            [ui/valign {:position 0.5}
+            [ui/align {:y :center}
              [ui/label "First state"]]
             ^{:stretch 1} [ui/gap]
             [ui/switch {:*value *state-first}]]]
           [ui/rect {:paint fill-delimiter}
            [ui/gap {:height 1}]]
           [ui/row
-           [ui/valign {:position 0.5}
+           [ui/align {:y :center}
             [ui/label "Second state"]]
            ^{:stretch 1} [ui/gap]
            [ui/switch {:*value *state-second}]]]]]]]]))

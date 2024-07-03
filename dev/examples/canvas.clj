@@ -122,7 +122,6 @@
     {:on-paint on-paint
      :on-event on-event}]
    [ui/padding {:padding 10}
-    [ui/halign {:position 1}
-     [ui/valign {:position 0}
-      [ui/button {:on-click (fn [_] (reset! *paths []))}
-       "Clear"]]]]])
+    [ui/align {:x :right :y :top}
+     [ui/button {:on-click (fn [_] (reset! *paths []))}
+      "Clear"]]]])

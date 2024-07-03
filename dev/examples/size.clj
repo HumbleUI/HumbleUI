@@ -7,21 +7,21 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  [ui/valign {:position 0.5}
+  [ui/align {:y :center}
    [ui/vscrollbar
-    [ui/halign {:position 0.5}
+    [ui/align {:x :center}
      (let [fill (paint/fill 0xFFAACCFF)]
        (util/table
          "Force child’s width"
          [ui/size {:width 50}
           [ui/rect {:paint fill}
-           [ui/halign {:position 0.5}
+           [ui/align {:x :center}
             "abc"]]]
     
          "Force child’s height"
          [ui/size {:height 50}
           [ui/rect {:paint fill}
-           [ui/valign {:position 0.5}
+           [ui/align {:y :center}
             "abc"]]]
       
          "Force both width and height"

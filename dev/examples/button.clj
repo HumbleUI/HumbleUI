@@ -18,7 +18,7 @@
        [ui/button {:*state *state
                    :on-click (fn [e] (reset! *clicks (:clicks e)))}
         "External state"]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/column {:gap 10}
          [ui/label "State: " *state]
          [ui/label "Last clicks: " *clicks]]]])))
@@ -31,7 +31,7 @@
        [ui/button {:name "outer" :on-click (fn [_] (swap! *outer inc))}
         [ui/button {:name "inner" :on-click (fn [_] (swap! *inner inc))}
          "Nested / bubble"]]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/column {:gap 10}
          [ui/label "Outer: " *outer]
          [ui/label "Inner: " *inner]]]])))
@@ -44,7 +44,7 @@
        [ui/button {:on-click-capture (fn [_] (swap! *outer inc))}
         [ui/button {:on-click-capture (fn [_] (swap! *inner inc))}
          "Nested / capture"]]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/column {:gap 10}
          [ui/label "Outer: " *outer]
          [ui/label "Inner: " *inner]]]])))
@@ -54,7 +54,7 @@
     (fn []
       [ui/row {:gap 10}
        [ui/toggle-button {:*value *value} "Toggle"]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/label (if @*value "ON" "OFF")]]])))
 
 (ui/defcomp radio []
@@ -70,7 +70,7 @@
        [ui/toggle-button {:*value *value
                           :value-on :three}
         "Three"]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/label "Radio " *value]]])))
 
 (def custom-button-bg
@@ -103,10 +103,10 @@
 
 (ui/defcomp with-shadow []
   [ui/row {:gap 10}
-   [ui/halign {:position 0}
+   [ui/align {:x :left}
     [ui/shadow {:blur @*clicks}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Outset shadow"]]]
-   [ui/halign {:position 0}
+   [ui/align {:x :left}
     [ui/shadow-inset {:blur @*clicks}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Inset shadow"]]]])
 
@@ -114,53 +114,53 @@
   [ui/center
    [ui/column {:gap (:leading ui/*ctx*)}
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [ui/label "Clicks: " *clicks]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [ui/row {:gap 10}
       [ui/button {:on-click (fn [_] (swap! *clicks inc))}
        "Increment"]
       [ui/button {:on-click (fn [_] (reset! *clicks 0))}
        "Reset"]]]
     
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [with-shadow]]
           
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
       [ui/row {:gap 5}
        [ui/size {:width 14, :height 14}
         [ui/image "dev/images/add.png"]]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/label "With PNG icon"]]]]]
 
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
       [ui/row {:gap 5}
        [ui/size {:width 14, :height 14}
         [ui/svg "dev/images/add.svg"]]
-       [ui/valign {:position 0.5}
+       [ui/align {:y :center}
         [ui/label "With SVG icon"]]]]]
                     
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
       [ui/label "Dynamic label: " *clicks]]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [external-state]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [nested-bubble]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [nested-capture]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [toggle]]
         
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [radio]]
     
-    [ui/halign {:position 0}
+    [ui/align {:x :left}
      [custom]]]])

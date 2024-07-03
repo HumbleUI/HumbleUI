@@ -25,7 +25,7 @@ It does not take much technical knowledge to see, for example, that higher-bandw
    (paragraph {} text))
   ([opts text]
    (let [opts' (merge {:features ["cv01" "cv02" "cv09" "cv10" "ss03" "ss04"]} opts)]
-     [ui/halign {:position 0}
+     [ui/align {:x :left}
       [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
        [ui/paragraph opts' text]]])))
 

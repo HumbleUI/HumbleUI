@@ -40,7 +40,7 @@
      [ui/gap]
 
      ;; not found
-     [ui/halign {:position 0}
+     [ui/align {:x :left}
       [ui/size {:width 50 :height 50}
        [ui/image "dev/images/not_found.png"]]]
      [ui/label "Not found"]

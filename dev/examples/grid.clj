@@ -49,7 +49,7 @@
                     sort-col
                     sort-dir]} @*state]
         [ui/vscrollbar
-         [ui/halign {:position 0.5}
+         [ui/align {:x :center}
           [ui/grid {:cols (count header)
                     :rows (inc (count currencies))}
            (concat
@@ -61,7 +61,7 @@
                   [ui/reserve-width
                    {:probes [[ui/label (str th " ⏶")]
                              [ui/label (str th " ⏷")]]}
-                   [ui/halign {:position 0}
+                   [ui/align {:x :left}
                     [ui/label
                      (str th
                        (case (when (= i sort-col)

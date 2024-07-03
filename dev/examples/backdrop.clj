@@ -41,11 +41,11 @@
   [ui/stack
    [ui/center
     [ui/column {:gap 10}
-     [ui/halign {:position 0.5}
+     [ui/align {:x :center}
       [ui/label "Hello"]]
-     [ui/halign {:position 0.5}
+     [ui/align {:x :center}
       [ui/button {} "Click me"]]
-     [ui/halign {:position 0.5}
+     [ui/align {:x :center}
       [ui/checkbox {} "Toggle me"]]]]
    [ui/draggable {:pos (core/ipoint 10 10)}
     [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}

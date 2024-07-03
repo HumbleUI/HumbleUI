@@ -233,7 +233,7 @@
 
 (defn ui []
   [ui/vscrollbar
-   [ui/halign {:position 0.5}
+   [ui/align {:x :center}
     [ui/grid {:cols 3}
      (for [paint-kw [:paint-point :paint-points :paint-lines
                      :paint-polygon :paint-line :paint-arc

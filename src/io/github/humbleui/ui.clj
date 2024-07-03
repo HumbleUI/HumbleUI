@@ -63,8 +63,7 @@
 (deflazy image-snapshot ([{:keys [dx dy]} child]) "image_snapshot")
 (deflazy reserve-width  ([{:keys [probes]} child]) "reserve_width")
 
-(deflazy halign ([{:keys [position child-position]} child]) "align")
-(deflazy valign ([{:keys [position child-position]} child]) "align")
+(deflazy align  ([{:keys [x y child-x child-y]} child]) "align")
 (deflazy center ([child]) "align")
 
 (deflazy vscroll    ([child] [opts child]) "scroll")

@@ -168,10 +168,9 @@
              ^{:stretch 3}
              [ui/rect {:paint (paint/fill 0xFF404040)}
               [ui/padding {:horizontal #(/ (:height %) 3)}
-               [ui/halign {:position 1}
-                [ui/valign {:position 0.5}
+               [ui/align {:x :right :y :center}
                  (let [val (get state (:screen state))]
-                   [ui/label {:font font-display :features ["tnum"]} val])]]]]
+                   [ui/label {:font font-display :features ["tnum"]} val])]]]
           
              ;; ops row
              ^{:stretch 2}

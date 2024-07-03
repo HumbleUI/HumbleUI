@@ -23,7 +23,7 @@
              label)]))))))
 
 (ui/defcomp ui []
-  [ui/halign {:position 0.5}
+  [ui/align {:x :center}
    [ui/row {:gap 10}
     ;; 100 elements
     [ui/vscrollbar

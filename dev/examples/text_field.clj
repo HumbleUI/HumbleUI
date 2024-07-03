@@ -36,11 +36,11 @@
      [ui/size {:width 300}
       [text-field "0123456890 AaBbCcDdEe FfGgHhIiJj KkLlMmNnOo PpQqRrSsTt UuVvWwXxYyZz" :padding-h 5 :padding-top 20 :padding-bottom 5 :cursor-blink-interval 0]]
      [ui/size {:width 300}
-      [ui/halign {:position 0}
+      [ui/align {:x :left}
        [text-field "Content width" :from 13 :to 13 :padding-h 5 :padding-v 10]]]
      [ui/size {:width 300}
-      [ui/halign {:position 0.5}
+      [ui/align {:x :center}
        [text-field "Align center" :padding-h 5 :padding-v 10]]]
      [ui/size {:width 300}
-      [ui/halign {:position 1}
+      [ui/align {:x :right}
        [text-field "Align right" :padding-h 5 :padding-v 10]]]]]])

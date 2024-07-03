@@ -87,7 +87,7 @@
    [ui/gap {:height 1}]])
 
 (defn strikethrough []
-  [ui/valign {:position 0.7}
+  [ui/align {:y 0.7}
    [ui/rect {:paint paint-completed}
     [ui/gap {:height 1}]]])
 
@@ -129,7 +129,7 @@
 (defn title []
   (let [font (font/make-with-size typeface-100 (* 100 (:scale ui/*ctx*)))]
     (fn []
-      [ui/halign {:position 0.5}
+      [ui/align {:x :center}
        [ui/label
         {:font  font
          :paint (paint/fill 0x26AF2F2F)}
@@ -195,10 +195,10 @@
    [ui/size {:height 66}
     [ui/shadow-inset {:dy -2, :blur 1, :color 0x08000000}
      [ui/row
-      [ui/valign {:position 0.5}
+      [ui/align {:y :center}
        [toggle-all]]
       ^{:stretch 1}
-      [ui/valign {:position 0.5}
+      [ui/align {:y :center}
        [ui/focusable {:on-focus #(swap! *state save)}
         [ui/on-key-focused {:keymap {:enter #(swap! *state add-todo)}}
          [ui/with-cursor {:cursor :ibeam}
@@ -246,14 +246,13 @@
            (when (= 2 (:clicks e))
              (swap! *state edit id)
              true))}
-        [ui/valign {:position 0.5}
-         [ui/halign {:position 0}
-          (let [{:keys [label completed?]} (get-in @*state [:todos id])]
-            (if completed?
-              [ui/stack
-               [ui/label {:paint paint-completed} label]
-               [strikethrough]]
-              [ui/label {:paint paint-label} label]))]]]
+        [ui/align {:x :left, :y :center}
+         (let [{:keys [label completed?]} (get-in @*state [:todos id])]
+           (if completed?
+             [ui/stack
+              [ui/label {:paint paint-completed} label]
+              [strikethrough]]
+             [ui/label {:paint paint-label} label]))]]
        [todo-delete (:hovered state) id]]])])
 
 (defn todo-edit [id]
@@ -270,7 +269,7 @@
        [ui/padding {:top 0.5 :right 1.5 :bottom 0.5}
         [ui/shadow-inset {:dy -1, :blur 5, :color 0x33000000}
          [ui/rect {:paint (paint/stroke 0xFF999999 (* 1 (:scale ui/*ctx*)))}
-          [ui/valign {:position 0.5}
+          [ui/align {:y :center}
            [ui/with-context
             {:hui.text-field/padding-left 10}
             [ui/text-input {:*state (cursor *state :editing)}]]]]]]]]]]])
@@ -358,15 +357,12 @@
          :fill-text paint-footer}
         [ui/padding {:horizontal 15}
          [ui/stack
-          [ui/halign {:position 0}
-           [ui/valign {:position 0.5}
-            [footer-active]]]
-          [ui/halign {:position 0.5}
-           [ui/valign {:position 0.5}
-            [footer-modes]]]
-          [ui/halign {:position 1}
-           [ui/valign {:position 0.5}
-            [footer-clear]]]]]]])))
+          [ui/align {:x :left, :y :center}
+           [footer-active]]
+          [ui/align {:x :center, :y :center}
+           [footer-modes]]
+          [ui/align {:x :right, :y :center}
+           [footer-clear]]]]]])))
 
 (defn ui []
   (let [scale            (:scale ui/*ctx*)
@@ -382,7 +378,7 @@
         
         [ui/rect {:paint paint-bg}
          [ui/vscrollbar
-          [ui/halign {:position 0.5}
+          [ui/align {:x :center}
            [ui/padding {:vertical 30}
             [ui/size {:width #(core/clamp (:width %) 230 550)}
              [ui/column

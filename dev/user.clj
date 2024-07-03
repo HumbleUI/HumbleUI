@@ -12,16 +12,28 @@
                  io.github.humbleui.protocols
                  io.github.humbleui.signal}})
 
+(def ^:dynamic *t0*)
+
+(defn log [& args]
+  (let [dt    (- (System/currentTimeMillis) *t0*)
+        mins  (quot dt 60000)
+        secs  (mod (quot dt 1000) 60)
+        msecs (mod dt 1000)]
+    (apply println (format "%02d:%02d.%03d" mins secs msecs) args))
+  (flush))
+
 (defn reload []
-  (or
-    (try
-      (when-some [window @@(requiring-resolve 'examples.util/*window)]
-        ;; do not reload in the middle of the frame
-        (locking window
-          (duti/reload)))
-      (catch Exception e
-        nil))
-    (duti/reload)))
+  (binding [*t0*                     (System/currentTimeMillis)
+            clj-reload.util/*log-fn* log]
+    (or
+      (try
+        (when-some [window @@(requiring-resolve 'examples.util/*window)]
+          ;; do not reload in the middle of the frame
+          (locking window
+            (duti/reload)))
+        (catch Exception e
+          nil))
+      (duti/reload))))
 
 (defn -main [& args]
   (let [args (apply array-map args)

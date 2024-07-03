@@ -64,10 +64,10 @@
       [ui/size {:width 50}
        [ui/text-field {:focused (core/now), :*state *celsius}]]
       [ui/gap {:width 5}]
-      [ui/valign {:position 0.5}
+      [ui/align {:y :center}
        [ui/label "Celsius = "]]
       [ui/size {:width 50}
        [ui/text-field {:*state *fahrenheit}]]
       [ui/gap {:width 5}]
-      [ui/valign {:position 0.5}
+      [ui/align {:y :center}
        [ui/label "Fahrenheit"]]]]]])

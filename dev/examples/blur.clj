@@ -13,7 +13,7 @@
    [ui/vscrollbar
     [ui/image {:scale :fit} "dev/images/blur.webp"]]
     
-   [ui/valign {:position 0}
+   [ui/align {:y :top}
     [ui/column
      [ui/backdrop {:filter (blur 30)}
       [ui/rect {:paint (paint/fill 0x20FFFFFF)}

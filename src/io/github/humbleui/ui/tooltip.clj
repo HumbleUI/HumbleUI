@@ -50,14 +50,13 @@
    (map->RelativeRect {})))
 
 (defn tooltip-ctor [opts child]
-  [valign {:position 0}
-   [halign {:position 0}
-    [hoverable
-     (fn [state]
-       (let [opts (cond-> opts
-                    true 
-                    (clojure.set/rename-keys {:tip :relative})
+  [align {:x :left :y :top}
+   [hoverable
+    (fn [state]
+      (let [opts (cond-> opts
+                   true 
+                   (clojure.set/rename-keys {:tip :relative})
                     
-                    (not (:hovered state))
-                    (assoc :relative [gap]))]
-         [relative-rect-ctor opts child]))]]])
+                   (not (:hovered state))
+                   (assoc :relative [gap]))]
+        [relative-rect-ctor opts child]))]])

@@ -39,7 +39,7 @@
           (fn [state]
             (let [checkbox-size (checkbox-size *ctx*)]
               [row
-               [valign {:position 0.5}
+               [align {:y :center}
                 [size {:width checkbox-size, :height checkbox-size}
                  [svg @(checkbox-states [(cond
                                            (= :mixed @*value) :mixed
@@ -47,5 +47,5 @@
                                            :else              false)
                                          (boolean (:pressed state))])]]]
                [gap {:width (/ checkbox-size 3)}]
-               [valign {:position 0.5}
+               [align {:y :center}
                 child]]))]))})))
