@@ -2,7 +2,12 @@
   (:require
     [clojure.string :as str]
     [clojure.test :as test :refer [deftest is are testing]]
-    [io.github.humbleui.ui.text-field :as text-field :refer [edit]]))
+    [io.github.humbleui.ui :as ui]))
+
+@ui/text-field
+
+(def edit
+  ui/edit)
 
 (defn- parse [s]
   {:text (str/replace s #"[\[\]\|]" "")
