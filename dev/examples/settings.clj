@@ -9,7 +9,7 @@
   [ui/row
    [ui/align {:y :center}
     [ui/label name]]
-   ^{:stretch 1} [ui/gap]
+   ^{:stretch 1} [ui/gap {:width 20}]
    [ui/switch {:*value signal}]])
 
 (ui/defcomp ui []
@@ -20,17 +20,19 @@
         fill-delimiter (paint/fill 0xFFE7E7E7)
         delimeter      [ui/rect {:paint fill-delimiter}
                         [ui/gap {:height 1}]]]
-    [ui/padding {:padding 20}
-     [ui/align {:y :top}
-      [ui/rounded-rect {:radius 6, :paint fill-bg}
-       [ui/rounded-rect {:radius 6, :paint stroke-bg}
-        [ui/padding {:padding padding-inner}
-         [ui/column {:gap padding-inner}
-          (interpose delimeter
-            (list
-              [setting "Always on top" util/*floating?]
-              [setting "Frame paint time" debug/*paint?]
-              [setting "Frame pacing" debug/*pacing?]
-              [setting "Event handling time" debug/*events?]
-              [setting "Outlines" debug/*outlines?]
-              [setting "Continuous render" debug/*continuous-render?]))]]]]]]))
+    [ui/align {:y :center}
+     [ui/vscrollbar
+      [ui/align {:x :center}
+       [ui/padding {:padding 20}
+        [ui/rounded-rect {:radius 6, :paint fill-bg}
+         [ui/rounded-rect {:radius 6, :paint stroke-bg}
+          [ui/padding {:padding padding-inner}
+           [ui/column {:gap padding-inner}
+            (interpose delimeter
+              (list
+                [setting "Always on top" util/*floating?]
+                [setting "Frame paint time" debug/*paint?]
+                [setting "Frame pacing" debug/*pacing?]
+                [setting "Event handling time" debug/*events?]
+                [setting "Outlines" debug/*outlines?]
+                [setting "Continuous render" debug/*continuous-render?]))]]]]]]]]))

@@ -18,60 +18,61 @@
                       :vertical height}
                      [ui/label text]]]
           [ui/hoverable {:*state *state}
-           (if (= :hovered @*state)
+           (if (:hovered @*state)
              [ui/rect {:paint (paint/fill 0xFFCFE8FC)} label]
              label)]))))))
 
 (ui/defcomp ui []
   [ui/align {:x :center}
-   [ui/row {:gap 10}
-    ;; 100 elements
-    [ui/vscrollbar
-     [ui/column
-      (for [i (range 0 100)]
-        [label i])]]
-    
-    ;; 100 elements, no scrollbar
-    [ui/vscroll
-     [ui/column
-      (for [i (range 0 100)]
-        [label i])]]
-        
-    ;; 50 elements
-    [ui/padding {:vertical 50}
+   [ui/padding {:padding 20}
+    [ui/row {:gap 10}
+     ;; 100 elements
      [ui/vscrollbar
       [ui/column
-       (for [i (range 0 50)]
-         [label i])]]]
-        
-    ;; 10 elements
-    [ui/vscrollbar
-     [ui/column
-      (for [i (range 0 10)]
-        [label i])]]
-        
-    ;; variable height
-    [ui/vscrollbar
-     [ui/column
-      (for [i (range 0 10)]
-        [label (+ 10 (* i 2)) i])]]
+       (for [i (range 0 100)]
+         [label i])]]
     
-    ;; nested
-    [ui/vscrollbar
-     [ui/column
-      (for [i (range 1 10)]
-        [ui/padding {:horizontal 20 :vertical 10}
-         [ui/label (str "Item " i)]])
+     ;; 100 elements, no scrollbar
+     [ui/vscroll
+      [ui/column
+       (for [i (range 0 100)]
+         [label i])]]
+        
+     ;; 50 elements
+     [ui/padding {:vertical 50}
+      [ui/vscrollbar
+       [ui/column
+        (for [i (range 0 50)]
+          [label i])]]]
+        
+     ;; 10 elements
+     [ui/vscrollbar
+      [ui/column
+       (for [i (range 0 10)]
+         [label i])]]
+        
+     ;; variable height
+     [ui/vscrollbar
+      [ui/column
+       (for [i (range 0 10)]
+         [label (+ 10 (* i 2)) i])]]
+    
+     ;; nested
+     [ui/vscrollbar
+      [ui/column
+       (for [i (range 1 10)]
+         [ui/padding {:horizontal 20 :vertical 10}
+          [ui/label (str "Item " i)]])
               
-      [ui/size {:height 130}
-       [ui/padding {:bottom 12}
-        [ui/rect {:paint (paint/stroke 0xFF000000 1)}
-         [ui/vscrollbar
-          [ui/column
-           (for [ch (map str "ABCDEFGHIJKLMN")]
-             [ui/padding {:horizontal 20 :vertical 10}
-              [ui/label (str "Nested " ch)]])]]]]]
+       [ui/size {:height 130}
+        [ui/padding {:bottom 12}
+         [ui/rect {:paint (paint/stroke 0xFF000000 1)}
+          [ui/vscrollbar
+           [ui/column
+            (for [ch (map str "ABCDEFGHIJKLMN")]
+              [ui/padding {:horizontal 20 :vertical 10}
+               [ui/label (str "Nested " ch)]])]]]]]
 
-      (for [i (range 10 20)]
-        [ui/padding {:horizontal 20 :vertical 10}
-         [ui/label (str "Item " i)]])]]]])
+       (for [i (range 10 20)]
+         [ui/padding {:horizontal 20 :vertical 10}
+          [ui/label (str "Item " i)]])]]]]])

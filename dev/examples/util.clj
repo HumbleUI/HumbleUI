@@ -90,20 +90,23 @@
     (set-floating! @*window new)))
 
 (defmacro table [& rows]
-  `[ui/padding {:padding 10}
-    [ui/grid {:cols 2}
-     ~@(for [[name row] (partition 2 rows)
-             :let [left ['ui/padding {:padding 11}
-                         ['ui/align {:x :left :y :top}
-                          row]]
-                   right ['ui/padding {:padding 11}
-                          ['ui/column {:gap (* 9 1.2)}
-                           ['ui/paragraph {:font '(:font-bold ui/*ctx*)} name]
-                           (cons 'list
-                             (-> (with-out-str
-                                   (binding [pprint/*print-right-margin* 40]
-                                     (pprint/pprint row)))
-                               (str/split #"\n")
-                               (->> (map #(vector 'ui/label {:font '(:font-mono ui/*ctx*)} %)))))]]]
-             cell [left right]]
-         cell)]])
+  `[ui/align {:y :center}
+    [ui/vscrollbar
+     [ui/align {:x :center}
+      [ui/padding {:padding 20}
+       [ui/grid {:cols 2}
+        ~@(for [[name row] (partition 2 rows)
+                :let [left ['ui/padding {:padding 11}
+                            ['ui/align {:x :left :y :top}
+                             row]]
+                      right ['ui/padding {:padding 11}
+                             ['ui/column {:gap (* 9 1.2)}
+                              ['ui/paragraph {:font '(:font-bold ui/*ctx*)} name]
+                              (cons 'list
+                                (-> (with-out-str
+                                      (binding [pprint/*print-right-margin* 40]
+                                        (pprint/pprint row)))
+                                  (str/split #"\n")
+                                  (->> (map #(vector 'ui/label {:font '(:font-mono ui/*ctx*)} %)))))]]]
+                cell [left right]]
+            cell)]]]]])

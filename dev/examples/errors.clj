@@ -4,5 +4,4 @@
 
 (defn ui []
   [ui/center
-   [ui/column
-    (str (/ 1 0))]])
+   [ui/label (/ 1 0)]])

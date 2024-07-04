@@ -23,22 +23,25 @@
         stroke-bg       (paint/stroke 0xFFE0E0E0 (* 0.5 scale))
         fill-delimiter  (paint/fill 0xFFE7E7E7)
         font            (font/make-with-cap-height face-ui (* 20 scale))]
-    [ui/padding {:padding 20}
-     [ui/align {:y :top}
-      [ui/rounded-rect {:radius 6, :paint fill-bg}
-       [ui/rounded-rect {:radius 6, :paint stroke-bg}
-        [ui/padding {:padding padding-inner}
-         [ui/column {:gap padding-inner}
-          [ui/with-context {:font-ui font}
-           [ui/row
-            [ui/align {:y :center}
-             [ui/label "First state"]]
-            ^{:stretch 1} [ui/gap]
-            [ui/switch {:*value *state-first}]]]
-          [ui/rect {:paint fill-delimiter}
-           [ui/gap {:height 1}]]
-          [ui/row
-           [ui/align {:y :center}
-            [ui/label "Second state"]]
-           ^{:stretch 1} [ui/gap]
-           [ui/switch {:*value *state-second}]]]]]]]]))
+    (fn []
+      [ui/align {:y :center}
+       [ui/vscrollbar
+        [ui/align {:x :center}
+         [ui/padding {:padding 20}
+          [ui/rounded-rect {:radius 6, :paint fill-bg}
+           [ui/rounded-rect {:radius 6, :paint stroke-bg}
+            [ui/padding {:padding padding-inner}
+             [ui/column {:gap padding-inner}
+              [ui/with-context {:font-ui font}
+               [ui/row
+                [ui/align {:y :center}
+                 [ui/label "First state"]]
+                ^{:stretch 1} [ui/gap {:width 20}]
+                [ui/switch {:*value *state-first}]]]
+              [ui/rect {:paint fill-delimiter}
+               [ui/gap {:height 1}]]
+              [ui/row
+               [ui/align {:y :center}
+                [ui/label "Second state"]]
+               ^{:stretch 1} [ui/gap {:width 20}]
+               [ui/switch {:*value *state-second}]]]]]]]]]])))

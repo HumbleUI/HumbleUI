@@ -369,17 +369,15 @@
         font-ui          (font/make-with-size typeface-300 (* 24 scale))
         font-placeholder (font/make-with-size typeface-300-italic (* 24 scale))]
     (fn []
-      [ui/focus-controller
-       
-       [ui/with-context
-        {:font-ui                         font-ui
-         :hui.text-field/font-placeholder font-placeholder
-         :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
-        
-        [ui/rect {:paint paint-bg}
-         [ui/vscrollbar
-          [ui/align {:x :center}
-           [ui/padding {:vertical 30}
+      [ui/vscrollbar
+       [ui/align {:x :center}
+        [ui/padding {:padding 20}
+         [ui/focus-controller
+          [ui/with-context
+           {:font-ui                         font-ui
+            :hui.text-field/font-placeholder font-placeholder
+            :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
+           [ui/rect {:paint paint-bg}
             [ui/size {:width #(core/clamp (:width %) 230 550)}
              [ui/column
               [title]

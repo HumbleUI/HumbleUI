@@ -48,28 +48,30 @@
       (let [{:keys [currencies
                     sort-col
                     sort-dir]} @*state]
-        [ui/vscrollbar
-         [ui/align {:x :center}
-          [ui/grid {:cols (count header)
-                    :rows (inc (count currencies))}
-           (concat
-             (for [[th i] (core/zip header (range))]
-               [ui/clickable
-                {:on-click (on-click i)}
-                [ui/padding {:padding 10}
-                 [ui/with-context {:font-ui font-bold}
-                  [ui/reserve-width
-                   {:probes [[ui/label (str th " ⏶")]
-                             [ui/label (str th " ⏷")]]}
-                   [ui/align {:x :left}
-                    [ui/label
-                     (str th
-                       (case (when (= i sort-col)
-                               sort-dir)
-                         :asc  " ⏶"
-                         :desc " ⏷"
-                         nil   ""))]]]]]])
-             (for [row currencies
-                   s   row]
-               [ui/padding {:padding 10}
-                [ui/label s]]))]]]))))
+        [ui/align {:y :center}
+         [ui/vscrollbar
+          [ui/align {:x :center}
+           [ui/padding {:padding 20}
+            [ui/grid {:cols (count header)
+                      :rows (inc (count currencies))}
+             (concat
+               (for [[th i] (core/zip header (range))]
+                 [ui/clickable
+                  {:on-click (on-click i)}
+                  [ui/padding {:padding 10}
+                   [ui/with-context {:font-ui font-bold}
+                    [ui/reserve-width
+                     {:probes [[ui/label (str th " ⏶")]
+                               [ui/label (str th " ⏷")]]}
+                     [ui/align {:x :left}
+                      [ui/label
+                       (str th
+                         (case (when (= i sort-col)
+                                 sort-dir)
+                           :asc  " ⏶"
+                           :desc " ⏷"
+                           nil   ""))]]]]]])
+               (for [row currencies
+                     s   row]
+                 [ui/padding {:padding 10}
+                  [ui/label s]]))]]]]]))))

@@ -13,19 +13,22 @@
    child])
 
 (defn ui []
-  [ui/center
-   [ui/grid {:cols 4}
-    (for [anchor [:top-left
-                  :top-right
-                  :bottom-left
-                  :bottom-right]
-          shackle [:top-left
-                   :top-right
-                   :bottom-left
-                   :bottom-right]]
-      [ui/padding {:padding 20}
-       [tooltip 
-        {:shackle shackle
-         :anchor  anchor
-         :tip     (name anchor)}
-        [ui/label (name shackle)]]])]])
+  [ui/align {:y :center}
+   [ui/vscrollbar
+    [ui/align {:x :center}
+     [ui/padding {:padding 20}
+      [ui/grid {:cols 4}
+       (for [anchor [:top-left
+                     :top-right
+                     :bottom-left
+                     :bottom-right]
+             shackle [:top-left
+                      :top-right
+                      :bottom-left
+                      :bottom-right]]
+         [ui/padding {:padding 20}
+          [tooltip 
+           {:shackle shackle
+            :anchor  anchor
+            :tip     (name anchor)}
+           [ui/label (name shackle)]]])]]]]])

@@ -143,10 +143,11 @@
          [ui/column
           (for [[section examples] examples]
             (list
+              [ui/gap {:height 10}]
               [example-header section]
               (for [[name _] (sort-by first examples)]
-                [example-label name])
-              [ui/gap {:height 10}]))]]
+                [example-label name])))
+          [ui/gap {:height 10}]]]
     
         [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
          [ui/gap {:width 1}]]
@@ -164,9 +165,6 @@
 (reset! *app
   (ui/default-theme {}
     (ui/make [app-wrapper])))
-
-; (defn before-ns-unload []
-;   (reset! *app nil))
 
 (defn maybe-save-window-rect [window event]
   (when (#{:window-move :window-resize} (:event event))
@@ -194,15 +192,17 @@
   (ui/start-app!
     (let [screen (first (app/screens))
           rect   (restore-window-rect screen)
-          opts   {:title    "Humble 🐝 UI"
-                  :mac-icon "dev/images/icon.icns"
-                  :screen   (:id screen)
-                  :width    800
-                  :height   800
-                  :x        :center
-                  :y        :center
-                  :on-event #'maybe-save-window-rect}
-          window (ui/window (merge opts rect) *app)]
+          opts   (merge
+                   {:title    "Humble 🐝 UI"
+                    :mac-icon "dev/images/icon.icns"
+                    :screen   (:id screen)
+                    :width    800
+                    :height   800
+                    :x        :center
+                    :y        :center
+                    :on-event #'maybe-save-window-rect}
+                   rect)
+          window (ui/window opts *app)]
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
         (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))

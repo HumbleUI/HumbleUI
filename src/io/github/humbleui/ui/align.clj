@@ -12,17 +12,27 @@
           _              (assert (or (nil? child-y) (number? child-y) (#{:top :center :bottom} child-y)) (str ":child-y, expected number or :top/:center/:bottom, got: " (pr-str child-y)))
           _              (assert (or x y) (str "Expected one of: :x, :y, got:" (pr-str opts)))
           x              (condp = x
-                           :left 0
+                           :left   0
                            :center 0.5
-                           :right 1
+                           :right  1
                            x)
           y              (condp = y
-                           :top 0
+                           :top    0
                            :center 0.5
                            :bottom 1
                            y)
-          child-x        (or child-x x)
-          child-y        (or child-y y)
+          child-x        (condp = child-x
+                           nil     x
+                           :left   0
+                           :center 0.5
+                           :right  1
+                           child-x)
+          child-y        (condp = child-y
+                           nil     y
+                           :top    0
+                           :center 0.5
+                           :bottom 1
+                           child-y)
           child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
           left           (when x
                            (+ (:x rect)

@@ -23,8 +23,11 @@
 (ui/defcomp ui []
   (ui/with [*timer (use-timer)]
     (fn []
-      [ui/center
-       [ui/column {:gap 10}
-        [static]
-        [dynamic-comp *timer]
-        [dynamic-label *timer]]])))
+      [ui/align {:y :center}
+       [ui/vscrollbar
+        [ui/align {:x :center}
+         [ui/padding {:padding 20}
+          [ui/column {:gap 10}
+           [static]
+           [dynamic-comp *timer]
+           [dynamic-label *timer]]]]]])))

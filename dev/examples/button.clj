@@ -111,56 +111,59 @@
      [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Inset shadow"]]]])
 
 (ui/defcomp ui []
-  [ui/center
-   [ui/column {:gap (:leading ui/*ctx*)}
+  [ui/align {:y :center}
+   [ui/vscrollbar
+    [ui/align {:x :center}
+     [ui/padding {:padding 20}
+      [ui/column {:gap (:leading ui/*ctx*)}
         
-    [ui/align {:x :left}
-     [ui/label "Clicks: " *clicks]]
+       [ui/align {:x :left}
+        [ui/label "Clicks: " *clicks]]
         
-    [ui/align {:x :left}
-     [ui/row {:gap 10}
-      [ui/button {:on-click (fn [_] (swap! *clicks inc))}
-       "Increment"]
-      [ui/button {:on-click (fn [_] (reset! *clicks 0))}
-       "Reset"]]]
+       [ui/align {:x :left}
+        [ui/row {:gap 10}
+         [ui/button {:on-click (fn [_] (swap! *clicks inc))}
+          "Increment"]
+         [ui/button {:on-click (fn [_] (reset! *clicks 0))}
+          "Reset"]]]
     
-    [ui/align {:x :left}
-     [with-shadow]]
+       [ui/align {:x :left}
+        [with-shadow]]
           
-    [ui/align {:x :left}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
-      [ui/row {:gap 5}
-       [ui/size {:width 14, :height 14}
-        [ui/image "dev/images/add.png"]]
-       [ui/align {:y :center}
-        [ui/label "With PNG icon"]]]]]
+       [ui/align {:x :left}
+        [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/row {:gap 5}
+          [ui/size {:width 14, :height 14}
+           [ui/image "dev/images/add.png"]]
+          [ui/align {:y :center}
+           [ui/label "With PNG icon"]]]]]
 
-    [ui/align {:x :left}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
-      [ui/row {:gap 5}
-       [ui/size {:width 14, :height 14}
-        [ui/svg "dev/images/add.svg"]]
-       [ui/align {:y :center}
-        [ui/label "With SVG icon"]]]]]
+       [ui/align {:x :left}
+        [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/row {:gap 5}
+          [ui/size {:width 14, :height 14}
+           [ui/svg "dev/images/add.svg"]]
+          [ui/align {:y :center}
+           [ui/label "With SVG icon"]]]]]
                     
-    [ui/align {:x :left}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
-      [ui/label "Dynamic label: " *clicks]]]
+       [ui/align {:x :left}
+        [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/label "Dynamic label: " *clicks]]]
         
-    [ui/align {:x :left}
-     [external-state]]
+       [ui/align {:x :left}
+        [external-state]]
         
-    [ui/align {:x :left}
-     [nested-bubble]]
+       [ui/align {:x :left}
+        [nested-bubble]]
         
-    [ui/align {:x :left}
-     [nested-capture]]
+       [ui/align {:x :left}
+        [nested-capture]]
         
-    [ui/align {:x :left}
-     [toggle]]
+       [ui/align {:x :left}
+        [toggle]]
         
-    [ui/align {:x :left}
-     [radio]]
+       [ui/align {:x :left}
+        [radio]]
     
-    [ui/align {:x :left}
-     [custom]]]])
+       [ui/align {:x :left}
+        [custom]]]]]]])

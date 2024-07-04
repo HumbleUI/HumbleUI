@@ -53,21 +53,24 @@
 ; F = C * (9/5) + 32
 
 (defn ui []
-  [ui/focus-controller
-   [ui/center
-    [ui/with-context
-     {:hui.text-field/padding-top    10
-      :hui.text-field/padding-bottom 10
-      :hui.text-field/padding-left   5
-      :hui.text-field/padding-right  5}
-     [ui/row
-      [ui/size {:width 50}
-       [ui/text-field {:focused (core/now), :*state *celsius}]]
-      [ui/gap {:width 5}]
-      [ui/align {:y :center}
-       [ui/label "Celsius = "]]
-      [ui/size {:width 50}
-       [ui/text-field {:*state *fahrenheit}]]
-      [ui/gap {:width 5}]
-      [ui/align {:y :center}
-       [ui/label "Fahrenheit"]]]]]])
+  [ui/align {:y :center}
+   [ui/vscrollbar
+    [ui/align {:x :center}
+     [ui/padding {:padding 20}
+      [ui/focus-controller
+       [ui/with-context
+        {:hui.text-field/padding-top    10
+         :hui.text-field/padding-bottom 10
+         :hui.text-field/padding-left   5
+         :hui.text-field/padding-right  5}
+        [ui/row
+         [ui/size {:width 50}
+          [ui/text-field {:focused (core/now), :*state *celsius}]]
+         [ui/gap {:width 5}]
+         [ui/align {:y :center}
+          [ui/label "Celsius = "]]
+         [ui/size {:width 50}
+          [ui/text-field {:*state *fahrenheit}]]
+         [ui/gap {:width 5}]
+         [ui/align {:y :center}
+          [ui/label "Fahrenheit"]]]]]]]]])

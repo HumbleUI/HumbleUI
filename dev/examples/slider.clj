@@ -86,56 +86,57 @@
         [ui/label *value " / " max]]]]]))
 
 (ui/defcomp ui []
-  [ui/padding {:padding 20}
-   [ui/align {:y :center}
-    (let [*state0 (signal/signal 500)]
-      [ui/column {:gap 10}
-       [with-slider 
-        [ui/slider
-         {:*value *state0
-          :max    1000}]]
+  (let [*state0 (signal/signal 500)]
+    [ui/align {:y :center}
+     [ui/vscrollbar
+      [ui/padding {:padding 20}
+       [ui/column {:gap 10}
+        [with-slider 
+         [ui/slider
+          {:*value *state0
+           :max    1000}]]
      
-       [with-slider 
-        [ui/slider
-         {:*value *state0
-          :max    1000
-          :thumb (map->SquareThumb {})}]]
+        [with-slider 
+         [ui/slider
+          {:*value *state0
+           :max    1000
+           :thumb (map->SquareThumb {})}]]
        
-       [with-slider 
-        [ui/slider
-         {:*value *state0
-          :max    1000
-          :thumb  [square-thumb]}]]
+        [with-slider 
+         [ui/slider
+          {:*value *state0
+           :max    1000
+           :thumb  [square-thumb]}]]
        
-       [with-slider 
-        [ui/slider
-         {:*value *state0
-          :max    1000
-          :thumb  [line-thumb]}]]
+        [with-slider 
+         [ui/slider
+          {:*value *state0
+           :max    1000
+           :thumb  [line-thumb]}]]
      
-       [with-slider 
-        [ui/slider
-         {:*value       *state0
-          :max          1000
-          :track-active (map->WideTrackLeft {})}]]
+        [with-slider 
+         [ui/slider
+          {:*value       *state0
+           :max          1000
+           :track-active (map->WideTrackLeft {})}]]
      
-       [with-slider 
-        [ui/slider
-         {:*value         *state0
-          :max            1000
-          :track-active   (map->WideTrackLeft {})
-          :track-inactive (map->WideTrackRight {})}]]
+        [with-slider 
+         [ui/slider
+          {:*value         *state0
+           :max            1000
+           :track-active   (map->WideTrackLeft {})
+           :track-inactive (map->WideTrackRight {})}]]
      
-       (let [*state1 (signal/signal 12)]
-         [with-slider 
-          [ui/slider
-           {:*value *state1
-            :min    -66
-            :max    66
-            :step   3}]])
+        (let [*state1 (signal/signal 12)]
+          [with-slider 
+           [ui/slider
+            {:*value *state1
+             :min    -66
+             :max    66
+             :step   3}]])
 
-       (let [*state2 (signal/signal 2)]
-         [with-slider 
-          [ui/slider
-           {:*value *state2
-            :max    10}]])])]])
+        (let [*state2 (signal/signal 2)]
+          [with-slider 
+           [ui/slider
+            {:*value *state2
+             :max    10}]])]]]]))

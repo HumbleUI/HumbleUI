@@ -25,17 +25,19 @@
   (signal/signal {:text ""}))
 
 (defn ui []
-  [ui/focus-controller
-   [ui/padding {:padding 10}
-    [ui/column {:gap 10}
-     [ui/with-context
-      {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
-       :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
-       :hui.text-field/cursor-width   2}
-      [ui/text-field {:focused (core/now)
-                      :*state *state
-                      :placeholder "Type here"}]]
-     [ui/label (str "\"" (:text @*state) "\"")]
-     ^{:stretch 1}
-     [ui/vscrollbar
-      [render-form @*state]]]]])
+  [ui/align {:y :top}
+   [ui/vscrollbar
+    [ui/padding {:padding 20}
+     [ui/focus-controller
+      [ui/column {:gap 10}
+       [ui/with-context
+        {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
+         :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
+         :hui.text-field/cursor-width   2}
+        [ui/text-field {:focused (core/now)
+                        :*state *state
+                        :placeholder "Type here"}]]
+       [ui/label (str "\"" (:text @*state) "\"")]
+       ^{:stretch 1}
+       [ui/vscrollbar
+        [render-form @*state]]]]]]])

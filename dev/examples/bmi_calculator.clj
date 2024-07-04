@@ -70,9 +70,10 @@
       [ui/label unit]]]]])
 
 (defn ui []
-  [ui/padding {:padding 20}
-   [ui/align {:y :center}
-    [ui/column {:gap 10}
-     [slider "Height" *height 100 250 "cm"]
-     [slider "Weight" *weight  30 150 "kg"]
-     [slider "BMI"    *bmi      5 150 ""]]]])
+  [ui/align {:y :center}
+   [ui/vscrollbar
+    [ui/padding {:padding 20}
+     [ui/column {:gap 10}
+      [slider "Height" *height 100 250 "cm"]
+      [slider "Weight" *weight  30 150 "kg"]
+      [slider "BMI"    *bmi      5 150 ""]]]]])

@@ -232,18 +232,20 @@
            (canvas/draw-double-rrect canvas srrect-1 srrect-2 fill)))))})
 
 (defn ui []
-  [ui/vscrollbar
-   [ui/align {:x :center}
-    [ui/grid {:cols 3}
-     (for [paint-kw [:paint-point :paint-points :paint-lines
-                     :paint-polygon :paint-line :paint-arc
-                     :paint-rect :paint-oval :paint-circle
-                     :paint-rrect :paint-drrect]]
-       [ui/padding {:padding 10}
-        [ui/column {:gap 10}
-         [ui/label (pr-str paint-kw)]
-         [ui/size {:width 250, :height 250}
-          [ui/canvas
-           {:on-paint
-            (fn [ctx ^Canvas canvas ^IPoint size]
-              (on-paint (paint-kw->fn paint-kw) ctx canvas size))}]]]])]]])
+  [ui/align {:y :center}
+   [ui/vscrollbar
+    [ui/align {:x :center}
+     [ui/padding {:padding 20}
+      [ui/grid {:cols 3} ;; TODO flow
+       (for [paint-kw [:paint-point :paint-points :paint-lines
+                       :paint-polygon :paint-line :paint-arc
+                       :paint-rect :paint-oval :paint-circle
+                       :paint-rrect :paint-drrect]]
+         [ui/padding {:padding 10}
+          [ui/column {:gap 10}
+           [ui/label (pr-str paint-kw)]
+           [ui/size {:width 250, :height 250}
+            [ui/canvas
+             {:on-paint
+              (fn [ctx ^Canvas canvas ^IPoint size]
+                (on-paint (paint-kw->fn paint-kw) ctx canvas size))}]]]])]]]]])

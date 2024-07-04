@@ -164,26 +164,25 @@
       [ui/label (format "%s: %s" name (.format decimal-format (double @(:*value opts))))]]]))
 
 (defn ui []
-  [ui/padding {:padding 20}
-   [ui/column {:gap 10}
+  [ui/column {:gap 10}
+   ^{:stretch 1}
+   [ui/row {:gap 10}
     ^{:stretch 1}
-    [ui/row {:gap 10}
-     ^{:stretch 1}
-     [ui/canvas {:on-paint (partial on-paint-shader effect-for-h @*h)}]
-     ^{:stretch 1}
-     [ui/canvas {:on-paint (partial on-paint-shader effect-for-l @*l)}]]
+    [ui/canvas {:on-paint (partial on-paint-shader effect-for-h @*h)}]
+    ^{:stretch 1}
+    [ui/canvas {:on-paint (partial on-paint-shader effect-for-l @*l)}]]
     
+   ^{:stretch 1}
+   [ui/row {:gap 10}
+     
     ^{:stretch 1}
-    [ui/row {:gap 10}
+    [ui/center
+     [ui/grid {:cols 3}
+      (row "Lightness" {:*value *l, :min 0.0, :max 1.0, :step  0.01})
+      (repeat 3 [ui/gap {:height 20}])
+      (row "Chroma" {:*value *c, :min 0.0, :max 0.35, :step 0.01})
+      (repeat 3 [ui/gap {:height 20}])
+      (row "Hue" {:*value *h, :min 0, :max 360, :step 1})]]
      
-     ^{:stretch 1}
-     [ui/center
-      [ui/grid {:cols 3}
-       (row "Lightness" {:*value *l, :min 0.0, :max 1.0, :step  0.01})
-       (repeat 3 [ui/gap {:height 20}])
-       (row "Chroma" {:*value *c, :min 0.0, :max 0.35, :step 0.01})
-       (repeat 3 [ui/gap {:height 20}])
-       (row "Hue" {:*value *h, :min 0, :max 360, :step 1})]]
-     
-     ^{:stretch 1}
-     [ui/canvas {:on-paint (partial on-paint-shader effect-for-c @*c)}]]]])
+    ^{:stretch 1}
+    [ui/canvas {:on-paint (partial on-paint-shader effect-for-c @*c)}]]])

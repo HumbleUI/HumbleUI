@@ -33,19 +33,22 @@
   (let [{:keys [face-ui scale]} ui/*ctx*
         font (font/make-with-cap-height face-ui (* 20 scale))]
     (fn []
-      [ui/center
-       [ui/column {:gap 10}
-        [ui/with-context {:font-ui font}
-         [ui/checkbox {:*value *state-group} [ui/label "Group state"]]]
-        [ui/checkbox {:*value *state-first} [ui/label "First state"]]
-        ;; on-change
-        ;; string label
-        [ui/checkbox
-         {:*value *state-second
-          :on-change
-          (fn [state-second]
-            (condp = [@*state-first state-second]
-              [true true]   (reset! *state-group true)
-              [false false] (reset! *state-group false)
-              #_else        (reset! *state-group :mixed)))}
-         "Second state"]]])))
+      [ui/align {:y :center}
+       [ui/vscrollbar
+        [ui/align {:x :center}
+         [ui/padding {:padding 20}
+          [ui/column {:gap 10}
+           [ui/with-context {:font-ui font}
+            [ui/checkbox {:*value *state-group} [ui/label "Group state"]]]
+           [ui/checkbox {:*value *state-first} [ui/label "First state"]]
+           ;; on-change
+           ;; string label
+           [ui/checkbox
+            {:*value *state-second
+             :on-change
+             (fn [state-second]
+               (condp = [@*state-first state-second]
+                 [true true]   (reset! *state-group true)
+                 [false false] (reset! *state-group false)
+                 #_else        (reset! *state-group :mixed)))}
+            "Second state"]]]]]])))

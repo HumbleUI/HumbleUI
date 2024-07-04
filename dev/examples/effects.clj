@@ -140,23 +140,26 @@
   (let [scale (:scale ui/*ctx*)
         font  (font/make-with-cap-height @util/*face-bold (* scale 10))]
     (fn []
-      [ui/center
-       [ui/column {:gap 10}
-        [button {}
-         [ui/label "Hover ripple"]]
+      [ui/align {:y :center}
+       [ui/vscrollbar
+        [ui/align {:x :center}
+         [ui/padding {:padding 20}
+          [ui/column {:gap 10}
+           [button {}
+            [ui/label "Hover ripple"]]
 
-        [ui/clip-rrect {:radii [10]}
-         [card {}
-          [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}
-           [ui/padding {:horizontal 30
-                        :vertical 20}
-            [ui/column
-             [ui/label {:font font} "Card title"]
-             [ui/gap {:height 20}]
-             [ui/label "Just some text here"]
-             [ui/gap {:height 10}]
-             [ui/label "to let you see and appreciate"]
-             [ui/gap {:height 10}]
-             [ui/label "how highlight gradient"]
-             [ui/gap {:height 10}]
-             [ui/label "works on this card."]]]]]]]])))
+           [ui/clip-rrect {:radii [10]}
+            [card {}
+             [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}
+              [ui/padding {:horizontal 30
+                           :vertical 20}
+               [ui/column
+                [ui/label {:font font} "Card title"]
+                [ui/gap {:height 20}]
+                [ui/label "Just some text here"]
+                [ui/gap {:height 10}]
+                [ui/label "to let you see and appreciate"]
+                [ui/gap {:height 10}]
+                [ui/label "how highlight gradient"]
+                [ui/gap {:height 10}]
+                [ui/label "works on this card."]]]]]]]]]]])))

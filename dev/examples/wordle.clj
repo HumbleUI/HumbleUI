@@ -175,7 +175,7 @@
         :stroke-dark-gray  stroke-dark-gray}
        [ui/key-listener {:on-key-down #(type! (:key %))}
         [ui/text-listener {:on-input #(type! (str/upper-case %))}
-         [ui/padding {:padding padding}
+         [ui/padding {:padding 20}
           [ui/column
            [ui/align {:x :center}
             [ui/clickable
