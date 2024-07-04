@@ -52,9 +52,13 @@
 ; TODO https://www.egui.rs/
 
 (def examples
-  [["Components"
+  [["Documented"
     [["Align" examples.align/ui]
-     ["Animation" examples.animation/ui]
+     ["Label" examples.label/ui]
+     ["Padding" examples.padding/ui]
+     ["Size" examples.size/ui]]]
+   ["Components"
+    [["Animation" examples.animation/ui]
      ["Backdrop" examples.backdrop/ui]
      ["Button" examples.button/ui]
      ["Canvas" examples.canvas/ui]
@@ -64,11 +68,8 @@
      ["Grid" examples.grid/ui]
      ["Image" examples.image/ui]
      ["Image Snapshot" examples.image-snapshot/ui]
-     ["Label" examples.label/ui]
-     ["Padding" examples.padding/ui]
      ["Paragraph" examples.paragraph/ui]
      ["Scroll" examples.scroll/ui]
-     ["Size" examples.size/ui]
      ["Slider" examples.slider/ui]
      ["Stack" examples.stack/ui]
      ["SVG" examples.svg/ui]
