@@ -99,6 +99,6 @@
                                       (binding [pprint/*print-right-margin* 40]
                                         (pprint/pprint row)))
                                   (str/split #"\n")
-                                  (->> (map #(vector 'ui/label {:font-family "Fira Code", :font-cap-height 8} %)))))]]]
+                                  (->> (map #(vector 'ui/label {:font-family "monospace", :font-cap-height 8} %)))))]]]
                 cell [left right]]
             cell)]]]]])

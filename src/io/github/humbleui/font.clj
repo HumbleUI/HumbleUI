@@ -58,7 +58,7 @@
 
 (defn get-font [opts]
   (let [typeface (typeface/typeface
-                   (core/checked-get opts :font-family string?)
+                   (core/checked-get opts :font-families #(and (coll? %) (every? string? %)))
                    opts)
         key      (core/merge-some {:typeface typeface}
                    (cond

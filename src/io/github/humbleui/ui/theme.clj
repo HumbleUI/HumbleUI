@@ -3,11 +3,11 @@
 (defn default-theme
   ([comp] (default-theme {} comp))
   ([opts comp]
-   (ui/load-typeface (io/resource "io/github/humbleui/fonts/Inter-Regular.ttf"))
-   (ui/load-typeface (io/resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
-   (ui/load-typeface (io/resource "io/github/humbleui/fonts/Inter-Italic.ttf"))
-   (ui/load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Regular.ttf"))
-   (ui/load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Bold.ttf"))
+   (load-typeface (io/resource "io/github/humbleui/fonts/Inter-Regular.ttf"))
+   (load-typeface (io/resource "io/github/humbleui/fonts/Inter-Bold.ttf"))
+   (load-typeface (io/resource "io/github/humbleui/fonts/Inter-Italic.ttf"))
+   (load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Regular.ttf"))
+   (load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Bold.ttf"))
 
    (dynamic ctx [scale (:scale ctx)]
      (let [cap-height (* scale 9) ; (:cap-height (font/metrics font-ui))
@@ -16,6 +16,9 @@
            fill-gray  (or (:fill-gray opts) (paint/fill 0xFF808080))
            theme      {:font-family     "Inter"
                        :font-cap-height 9
+                       :font-family-aliases
+                       {"sans-serif" "Inter"
+                        "monospace"  "Fira Code"}
                        
                        :leading        leading
                        :fill-text      fill-text

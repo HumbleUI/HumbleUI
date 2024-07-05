@@ -58,5 +58,11 @@
          [ui/label {:font-family "SF Pro Text, Inter"} "12345 Hamburgevons"]
          [ui/label {:font-family "Inter"} "12345 Hamburgevons"]]
         
+        "Alias font families"
+        [ui/with-font-family-aliases
+         {"default"    "Inter"
+          "sans-serif" "SF Pro Text, Segoe UI, default"}
+         [ui/label {:font-family "sans-serif"} "12345 Hamburgevons"]]
+        
         "Pass signals directly for fine-grained reactivity"
         [ui/label "Time: " *timer]))))

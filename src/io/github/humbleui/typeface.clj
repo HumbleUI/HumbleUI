@@ -165,10 +165,11 @@
 
 (defn typeface
   "Returns a cached version of a typeface by family name and style"
-  ([family]
-   (typeface family {}))
-  ([family style]
-   (assert (string? family) (str "family, expected: string?, got: " (pr-str family)))
+  ([families]
+   (typeface families {}))
+  ([families style]
+   (assert (and (coll? families) (every? string? families))
+     (str "families, expected: [string ...], got: " (pr-str families)))
    (assert
      (or 
        (nil? (:font-weight style))
@@ -177,14 +178,13 @@
      (str ":font-weight, expected one of: " (str/join "," (sort (keys weights))) " or number 0..1000, got: " (pr-str (:font-weight style))))
    (assert (or (nil? (:font-width style)) (widths (:font-width style))) (str ":font-width, expected one of: " (str/join "," (sort (keys widths))) ", got: " (pr-str (:font-width style))))
    (assert (or (nil? (:font-slant style)) (slants (:font-slant style))) (str ":font-slant, expected one of: " (str/join "," (keys slants)) ", got: " (pr-str (:font-slant style))))
-   (let [style    (core/merge-some
-                    {:font-weight 400
-                     :font-width  :normal
-                     :font-slant  :upright}
-                    (-> style
-                      (select-keys [:font-weight :font-width :font-slant])
-                      (update :font-weight weights (:font-weight style))))
-         families (str/split family #"\s*,\s*")]
+   (let [style (core/merge-some
+                 {:font-weight 400
+                  :font-width  :normal
+                  :font-slant  :upright}
+                 (-> style
+                   (select-keys [:font-weight :font-width :font-slant])
+                   (update :font-weight weights (:font-weight style))))]
      (loop [families families]
        (core/cond+
          (empty? families)
