@@ -10,19 +10,20 @@
   (paint/fill 0xFFB2D7FE))
 
 (ui/defcomp button-look [state child]
-  [clip-rrect {:radii [4]}
-   [rect {:paint (cond
-                   (and 
-                     (:selected state)
-                     (:pressed state)) button-bg-hovered
-                   (:selected state)   button-bg-pressed
-                   (:pressed state)    button-bg-pressed
-                   (:hovered state)    button-bg-hovered
-                   :else               button-bg)}
-    [padding {:horizontal (* 2 (:leading *ctx*))
-              :vertical   (:leading *ctx*)}
-     [center
-      child]]]])
+  (let [cap-height (cap-height)]
+    [clip-rrect {:radii [4]}
+     [rect {:paint (cond
+                     (and 
+                       (:selected state)
+                       (:pressed state)) button-bg-hovered
+                     (:selected state)   button-bg-pressed
+                     (:pressed state)    button-bg-pressed
+                     (:hovered state)    button-bg-hovered
+                     :else               button-bg)}
+      [padding {:horizontal (* 2 cap-height)
+                :vertical   cap-height}
+       [center
+        child]]]]))
 
 (ui/defcomp button-ctor
   ([child]

@@ -9,12 +9,10 @@
    [:mixed true]  (core/lazy-resource "ui/checkbox/mixed_pressed.svg")})
 
 (defn- checkbox-size [ctx]
-  (let [font       (get-font)
-        cap-height (:cap-height (font/metrics font))
-        extra      (-> cap-height (/ 8) math/ceil (* 4))] ;; half cap-height but increased so that it’s divisible by 4
-    (/
-      (+ cap-height extra)
-      (:scale ctx))))
+  (let [cap-height (cap-height)
+        scale      (scale)
+        extra      (-> cap-height (* scale) (/ 8) math/ceil (* 4) (/ scale))] ;; half cap-height but increased so that it’s divisible by 4
+    (+ cap-height extra)))
 
 (defn checkbox-ctor
   ([child]

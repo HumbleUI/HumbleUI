@@ -11,7 +11,6 @@
 
    (dynamic ctx [scale (:scale ctx)]
      (let [cap-height (* scale 9) ; (:cap-height (font/metrics font-ui))
-           leading    (or (:leading opts) (-> cap-height math/round (/ scale) float))
            fill-text  (or (:fill-text opts) (paint/fill 0xFF000000))
            fill-gray  (or (:fill-gray opts) (paint/fill 0xFF808080))
            theme      {:font-family     "Inter"
@@ -20,7 +19,6 @@
                        {"sans-serif" "Inter"
                         "monospace"  "Fira Code"}
                        
-                       :leading        leading
                        :fill-text      fill-text
                        :fill-gray      fill-gray
                          

@@ -115,7 +115,7 @@
    [ui/vscrollbar
     [ui/align {:x :center}
      [ui/padding {:padding 20}
-      [ui/column {:gap (:leading ui/*ctx*)}
+      [ui/column {:gap 10}
         
        [ui/align {:x :left}
         [ui/label "Clicks: " *clicks]]
@@ -126,6 +126,11 @@
           "Increment"]
          [ui/button {:on-click (fn [_] (reset! *clicks 0))}
           "Reset"]]]
+       
+       [ui/align {:x :left}
+        [ui/with-context {:font-cap-height 15}
+         [ui/button {:on-click (fn [_] (swap! *clicks + 2))}
+          "Big increment"]]]
     
        [ui/align {:x :left}
         [with-shadow]]

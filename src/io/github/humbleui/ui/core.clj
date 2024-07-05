@@ -83,6 +83,11 @@
 (defn scaled [x]
   (when x
     (* x (:scale *ctx*))))
+
+(declare get-font)
+
+(defn cap-height []
+  (-> (get-font) font/metrics :cap-height (/ (scale))))
   
 (declare map->FnNode)
 
