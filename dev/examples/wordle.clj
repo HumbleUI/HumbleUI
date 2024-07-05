@@ -74,7 +74,7 @@
       {(str letter) (color word letter idx)})))
 
 (defn field []
-  (let [{:keys [font-large stroke-light-gray stroke-dark-gray fill-green fill-yellow fill-dark-gray fill-white fill-black]} ui/*ctx*
+  (let [{:keys [stroke-light-gray stroke-dark-gray fill-green fill-yellow fill-dark-gray fill-white fill-black]} ui/*ctx*
         {:keys [word guesses typing] :as state} @*state
         fill (fn [letter idx]
                (case (color word letter idx)
@@ -88,7 +88,7 @@
           [ui/rect {:paint (fill letter idx)}
            [ui/size {:width 50, :height 50}
             [ui/center
-             [ui/label {:font font-large :paint fill-white} letter]]]])])
+             [ui/label {:font-cap-height 18, :font-weight :bold, :paint fill-white} letter]]]])])
      (when-not (won? state)
        (let [colors (colors word guesses)]        
          (list
@@ -112,7 +112,7 @@
                                             
                                  :else
                                  fill-black)]
-                     [ui/label {:font font-large :paint color} letter])]]]
+                     [ui/label {:font-cap-height 18, :font-weight :bold, :paint color} letter])]]]
                 [ui/rect {:paint stroke-light-gray}
                  [ui/gap {:width 50 :height 50}]]))])))]))
 
@@ -122,7 +122,7 @@
   ([{:keys [width code]} char]
    [ui/clickable
     {:on-click (fn [_] (type! code))}
-    (let [{:keys [font-small fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ui/*ctx*
+    (let [{:keys [fill-green fill-yellow fill-dark-gray fill-light-gray fill-black fill-white]} ui/*ctx*
           color (get (:colors ui/*ctx*) char)]
       [ui/rect {:paint (case color
                          :green  fill-green
@@ -131,7 +131,8 @@
                          nil     fill-light-gray)}
        [ui/size {:width width, :height 35}
         [ui/center
-         [ui/label {:font font-small :paint (if (some? color) fill-white fill-black)} char]]]])]))
+         [ui/label {:font-weight :bold
+                    :paint (if (some? color) fill-white fill-black)} char]]]])]))
   
 (defn keyboard []
   (let [{:keys [word guesses]} @*state]
@@ -151,8 +152,6 @@
 
 (defn ui []
   (let [scale             (:scale ui/*ctx*)
-        font-large        (font/make-with-cap-height @util/*face-bold (float (* scale 18)))
-        font-small        (font/make-with-cap-height @util/*face-bold (float (* scale 9)))
         fill-black        (paint/fill 0xFF000000)
         fill-white        (paint/fill 0xFFFFFFFF)
         fill-light-gray   (paint/fill 0xFFD4D6DA)
@@ -163,9 +162,7 @@
         stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))]
     (fn []
       [ui/with-context
-       {:font-large        font-large
-        :font-small        font-small
-        :fill-white        fill-white
+       {:fill-white        fill-white
         :fill-black        fill-black
         :fill-light-gray   fill-light-gray
         :fill-dark-gray    fill-dark-gray
@@ -181,7 +178,7 @@
             [ui/clickable
              {:on-click (fn [_] (reset! *state (empty-state)))}
              [ui/padding {:padding 10}
-              [ui/label {:font font-small :paint fill-black} "↻ Reset"]]]]
+              [ui/label {:font-weight :bold, :paint fill-black} "↻ Reset"]]]]
            [ui/gap {:height padding}]
            ^{:stretch 1} [ui/gap]
            [ui/align {:x :center}

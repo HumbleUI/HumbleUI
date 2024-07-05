@@ -113,11 +113,10 @@
    (fn [state]
      (let [color' (if (:pressed state)
                     (bit-or 0x80000000 (bit-and 0xFFFFFF color))
-                    color)
-           font-btn (:font-btn ui/*ctx*)]
+                    color)]
        [ui/rect {:paint (paint/fill color')}
         [ui/center
-         [ui/label {:font font-btn :features ["tnum"]} text]]]))])
+         [ui/label {:features ["tnum"]} text]]]))])
 
 (def color-digit
   0xFF797979)
@@ -134,23 +133,12 @@
 (def padding
   1)
 
-(defn scale-font [^Font font cap-height']
-  (let [size       (.getSize font)
-        cap-height (-> font .getMetrics .getCapHeight)]
-    (-> size (/ cap-height) (* cap-height'))))
-
 (defn calc-ui [bounds]
-  (let [{:keys [face-ui font-ui scale]} ui/*ctx*
-        height         (:height bounds)
-        face-ui        ^Typeface face-ui
+  (let [height         (:height bounds)
         btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
-        cap-height'    (-> btn-height (/ 3) (* scale) (Math/floor))
+        cap-height'    (-> btn-height (/ 3) (Math/floor))
         display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
-        cap-height''   (-> display-height (/ 3) (* scale) (Math/floor))
-        size'          (scale-font font-ui cap-height')
-        size''         (scale-font font-ui cap-height'')
-        font-display   (Font. face-ui (float size''))
-        font-btn       (Font. face-ui (float size'))]
+        cap-height''   (-> display-height (/ 3) (Math/floor))]
     {:should-setup?
      (fn [bounds']
        (not= (:height bounds) (:height bounds')))
@@ -158,8 +146,8 @@
      (fn [bounds]
        (let [state @*state]
          [ui/with-context
-          {:font-btn  font-btn
-           :fill-text (paint/fill 0xFFEBEBEB)}
+          {:font-cap-height cap-height'
+           :fill-text       (paint/fill 0xFFEBEBEB)}
           [ui/rect {:paint (paint/fill color-display)}
            [ui/padding {:padding padding}
           
@@ -169,8 +157,8 @@
              [ui/rect {:paint (paint/fill 0xFF404040)}
               [ui/padding {:horizontal #(/ (:height %) 3)}
                [ui/align {:x :right :y :center}
-                 (let [val (get state (:screen state))]
-                   [ui/label {:font font-display :features ["tnum"]} val])]]]
+                (let [val (get state (:screen state))]
+                  [ui/label {:font-cap-height cap-height'' :features ["tnum"]} val])]]]
           
              ;; ops row
              ^{:stretch 2}

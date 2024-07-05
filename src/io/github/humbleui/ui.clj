@@ -14,6 +14,7 @@
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window])
   (:import
+    [java.io File]
     [io.github.humbleui.jwm Window]
     [io.github.humbleui.skija Canvas Color Data Font FontMetrics Paint TextLine]
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
@@ -27,6 +28,43 @@
 (load "/io/github/humbleui/ui/dynamic")
 (load "/io/github/humbleui/ui/with_context")
 (load "/io/github/humbleui/ui/size")
+
+(core/import-vars typeface/load-typeface)
+(core/import-vars typeface/load-typefaces)
+(core/import-vars typeface/typeface)
+
+(defn get-font
+  "Get cached instance of a font. Required options:
+   
+     :font-family     <string> - Font families, comma-separated
+   
+   and one of:
+   
+     :font-cap-height <number> - Cap height in dip
+     :font-size       <number> - Font size in dip
+   
+   Optional opts:
+
+     :font-weight     <number>  - 0...1000, default 400
+     :font-width      <keyword> - :ultra-condensed | :extra-condensed | :condensed | :semi-condensed | :normal | :semi-expanded | :expanded | :extra-expanded | :ultra-expanded
+     :font-slant      <keyword> - :upright | :italic | :oblique
+   "
+  ([]
+   (get-font {}))
+  ([opts]
+   (let [opts (core/merge-some
+                {:font-family     (:font-family *ctx*)
+                 :font-size       (:font-size *ctx*)
+                 :font-cap-height (:font-cap-height *ctx*)
+                 :font-weight     (:font-weight *ctx*)
+                 :font-width      (:font-width *ctx*)
+                 :font-slant      (:font-slant *ctx*)}
+                opts)
+         opts (-> opts
+                ; (update :family #(or (get (:font-family-aliases *ctx*) %) %))
+                (update :font-size scaled)
+                (update :font-cap-height scaled))]
+     (font/get-font opts))))
 
 (def *loaded
   (atom #{}))

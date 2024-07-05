@@ -46,7 +46,8 @@
 (defn on-paint [ctx ^Canvas canvas ^IPoint size]
   (log-event {:event :frame})
   
-  (let [{:keys [font-ui fill-text leading scale]} ctx
+  (let [font-ui (ui/get-font)
+        {:keys [fill-text leading scale]} ctx
         {:keys [width height]} size]
     
     ;; paths

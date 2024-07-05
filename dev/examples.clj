@@ -97,12 +97,9 @@
 (util/def-durable-signal *example
   (-> examples first second first first))
 
-(core/defn-memoize-last font-bold [size]
-  (font/make-with-cap-height @util/*face-bold size))
-
 (ui/defcomp example-header [name]
   [ui/padding {:horizontal 20 :vertical 10}
-   [ui/label {:font (:font-bold ui/*ctx*)} name]])
+   [ui/label {:font-weight :bold} name]])
 
 (ui/defcomp example-label [name]
   (let [fill-selected (paint/fill 0xFFB2D7FE)
@@ -134,30 +131,25 @@
 (ui/defcomp app-impl []
   (let [examples-map (->> examples
                        (mapcat second)
-                       (into {}))
-        font-mono    (font/make-with-cap-height @util/*face-mono (ui/scaled 8.5))
-        font-bold    (font/make-with-cap-height @util/*face-bold (ui/scaled 10))]
+                       (into {}))]
     (fn []
-      [ui/with-context
-       {:font-mono font-mono
-        :font-bold font-bold}
-       [ui/row
-        [ui/vscrollbar
-         [ui/column
-          (for [[section examples] examples]
-            (list
-              [ui/gap {:height 10}]
-              [example-header section]
-              (for [[name _] (sort-by first examples)]
-                [example-label name])))
-          [ui/gap {:height 10}]]]
+      [ui/row
+       [ui/vscrollbar
+        [ui/column
+         (for [[section examples] examples]
+           (list
+             [ui/gap {:height 10}]
+             [example-header section]
+             (for [[name _] (sort-by first examples)]
+               [example-label name])))
+         [ui/gap {:height 10}]]]
     
-        [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
-         [ui/gap {:width 1}]]
+       [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
+        [ui/gap {:width 1}]]
     
-        ^{:stretch 1}
-        [ui/clip
-         [(examples-map @*example)]]]])))
+       ^{:stretch 1}
+       [ui/clip
+        [(examples-map @*example)]]])))
 
 (defn app-wrapper []
   [app-impl])

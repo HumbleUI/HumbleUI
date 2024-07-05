@@ -4,12 +4,11 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
-    [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Canvas FontMgr FontStyle]))
+    [io.github.humbleui.skija Canvas]))
 
 (def ^:dynamic *editing*
   false)
@@ -50,28 +49,6 @@
                     :completed? true}
                  2 {:label "third"
                     :completed? false})}))
-
-(def ^FontMgr font-mgr
-  (FontMgr/getDefault))
-
-(def font-families
-  (into-array String
-    ["Helvetica Neue" "Helvetica" "Arial"]))
-
-(def typeface-100
-  (.matchFamiliesStyle font-mgr
-    font-families
-    (-> FontStyle/NORMAL (.withWeight 100))))
-
-(def typeface-300
-  (.matchFamiliesStyle font-mgr
-    font-families
-    (-> FontStyle/NORMAL (.withWeight 300))))
-
-(def typeface-300-italic
-  (.matchFamiliesStyle font-mgr
-    font-families
-    (-> FontStyle/ITALIC (.withWeight 300))))
 
 (def paint-bg
   (paint/fill 0xFFF5F5F5))
@@ -127,13 +104,12 @@
                 :to   (count label)})))
 
 (defn title []
-  (let [font (font/make-with-size typeface-100 (* 100 (:scale ui/*ctx*)))]
-    (fn []
-      [ui/align {:x :center}
-       [ui/label
-        {:font  font
-         :paint (paint/fill 0x26AF2F2F)}
-        "todos"]])))
+  [ui/align {:x :center}
+   [ui/label
+    {:font-weight 100
+     :font-size   100
+     :paint (paint/fill 0x26AF2F2F)}
+    "todos"]])
 
 (defn body [child]
   (let [empty? (empty? (:todos @*state))]
@@ -349,46 +325,46 @@
       [ui/gap])))
 
 (defn footer []
-  (let [font-footer (font/make-with-size typeface-300 (* 14 (:scale ui/*ctx*)))]
-    (fn []
-      [ui/size {:height 40}
-       [ui/with-context
-        {:font-ui   font-footer
-         :fill-text paint-footer}
-        [ui/padding {:horizontal 15}
-         [ui/stack
-          [ui/align {:x :left, :y :center}
-           [footer-active]]
-          [ui/align {:x :center, :y :center}
-           [footer-modes]]
-          [ui/align {:x :right, :y :center}
-           [footer-clear]]]]]])))
+  [ui/size {:height 40}
+   [ui/with-context
+    {:font-size   14
+     :font-weight 300
+     :fill-text   paint-footer}
+    [ui/padding {:horizontal 15}
+     [ui/stack
+      [ui/align {:x :left, :y :center}
+       [footer-active]]
+      [ui/align {:x :center, :y :center}
+       [footer-modes]]
+      [ui/align {:x :right, :y :center}
+       [footer-clear]]]]]])
 
 (defn ui []
-  (let [scale            (:scale ui/*ctx*)
-        font-ui          (font/make-with-size typeface-300 (* 24 scale))
-        font-placeholder (font/make-with-size typeface-300-italic (* 24 scale))]
-    (fn []
-      [ui/vscrollbar
-       [ui/align {:x :center}
-        [ui/padding {:padding 20}
-         [ui/focus-controller
-          [ui/with-context
-           {:font-ui                         font-ui
-            :hui.text-field/font-placeholder font-placeholder
-            :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
-           [ui/rect {:paint paint-bg}
-            [ui/size {:width #(core/clamp (:width %) 230 550)}
-             [ui/column
-              [title]
-              [ui/gap {:height 25}]
-              [capture-clicks
-               [body
-                (if-let [empty? (empty? (:todos @*state))]
-                  [new-todo]
-                  [ui/column
-                   [new-todo]
-                   [divider]
-                   [todos]
-                   [divider]
-                   [footer]])]]]]]]]]]])))
+  [ui/vscrollbar
+   [ui/align {:x :center}
+    [ui/padding {:padding 20}
+     [ui/focus-controller
+      [ui/with-context
+       {:font-family                     "Helvetica Neue, Helvetica, Arial"
+        :font-size                       24
+        :font-weight                     300
+        :hui.text-field/font-placeholder (ui/get-font {:font-family "Helvetica Neue, Helvetica, Arial"
+                                                       :font-size   24
+                                                       :font-weight 300
+                                                       :font-slant  :italic})
+        :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
+       [ui/rect {:paint paint-bg}
+        [ui/size {:width #(core/clamp (:width %) 230 550)}
+         [ui/column
+          [title]
+          [ui/gap {:height 25}]
+          [capture-clicks
+           [body
+            (if-let [empty? (empty? (:todos @*state))]
+              [new-todo]
+              [ui/column
+               [new-todo]
+               [divider]
+               [todos]
+               [divider]
+               [footer]])]]]]]]]]]])

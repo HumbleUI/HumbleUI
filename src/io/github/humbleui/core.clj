@@ -363,8 +363,8 @@
     (conj (vec (take (dec limit) xs)) x)
     (conj (or xs []) x)))
 
-(defn merge-some [a b]
-  (merge-with #(or %2 %1) a b))
+(defn merge-some [& maps]
+  (apply merge-with #(or %2 %1) maps))
 
 (defn find [pred xs]
   (reduce (fn [_ x] (when (pred x) (reduced x))) nil xs))

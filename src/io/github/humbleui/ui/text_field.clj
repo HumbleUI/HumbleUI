@@ -933,9 +933,7 @@
   ([]
    (text-input-ctor {}))
   ([{:keys [*value *state on-change] :as opts}]
-   (let [font     (or
-                    (:hui.text-field/font *ctx*)
-                    (:font-ui *ctx*))
+   (let [font     (get-font opts)
          metrics  (font/metrics font)
          features (:hui.text-field/font-features *ctx*)
          features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)

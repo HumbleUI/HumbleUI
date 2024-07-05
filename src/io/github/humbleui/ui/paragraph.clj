@@ -31,7 +31,7 @@
      :width     width
      :height    height}))
 
-(core/deftype+ Paragraph [^Paint paint tokens *layout line-height metrics]
+(core/deftype+ Paragraph [^Paint paint tokens *layout line-height ^Font font metrics features]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -49,7 +49,13 @@
         (.drawTextLine canvas (:shaped token) (+ (:x rect) (:x pos)) (+ (:y rect) (:y pos)) paint))))
   
   (-should-reconcile? [_this ctx new-element]
-    (= element new-element))
+    (and
+      (= element new-element)
+      (let [[_ opts' _] (parse-element new-element)]
+        (and
+          (identical? font (font opts'))
+          (identical? paint (or (:paint opts') (:fill-text ctx)))
+          (= features (set (concat (:font-features ctx) (:font-features opts'))))))))
   
   (-unmount-impl [this]
     (doseq [token tokens]
@@ -76,24 +82,28 @@
   ([text]
    (paragraph-ctor nil text))
   ([opts text]
-   (let [^Font font  (or (:font opts) (:font-ui *ctx*))
-         paint       (or (:paint opts) (:fill-text *ctx*))
-         line-height (Math/ceil
-                       (or (some-> opts :line-height (* (:scale *ctx*)))
-                         (* 2 (:cap-height (font/metrics font)))))
-         text        (str text)
-         features    (cond-> ShapingOptions/DEFAULT
-                       (not (empty? (:features opts)))
-                       (.withFeatures (str/join " " (:features opts))))
-         tokens      (mapv
-                       (fn [token]
-                         {:text   token
-                          :shaped (.shapeLine shaper token font ^ShapingOptions features)
-                          :blank? (str/blank? token)})
-                       (paragraph-words text))]
+   (let [paint        (or (:paint opts) (:fill-text *ctx*))
+         font         (get-font opts)
+         line-height  (Math/ceil
+                        (or (some-> opts :line-height (* (:scale *ctx*)))
+                          (* 2 (:cap-height (font/metrics font)))))
+         text         (str text)
+         features     (cond-> ShapingOptions/DEFAULT
+                        (not (empty? (:font-features *ctx*)))
+                        (.withFeatures (str/join " " (:font-features *ctx*)))
+                        (not (empty? (:font-features opts)))
+                        (.withFeatures (str/join " " (:font-features opts))))
+         tokens       (mapv
+                        (fn [token]
+                          {:text   token
+                           :shaped (.shapeLine shaper token font ^ShapingOptions features)
+                           :blank? (str/blank? token)})
+                        (paragraph-words text))]
      (map->Paragraph
        {:paint       paint
         :tokens      tokens
         :*layout     (atom nil)
         :line-height line-height
-        :metrics     (font/metrics font)}))))
+        :font        font
+        :metrics     (font/metrics font)
+        :features    features}))))

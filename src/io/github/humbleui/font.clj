@@ -1,9 +1,15 @@
 (ns io.github.humbleui.font
   (:require
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.typeface :as typeface])
   (:import
     [java.io Writer]
     [io.github.humbleui.skija Font Typeface]))
+
+(def *font-cache
+  "{{:typeface  Typeface
+     :font-size size} -> Font}"
+  (atom {}))
 
 (defn make-with-size ^Font [^Typeface typeface size]
   (Font. typeface (float size)))
@@ -44,8 +50,43 @@
   (.setSize font size))
 
 (defmethod print-method Font [o ^Writer w]
-  (.write w "#Font{familyName=")
-  (.write w (typeface/family-name (typeface o)))
+  (.write w "#Font{typeface=")
+  (.write w (pr-str (typeface o)))
   (.write w ", size=")
   (.write w (str (size o)))
   (.write w "}"))
+
+(defn get-font [opts]
+  (let [typeface (typeface/typeface
+                   (core/checked-get opts :font-family string?)
+                   opts)
+        key      (core/merge-some {:typeface typeface}
+                   (cond
+                     (:font-size opts)
+                     (do
+                       (assert (and
+                                 (number? (:font-size opts))
+                                 (>= (:font-size opts) 0))
+                         (str ":font-size, expected number? >= 0, got: " (pr-str (:font-size opts))))
+                       {:font-size (:font-size opts)})
+                     
+                     (:font-cap-height opts)
+                     (do
+                       (assert (and
+                                 (number? (:font-cap-height opts))
+                                 (>= (:font-cap-height opts) 0))
+                         (str ":font-cap-height, expected number? >= 0, got: " (pr-str (:font-cap-height opts))))
+                       {:font-cap-height (:font-cap-height opts)})
+                     
+                     :else
+                     (throw (ex-info (str "Expected one of: :cap-height, :size, got: " opts) {}))))]
+    (or
+      (@*font-cache key)
+      (let [font (cond
+                   (:font-size opts)
+                   (make-with-size typeface (:font-size opts))
+                   
+                   (:font-cap-height opts)
+                   (make-with-cap-height typeface (:font-cap-height opts)))]
+        (swap! *font-cache assoc key font) ;; FIXME clean up font cache
+        font))))

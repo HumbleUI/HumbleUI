@@ -81,7 +81,8 @@
    (:scale ctx)))
 
 (defn scaled [x]
-  (* x (:scale *ctx*)))
+  (when x
+    (* x (:scale *ctx*))))
   
 (declare map->FnNode)
 

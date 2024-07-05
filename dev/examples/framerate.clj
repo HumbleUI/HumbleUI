@@ -83,11 +83,10 @@
   [ui/stack
    [ui/canvas {:on-paint #(on-paint interpolation fps %1 %2 %3)}]
    [ui/center
-    [ui/label {:font (:font ui/*ctx*)} (str fps)]]])
+    [ui/label (str fps)]]])
 
 (defn ui-impl [bounds]
   (let [fill-text              (paint/fill 0xFFFFFFFF)
-        font                   (font/make-with-cap-height (:face-ui ui/*ctx*) (* (:scale ui/*ctx*) 30))
         {:keys [width height]} bounds]
     {:should-setup?
      (fn [bounds']
@@ -96,7 +95,7 @@
      (fn [_]
        [ui/rect {:paint (paint/fill 0xFF0D1924)}
         [ui/with-context {:fill-text fill-text
-                          :font      font}
+                          :font-cap-height 15}
          [ui/padding {:padding 20}
           (let [gap   10
                 table [[[ui/align {:x :center, :y :bottom} [ui/gap]]

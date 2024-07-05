@@ -17,12 +17,10 @@
       (reset! *state-second (not new)))))
 
 (defn ui []
-  (let [{:keys [face-ui scale]} ui/*ctx*
-        padding-inner   12
+  (let [padding-inner   12
         fill-bg         (paint/fill 0xFFF2F2F2)
-        stroke-bg       (paint/stroke 0xFFE0E0E0 (* 0.5 scale))
-        fill-delimiter  (paint/fill 0xFFE7E7E7)
-        font            (font/make-with-cap-height face-ui (* 20 scale))]
+        stroke-bg       (paint/stroke 0xFFE0E0E0 (ui/scaled 0.5))
+        fill-delimiter  (paint/fill 0xFFE7E7E7)]
     (fn []
       [ui/align {:y :center}
        [ui/vscrollbar
@@ -32,7 +30,7 @@
            [ui/rounded-rect {:radius 6, :paint stroke-bg}
             [ui/padding {:padding padding-inner}
              [ui/column {:gap padding-inner}
-              [ui/with-context {:font-ui font}
+              [ui/with-context {:font-cap-height 20}
                [ui/row
                 [ui/align {:y :center}
                  [ui/label "First state"]]

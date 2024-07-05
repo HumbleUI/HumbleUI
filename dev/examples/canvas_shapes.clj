@@ -39,7 +39,8 @@
 (def paint-kw->fn
   {:paint-point
    (fn paint-point [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            p (core/ipoint 50 100)
            [x y] [250 450]]
        (canvas/with-canvas canvas
@@ -51,7 +52,8 @@
            (canvas/draw-point canvas x y stroke)))))
    :paint-points
    (fn paint-points [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            points-coll (mapv (fn [[x y]] (Point. x y)) [[50 50] [100 100] [150 50] [200 100] [250 50]])
            ipoints-coll (mapv (fn [[x y]] (IPoint. x y)) [[50 150] [100 200] [150 150] [200 200] [250 150]])
            floats-coll [50 250 100 300 150 250 200 300 250 250]
@@ -79,7 +81,8 @@
            (canvas/draw-points canvas ipoints-arr stroke)))))
    :paint-lines
    (fn paint-lines [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            points-coll (mapv (fn [[x y]] (Point. x y)) [[50 50] [100 100] [150 50] [200 100] [250 50]])
            ipoints-coll (mapv (fn [[x y]] (IPoint. x y)) [[50 150] [100 200] [150 150] [200 200] [250 150]])
            floats-coll [50 250 100 300 150 250 200 300 250 250]
@@ -107,7 +110,8 @@
            (canvas/draw-lines canvas ipoints-arr stroke)))))
    :paint-polygon
    (fn paint-polygon [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            points-coll (mapv (fn [[x y]] (Point. x y)) [[50 50] [100 100] [150 50] [200 100] [250 50]])
            ipoints-coll (mapv (fn [[x y]] (IPoint. x y)) [[50 150] [100 200] [150 150] [200 200] [250 150]])
            floats-coll [50 250 100 300 150 250 200 300 250 250]
@@ -135,7 +139,8 @@
            (canvas/draw-polygon canvas ipoints-arr stroke)))))
    :paint-line
    (fn paint-line [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            p1 (core/ipoint 100 450)
            p2 (core/ipoint 300 200)
            [x1 y1 x2 y2] [250 150 200 50]]
@@ -148,7 +153,8 @@
            (canvas/draw-line canvas x1 y1 x2 y2 stroke)))))
    :paint-arc
    (fn paint-arc [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            arc-1 {:rect (core/irect-xywh 50 100 150 50) :start-angle 45 :sweep-angle 135 :use-center true}
            arc-2 {:rect (core/rrect-xywh 250 150 100 50 5) :start-angle 90 :sweep-angle -135 :use-center true}
            arc-3 {:rect (core/rect-xywh 300 300 150 100) :start-angle 135 :sweep-angle 135 :use-center false}
@@ -168,7 +174,8 @@
            (canvas/draw-arc canvas (:left arc-4) (:top arc-4) (:right arc-4) (:bottom arc-4) (:start-angle arc-4) (:sweep-angle arc-4) (:use-center arc-4) fill)))))
    :paint-rect
    (fn paint-rect [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            irect (core/irect-xywh 100 50 150 50)
            rrect (core/rrect-xywh 50 150 100 50 5)
            rect (core/rect-xywh 100 250 150 100)]
@@ -184,7 +191,8 @@
            (canvas/draw-rect canvas rect fill)))))
    :paint-oval
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            irect (core/irect-xywh 100 50 150 50)
            rrect (core/rrect-xywh 50 150 100 50 5)
            rect (core/rect-xywh 100 250 150 100)]
@@ -200,7 +208,8 @@
            (canvas/draw-oval canvas rect fill)))))
    :paint-circle
    (fn paint-circle [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            [x y r] [150 100 50]]
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFF00CCCC)]
@@ -208,14 +217,16 @@
            (canvas/draw-circle canvas x y r fill)))))
    :paint-rrect
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            rrect (core/rrect-xywh 50 150 100 50 5)]
        (with-open [fill (paint/fill 0xFFCC00CC)]
          (canvas/draw-string canvas "rrect [50 150 100 50 5]" (:x rrect) (- (:y rrect) 8) font-ui fill-text)
          (canvas/draw-rrect canvas rrect fill))))
    :paint-drrect
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
-     (let [{:keys [font-ui fill-text]} ctx
+     (let [font-ui (ui/get-font)
+           {:keys [fill-text]} ctx
            rrect-1 (core/rrect-xywh 50 150 100 50 5)
            rrect-2 (core/rrect-xywh 60 160 50 30 5)
            srrect-1 (core/rrect-xywh 50 350 100 50 5)

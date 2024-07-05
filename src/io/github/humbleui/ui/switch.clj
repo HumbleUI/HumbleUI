@@ -19,7 +19,7 @@
   (paint/fill 0xFFE0E0E0))
 
 (defn- switch-height [ctx]
-  (let [font       ^Font (:font-ui ctx)
+  (let [font       (get-font)
         cap-height (.getCapHeight (.getMetrics font))
         extra      (-> cap-height (/ 8) math/ceil (* 4))] ;; half cap-height but increased so that it’s divisible by 4
     (+ cap-height extra)))
