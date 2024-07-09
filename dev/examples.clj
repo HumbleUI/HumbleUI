@@ -164,39 +164,38 @@
 (defn maybe-save-window-rect [window event]
   (when (#{:window-move :window-resize} (:event event))
     (let [rect (window/window-rect window)
-          {:keys [scale work-area]} (window/screen window)
+          {:keys [id scale work-area]} (window/screen window)
           x (-> rect :x (- (:x work-area)) (/ scale) int)
           y (-> rect :y (- (:y work-area)) (/ scale) int)
           w (-> rect :width (/ scale) int)
           h (-> rect :height (/ scale) int)]
-      (util/save-state {:x x, :y y, :width w, :height h}))))
+      (util/save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
 
-(defn restore-window-rect [screen]
-  (let [{:keys [scale work-area]} screen
-        right  (-> (:right work-area) (/ scale) int)
-        bottom (-> (:bottom work-area) (/ scale) int)]
-    (core/when-some+ [{:keys [x y width height]} (util/load-state)]
-      (let [x      (min (- right 500) x)
+(defn restore-window-rect []
+  (core/when-some+ [{:keys [screen-id x y width height]} (util/load-state)]
+    (when-some [screen (core/find-by :id screen-id (app/screens))]
+      (let [{:keys [scale work-area]} screen
+            right  (-> (:right work-area) (/ scale) int)
+            bottom (-> (:bottom work-area) (/ scale) int)
+            x      (min (- right 500) x)
             y      (min (- bottom 500) y)
             width  (min (- right x) width)
             height (min (- bottom y) height)]
-        {:x x, :y y, :width width, :height height}))))
+        {:screen screen-id, :x x, :y y, :width width, :height height}))))
 
 (defn -main [& args]
   ;; setup window
   (ui/start-app!
-    (let [screen (first (app/screens))
-          rect   (restore-window-rect screen)
-          opts   (merge
+    (let [opts   (merge
                    {:title    "Humble 🐝 UI"
                     :mac-icon "dev/images/icon.icns"
-                    :screen   (:id screen)
+                    :screen   (:id (first (app/screens)))
                     :width    800
                     :height   800
                     :x        :center
                     :y        :center
                     :on-event #'maybe-save-window-rect}
-                   rect)
+                   (restore-window-rect))
           window (ui/window opts *app)]
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
