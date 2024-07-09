@@ -31,7 +31,7 @@
      :width     width
      :height    height}))
 
-(core/deftype+ Paragraph [^Paint paint tokens *layout line-height ^Font font metrics features]
+(core/deftype+ Paragraph [tokens *layout line-height ^Font font metrics features-ctx]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -41,21 +41,22 @@
         (math/ceil (:width layout))
         (:height layout))))
   
-  (-draw-impl [_ _ctx rect ^Canvas canvas]
-    (let [layout (core/cached *layout (:width rect)
-                   #(paragraph-layout tokens (:width rect) (:cap-height metrics) line-height))]
+  (-draw-impl [_ ctx rect ^Canvas canvas]
+    (let [[_ opts _] (parse-element element)
+          paint      (or (:paint opts) (:fill-text ctx))
+          layout     (core/cached *layout (:width rect)
+                       #(paragraph-layout tokens (:width rect) (:cap-height metrics) line-height))]
       (doseq [[pos token] (core/zip (:positions layout) tokens)
               :when pos]
         (.drawTextLine canvas (:shaped token) (+ (:x rect) (:x pos)) (+ (:y rect) (:y pos)) paint))))
   
-  (-should-reconcile? [_this ctx new-element]
+  (-should-reconcile? [_ ctx new-element]
     (and
       (= element new-element)
       (let [[_ opts' _] (parse-element new-element)]
         (and
           (identical? font (font opts'))
-          (identical? paint (or (:paint opts') (:fill-text ctx)))
-          (= features (set (concat (:font-features ctx) (:font-features opts'))))))))
+          (= features-ctx (:font-features ctx))))))
   
   (-unmount-impl [this]
     (doseq [token tokens]
@@ -78,32 +79,33 @@
           (persistent! words)
           (recur (reduce conj! words (paragraph-split-whitespace (subs text start end))) end))))))
 
-(defn- paragraph-ctor
-  ([text]
-   (paragraph-ctor nil text))
-  ([opts text]
-   (let [paint        (or (:paint opts) (:fill-text *ctx*))
-         font         (get-font opts)
-         line-height  (Math/ceil
-                        (or (some-> opts :line-height (* (:scale *ctx*)))
-                          (* 2 (:cap-height (font/metrics font)))))
-         text         (str text)
-         features     (cond-> ShapingOptions/DEFAULT
-                        (not (empty? (:font-features *ctx*)))
-                        (.withFeatures (str/join " " (:font-features *ctx*)))
-                        (not (empty? (:font-features opts)))
-                        (.withFeatures (str/join " " (:font-features opts))))
-         tokens       (mapv
-                        (fn [token]
-                          {:text   token
-                           :shaped (.shapeLine shaper token font ^ShapingOptions features)
-                           :blank? (str/blank? token)})
-                        (paragraph-words text))]
-     (map->Paragraph
-       {:paint       paint
-        :tokens      tokens
-        :*layout     (atom nil)
-        :line-height line-height
-        :font        font
-        :metrics     (font/metrics font)
-        :features    features}))))
+(defn- paragraph-impl [opts & texts]
+  (let [font         (get-font opts)
+        line-height  (Math/ceil
+                       (or (some-> opts :line-height (* (:scale *ctx*)))
+                         (* 2 (:cap-height (font/metrics font)))))
+        text         (str/join texts)
+        features-ctx (:font-features *ctx*)
+        features     (cond-> ShapingOptions/DEFAULT
+                       (not (empty? features-ctx))
+                       (.withFeatures (str/join " " features-ctx))
+                       (not (empty? (:font-features opts)))
+                       (.withFeatures (str/join " " (:font-features opts))))
+        tokens       (mapv
+                       (fn [token]
+                         {:text   token
+                          :shaped (.shapeLine shaper token font ^ShapingOptions features)
+                          :blank? (str/blank? token)})
+                       (paragraph-words text))]
+    (map->Paragraph
+      {:tokens       tokens
+       :*layout      (atom nil)
+       :line-height  line-height
+       :font         font
+       :metrics      (font/metrics font)
+       :features-ctx features-ctx})))
+
+(defn- paragraph-ctor [& texts]
+  (let [[_ opts texts] (parse-element (cons nil texts))]
+    (core/vector* paragraph-impl opts
+      (map signal/maybe-read texts))))

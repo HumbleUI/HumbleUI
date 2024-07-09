@@ -310,6 +310,10 @@
 (defn consv [x xs]
   (vec (cons x xs)))
 
+(defn vector* [& args]
+  (vec
+    (concat (butlast args) (last args))))
+
 (defn update-last [xs f & args]
   (apply update xs (dec (count xs)) f args))
 
