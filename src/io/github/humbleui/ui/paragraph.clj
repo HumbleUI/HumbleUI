@@ -106,6 +106,6 @@
        :features-ctx features-ctx})))
 
 (defn- paragraph-ctor [& texts]
-  (let [[_ opts texts] (parse-element (cons nil texts))]
+  (let [[_ opts texts] (parse-element (core/consv nil texts))]
     (core/vector* paragraph-impl opts
       (map signal/maybe-read texts))))

@@ -33,6 +33,6 @@
                 [setting "Always on top" util/*floating?]
                 [setting "Frame paint time" debug/*paint?]
                 [setting "Frame pacing" debug/*pacing?]
-                [setting "Event handling time" debug/*events?]
+                [setting "Event pacing" debug/*events?]
                 [setting "Outlines" debug/*outlines?]
                 [setting "Continuous render" debug/*continuous-render?]))]]]]]]]]))

@@ -1,59 +1,53 @@
 (in-ns 'io.github.humbleui.ui)
 
 (defn- grid-measure [rows cols children cs ctx]
-  (core/loopr [heights (vec (repeat rows 0))
-               widths  (vec (repeat cols 0))
-               row     0
-               col     0]
-    [child children]
-    (let [[row' col'] (if (< col (dec cols))
-                        [row (inc col)]
-                        [(inc row) 0])]
-      (if child
-        (let [size (measure child ctx cs)]
-          (recur
-            (update heights row max (:height size))
-            (update widths  col max (:width size))
-            row' col'))
-        (recur heights widths row' col')))
-    {:widths  widths
-     :heights heights}))
+  (let [heights (float-array rows 0)
+        widths  (float-array cols 0)]
+    (core/loopr [row 0
+                 col 0]
+      [child children]
+      (let [row' (if (< col (dec cols)) row (inc row))
+            col' (if (< col (dec cols)) (inc col) 0)]
+        (if child
+          (let [size (measure child ctx cs)]
+            (aset-float heights row (max (aget heights row) (:height size)))
+            (aset-float widths  col (max (aget widths  col) (:width size)))
+            (recur row' col'))
+          (recur row' col')))
+      {:widths  widths
+       :heights heights})))
 
 (defn- grid-opts [element children]
   (let [[_ opts _] (parse-element element)
         cols       (core/checked-get opts :cols (every-pred integer? pos?))
         rows       (or
                      (:rows opts)
-                     (-> (count children) dec (quot cols) inc))
-        children   (concat
-                     children
-                     (repeat (- (* rows cols) (count children)) nil))]
-    {:cols     cols
-     :rows     rows
-     :children children}))
+                     (-> (count children) dec (quot cols) inc))]
+    {:cols cols
+     :rows rows}))
 
 (core/deftype+ Grid []
   :extends AContainerNode
   
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [{:keys [cols rows children]} (grid-opts element children)
-          {:keys [widths heights]}     (grid-measure rows cols children cs ctx)]
+    (let [{:keys [cols rows]}      (grid-opts element children)
+          {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
       (core/ipoint
-        (reduce + 0 widths)
-        (reduce + 0 heights))))
+        (areduce ^floats widths  i res (float 0) (+ res (aget ^floats widths i)))
+        (areduce ^floats heights i res (float 0) (+ res (aget ^floats heights i))))))
   
   (-draw-impl [_ ctx rect ^Canvas canvas]
-    (let [{:keys [cols rows children]} (grid-opts element children)
-          cs                           (core/ipoint (:width rect) (:height rect))
-          {:keys [widths heights]}     (grid-measure rows cols children cs ctx)]
+    (let [{:keys [cols rows]}      (grid-opts element children)
+          cs                       (core/ipoint (:width rect) (:height rect))
+          {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
       (core/loopr [x (:x rect)
                    y (:y rect)]
         [row (range rows)
          col (range cols)]
-        (let [height (nth heights row)
-              width  (nth widths col)]
-          (when-some [child (nth children (+ col (* row cols)))]
+        (let [height (aget ^floats heights row)
+              width  (aget ^floats widths col)]
+          (when-some [child (nth children (+ col (* row cols)) nil)]
             (let [child-rect (core/irect-xywh x y width height)]
               (draw-child child ctx child-rect canvas)))
           (let [[x' y'] (if (< col (dec cols))

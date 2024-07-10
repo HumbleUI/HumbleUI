@@ -30,25 +30,25 @@
    :font-weight     <number>  - 0...1000, default 400
    :font-width      <keyword> - :ultra-condensed | :extra-condensed | :condensed | :semi-condensed | :normal | :semi-expanded | :expanded | :extra-expanded | :ultra-expanded
    :font-slant      <keyword> - :upright | :italic | :oblique"
-  ([]
-   (get-font {}))
-  ([opts]
-   (let [opts (core/merge-some
-                {:font-size       (:font-size *ctx*)
-                 :font-cap-height (:font-cap-height *ctx*)
-                 :font-weight     (:font-weight *ctx*)
-                 :font-width      (:font-width *ctx*)
-                 :font-slant      (:font-slant *ctx*)}
-                opts)
-         families (-> (:font-family opts)
-                    (or (:font-family *ctx*))
-                    (font-resolve-aliases (:font-family-aliases *ctx*)))
-         opts (-> opts
-                (dissoc :font-family)
-                (assoc  :font-families families)
-                (update :font-size scaled)
-                (update :font-cap-height scaled))]
-     (font/get-font opts))))
+  (^Font []
+    (get-font {}))
+  (^Font [opts]
+    (let [opts (core/merge-some
+                 {:font-size       (:font-size *ctx*)
+                  :font-cap-height (:font-cap-height *ctx*)
+                  :font-weight     (:font-weight *ctx*)
+                  :font-width      (:font-width *ctx*)
+                  :font-slant      (:font-slant *ctx*)}
+                 opts)
+          families (-> (:font-family opts)
+                     (or (:font-family *ctx*))
+                     (font-resolve-aliases (:font-family-aliases *ctx*)))
+          opts (-> opts
+                 (dissoc :font-family)
+                 (assoc  :font-families families)
+                 (update :font-size scaled)
+                 (update :font-cap-height scaled))]
+      (font/get-font opts))))
 
 (defn with-font-family-aliases
   "Create font-family aliases, e.g.

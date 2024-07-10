@@ -24,11 +24,12 @@
   (defmethod print-method clojure.lang.AFunction [o ^java.io.Writer w]
     (.write w (clojure.lang.Compiler/demunge (.getName (class o))))))
 
-(load "/io/github/humbleui/ui/core")
-(load "/io/github/humbleui/ui/dynamic")
-(load "/io/github/humbleui/ui/with_context")
-(load "/io/github/humbleui/ui/size")
-(load "/io/github/humbleui/ui/font")
+(binding [*warn-on-reflection* true]
+  (load "/io/github/humbleui/ui/core")
+  (load "/io/github/humbleui/ui/dynamic")
+  (load "/io/github/humbleui/ui/with_context")
+  (load "/io/github/humbleui/ui/size")
+  (load "/io/github/humbleui/ui/font"))
 
 (def *loaded
   (atom #{}))
@@ -42,7 +43,8 @@
       (delay
         (when-not (@*loaded ~file)
           (core/log (str "Loading ui/" ~file))
-          (load (str "/io/github/humbleui/ui/" ~file))
+          (binding [*warn-on-reflection* true]
+            (load (str "/io/github/humbleui/ui/" ~file)))
           (swap! *loaded conj ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
@@ -102,10 +104,12 @@
 (deflazy text-input       ([] [{:keys [*value *state on-change]}]) "text_field")
 (deflazy text-field       ([] [{:keys [*value *state on-change focused on-focus on-blur keymap]}]) "text_field")
 
-(deflazy error         ([throwable]) "error")
+(deflazy error   ([throwable]) "error")
+(deflazy profile ([{:keys [value]} child]) "profile")
 
-(load "/io/github/humbleui/ui/theme")
-(load "/io/github/humbleui/ui/window")
+(binding [*warn-on-reflection* true]
+  (load "/io/github/humbleui/ui/theme")
+  (load "/io/github/humbleui/ui/window"))
 
 (defmacro start-app! [& body]
   `(core/thread

@@ -43,6 +43,7 @@
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -129,7 +130,8 @@
               :else            label)))]])))
 
 (ui/defcomp app-impl []
-  (let [examples-map (->> examples
+  (let [*profiling?  (signal/signal false)
+        examples-map (->> examples
                        (mapcat second)
                        (into {}))]
     (fn []
@@ -142,6 +144,9 @@
              [example-header section]
              (for [[name _] (sort-by first examples)]
                [example-label name])))
+         [ui/gap {:height 10}]
+         [ui/padding {:horizontal 20}
+          [ui/button {:on-click (fn [_] (reset! *profiling? true))} "Profile"]]
          [ui/gap {:height 10}]]]
     
        [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
@@ -149,7 +154,8 @@
     
        ^{:stretch 1}
        [ui/clip
-        [(examples-map @*example)]]])))
+        [ui/profile {:value *profiling?}
+         [(examples-map @*example)]]]])))
 
 (defn app-wrapper []
   [app-impl])

@@ -14,7 +14,7 @@
 (core/deftype+ ClipRRect [radii]
   :extends AWrapperNode
   protocols/IComponent
-  (-draw [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx rect ^Canvas canvas]
     (let [{:keys [scale]} ctx
           [_ opts _] (parse-element element)
           radii      (:radii opts)

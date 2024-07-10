@@ -6,6 +6,7 @@ hs_err_pid*.log
 target
 *.diff
 /script/repl_local.sh
+clj-async-profiler
 
 # Calva specific
 

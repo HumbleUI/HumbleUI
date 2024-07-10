@@ -62,7 +62,10 @@
   (when comp
     (protocols/-unmount comp)))
 
-(declare parse-element)
+(defn parse-element [vals]
+  (if (map? (nth vals 1))
+    [(nth vals 0) (nth vals 1) (subvec vals 2)]
+    [(nth vals 0) {} (subvec vals 1)]))
 
 (defn invoke-callback [comp key & args]
   (let [[_ opts _] (parse-element (:element comp))]
@@ -90,11 +93,6 @@
   (-> (get-font) font/metrics :cap-height (/ (scale))))
   
 (declare map->FnNode)
-
-(defn parse-element [vals]
-  (if (map? (second vals))
-    [(first vals) (second vals) (nnext vals)]
-    [(first vals) {} (next vals)]))
 
 (defn parse-opts [element]
   (let [[_ opts & _] (parse-element element)]
@@ -401,26 +399,20 @@
     ctx)
 
   (-measure [this ctx cs]
-    (binding [ui/*node* this
-              ui/*ctx*  ctx]
-      (ui/maybe-render this ctx)
-      (protocols/-measure-impl this ctx cs)))
+    (ui/maybe-render this ctx)
+    (protocols/-measure-impl this ctx cs))
     
   (-draw [this ctx rect' canvas]
     (protocols/-set! this :rect rect')
-    (binding [ui/*node* this
-              ui/*ctx*  ctx]
-      (ui/maybe-render this ctx)
-      (protocols/-draw-impl this ctx rect' canvas))
+    (ui/maybe-render this ctx)
+    (protocols/-draw-impl this ctx rect' canvas)
     (when (and @debug/*outlines? (not (:mounted? this)))
       (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ui/ctor-border)
       (protocols/-set! this :mounted? true)))
   
   (-event [this ctx event]
     (when-some [ctx' (protocols/-context this ctx)]
-      (binding [ui/*node* this
-                ui/*ctx*  ctx']
-        (protocols/-event-impl this ctx' event))))
+      (protocols/-event-impl this ctx' event)))
   
   (-event-impl [this ctx event]
     nil)
@@ -563,7 +555,9 @@
         (set! mounted? true))))
     
   (-event-impl [this ctx event]
-    (event-child child ctx event))
+    (binding [*node* this
+              *ctx*  ctx]
+      (event-child child ctx event)))
   
   (-iterate [this ctx cb]
     (or

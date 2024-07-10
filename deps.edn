@@ -2,7 +2,7 @@
  :deps
  {org.clojure/clojure                  {:mvn/version "1.11.3"}
   io.github.humbleui/types$clojure     {:mvn/version "0.2.0"}
-  io.github.humbleui/jwm               {:mvn/version "0.4.17"  :exclusions [io.github.humbleui/types]}
+  io.github.humbleui/jwm               {:mvn/version "0.4.18"  :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-windows-x64 {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-linux-x64   {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-macos-x64   {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
@@ -16,7 +16,7 @@
                  io.github.tonsky/clj-reload {:mvn/version "0.7.0"
                                               #_#_:local/root "/ws/clj-reload"}
                  criterium/criterium {:mvn/version "0.4.6"}
-                 com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
+                 com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.2.2"}}
    :jvm-opts    ["-ea"
                  "-Duser.language=en" "-Duser.country=US" "-Dfile.encoding=UTF-8"
                  "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}

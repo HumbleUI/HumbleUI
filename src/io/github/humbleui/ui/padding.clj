@@ -10,12 +10,12 @@
           top        (dimension (or (:top opts)    (:vertical opts)   (:padding opts) 0) cs ctx)
           bottom     (dimension (or (:bottom opts) (:vertical opts)   (:padding opts) 0) cs ctx)
           child-cs   (core/ipoint
-                       (max 0 (- (:width cs) left right))
-                       (max 0 (- (:height cs) top bottom)))
+                       (-> (:width cs) (- left) (- right) (max 0))
+                       (-> (:height cs) (- top) (- bottom) (max 0)))
           child-size (measure child ctx child-cs)]
       (core/ipoint
-        (+ (:width child-size) left right)
-        (+ (:height child-size) top bottom))))
+        (-> (:width child-size) (+ left) (+ right))
+        (-> (:height child-size) (+ top) (+ bottom)))))
   
   (-draw-impl [_ ctx rect ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
@@ -23,8 +23,8 @@
           right      (dimension (or (:right opts)  (:horizontal opts) (:padding opts) 0) rect ctx)
           top        (dimension (or (:top opts)    (:vertical opts)   (:padding opts) 0) rect ctx)
           bottom     (dimension (or (:bottom opts) (:vertical opts)   (:padding opts) 0) rect ctx)
-          width      (max 0 (- (:width rect) left right))
-          height     (max 0 (- (:height rect) top bottom))
+          width      (-> (:width rect) (- left) (- right) (max 0))
+          height     (-> (:height rect) (- top) (- bottom) (max 0))
           child-rect (core/irect-xywh
                        (+ (:x rect) left)
                        (+ (:y rect) top)
