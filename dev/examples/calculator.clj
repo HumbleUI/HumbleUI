@@ -2,6 +2,7 @@
   (:require
     [clojure.string :as str]
     [clojure.test :as test :refer [are deftest]]
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])

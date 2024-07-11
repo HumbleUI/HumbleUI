@@ -60,7 +60,7 @@
   
   (-unmount-impl [this]
     (doseq [token tokens]
-      (.close (:shaped ^TextLine token)))))
+      (core/close (:shaped ^TextLine token)))))
 
 (defn- paragraph-split-whitespace [s]
   (let [trimmed (str/trimr s)

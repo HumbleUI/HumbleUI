@@ -28,6 +28,7 @@
   (load "/io/github/humbleui/ui/core")
   (load "/io/github/humbleui/ui/dynamic")
   (load "/io/github/humbleui/ui/with_context")
+  (load "/io/github/humbleui/ui/with_resources")
   (load "/io/github/humbleui/ui/size")
   (load "/io/github/humbleui/ui/font"))
 
@@ -86,6 +87,7 @@
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
 (deflazy button        ([{:keys [on-click]} child]) "button")
 (deflazy toggle-button ([{:keys [*value]} child]) "button")
+(deflazy link          ([{:keys [on-click visited]} child]) "link")
 (deflazy slider        ([{:keys [*value min max step]}]) "slider")
 
 (deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "switch")

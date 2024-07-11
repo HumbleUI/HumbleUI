@@ -87,6 +87,10 @@
   (when x
     (* x (:scale *ctx*))))
 
+(defn descaled [x]
+  (when x
+    (/ x (:scale *ctx*))))
+
 (declare get-font)
 
 (defn cap-height []
@@ -187,7 +191,6 @@
   ([el]
    (make-impl (map->FnNode {}) el))
   ([start-node el]
-
    (core/cond+
      (satisfies? protocols/IComponent el)
      el
@@ -248,12 +251,16 @@
            (reset! ref node))
          node)))))
 
-(defn make [el]
-  (try
-    (make-impl el)
-    (catch Exception e
-      (core/log-error e)
-      (make-impl [@(resolve 'io.github.humbleui.ui/error) e]))))
+(defn make
+  ([el]
+   (try
+     (make-impl el)
+     (catch Exception e
+       (core/log-error e)
+       (make-impl [@(resolve 'io.github.humbleui.ui/error) e]))))
+  ([el ctx]
+   (binding [*ctx* ctx]
+     (make el))))
 
 (defn should-reconcile? [ctx old-node new-el]
   (and 
@@ -321,7 +328,7 @@
         (cond
           ;; new key
           (nil? old-node)
-          (let [new-node (make new-el')]
+          (let [new-node (make new-el' ctx)]
             (recur [new-els   new-els'
                     res       (conj! res new-node)
                     keys-idxs keys-idxs']))
@@ -337,7 +344,7 @@
           
           ;; non-compatible key
           :else
-          (let [new-node (make new-el')]
+          (let [new-node (make new-el' ctx)]
             (unmount old-node)
             (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
                     new-els         new-els'
@@ -365,14 +372,14 @@
       ;; new-el was inserted
       (should-reconcile? ctx old-node (first new-els'))
       (let [; _ (println "new-el inserted" old-node new-el)
-            new-node (make new-el)]
+            new-node (make new-el ctx)]
         (recur [new-els new-els'
                 res     (conj! res new-node)]))
       
       ;; just incompatible
       :else
       (let [; _ (println "incompatible" old-node new-el)
-            new-node (make new-el)]
+            new-node (make new-el ctx)]
         (unmount old-node)
         (recur [old-nodes old-nodes'
                 new-els   new-els'
