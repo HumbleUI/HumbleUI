@@ -898,8 +898,8 @@
   TextInputClient
   (getRectForMarkedRange [this selection-start selection-end]
     (let [{:keys [from to marked-from marked-to offset metrics]} @*state
-          {:hui.text-field/keys [padding-top]} core/*ctx*
-          line       (text-line this core/*ctx*)
+          {:hui.text-field/keys [padding-top]} core/*text-input-ctx*
+          line       (text-line this core/*text-input-ctx*)
           cap-height (Math/ceil (:cap-height metrics))
           ascent     (Math/ceil (- (- (:ascent metrics)) cap-height))
           descent    (Math/ceil (:descent metrics))

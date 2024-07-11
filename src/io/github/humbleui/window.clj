@@ -103,7 +103,7 @@
                          (or
                            (core/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*ctx* ctx]
+                               (binding [core/*text-input-ctx* ctx]
                                  (.getRectForMarkedRange client selection-start selection-end))))
                            (IRect/makeXYWH 0 0 0 0)))
                        
@@ -111,7 +111,7 @@
                          (or
                            (core/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*ctx* ctx]
+                               (binding [core/*text-input-ctx* ctx]
                                  (.getSelectedRange client))))
                            (core/irange -1 -1)))
                          
@@ -119,14 +119,14 @@
                          (or
                            (core/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*ctx* ctx]
+                               (binding [core/*text-input-ctx* ctx]
                                  (.getMarkedRange client))))
                            (core/irange -1 -1)))
                        
                        (getSubstring [_ start end]
                          (core/catch-and-log
                            (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                             (binding [core/*ctx* ctx]
+                             (binding [core/*text-input-ctx* ctx]
                                (.getSubstring client start end))))))]
     (.setLayer window layer)
     (.setEventListener window listener)

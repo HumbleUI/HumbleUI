@@ -42,7 +42,7 @@
      (catch Throwable t#
        (log-error t#))))
 
-(def ^:dynamic *ctx*)
+(def ^:dynamic *text-input-ctx*)
 
 ;; macros
 
