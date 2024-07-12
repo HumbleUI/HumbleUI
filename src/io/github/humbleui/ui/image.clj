@@ -82,8 +82,8 @@
                    (Image/makeFromEncoded 
                      (core/slurp-bytes
                        (io/resource "io/github/humbleui/ui/image/not_found.png")))))
-         width  (.getWidth image)
-         height (.getHeight image)]
+         width  (.getWidth ^Image image)
+         height (.getHeight ^Image image)]
      (map->AnImage {:image  image
                     :width  width
                     :height height

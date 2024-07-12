@@ -207,11 +207,16 @@
   (clojure.core/reset! signal value'))
 
 (defn reset-changed! [signal value']
-  (when (not= value' @signal)
-    (clojure.core/reset! signal value')))
+  (let [value @signal]
+    (if (not= value' value)
+      (clojure.core/reset! signal value')
+      value)))
 
 (defn swap! [signal f & args]
   (apply clojure.core/swap! signal f args))
+
+(defn swap-changed! [signal f & args]
+  (reset-changed! signal (apply f @signal args)))
 
 (defn dispose! [& signals]
   (doseq [signal signals]

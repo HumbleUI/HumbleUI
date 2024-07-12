@@ -9,7 +9,7 @@
 (def button-bg
   (paint/fill 0xFFB2D7FE))
 
-(ui/defcomp button-look [state child]
+(ui/defcomp button-look-ctor [state child]
   (let [cap-height (cap-height)]
     [clip-rrect {:radii [4]}
      [rect {:paint (cond
@@ -31,9 +31,9 @@
   ([opts child]
    [clickable opts
     (fn [state]
-      [(or (:hui.button/look *ctx*) button-look) state child])]))
+      [(or (:hui.button/look *ctx*) button-look-ctor) state child])]))
 
 (ui/defcomp toggle-button-ctor [opts child]
   [toggleable opts
    (fn [state]
-     [(or (:hui.button/look *ctx*) button-look) state child])])
+     [(or (:hui.button/look *ctx*) button-look-ctor) state child])])

@@ -6,8 +6,8 @@
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)
           scale  (:scale ctx)
-          width  (/ (:width rect) scale)
-          height (/ (:height rect) scale)]
+          width  (/ (:width rect 0) scale)
+          height (/ (:height rect 0) scale)]
       [[child-ctor-or-el (core/ipoint width height)]]))
   
   (-draw-impl [this ctx rect canvas]

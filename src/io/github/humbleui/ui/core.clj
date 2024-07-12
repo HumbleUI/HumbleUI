@@ -265,8 +265,8 @@
 (defn should-reconcile? [ctx old-node new-el]
   (and 
     old-node
-    (let [left  (core/maybe-deref (first (:element old-node)))
-          right (core/maybe-deref (first new-el))]
+    (let [left  (core/maybe-deref (nth (:element old-node) 0))
+          right (core/maybe-deref (nth new-el 0))]
       (or
         (identical? left right)
         ;; same lambdas with different captured vars still should reconcile

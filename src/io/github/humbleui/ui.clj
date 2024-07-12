@@ -85,6 +85,7 @@
 (deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
 (deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "toggleable")
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
+(deflazy button-look   ([state child]) "button")
 (deflazy button        ([{:keys [on-click]} child]) "button")
 (deflazy toggle-button ([{:keys [*value]} child]) "button")
 (deflazy link          ([{:keys [on-click visited]} child]) "link")

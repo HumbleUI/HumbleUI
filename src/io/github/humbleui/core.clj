@@ -538,6 +538,11 @@
       (apply println (format "%02d:%02d.%03d" mins secs msecs) args))
     (flush)))
 
+(defn log-debug [ctx & args]
+  (when (:debug? ctx)
+    (apply log args)
+    (last args)))
+
 ;; deftype+
 
 (defn- signature [method]
