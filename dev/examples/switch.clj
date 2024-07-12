@@ -23,7 +23,7 @@
         fill-delimiter  (paint/fill 0xFFE7E7E7)]
     (fn []
       [ui/align {:y :center}
-       [ui/vscrollbar
+       [ui/vscroll
         [ui/align {:x :center}
          [ui/padding {:padding 20}
           [ui/rounded-rect {:radius 6, :paint fill-bg}

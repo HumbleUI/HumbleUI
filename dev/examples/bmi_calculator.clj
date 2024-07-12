@@ -71,7 +71,7 @@
 
 (defn ui []
   [ui/align {:y :center}
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/padding {:padding 20}
      [ui/column {:gap 10}
       [slider "Height" *height 100 250 "cm"]

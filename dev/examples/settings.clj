@@ -21,7 +21,7 @@
         delimeter      [ui/rect {:paint fill-delimiter}
                         [ui/gap {:height 1}]]]
     [ui/align {:y :center}
-     [ui/vscrollbar
+     [ui/vscroll
       [ui/align {:x :center}
        [ui/padding {:padding 20}
         [ui/rounded-rect {:radius 6, :paint fill-bg}

@@ -472,7 +472,7 @@
         vararg   (->> methods
                    (find #(= "getRequiredArity" (.getName ^java.lang.reflect.Method %))))
         required (when vararg
-                   (.invoke ^java.lang.reflect.Method vararg f (make-array 0)))]
+                   (.invoke ^java.lang.reflect.Method vararg f (make-array Object 0)))]
     (some-map
       :fixed fixed
       :vararg required)))

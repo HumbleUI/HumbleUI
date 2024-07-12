@@ -340,7 +340,7 @@
        [footer-clear]]]]]])
 
 (defn ui []
-  [ui/vscrollbar
+  [ui/vscroll
    [ui/align {:x :center}
     [ui/padding {:padding 20}
      [ui/focus-controller

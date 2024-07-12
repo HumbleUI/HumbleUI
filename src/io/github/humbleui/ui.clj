@@ -71,12 +71,12 @@
 (deflazy align  ([{:keys [x y child-x child-y]} child]) "align")
 (deflazy center ([child]) "align")
 
-(deflazy vscroll    ([child] [opts child]) "scroll")
-(deflazy vscrollbar ([child] [opts child]) "scroll")
-(deflazy column     ([& children] [opts & children]) "column")
-(deflazy row        ([& children] [opts & children]) "row")
-(deflazy stack      ([& children]) "stack")
-(deflazy grid       ([{:keys [rows cols]} & children]) "grid")
+(deflazy vscrollable ([child] [opts child]) "vscrollable")
+(deflazy vscroll     ([child] [opts child]) "vscroll")
+(deflazy column      ([& children] [opts & children]) "column")
+(deflazy row         ([& children] [opts & children]) "row")
+(deflazy stack       ([& children]) "stack")
+(deflazy grid        ([{:keys [rows cols]} & children]) "grid")
 
 (deflazy shadow       ([opts] [opts child]) "shadow")
 (deflazy shadow-inset ([opts] [opts child]) "shadow")

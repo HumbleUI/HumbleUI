@@ -25,7 +25,6 @@
     [examples.oklch]
     [examples.padding]
     [examples.paragraph]
-    [examples.scroll]
     [examples.settings]
     [examples.size]
     [examples.slider]
@@ -39,6 +38,7 @@
     [examples.tooltip]
     [examples.treemap]
     [examples.util :as util]
+    [examples.vscroll]
     [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.core :as core]
@@ -58,7 +58,8 @@
     [["Align" examples.align/ui]
      ["Label" examples.label/ui]
      ["Padding" examples.padding/ui]
-     ["Size" examples.size/ui]]]
+     ["Size" examples.size/ui]
+     ["VScroll" examples.vscroll/ui]]]
    ["Components"
     [["Animation" examples.animation/ui]
      ["Backdrop" examples.backdrop/ui]
@@ -72,7 +73,6 @@
      ["Image Snapshot" examples.image-snapshot/ui]
      ["Link" examples.link/ui]
      ["Paragraph" examples.paragraph/ui]
-     ["Scroll" examples.scroll/ui]
      ["Slider" examples.slider/ui]
      ["Stack" examples.stack/ui]
      ["SVG" examples.svg/ui]
@@ -138,7 +138,7 @@
                        (into {}))]
     (fn []
       [ui/row
-       [ui/vscrollbar
+       [ui/vscroll
         [ui/column
          (for [[section examples] examples]
            (list

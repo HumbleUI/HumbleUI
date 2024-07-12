@@ -31,7 +31,7 @@ It does not take much technical knowledge to see, for example, that higher-bandw
 
 (ui/defcomp ui []
   [ui/align {:y :center}
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/align {:x :center}
      [ui/padding {:padding 20}
       [ui/shadow {:dy 2 :blur 4 :color 0x33000000}

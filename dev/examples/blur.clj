@@ -10,7 +10,7 @@
 
 (defn ui []
   [ui/stack
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/image {:scale :fit} "dev/images/blur.webp"]]
     
    [ui/align {:y :top}

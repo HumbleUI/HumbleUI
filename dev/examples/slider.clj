@@ -88,7 +88,7 @@
 (ui/defcomp ui []
   (let [*state0 (signal/signal 500)]
     [ui/align {:y :center}
-     [ui/vscrollbar
+     [ui/vscroll
       [ui/padding {:padding 20}
        [ui/column {:gap 10}
         [with-slider 

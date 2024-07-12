@@ -11,7 +11,7 @@
 
 (ui/defcomp ui []
   [ui/align {:y :center}
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/padding {:padding 20}
      [ui/column {:gap 10}
       [ui/padding {:top 10}

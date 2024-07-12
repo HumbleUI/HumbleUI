@@ -244,7 +244,7 @@
 
 (defn ui []
   [ui/align {:y :center}
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/align {:x :center}
      [ui/padding {:padding 20}
       [ui/grid {:cols 3} ;; TODO flow

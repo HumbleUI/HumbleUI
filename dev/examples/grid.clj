@@ -46,7 +46,7 @@
                 sort-col
                 sort-dir]} @*state]
     [ui/align {:y :center}
-     [ui/vscrollbar
+     [ui/vscroll
       [ui/align {:x :center}
        [ui/padding {:padding 20}
         [ui/grid {:cols (count header)

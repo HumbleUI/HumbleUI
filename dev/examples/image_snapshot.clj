@@ -16,7 +16,7 @@
                              (unchecked-int 0xFFffba08)]))
         paint  (-> (Paint.) (.setShader shader))]
     (fn [_]
-      [ui/vscrollbar
+      [ui/vscroll
        [ui/padding {:padding 20}
         [ui/size {:height (* height 2)}
          [ui/row

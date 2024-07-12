@@ -26,7 +26,7 @@
 
 (defn ui []
   [ui/align {:y :top}
-   [ui/vscrollbar
+   [ui/vscroll
     [ui/padding {:padding 20}
      [ui/focus-controller
       [ui/column {:gap 10}
@@ -39,5 +39,5 @@
                         :placeholder "Type here"}]]
        [ui/label (str "\"" (:text @*state) "\"")]
        ^{:stretch 1}
-       [ui/vscrollbar
+       [ui/vscroll
         [render-form @*state]]]]]]])
