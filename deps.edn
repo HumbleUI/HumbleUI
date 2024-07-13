@@ -11,11 +11,11 @@
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
-   :extra-deps  {io.github.tonsky/duti {:git/sha "fc833a87a8687b67e66281e216eeee1ad6048168"
-                                        #_#_:local/root "/ws/duti"}
+   :extra-deps  {io.github.tonsky/duti       {:git/sha "fc833a87a8687b67e66281e216eeee1ad6048168"
+                                              #_#_:local/root "/ws/duti"}
                  io.github.tonsky/clj-reload {:mvn/version "0.7.0"
                                               #_#_:local/root "/ws/clj-reload"}
-                 criterium/criterium {:mvn/version "0.4.6"}
+                 criterium/criterium         {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.2.2"}}
    :jvm-opts    ["-ea"
                  "-Duser.language=en" "-Duser.country=US" "-Dfile.encoding=UTF-8"

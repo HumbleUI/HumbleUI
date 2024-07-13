@@ -6,6 +6,7 @@
     [clojure.pprint :as pprint]
     [clojure.string :as str]
     [io.github.humbleui.app :as app]
+    [io.github.humbleui.core :as core]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
@@ -81,6 +82,22 @@
   (fn [_ _ _ new]
     (set-floating! @*window new)))
 
+(defn slurp-source [file key]
+  (let [content      (slurp (io/resource file))
+        key-str      (pr-str key)
+        idx          (str/index-of content key)
+        content-tail (subs content (+ idx (count key-str)))
+        reader       (clojure.lang.LineNumberingPushbackReader.
+                       (java.io.StringReader.
+                         content-tail))
+        indent       (re-find #"\s+" content-tail)
+        [_ form-str] (read+string reader)]
+    (->> form-str
+      str/split-lines
+      (map #(if (str/starts-with? % indent)
+              (subs % (count indent))
+              %)))))
+
 (defmacro table [& rows]
   `[ui/align {:y :center}
     [ui/vscroll
@@ -91,14 +108,15 @@
                 :let [left ['ui/padding {:padding 10}
                             ['ui/align {:x :left :y :top}
                              row]]
+                      lines (slurp-source *file* name)
                       right ['ui/padding {:padding 10}
                              ['ui/column {:gap 10}
                               ['ui/label {:font-weight :bold} name]
                               (cons 'list
-                                (-> (with-out-str
-                                      (binding [pprint/*print-right-margin* 40]
-                                        (pprint/pprint row)))
-                                  (str/split #"\n")
-                                  (->> (map #(vector 'ui/label {:font-family "monospace", :font-cap-height 8} %)))))]]]
-                cell [left right]]
-            cell)]]]]])
+                                (map
+                                  #(vector 'ui/label
+                                     {:font-family "monospace"
+                                      :font-cap-height 8}
+                                     %)
+                                  lines))]]]]
+            (list 'list left right))]]]]])

@@ -22,16 +22,22 @@
         
         "Separate horizontal/vertical padding"
         [ui/rect {:paint fill}
-         [ui/padding {:horizontal 20, :vertical 10}
+         [ui/padding {:horizontal 20
+                      :vertical 10}
           [ui/label "P"]]]
         
         "Separate four-way padding"
         [ui/rect {:paint fill}
-         [ui/padding {:left 10 :top 20 :right 30 :bottom 40}
+         [ui/padding {:left   10
+                      :top    20
+                      :right  30
+                      :bottom 40}
           [ui/label "P"]]]
         
         "Function accepts container’s size"
         [ui/rect {:paint fill}
-         [ui/padding {:padding (fn [cs] (* 0.2 (:width cs)))}
+         [ui/padding
+          {:padding (fn [cs]
+                      (* 0.2 (:width cs)))}
           [ui/rect {:paint fill}
            [ui/label "P"]]]]))))

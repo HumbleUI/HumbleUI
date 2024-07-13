@@ -77,7 +77,8 @@
             [label i])]]]
        [ui/size {:width 100}
         [ui/align {:x :center}
-         [ui/label {:font-features ["tnum"]} offset " px"]]]])
+         [ui/label {:font-features ["tnum"]}
+          offset " px"]]]])
     
     "Synced scrolls"
     (let [offset (signal/signal 0)]

@@ -35,7 +35,8 @@
            "abc"]]]
          
         "Accepts functions of parent size"
-        [ui/size {:width (fn [cs] (* 0.25 (:width cs)))}
+        [ui/size {:width (fn [cs]
+                           (* 0.25 (:width cs)))}
          [ui/rect {:paint fill}
           "abc"]]
     
