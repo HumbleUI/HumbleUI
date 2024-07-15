@@ -7,7 +7,7 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  (let [fill (paint/fill 0x8080E0FF)]
+  (let [fill (paint/fill 0x80FFDB2C)]
     (fn []
       (util/table
         "Force child’s width"

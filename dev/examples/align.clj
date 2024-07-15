@@ -8,7 +8,7 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp label [text]
-  [ui/rect {:paint (paint/fill 0x8080E0FF)}
+  [ui/rect {:paint (paint/fill 0x80FFDB2C)}
    [ui/center
     [ui/padding {:padding 4}
      [ui/column {:gap 5}
