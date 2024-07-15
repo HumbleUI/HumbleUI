@@ -26,7 +26,7 @@
         r     (Color/getR color)
         g     (Color/getG color)
         b     (Color/getB color)]
-    [ui/clip-rrect {:radii [8]}
+    [ui/clip {:radius 8}
      [ui/backdrop {:filter filter}
       [ui/stack
        [ui/rect {:paint (paint/fill color)}

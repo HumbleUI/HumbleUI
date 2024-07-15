@@ -83,13 +83,21 @@
   ([ctx]
    (:scale ctx)))
 
-(defn scaled [x]
-  (when x
-    (* x (:scale *ctx*))))
+(defn scaled
+  ([x]
+   (when x
+     (* x (:scale *ctx*))))
+  ([x ctx]
+   (when x
+     (* x (:scale ctx)))))
 
-(defn descaled [x]
-  (when x
-    (/ x (:scale *ctx*))))
+(defn descaled
+  ([x]
+   (when x
+     (/ x (:scale *ctx*))))
+  ([x ctx]
+   (when x
+     (/ x (:scale ctx)))))
 
 (declare get-font)
 

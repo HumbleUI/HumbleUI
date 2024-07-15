@@ -11,7 +11,7 @@
 
 (ui/defcomp button-look-ctor [state child]
   (let [cap-height (cap-height)]
-    [clip-rrect {:radii [4]}
+    [clip {:radius 4}
      [rect {:paint (cond
                      (and 
                        (:selected state)

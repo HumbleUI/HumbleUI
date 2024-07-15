@@ -995,6 +995,6 @@
                       (:hui.text-field/fill-bg-active *ctx*)
                       (:hui.text-field/fill-bg-inactive *ctx*))
             radius  (:hui.text-field/border-radius *ctx*)]
-        [rounded-rect {:radius radius, :paint bg}
-         [rounded-rect {:radius radius, :paint stroke}
+        [rect {:radius radius, :paint bg}
+         [rect {:radius radius, :paint stroke}
           [text-input-ctor opts]]])]]]))

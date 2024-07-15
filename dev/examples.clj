@@ -13,6 +13,7 @@
     [examples.canvas]
     [examples.canvas-shapes]
     [examples.checkbox]
+    [examples.clip]
     [examples.container]
     [examples.effects]
     [examples.errors]
@@ -25,6 +26,8 @@
     [examples.oklch]
     [examples.padding]
     [examples.paragraph]
+    [examples.rect]
+    
     [examples.settings]
     [examples.size]
     [examples.slider]
@@ -56,8 +59,10 @@
 (def examples
   [["Documented"
     [["Align" examples.align/ui]
+     ["Clip" examples.clip/ui]
      ["Label" examples.label/ui]
      ["Padding" examples.padding/ui]
+     ["Rect" examples.rect/ui]
      ["Size" examples.size/ui]
      ["VScroll" examples.vscroll/ui]]]
    ["Components"

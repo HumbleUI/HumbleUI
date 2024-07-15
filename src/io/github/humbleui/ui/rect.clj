@@ -4,24 +4,19 @@
   :extends AWrapperNode
   protocols/IComponent
   (-draw-impl [_ ctx bounds canvas]
-    (let [[_ opts _ ] (parse-element element)
-          paint       (core/checked-get opts :paint #(instance? Paint %))]
-      (canvas/draw-rect canvas bounds paint)
+    (let [opts  (parse-opts element)
+          paint (core/checked-get opts :paint #(instance? Paint %))
+          radii (some->>
+                  (core/checked-get opts :radius #(or
+                                                    (nil? %)
+                                                    (number? %) 
+                                                    (and (sequential? %) (every? number? %))))
+                  (#(if (sequential? %) % [%]))
+                  (map #(scaled % ctx)))]
+      (if radii
+        (canvas/draw-rect canvas (core/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) radii) paint)
+        (canvas/draw-rect canvas bounds paint))
       (draw-child child ctx bounds canvas))))
 
 (defn- rect-ctor [opts child]
   (map->RectNode {}))
-
-(core/deftype+ RoundedRect []
-  :extends AWrapperNode
-  protocols/IComponent
-  (-draw-impl [_ ctx bounds canvas]
-    (let [[_ opts _ ] (parse-element element)
-          radius      (core/checked-get opts :radius number?)
-          paint       (core/checked-get opts :paint #(instance? Paint %))          
-          rrect       (RRect/makeXYWH (:x bounds) (:y bounds) (:width bounds) (:height bounds) (* radius (:scale ctx)))]
-      (canvas/draw-rect canvas rrect paint)
-      (draw-child child ctx bounds canvas))))
-
-(defn- rounded-rect-ctor [opts child]
-  (map->RoundedRect {}))

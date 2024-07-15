@@ -102,8 +102,8 @@
 
 (ui/defcomp custom-look [state child]
   [ui/translate {:dy (if (:pressed state) 2 0)}
-   [ui/rounded-rect {:radius 15
-                     :paint  custom-button-bg}
+   [ui/rect {:radius 15
+             :paint  custom-button-bg}
     [ui/padding {:padding 10}
      (if (vector? child)
        child
@@ -117,8 +117,8 @@
    [ui/clickable {:on-click (fn [_] (swap! *clicks inc))}
     (fn [state]
       [ui/translate {:dy (if (:pressed state) 2 0)}
-       [ui/rounded-rect {:radius 15
-                         :paint  custom-button-bg}
+       [ui/rect {:radius 15
+                 :paint  custom-button-bg}
         [ui/padding {:padding 10}
          [ui/label {:paint custom-button-text} "Inline custom look"]]]])]])
 

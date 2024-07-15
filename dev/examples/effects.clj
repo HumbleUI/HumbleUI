@@ -145,7 +145,7 @@
        [button {}
         [ui/label "Hover ripple"]]
 
-       [ui/clip-rrect {:radii [10]}
+       [ui/clip {:radius 10}
         [card {}
          [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}
           [ui/padding {:horizontal 30

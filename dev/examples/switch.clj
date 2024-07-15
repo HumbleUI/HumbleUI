@@ -26,8 +26,8 @@
        [ui/vscroll
         [ui/align {:x :center}
          [ui/padding {:padding 20}
-          [ui/rounded-rect {:radius 6, :paint fill-bg}
-           [ui/rounded-rect {:radius 6, :paint stroke-bg}
+          [ui/rect {:radius 6, :paint fill-bg}
+           [ui/rect {:radius 6, :paint stroke-bg}
             [ui/padding {:padding padding-inner}
              [ui/column {:gap padding-inner}
               [ui/with-context {:font-cap-height 20}

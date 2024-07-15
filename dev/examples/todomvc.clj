@@ -281,8 +281,8 @@
                     selected? 0x33AF2F2F
                     hovered?  0x19AF2F2F
                     :else     0x00000000)]
-        [ui/rounded-rect {:radius 3
-                          :paint  (paint/stroke color (* 1 scale))}
+        [ui/rect {:radius 3
+                  :paint  (paint/stroke color (* 1 scale))}
          [ui/padding {:padding 7}
           [ui/label label]]]))]])
 
