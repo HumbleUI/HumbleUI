@@ -414,20 +414,22 @@
     ctx)
 
   (-measure [this ctx cs]
-    (ui/maybe-render this ctx)
-    (protocols/-measure-impl this ctx cs))
+    (let [ctx (protocols/-context this ctx)]
+      (ui/maybe-render this ctx)
+      (protocols/-measure-impl this ctx cs)))
     
   (-draw [this ctx bounds' canvas]
-    (protocols/-set! this :bounds bounds')
-    (ui/maybe-render this ctx)
-    (protocols/-draw-impl this ctx bounds' canvas)
-    (when (and @debug/*outlines? (not (:mounted? this)))
-      (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
-      (protocols/-set! this :mounted? true)))
+    (let [ctx (protocols/-context this ctx)]
+      (protocols/-set! this :bounds bounds')
+      (ui/maybe-render this ctx)
+      (protocols/-draw-impl this ctx bounds' canvas)
+      (when (and @debug/*outlines? (not (:mounted? this)))
+        (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
+        (protocols/-set! this :mounted? true))))
   
   (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (protocols/-event-impl this ctx' event)))
+    (let [ctx (protocols/-context this ctx)]
+      (protocols/-event-impl this ctx event)))
   
   (-event-impl [this ctx event]
     nil)
@@ -470,26 +472,27 @@
   :extends ANode
   protocols/IComponent
   (-measure-impl [this ctx cs]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (measure (:child this) ctx' cs)))
+    (let [ctx (protocols/-context this ctx)]
+      (measure (:child this) ctx cs)))
 
   (-draw-impl [this ctx bounds canvas]
-    (when-some [ctx' (protocols/-context this ctx)]
-      (draw-child (:child this) ctx' bounds canvas)))
+    (let [ctx (protocols/-context this ctx)]
+      (draw-child (:child this) ctx bounds canvas)))
   
   (-event-impl [this ctx event]
-    (event-child (:child this) ctx event))
+    (let [ctx (protocols/-context this ctx)]
+      (event-child (:child this) ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (when-some [ctx' (protocols/-context this ctx)]
-        (iterate-child (:child this) ctx' cb))))
+      (let [ctx (protocols/-context this ctx)]
+        (iterate-child (:child this) ctx cb))))
   
   (-reconcile-impl [this ctx el']
-    (let [child-els (protocols/-child-elements this ctx el')
-          ctx'      (protocols/-context this ctx)
-          [child']  (reconcile-many ctx' [(:child this)] child-els)]
+    (let [ctx       (protocols/-context this ctx)
+          child-els (protocols/-child-elements this ctx el')
+          [child']  (reconcile-many ctx [(:child this)] child-els)]
       (protocols/-set! this :child child')))
   
   (-unmount [this]
@@ -502,20 +505,22 @@
   :extends ANode
   protocols/IComponent  
   (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
+    (let [ctx (protocols/-context this ctx)]
       (binding [*node* this
-                *ctx*  ctx']
+                *ctx*  ctx]
         (core/eager-or
           (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
-          (protocols/-event-impl this ctx' event)))))
+          (protocols/-event-impl this ctx event)))))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (some #(iterate-child % ctx cb) (:children this))))
+      (let [ctx (protocols/-context this ctx)]
+        (some #(iterate-child % ctx cb) (:children this)))))
   
   (-reconcile-impl [this ctx el']
-    (let [child-els (protocols/-child-elements this ctx el')
+    (let [ctx       (protocols/-context this ctx)
+          child-els (protocols/-child-elements this ctx el')
           child-els (core/flatten child-els)
           children' (reconcile-many ctx (:children this) child-els)]
       (protocols/-set! this :children children')))

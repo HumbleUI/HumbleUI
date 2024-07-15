@@ -11,7 +11,7 @@
     (some-> (::*focused ctx)
       (cond->
         focused (vswap! conj this)))
-    (draw-child child (protocols/-context this ctx) bounds canvas))
+    (draw-child child ctx bounds canvas))
   
   (-event-impl [this ctx event]
     (core/eager-or
@@ -25,7 +25,7 @@
         true)
       (let [event' (cond-> event
                      focused (assoc :focused? true))]
-        (event-child child (protocols/-context this ctx) event'))))
+        (event-child child ctx event'))))
   
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]

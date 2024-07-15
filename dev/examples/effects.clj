@@ -66,7 +66,7 @@
                     py     (-> (math/sin theta) (* max-r) (+ cy))]
                 (set! center (core/point px py))
                 true)))))
-      (ui/event-child child (protocols/-context this ctx) event))))
+      (ui/event-child child ctx event))))
 
 (defn ripple [opts child]
   (map->Ripple {}))

@@ -19,9 +19,9 @@
       (draw-child child ctx bounds canvas)))
   
   (-event [this ctx event]
-    (when-some [ctx' (protocols/-context this ctx)]
+    (let [ctx (protocols/-context this ctx)]
       (binding [*node* this
-                *ctx*  ctx']
+                *ctx*  ctx]
         (reduce 
           (fn [_ child]
             (when-let [res (event-child child ctx event)]
