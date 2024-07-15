@@ -24,6 +24,7 @@
           (canvas/clip-rect canvas bounds))
         (let [child-bounds (-> bounds
                              (update :y - offset-px)
+                             (update :y math/round)
                              (assoc :height (:height child-size)))]
           (draw child ctx child-bounds canvas)))))
   
@@ -38,7 +39,7 @@
                              (core/clamp 0 (- (:height child-size) (:height bounds))))]
             (when (not= offset-px offset-px')
               (set! offset-px offset-px')
-              (reset! offset (descaled offset-px'))
+              (reset! offset (descaled (math/round offset-px')))
               (window/request-frame (:window ctx))))))
       
       :mouse-button
