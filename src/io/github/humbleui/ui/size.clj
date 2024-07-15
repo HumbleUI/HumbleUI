@@ -31,16 +31,3 @@
    (size opts nil))
   ([opts child]
    (map->Size {})))
-
-(defn node-size []
-  (let [scale (or (:scale *ctx*) 1)
-        w     (or (:width (:bounds *node*)) 0)
-        h     (or (:height (:bounds *node*)) 0)]
-    (core/point (/ w scale) (/ h scale))))
-
-(defn use-size []
-  (let [*size (signal/signal (core/point 0 0))]
-    {:before-draw
-     (fn []
-       (reset! *size (node-size)))
-     :value *size}))

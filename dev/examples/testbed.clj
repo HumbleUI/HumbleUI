@@ -15,7 +15,7 @@
         (fn [state]
           ; (let [e (Exception.)]
           ;   (.printStackTrace e))
-          (core/log "button" state)
+          ; (core/log "button" state)
           [ui/rect {:paint (paint/fill 0xFFB0D0FF)}
            [ui/padding {:padding 20}
             "8"]])]])]])
