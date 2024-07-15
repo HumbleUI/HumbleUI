@@ -48,17 +48,13 @@
         (.render dom canvas))))
   
   (-should-reconcile? [_this ctx new-element]
-    (let [[_ _ [src]] (parse-element element)
-          [_ _ [new-src]] (parse-element new-element)]
-      (= src new-src)))
+    (opts-match? [:src] element new-element))
   
   (-unmount-impl [this]
     (.close dom)))
 
-(defn- svg-ctor
-  ([src]
-   (svg-ctor {} src))
-  ([opts src]
-   (let [dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
-               (SVGDOM. data))]
-     (map->SVG {:dom dom}))))
+(defn- svg-ctor [opts]
+  (let [src (core/checked-get opts :src core/slurpable?)
+        dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
+              (SVGDOM. data))]
+    (map->SVG {:dom dom})))

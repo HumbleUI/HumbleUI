@@ -9,10 +9,11 @@
 (defn img [opts]
   [ui/size {:width (:w opts) :height (:h opts)}
    [ui/rect {:paint border}
-    [ui/image {:scale (:scale opts)
-               :xpos    (:xpos opts)
-               :ypos    (:ypos opts)}
-     "dev/images/face_100w.png"]]])
+    [ui/image
+     {:scale (:scale opts)
+      :xpos  (:xpos opts)
+      :ypos  (:ypos opts)
+      :src   "dev/images/face_100w.png"}]]])
 
 (defn ui []
   [ui/align {:y :center}
@@ -26,7 +27,7 @@
         (for [mode [:nearest :linear :mitchell :catmull-rom]]
           [ui/column {:gap 10}
            [ui/size {:width 100 :height 100}
-            [ui/image {:sampling mode} "dev/images/face_185w.png"]]
+            [ui/image {:sampling mode, :src "dev/images/face_185w.png"}]]
            [ui/label mode]])]
        [ui/label "Scaled down (185 → 100)"]
        [ui/gap]
@@ -36,7 +37,7 @@
         (for [mode [:nearest :linear :mitchell :catmull-rom]]
           [ui/column {:gap 10}
            [ui/size {:width 100 :height 100}
-            [ui/image {:sampling mode} "dev/images/face_35w.png"]]
+            [ui/image {:sampling mode, :src "dev/images/face_35w.png"}]]
            [ui/label mode]])]
        [ui/label "Scaled up (35 → 100)"]
        [ui/gap]
@@ -44,7 +45,7 @@
        ;; not found
        [ui/align {:x :left}
         [ui/size {:width 50 :height 50}
-         [ui/image "dev/images/not_found.png"]]]
+         [ui/image {:src "dev/images/not_found.png"}]]]
        [ui/label "Not found"]
        [ui/gap]
      
@@ -81,7 +82,7 @@
         [ui/gap]
       
         [ui/column {:gap 10}
-         [ui/image {:scale :content} "dev/images/face_100w.png"]
+         [ui/image {:scale :content, :src "dev/images/face_100w.png"}]
          [ui/label ":content"]]]
        [ui/gap]
      

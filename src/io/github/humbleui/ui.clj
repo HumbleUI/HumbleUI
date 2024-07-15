@@ -52,9 +52,9 @@
 (deflazy gap       ([] [{:keys [width height]}]) "gap")
 (deflazy label     ([& texts]) "label")
 (deflazy paragraph ([text] [opts text]) "paragraph")
-(deflazy image     ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
-(deflazy animation ([src] [{:keys [sampling scale xpos ypos]} src]) "image")
-(deflazy svg       ([src] [{:keys [preserve-aspect-ratio xpos ypos scale]} src]) "svg")
+(deflazy image     ([{:keys [file sampling scale xpos ypos]}]) "image")
+(deflazy animation ([{:keys [file sampling scale xpos ypos]}]) "image")
+(deflazy svg       ([{:keys [file preserve-aspect-ratio scale xpos ypos]}]) "svg")
 (deflazy canvas    ([{:keys [on-paint on-event]}]) "canvas")
 
 (deflazy padding        ([{:keys [padding horizontal vertical left right top bottom]} child]) "padding")

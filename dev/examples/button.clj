@@ -161,7 +161,7 @@
          [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
           [ui/row {:gap 5}
            [ui/size {:width 14, :height 14}
-            [ui/image "dev/images/add.png"]]
+            [ui/image {:src "dev/images/add.png"}]]
            [ui/align {:y :center}
             [ui/label "With PNG icon"]]]]]
 
@@ -169,7 +169,7 @@
          [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
           [ui/row {:gap 5}
            [ui/size {:width 14, :height 14}
-            [ui/svg "dev/images/add.svg"]]
+            [ui/svg {:src "dev/images/add.svg"}]]
            [ui/align {:y :center}
             [ui/label "With SVG icon"]]]]]
                     

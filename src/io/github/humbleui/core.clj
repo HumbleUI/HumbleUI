@@ -379,9 +379,23 @@
 (defn repeatedlyv [n f]
   (into [] (repeatedly n f)))
 
+(defn slurpable? [src]
+  (or
+    (string? src)
+    (bytes? src)
+    (instance? java.io.InputStream src)
+    (instance? java.net.URL src)
+    (instance? java.net.URI src)))
+
 (defn slurp-bytes ^bytes [src]
-  (if (bytes? src)
+  (cond
+    (bytes? src)
     src
+    
+    (instance? java.io.InputStream src)
+    (.readAllBytes ^java.io.InputStream src)
+    
+    :else
     (with-open [is (io/input-stream src)]
       (.readAllBytes is))))
 

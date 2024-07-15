@@ -64,30 +64,26 @@
         (.drawImageRect canvas image src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))))
   
   (-should-reconcile? [_this ctx new-element]
-    (let [[_ _ [src]] (parse-element element)
-          [_ _ [new-src]] (parse-element new-element)]
-      (= src new-src)))
+    (opts-match? [:src] element new-element))
   
   (-unmount-impl [this]
     (core/close image)))
 
-(defn- image-ctor
-  ([src]
-   (image-ctor {} src))
-  ([opts src]
-   (let [image (try
-                 (Image/makeFromEncoded (core/slurp-bytes src))
-                 (catch Exception e
-                   ; (core/log-error e)
-                   (Image/makeFromEncoded 
-                     (core/slurp-bytes
-                       (io/resource "io/github/humbleui/ui/image/not_found.png")))))
-         width  (.getWidth ^Image image)
-         height (.getHeight ^Image image)]
-     (map->AnImage {:image  image
-                    :width  width
-                    :height height
-                    :aspect (/ width height)}))))
+(defn- image-ctor [opts]
+  (let [src  (core/checked-get opts :src core/slurpable?)
+        image (try
+                (Image/makeFromEncoded (core/slurp-bytes src))
+                (catch Exception e
+                  ; (core/log-error e)
+                  (Image/makeFromEncoded 
+                    (core/slurp-bytes
+                      (io/resource "io/github/humbleui/ui/image/not_found.png")))))
+        width  (.getWidth ^Image image)
+        height (.getHeight ^Image image)]
+    (map->AnImage {:image  image
+                   :width  width
+                   :height height
+                   :aspect (/ width height)})))
 
 (core/deftype+ Animation [width height durations images start]
   :extends ATerminalNode
@@ -113,33 +109,29 @@
       (core/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
 
   (-should-reconcile? [_this ctx new-element]
-    (let [[_ _ [src]] (parse-element element)
-          [_ _ [new-src]] (parse-element new-element)]
-      (= src new-src)))
+    (opts-match? [:src] element new-element))
 
   (-unmount-impl [this]
     (doseq [image images]
       (core/close image))))
 
-(defn- animation-ctor
-  ([src]
-   (animation-ctor {} src))
-  ([opts src]
-   (with-open [codec (Codec/makeFromData (Data/makeFromBytes (core/slurp-bytes src)))]
-     (let [frames    (.getFrameCount codec)
-           durations (mapv #(.getDuration ^AnimationFrameInfo %) (.getFramesInfo codec))
-           info      (.getImageInfo codec)
-           images    (mapv
-                       (fn [frame]
-                         (with-open [bitmap (doto (Bitmap.)
-                                              (.allocPixels info))]
-                           (.readPixels codec bitmap frame)
-                           (.setImmutable bitmap)
-                           (Image/makeFromBitmap bitmap)))
-                       (range frames))]
-       (map->Animation
-         {:width     (.getWidth codec)
-          :height    (.getHeight codec)
-          :durations durations
-          :images    images
-          :start     (core/now)})))))
+(defn- animation-ctor [opts]
+  (let [src (core/checked-get opts :src core/slurpable?)]
+    (with-open [codec (Codec/makeFromData (Data/makeFromBytes (core/slurp-bytes src)))]
+      (let [frames    (.getFrameCount codec)
+            durations (mapv #(.getDuration ^AnimationFrameInfo %) (.getFramesInfo codec))
+            info      (.getImageInfo codec)
+            images    (mapv
+                        (fn [frame]
+                          (with-open [bitmap (doto (Bitmap.)
+                                               (.allocPixels info))]
+                            (.readPixels codec bitmap frame)
+                            (.setImmutable bitmap)
+                            (Image/makeFromBitmap bitmap)))
+                        (range frames))]
+        (map->Animation
+          {:width     (.getWidth codec)
+           :height    (.getHeight codec)
+           :durations durations
+           :images    images
+           :start     (core/now)})))))

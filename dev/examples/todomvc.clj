@@ -160,8 +160,8 @@
            true)}
         [ui/size {:width 40, :height 40}
          (if-let [state (completed-all?)]
-           [ui/svg "dev/images/todomvc/uncheck-all.svg"]
-           [ui/svg "dev/images/todomvc/check-all.svg"])]]))])
+           [ui/svg {:src "dev/images/todomvc/uncheck-all.svg"}]
+           [ui/svg {:src "dev/images/todomvc/check-all.svg"}])]]))])
 
 (def *new-todo
   (cursor *state :new-todo))
@@ -189,8 +189,8 @@
        true)}
     [ui/size {:width 40, :height 40}
      (if-let [state @*state]
-       [ui/svg "dev/images/todomvc/checked.svg"]
-       [ui/svg "dev/images/todomvc/unchecked.svg"])]]])
+       [ui/svg {:src "dev/images/todomvc/checked.svg"}]
+       [ui/svg {:src "dev/images/todomvc/unchecked.svg"}])]]])
 
 (defn todo-delete [hovered? id]
   [ui/padding {:padding 10}
@@ -203,8 +203,8 @@
       (fn [state]
         [ui/size {:width 40, :height 40}
          (if (:hovered state)
-           [ui/svg "dev/images/todomvc/delete-hovered.svg"]
-           [ui/svg "dev/images/todomvc/delete.svg"])])]
+           [ui/svg {:src "dev/images/todomvc/delete-hovered.svg"}]
+           [ui/svg {:src "dev/images/todomvc/delete.svg"}])])]
      [ui/gap {:width 40 :height 40}])])
 
 (defn todo [id]

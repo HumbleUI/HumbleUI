@@ -39,11 +39,11 @@
               [row
                [align {:y :center}
                 [size {:width checkbox-size, :height checkbox-size}
-                 [svg @(checkbox-states [(cond
-                                           (= :mixed @*value) :mixed
-                                           (:selected state)  true
-                                           :else              false)
-                                         (boolean (:pressed state))])]]]
+                 [svg {:src @(checkbox-states [(cond
+                                                 (= :mixed @*value) :mixed
+                                                 (:selected state)  true
+                                                 :else              false)
+                                               (boolean (:pressed state))])}]]]
                [gap {:width (/ checkbox-size 3)}]
                [align {:y :center}
                 child]]))]))})))
