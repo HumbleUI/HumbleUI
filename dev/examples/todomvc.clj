@@ -340,31 +340,32 @@
        [footer-clear]]]]]])
 
 (defn ui []
-  [ui/vscroll
-   [ui/align {:x :center}
-    [ui/padding {:padding 20}
-     [ui/focus-controller
-      [ui/with-context
-       {:font-family                     "Helvetica Neue, Helvetica, Arial"
-        :font-size                       24
-        :font-weight                     300
-        :hui.text-field/font-placeholder (ui/get-font {:font-family "Helvetica Neue, Helvetica, Arial"
-                                                       :font-size   24
-                                                       :font-weight 300
-                                                       :font-slant  :italic})
-        :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
-       [ui/rect {:paint paint-bg}
-        [ui/size {:width #(core/clamp (:width %) 230 550)}
-         [ui/column
-          [title]
-          [ui/gap {:height 25}]
-          [capture-clicks
-           [body
-            (if-let [empty? (empty? (:todos @*state))]
-              [new-todo]
-              [ui/column
+  [ui/align {:y :center}
+   [ui/vscroll {:clip? false}
+    [ui/align {:x :center}
+     [ui/padding {:padding 20}
+      [ui/focus-controller
+       [ui/with-context
+        {:font-family                     "Helvetica Neue, Helvetica, Arial"
+         :font-size                       24
+         :font-weight                     300
+         :hui.text-field/font-placeholder (ui/get-font {:font-family "Helvetica Neue, Helvetica, Arial"
+                                                        :font-size   24
+                                                        :font-weight 300
+                                                        :font-slant  :italic})
+         :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
+        [ui/rect {:paint paint-bg}
+         [ui/size {:width #(core/clamp (:width %) 230 550)}
+          [ui/column
+           [title]
+           [ui/gap {:height 25}]
+           [capture-clicks
+            [body
+             (if-let [empty? (empty? (:todos @*state))]
                [new-todo]
-               [divider]
-               [todos]
-               [divider]
-               [footer]])]]]]]]]]]])
+               [ui/column
+                [new-todo]
+                [divider]
+                [todos]
+                [divider]
+                [footer]])]]]]]]]]]]])

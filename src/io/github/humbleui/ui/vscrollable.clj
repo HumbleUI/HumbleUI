@@ -16,14 +16,16 @@
           (:height cs)))))
   
   (-draw-impl [_ ctx bounds canvas]
-    (set! child-size (protocols/-measure child ctx (core/ipoint (:width bounds) Integer/MAX_VALUE)))
-    (set! offset-px (core/clamp (scaled (or @offset 0)) 0 (- (:height child-size) (:height bounds))))
-    (canvas/with-canvas canvas
-      (canvas/clip-rect canvas bounds)
-      (let [child-bounds (-> bounds
-                         (update :y - offset-px)
-                         (assoc :height (:height child-size)))]
-        (draw child ctx child-bounds canvas))))
+    (let [opts (parse-opts element)]
+      (set! child-size (protocols/-measure child ctx (core/ipoint (:width bounds) Integer/MAX_VALUE)))
+      (set! offset-px (core/clamp (scaled (or @offset 0)) 0 (- (:height child-size) (:height bounds))))
+      (canvas/with-canvas canvas
+        (when (:clip? opts true)
+          (canvas/clip-rect canvas bounds))
+        (let [child-bounds (-> bounds
+                             (update :y - offset-px)
+                             (assoc :height (:height child-size)))]
+          (draw child ctx child-bounds canvas)))))
   
   (-event-impl [_ ctx event]
     (case (:event event)
