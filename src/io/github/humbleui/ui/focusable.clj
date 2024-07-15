@@ -7,11 +7,11 @@
     (cond-> ctx
       focused (assoc :hui/focused? true)))
   
-  (-draw-impl [this ctx rect canvas]
+  (-draw-impl [this ctx bounds canvas]
     (some-> (::*focused ctx)
       (cond->
         focused (vswap! conj this)))
-    (draw-child child (protocols/-context this ctx) rect canvas))
+    (draw-child child (protocols/-context this ctx) bounds canvas))
   
   (-event-impl [this ctx event]
     (core/eager-or
@@ -19,7 +19,7 @@
               (= :mouse-button (:event event))
               (:pressed? event)
               (not focused)
-              (core/rect-contains? rect (core/ipoint (:x event) (:y event))))
+              (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
         (set! focused (core/now))
         (invoke-callback this :on-focus)
         true)
@@ -51,10 +51,10 @@
 (core/deftype+ FocusController []
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [*focused (volatile! [])
           ctx'     (assoc ctx ::*focused *focused)
-          res      (draw-child child ctx' rect canvas)
+          res      (draw-child child ctx' bounds canvas)
           focused  (sort-by :focused @*focused)]
       (doseq [comp (butlast focused)]
         (core/set!! comp :focused nil)
@@ -65,7 +65,7 @@
     (if (and
           (= :mouse-button (:event event))
           (:pressed? event)
-          (core/rect-contains? rect (core/ipoint (:x event) (:y event))))
+          (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
       (let [focused-before (focused this ctx)
             res            (event-child child ctx event)
             focused-after  (focused this ctx)]

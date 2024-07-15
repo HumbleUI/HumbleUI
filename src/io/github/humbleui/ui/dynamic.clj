@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Contextual [child-ctor ^:mut child ^:mut child-rect]
+(core/deftype+ Contextual [child-ctor ^:mut child ^:mut child-bounds]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child' (child-ctor ctx)]
@@ -11,15 +11,15 @@
       cs
       (measure child ctx cs)))
   
-  (-draw [_ ctx rect canvas]
+  (-draw [_ ctx bounds canvas]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
         (unmount-child child)
         (set! child child')))
-    (set! child-rect rect)
+    (set! child-bounds bounds)
     (if (instance? Throwable child)
-      (canvas/draw-rect canvas rect (paint/fill 0xFFCC3333))
-      (draw-child child ctx child-rect canvas)))
+      (canvas/draw-rect canvas bounds (paint/fill 0xFFCC3333))
+      (draw-child child ctx child-bounds canvas)))
   
   (-event [_ ctx event]
     (when-not (instance? Throwable child)

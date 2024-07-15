@@ -7,7 +7,7 @@
       (core/when-some+ [{:keys [x y]} event]
         (let [state     @*state
               hovered?  (:hovered state)
-              hovered?' (core/rect-contains? rect (core/ipoint x y))]
+              hovered?' (core/rect-contains? bounds (core/ipoint x y))]
           (cond
             (and (not hovered?) hovered?')
             (do

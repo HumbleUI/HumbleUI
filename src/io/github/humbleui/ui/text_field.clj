@@ -480,7 +480,7 @@
         (math/round (.getCoordAtOffset line to))))))
 
 (defn- correct-offset! [text-field ctx]
-  (let [{:keys [*state rect]} text-field
+  (let [{:keys [*state bounds]} text-field
         state  @*state
         {:keys [offset]} state
         {:keys [scale]
@@ -488,23 +488,23 @@
         line          (text-line text-field ctx)
         coord-to      (coord-to text-field ctx)
         line-width    (.getWidth line)
-        rect-width    (:width rect)
+        bounds-width  (:width bounds)
         padding-left  (* scale padding-left)
         padding-right (* scale (+ cursor-width padding-right))
         min-offset    (- padding-left)
         max-offset    (-> line-width
                         (+ padding-right)
-                        (- rect-width)
+                        (- bounds-width)
                         (max min-offset))]
     (if (or
           (nil? offset)
           (< (- coord-to offset) padding-left) ;; cursor overflow left
-          (> (- coord-to offset) (- rect-width padding-right)) ;; cursor overflow right
+          (> (- coord-to offset) (- bounds-width padding-right)) ;; cursor overflow right
           (< offset min-offset)
           (> offset max-offset))
       (-> *state
         (swap! assoc
-          :offset (-> (- coord-to (/ rect-width 2))
+          :offset (-> (- coord-to (/ bounds-width 2))
                     (core/clamp min-offset max-offset)
                     (math/round)))
         :offset)
@@ -552,11 +552,11 @@
   ; └────────┼───────────────────┼───────┘
   ;          └───────────────────┘        
   ; ├────────┼───────────────────┤        
-  ;   offset     (:width rect)            
+  ;   offset     (:width bounds)          
   ;                                       
   ; ├────────────────────────────────────┤
   ;            (.getWidth line)           
-  (-draw-impl [this ctx rect ^Canvas canvas]
+  (-draw-impl [this ctx bounds ^Canvas canvas]
     (correct-ranges! *state)
     (correct-offset! this ctx)
     
@@ -576,16 +576,16 @@
                        coord-to
                        (math/round (.getCoordAtOffset line from)))]
       (canvas/with-canvas canvas
-        (canvas/clip-rect canvas (core/rect rect))
+        (canvas/clip-rect canvas (core/rect bounds))
         
         ;; selection
         (when selection?
           (canvas/draw-rect canvas
             (core/rect-ltrb
-              (+ (:x rect) (- offset) (min coord-from coord-to))
-              (+ (:y rect) (* scale padding-top) (- ascent))
-              (+ (:x rect) (- offset) (max coord-from coord-to))
-              (+ (:y rect) baseline descent))
+              (+ (:x bounds) (- offset) (min coord-from coord-to))
+              (+ (:y bounds) (* scale padding-top) (- ascent))
+              (+ (:x bounds) (- offset) (max coord-from coord-to))
+              (+ (:y bounds) baseline descent))
             (if focused?
               (:hui.text-field/fill-selection-active ctx)
               (:hui.text-field/fill-selection-inactive ctx))))
@@ -595,8 +595,8 @@
               line (if placeholder?
                      (placeholder-line this ctx)
                      line)
-              x    (+ (:x rect) (- offset))
-              y    (+ (:y rect) baseline)
+              x    (+ (:x bounds) (- offset))
+              y    (+ (:y bounds) baseline)
               fill (if placeholder?
                      (:hui.text-field/fill-placeholder ctx)
                      (:hui.text-field/fill-text ctx))]
@@ -611,10 +611,10 @@
                 right (.getCoordAtOffset line marked-to)]
             (canvas/draw-rect canvas
               (core/rect-ltrb
-                (+ (:x rect) (- offset) left)
-                (+ (:y rect) baseline (* 1 scale))
-                (+ (:x rect) (- offset) right)
-                (+ (:y rect) baseline (* 2 scale)))
+                (+ (:x bounds) (- offset) left)
+                (+ (:y bounds) baseline (* 1 scale))
+                (+ (:x bounds) (- offset) right)
+                (+ (:y bounds) baseline (* 2 scale)))
               (:hui.text-field/fill-text ctx))))
         
         ;; cursor
@@ -631,10 +631,10 @@
             (when (and cursor-visible? (not selection?))
               (canvas/draw-rect canvas
                 (core/rect-ltrb
-                  (+ (:x rect) (- offset) coord-to (- cursor-left))
-                  (+ (:y rect) (* scale padding-top) (- ascent))
-                  (+ (:x rect) (- offset) coord-to cursor-right)
-                  (+ (:y rect) baseline descent))
+                  (+ (:x bounds) (- offset) coord-to (- cursor-left))
+                  (+ (:y bounds) (* scale padding-top) (- ascent))
+                  (+ (:x bounds) (- offset) coord-to cursor-right)
+                  (+ (:y bounds) baseline descent))
                 (:hui.text-field/fill-cursor ctx)))
             (when (> cursor-blink-interval 0)
               (core/schedule
@@ -658,10 +658,10 @@
             (= :mouse-button (:event event))
             (= :primary (:button event))
             (:pressed? event)
-            rect
-            (core/rect-contains? rect (core/ipoint (:x event) (:y event))))
+            bounds
+            (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
           (let [x             (-> (:x event)
-                                (- (:x rect))
+                                (- (:x bounds))
                                 (+ offset))
                 offset'       (.getOffsetAtCoord line x)
                 now           (core/now)
@@ -699,16 +699,16 @@
             (= :mouse-move (:event event))
             (:selecting? state))
           (let [x (-> (:x event)
-                    (- (:x rect))
+                    (- (:x bounds))
                     (+ offset))]
             (cond
-              (core/rect-contains? rect (core/ipoint (:x event) (:y event)))
+              (core/rect-contains? bounds (core/ipoint (:x event) (:y event)))
               (swap! *state edit :expand-to-position (.getOffsetAtCoord line x))
               
-              (< (:y event) (:y rect))
+              (< (:y event) (:y bounds))
               (swap! *state edit :expand-to-position 0)
               
-              (>= (:y event) (:bottom rect))
+              (>= (:y event) (:bottom bounds))
               (swap! *state edit :expand-to-position (count (:text state))))
             true)
           
@@ -909,10 +909,10 @@
                        left
                        (.getCoordAtOffset line (or marked-to to)))]
       (core/irect-ltrb
-        (+ (:x rect) (- offset) left)
-        (+ (:y rect) padding-top (- ascent))
-        (+ (:x rect) (- offset) right)
-        (+ (:y rect) baseline descent))))
+        (+ (:x bounds) (- offset) left)
+        (+ (:y bounds) padding-top (- ascent))
+        (+ (:x bounds) (- offset) right)
+        (+ (:y bounds) baseline descent))))
   
   (getSelectedRange [_]
     (let [{:keys [from to]} @*state]

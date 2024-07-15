@@ -6,15 +6,15 @@
 (core/deftype+ ImageSnapshot [^:mut ^Image image]
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [this ctx rect ^Canvas canvas]
+  (-draw-impl [this ctx bounds ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           scale   (:scale opts)
           [sx sy] (if (some? scale)
                     ((juxt :x :y) scale)
                     (let [m44 (.getMat (.getLocalToDevice canvas))]
                       [(nth m44 0) (nth m44 5)]))
-          w (int (math/ceil (* (:width rect) sx)))
-          h (int (math/ceil (* (:height rect) sy)))]
+          w (int (math/ceil (* (:width bounds) sx)))
+          h (int (math/ceil (* (:height bounds) sy)))]
       (when (and image
               (or 
                 (not= (.getWidth image) w)
@@ -25,7 +25,7 @@
         (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
           (draw-child child ctx (core/irect-xywh 0 0 w h) (.getCanvas surface))
           (protocols/-set! this :image (.makeImageSnapshot surface))))
-      (.drawImageRect canvas image (core/rect rect)))))
+      (.drawImageRect canvas image (core/rect bounds)))))
 
 (defn image-snapshot-ctor
   ([child]

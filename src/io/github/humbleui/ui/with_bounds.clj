@@ -1,21 +1,21 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithBounds [^:mut last-bounds]
+(core/deftype+ WithBounds [^:mut cs]
   :extends AWrapperNode
   protocols/IComponent  
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)
           scale  (:scale ctx)
-          width  (/ (:width rect 0) scale)
-          height (/ (:height rect 0) scale)]
+          width  (/ (:width bounds 0) scale)
+          height (/ (:height bounds 0) scale)]
       [[child-ctor-or-el (core/ipoint width height)]]))
   
-  (-draw-impl [this ctx rect canvas]
-    (let [bounds (core/ipoint (:width rect) (:height rect))]
-      (when (not= last-bounds bounds)
-        (set! last-bounds bounds)
+  (-draw-impl [this ctx bounds canvas]
+    (let [cs' (core/ipoint (:width bounds) (:height bounds))]
+      (when (not= cs cs')
+        (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?
-      (draw-child (:child this) ctx rect canvas))))
+      (draw-child (:child this) ctx bounds canvas))))
 
 (defn with-bounds-ctor [child-ctor-or-el]
   (map->WithBounds {}))

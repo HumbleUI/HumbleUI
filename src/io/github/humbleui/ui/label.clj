@@ -6,10 +6,10 @@
   (-measure-impl [this ctx cs]
     size)
   
-  (-draw-impl [this ctx rect ^Canvas canvas]
+  (-draw-impl [this ctx bounds ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           paint      (or (:paint opts) (:fill-text ctx))]
-      (.drawTextLine canvas line (:x rect) (+ (:y rect) (:height size)) paint)))
+      (.drawTextLine canvas line (:x bounds) (+ (:y bounds) (:height size)) paint)))
   
   (-should-reconcile? [_this ctx new-element]
     (and

@@ -25,8 +25,8 @@
                           ^:mut clicks
                           ^:mut last-click]
   :extends AWrapperNode
-  (-draw-impl [this ctx rect canvas]
-    (draw-child (:child this) ctx rect canvas)
+  (-draw-impl [this ctx bounds canvas]
+    (draw-child (:child this) ctx bounds canvas)
     (when (#{:unpressed :hovered-unpressed} phase)
       (set! phase (case phase
                     :unpressed         :default
@@ -41,7 +41,7 @@
     
     (let [{:keys [on-click on-click-capture]} (parse-opts element)
           {x :x y :y}   event
-          over?         (and x y (core/rect-contains? rect (core/ipoint x y)))
+          over?         (and x y (core/rect-contains? bounds (core/ipoint x y)))
           out?          (and x y (not over?))
           btn-down?     (and (= :mouse-button (:event event)) (:pressed? event))
           btn-up?       (and (= :mouse-button (:event event)) (not (:pressed? event)))

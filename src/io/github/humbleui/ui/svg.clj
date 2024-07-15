@@ -35,9 +35,9 @@
   (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw-impl [_ _ctx rect ^Canvas canvas]
+  (-draw-impl [_ _ctx bounds ^Canvas canvas]
     (let [root (.getRoot dom)
-          {:keys [x y width height]} rect
+          {:keys [x y width height]} bounds
           [_ opts _] (parse-element element)
           scaling    (svg-opts->scaling opts)]
       (.setWidth root (SVGLength. width))

@@ -21,7 +21,7 @@
   :extends ui/AWrapperNode
   
   protocols/IComponent  
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [{:keys [scale window]} ctx
           [_ opts _] (ui/parse-element element)
           {:keys [duration radius state]
@@ -29,8 +29,8 @@
                 radius 1.5}} opts
           pressed? (:pressed state)
           border-radius 10
-          rrect    (core/rrect-xywh (:x rect) (:y rect) (:width rect) (:height rect) (* scale border-radius))
-          max-r    (* radius (Math/hypot (:width rect) (:height rect)))
+          rrect    (core/rrect-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (* scale border-radius))
+          max-r    (* radius (Math/hypot (:width bounds) (:height bounds)))
           progress (-> (core/now) (- (or progress-start 0)) (/ duration) (min 1))
           progress (if hovered? progress (- 1 progress))]
       (canvas/with-canvas canvas
@@ -42,7 +42,7 @@
         (when (> progress 0)
           (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) (if pressed? ui/button-bg-pressed ui/button-bg-hovered)))
         
-        (ui/draw-child child ctx rect canvas)
+        (ui/draw-child child ctx bounds canvas)
         
         (when (< 0 progress 1)
           (window/request-frame window)))))
@@ -52,16 +52,16 @@
       (when (= :mouse-move (:event event))
         (core/when-some+ [{:keys [x y]} event]
           (let [p         (core/ipoint x y)
-                hovered?' (core/rect-contains? rect p)]
+                hovered?' (core/rect-contains? bounds p)]
             (when (not= hovered? hovered?')
               (set! hovered? hovered?')
               (set! progress-start (core/now))
               (let [[_ opts _] (ui/parse-element element)
                     radius (:radius opts 1.5)
-                    cx     (+ (:x rect) (/ (:width rect) 2))
-                    cy     (+ (:y rect) (/ (:height rect) 2))
+                    cx     (+ (:x bounds) (/ (:width bounds) 2))
+                    cy     (+ (:y bounds) (/ (:height bounds) 2))
                     theta  (math/atan2 (- y cy) (- x cx))
-                    max-r  (* (- radius 0.5) (Math/hypot (:width rect) (:height rect)))
+                    max-r  (* (- radius 0.5) (Math/hypot (:width bounds) (:height bounds)))
                     px     (-> (math/cos theta) (* max-r) (+ cx))
                     py     (-> (math/sin theta) (* max-r) (+ cy))]
                 (set! center (core/point px py))
@@ -93,24 +93,24 @@
                      ^:mut hovered?]
   :extends ui/AWrapperNode
   protocols/IComponent  
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [{:keys [mouse-pos scale]} ctx
           [_ opts _] (ui/parse-element element)
           {:keys [bg gradient]
            :or {bg       (paint/fill 0xFF202020)
                 gradient default-gradient}} opts]
-      (canvas/draw-rect canvas rect bg)
+      (canvas/draw-rect canvas bounds bg)
       (when hovered?
         (canvas/with-canvas canvas
-          (canvas/clip-rect canvas rect)
-          (canvas/translate canvas (:x rect) (:y rect))
-          (let [scale (max (:width rect) (:height rect))
-                w     (/ (:width rect) scale)
-                h     (/ (:height rect) scale)]
+          (canvas/clip-rect canvas bounds)
+          (canvas/translate canvas (:x bounds) (:y bounds))
+          (let [scale (max (:width bounds) (:height bounds))
+                w     (/ (:width bounds) scale)
+                h     (/ (:height bounds) scale)]
             (canvas/scale canvas scale scale)
             (with-open [mask   (Shader/makeRadialGradient
-                                 (-> (:x mouse-pos) (- (:x rect)) (/ scale) float)
-                                 (-> (:y mouse-pos) (- (:y rect)) (/ scale) float)
+                                 (-> (:x mouse-pos) (- (:x bounds)) (/ scale) float)
+                                 (-> (:y mouse-pos) (- (:y bounds)) (/ scale) float)
                                  (float 1)
                                  (int-array [(unchecked-int 0xFFFFFFFF)
                                              (unchecked-int 0x00FFFFFF)]))
@@ -118,13 +118,13 @@
                         paint  (Paint.)]
               (.setShader paint shader)
               (canvas/draw-rect canvas (core/rect-xywh 0 0 w h) paint)))))
-      (ui/draw-child child ctx rect canvas)))
+      (ui/draw-child child ctx bounds canvas)))
   
   (-event-impl [this ctx event]
     (core/eager-or
       (core/when-some+ [{:keys [x y]} event]
         (when (= :mouse-move (:event event))
-          (let [hovered?' (core/rect-contains? rect (core/ipoint x y))]
+          (let [hovered?' (core/rect-contains? bounds (core/ipoint x y))]
             (core/eager-or
               (when (not= hovered? hovered?')
                 (set! hovered? hovered?')

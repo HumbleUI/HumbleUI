@@ -14,9 +14,9 @@
       (core/ipoint 0 0)
       children))
   
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (doseq [child children]
-      (draw-child child ctx rect canvas)))
+      (draw-child child ctx bounds canvas)))
   
   (-event [this ctx event]
     (when-some [ctx' (protocols/-context this ctx)]

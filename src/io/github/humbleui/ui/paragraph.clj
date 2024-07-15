@@ -41,14 +41,14 @@
         (math/ceil (:width layout))
         (:height layout))))
   
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           paint      (or (:paint opts) (:fill-text ctx))
-          layout     (core/cached *layout (:width rect)
-                       #(paragraph-layout tokens (:width rect) (:cap-height metrics) line-height))]
+          layout     (core/cached *layout (:width bounds)
+                       #(paragraph-layout tokens (:width bounds) (:cap-height metrics) line-height))]
       (doseq [[pos token] (core/zip (:positions layout) tokens)
               :when pos]
-        (.drawTextLine canvas (:shaped token) (+ (:x rect) (:x pos)) (+ (:y rect) (:y pos)) paint))))
+        (.drawTextLine canvas (:shaped token) (+ (:x bounds) (:x pos)) (+ (:y bounds) (:y pos)) paint))))
   
   (-should-reconcile? [_ ctx new-element]
     (and

@@ -36,8 +36,7 @@
 
 (core/deftype+ Switch [animation-length
                        ^:mut on?-cached
-                       ^:mut animation-start
-                       ^:mut child-rect]
+                       ^:mut animation-start]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx _cs]
@@ -45,8 +44,8 @@
           width  (math/round (* height 1.61803))]
       (core/ipoint width height)))
   
-  (-draw-impl [this ctx rect canvas]
-    (let [{x :x, y :y, w :width, h :height} rect
+  (-draw-impl [this ctx bounds canvas]
+    (let [{x :x, y :y, w :width, h :height} bounds
           [_ on? pressed?] element
           _                (when (nil? on?-cached)
                              (set! on?-cached on?))

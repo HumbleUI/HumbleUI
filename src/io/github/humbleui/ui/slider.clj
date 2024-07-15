@@ -3,7 +3,7 @@
 (defn- slider-value-at [slider x]
   (let [{:keys [*value
                 thumb-size
-                rect
+                bounds
                 delta-x
                 element]} slider
         {:keys [min max step]
@@ -12,8 +12,8 @@
               step 1}}    (parse-opts element)
         {thumb-w :width}  thumb-size
         half-thumb-w      (/ thumb-w 2)
-        left              (+ (:x rect) half-thumb-w)
-        width             (- (:width rect) thumb-w)
+        left              (+ (:x bounds) half-thumb-w)
+        width             (- (:width bounds) thumb-w)
         ratio             (core/clamp (/ (- x delta-x left) width) 0 1)
         range             (- max min)]
     (-> ratio
@@ -29,15 +29,15 @@
     (let [{:hui.slider/keys [thumb-size]} ctx]
       (core/isize thumb-size thumb-size)))
 
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [{:hui.slider/keys [fill-thumb
                              stroke-thumb
                              fill-thumb-active
                              stroke-thumb-active]
            :hui/keys        [active?]} ctx
-          x (+ (:x rect) (/ (:width rect) 2))
-          y (+ (:y rect) (/ (:height rect) 2))
-          r (/ (:height rect) 2)]
+          x (+ (:x bounds) (/ (:width bounds) 2))
+          y (+ (:y bounds) (/ (:height bounds) 2))
+          r (/ (:height bounds) 2)]
       (canvas/draw-circle canvas x y r (if active? fill-thumb-active fill-thumb))
       (canvas/draw-circle canvas x y r (if active? stroke-thumb-active stroke-thumb)))))
 
@@ -47,12 +47,12 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [{:hui.slider/keys [track-height]} ctx
           half-track-height (/ track-height 2)
-          x      (- (:x rect) half-track-height)
-          y      (+ (:y rect) (/ (:height rect) 2) (- half-track-height))
-          w      (+ (:width rect) track-height)
+          x      (- (:x bounds) half-track-height)
+          y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
+          w      (+ (:width bounds) track-height)
           r      half-track-height
           rect   (core/rrect-xywh x y w track-height r)]
       (canvas/draw-rect canvas rect (ctx fill-key)))))
@@ -69,15 +69,15 @@
   (-measure-impl [_ ctx cs]
     (measure thumb ctx cs))
   
-  (-draw-impl [_ ctx rect canvas]
-    (set! thumb-size (measure thumb ctx (core/isize (:width rect) (:height rect))))
+  (-draw-impl [_ ctx bounds canvas]
+    (set! thumb-size (measure thumb ctx (core/isize (:width bounds) (:height bounds))))
     (let [{:keys [min max]
            :or {min 0
                 max 100}}   (parse-opts element)
           value             @*value
           {left :x
            top  :y
-           w    :width}     rect
+           w    :width}     bounds
           {thumb-w :width
            thumb-h :height} thumb-size
           half-thumb-w      (/ thumb-w 2)
@@ -102,7 +102,7 @@
               value             @*value
               {left :x
                top :y
-               width :width}    rect
+               width :width}    bounds
               {thumb-w :width
                thumb-h :height} thumb-size
               half-thumb-w      (/ thumb-w 2)
@@ -118,7 +118,7 @@
               (set! delta-x (- (:x event) thumb-x))
               true)
             
-            (core/rect-contains? rect point)
+            (core/rect-contains? bounds point)
             (do
               (set! dragging? true)
               (reset! *value (slider-value-at this (:x event)))

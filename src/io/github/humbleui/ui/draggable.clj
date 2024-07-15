@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(defn- draggable-child-rect [draggable]
+(defn- draggable-child-bounds [draggable]
   (let [{:keys [my-pos child-pos child-size]} draggable]
     (core/irect-xywh
       (+ (:x my-pos) (:x child-pos))
@@ -18,10 +18,10 @@
   (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw-impl [this ctx rect canvas]
-    (set! my-pos (core/ipoint (:x rect) (:y rect)))
-    (set! child-size (measure child ctx (core/ipoint (:width rect) (:height rect))))
-    (draw-child child ctx (draggable-child-rect this) canvas))
+  (-draw-impl [this ctx bounds canvas]
+    (set! my-pos (core/ipoint (:x bounds) (:y bounds)))
+    (set! child-size (measure child ctx (core/ipoint (:width bounds) (:height bounds))))
+    (draw-child child ctx (draggable-child-bounds this) canvas))
   
   (-event-impl [this ctx event]
     (let [[_ opts _] (parse-element element)
@@ -30,7 +30,7 @@
               (= :mouse-button (:event event))
               (= :primary (:button event))
               (:pressed? event)
-              (core/rect-contains? (draggable-child-rect this) (core/ipoint (:x event) (:y event))))
+              (core/rect-contains? (draggable-child-bounds this) (core/ipoint (:x event) (:y event))))
         (set! mouse-start
           (core/ipoint
             (- (:x child-pos) (:x event))

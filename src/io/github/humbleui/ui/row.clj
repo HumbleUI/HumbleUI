@@ -20,17 +20,17 @@
             (max height (:height child-size))))
         (core/ipoint width height))))
   
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [[_ opts _]    (parse-element element)
           gap           (-> (:gap opts 0)
                           (* (:scale ctx))
                           (core/iceil))
-          cs            (core/ipoint (:width rect) (:height rect))
+          cs            (core/ipoint (:width bounds) (:height bounds))
           known         (for [child children]
                           (let [meta (meta (:element child))]
                             (when (= :hug (:stretch meta :hug))
                               (measure child ctx cs))))
-          space         (-> (:width rect)
+          space         (-> (:width bounds)
                           (- (transduce (keep :width) + 0 known))
                           (- (* gap (dec (count children))))
                           (max 0))
@@ -46,12 +46,12 @@
                                         (:width size)
                                         (let [stretch (:stretch (meta (:element child)))]
                                           (-> space (/ total-stretch) (* stretch) (math/round)))))
-                child-rect          (core/irect-xywh
-                                      (+ (:x rect) width)
-                                      (:y rect)
+                child-bounds        (core/irect-xywh
+                                      (+ (:x bounds) width)
+                                      (:y bounds)
                                       (max 0 child-width)
-                                      (max 0 (:height rect)))]
-            (draw-child child ctx child-rect canvas)
+                                      (max 0 (:height bounds)))]
+            (draw-child child ctx child-bounds canvas)
             (recur known' children' (+ width gap child-width))))))))
 
 (defn- row-ctor [& children]

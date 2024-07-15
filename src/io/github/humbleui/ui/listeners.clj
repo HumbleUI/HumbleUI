@@ -54,9 +54,9 @@
 (core/deftype+ MouseListener [^:mut over?]
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx rect canvas]
-    (set! over? (core/rect-contains? rect (:mouse-pos ctx)))
-    (draw-child child ctx rect canvas))
+  (-draw-impl [_ ctx bounds canvas]
+    (set! over? (core/rect-contains? bounds (:mouse-pos ctx)))
+    (draw-child child ctx bounds canvas))
   
   (-event-impl [_ ctx event]
     (let [[_ opts _] (parse-element element)
@@ -66,7 +66,7 @@
                   on-over
                   on-out]} opts]
       (core/when-some+ [{:keys [x y]} event]
-        (let [over?' (core/rect-contains? rect (core/ipoint x y))]
+        (let [over?' (core/rect-contains? bounds (core/ipoint x y))]
           (when (and (not over?) over?' on-over)
             (on-over event))
           (when (and over? (not over?') on-out)

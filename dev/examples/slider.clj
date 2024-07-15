@@ -16,14 +16,14 @@
     (let [{:keys [scale]} ctx]
       (core/isize (* scale 32) (* scale 32))))
 
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [{:hui.slider/keys [fill-thumb
                              stroke-thumb
                              fill-thumb-active
                              stroke-thumb-active]
            :hui/keys        [active?]} ctx]
-      (canvas/draw-rect canvas rect (if active? fill-thumb-active fill-thumb))
-      (canvas/draw-rect canvas rect (if active? stroke-thumb-active stroke-thumb)))))
+      (canvas/draw-rect canvas bounds (if active? fill-thumb-active fill-thumb))
+      (canvas/draw-rect canvas bounds (if active? stroke-thumb-active stroke-thumb)))))
 
 (defn square-thumb []
   (map->SquareThumb {}))
@@ -35,9 +35,9 @@
        (let [{:keys [scale]} ui/*ctx*]
          (core/isize (* scale 4) (* scale 32))))
      :draw
-     (fn [_ ^IRect rect canvas]
+     (fn [_ ^IRect bounds canvas]
        (let [{:keys [scale]} ui/*ctx*
-             rrect (-> rect .toRect (.withRadii (* scale 2.0)))]
+             rrect (-> bounds .toRect (.withRadii (* scale 2.0)))]
          (canvas/draw-rrect canvas rrect paint)))}))
 
 (core/deftype+ WideTrackLeft []
@@ -46,13 +46,13 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [{:keys [scale]}   ctx
-          track-height      (+ (:height rect) (* 2 scale))
+          track-height      (+ (:height bounds) (* 2 scale))
           half-track-height (/ track-height 2)
-          x      (- (:x rect) half-track-height)
-          y      (+ (:y rect) (/ (:height rect) 2) (- half-track-height))
-          w      (+ (:width rect) half-track-height)
+          x      (- (:x bounds) half-track-height)
+          y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
+          w      (+ (:width bounds) half-track-height)
           r      half-track-height
           rect   (core/rrect-xywh x y w track-height r 0 0 r)]
       (canvas/draw-rect canvas rect (:hui.slider/fill-track-active ctx)))))
@@ -63,13 +63,13 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [{:keys [scale]}   ctx
-          track-height      (+ (:height rect) (* 2 scale))
+          track-height      (+ (:height bounds) (* 2 scale))
           half-track-height (/ track-height 2)
-          x      (:x rect)
-          y      (+ (:y rect) (/ (:height rect) 2) (- half-track-height))
-          w      (+ (:width rect) half-track-height)
+          x      (:x bounds)
+          y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
+          w      (+ (:width bounds) half-track-height)
           r      half-track-height
           rect   (core/rrect-xywh x y w track-height 0 r r 0)]
       (canvas/draw-rect canvas rect (:hui.slider/fill-track-inactive ctx)))))

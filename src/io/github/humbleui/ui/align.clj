@@ -3,7 +3,7 @@
 (core/deftype+ Align []
   :extends AWrapperNode  
   protocols/IComponent  
-  (-draw-impl [_ ctx rect canvas]
+  (-draw-impl [_ ctx bounds canvas]
     (let [[_ opts _]     element
           {:keys [x y child-x child-y]} opts
           _              (assert (or (nil? x) (number? x) (#{:left :center :right} x)) (str ":x, expected number or :left/:center/:right, got: " (pr-str x)))
@@ -33,25 +33,25 @@
                            :center 0.5
                            :bottom 1
                            child-y)
-          child-size     (measure child ctx (core/ipoint (:width rect) (:height rect)))
+          child-size     (measure child ctx (core/ipoint (:width bounds) (:height bounds)))
           left           (when x
-                           (+ (:x rect)
-                             (* (:width rect) x)
+                           (+ (:x bounds)
+                             (* (:width bounds) x)
                              (- (* (:width child-size) child-x))))
           top            (when y
-                           (+ (:y rect)
-                             (* (:height rect) y)
+                           (+ (:y bounds)
+                             (* (:height bounds) y)
                              (- (* (:height child-size) child-y))))
-          child-rect     (cond
+          child-bounds   (cond
                            (and x y)
                            (core/irect-xywh left top (:width child-size) (:height child-size))
                            
                            x
-                           (core/irect-xywh left (:y rect) (:width child-size) (:height rect))
+                           (core/irect-xywh left (:y bounds) (:width child-size) (:height bounds))
                            
                            y
-                           (core/irect-xywh (:x rect) top (:width rect) (:height child-size)))]
-      (draw-child child ctx child-rect canvas))))
+                           (core/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
+      (draw-child child ctx child-bounds canvas))))
 
 (defn- align-ctor [opts child]
   (map->Align {}))

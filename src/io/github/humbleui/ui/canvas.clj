@@ -7,19 +7,19 @@
   (-measure-impl [_ ctx cs]
     (core/ipoint 0 0))
   
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
     (when on-paint
       (canvas/with-canvas canvas
-        (.clipRect canvas (core/rect rect))
-        (.translate canvas (:x rect) (:y rect))
-        (on-paint ctx canvas (core/ipoint (:width rect) (:height rect))))))
+        (.clipRect canvas (core/rect bounds))
+        (.translate canvas (:x bounds) (:y bounds))
+        (on-paint ctx canvas (core/ipoint (:width bounds) (:height bounds))))))
   
   (-event-impl [_ ctx event]
     (when on-event
       (let [event' (if (every? event [:x :y])
                      (-> event
-                       (update :x - (:x rect))
-                       (update :y - (:y rect)))
+                       (update :x - (:x bounds))
+                       (update :y - (:y bounds)))
                      event)]
         (on-event ctx event'))))
   

@@ -31,15 +31,15 @@
       (assert (instance? IPoint res) (str "Expected IPoint as result, got: " res))
       res)))
 
-(defn draw [comp ctx ^IRect rect ^Canvas canvas]
-  {:pre [(instance? IRect rect)]}
-  (protocols/-draw comp ctx rect canvas))
+(defn draw [comp ctx ^IRect bounds ^Canvas canvas]
+  {:pre [(instance? IRect bounds)]}
+  (protocols/-draw comp ctx bounds canvas))
 
-(defn draw-child [comp ctx ^IRect rect ^Canvas canvas]
+(defn draw-child [comp ctx ^IRect bounds ^Canvas canvas]
   (when comp
     (let [count (.getSaveCount canvas)]
       (try
-        (draw comp ctx rect canvas)
+        (draw comp ctx bounds canvas)
         (finally
           (.restoreToCount canvas count))))))
 
@@ -397,7 +397,7 @@
 (core/defparent ANode
   [^:mut element
    ^:mut mounted?
-   ^:mut rect
+   ^:mut bounds
    ^:mut key
    ^:mut dirty?]
   
@@ -409,12 +409,12 @@
     (ui/maybe-render this ctx)
     (protocols/-measure-impl this ctx cs))
     
-  (-draw [this ctx rect' canvas]
-    (protocols/-set! this :rect rect')
+  (-draw [this ctx bounds' canvas]
+    (protocols/-set! this :bounds bounds')
     (ui/maybe-render this ctx)
-    (protocols/-draw-impl this ctx rect' canvas)
+    (protocols/-draw-impl this ctx bounds' canvas)
     (when (and @debug/*outlines? (not (:mounted? this)))
-      (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect rect' .toRect (.inflate 4)) ui/ctor-border)
+      (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
       (protocols/-set! this :mounted? true)))
   
   (-event [this ctx event]
@@ -465,9 +465,9 @@
     (when-some [ctx' (protocols/-context this ctx)]
       (measure (:child this) ctx' cs)))
 
-  (-draw-impl [this ctx rect canvas]
+  (-draw-impl [this ctx bounds canvas]
     (when-some [ctx' (protocols/-context this ctx)]
-      (draw-child (:child this) ctx' rect canvas)))
+      (draw-child (:child this) ctx' bounds canvas)))
   
   (-event-impl [this ctx event]
     (event-child (:child this) ctx event))
@@ -538,29 +538,29 @@
     (binding [*node* this
               *ctx*  ctx]
       (when render
-        (set! rect (core/irect-xywh 0 0 (:width cs) (:height cs)))
+        (set! bounds (core/irect-xywh 0 0 (:width cs) (:height cs)))
         (maybe-render this ctx))
       (if user-measure
         (user-measure child cs)
         (measure child ctx cs))))
   
-  (-draw [this ctx rect' canvas]
-    (set! rect rect')
+  (-draw [this ctx bounds' canvas]
+    (set! bounds bounds')
     (binding [*node* this
               *ctx*  ctx]
       (when render
         (maybe-render this ctx))
       (core/invoke before-draw)
       (if user-draw
-        (user-draw child rect canvas)
-        (protocols/-draw child ctx rect canvas))
+        (user-draw child bounds canvas)
+        (protocols/-draw child ctx bounds canvas))
       (core/invoke after-draw)
       (when-not mounted?
         (core/invoke after-mount))
       (when (and @debug/*outlines? (not mounted?))
-        (canvas/draw-rect canvas (-> ^IRect rect .toRect (.inflate 4)) ctor-border)
+        (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
         (set! mounted? true))))
-    
+
   (-event-impl [this ctx event]
     (binding [*node* this
               *ctx*  ctx]

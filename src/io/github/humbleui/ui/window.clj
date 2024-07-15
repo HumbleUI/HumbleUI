@@ -42,11 +42,11 @@
                        (locking window
                          (canvas/clear canvas bg-color)
                          (let [bounds (window/content-rect window)
-                               rect   (core/irect-xywh 0 0 (:width bounds) (:height bounds))]
+                               bounds (core/irect-xywh 0 0 (:width bounds) (:height bounds))]
                            (when on-paint
                              (on-paint window canvas))
                            (when-some [app @*app-node]
-                             (protocols/-draw app (ctx-fn window) rect canvas)))))
+                             (protocols/-draw app (ctx-fn window) bounds canvas)))))
           event-fn   (fn [window event]
                        (locking window
                          (core/when-some+ [{:keys [x y]} event]

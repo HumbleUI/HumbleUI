@@ -10,7 +10,7 @@
         (core/iceil (* scale (or (:width opts) 0)))
         (core/iceil (* scale (or (:height opts) 0))))))
   
-  (-draw-impl [_this _ctx _rect _canvas]))
+  (-draw-impl [_this _ctx _bounds _canvas]))
 
 (defn- gap-ctor
   ([]

@@ -4,21 +4,21 @@
   :extends AWrapperNode
   
   protocols/IComponent
-  (-draw-impl [_ ctx rect ^Canvas canvas]
-    (draw-child child ctx rect canvas)
-    (when (> (:height (:child-size child)) (:height rect))
+  (-draw-impl [_ ctx bounds ^Canvas canvas]
+    (draw-child child ctx bounds canvas)
+    (when (> (:height (:child-size child)) (:height bounds))
       (let [{:keys [scale]} ctx
             [_ opts _]      (parse-element element)
             fill-track      (or (:fill-track opts) (:hui.scroll/fill-track ctx))
             fill-thumb      (or (:fill-thumb opts) (:hui.scroll/fill-thumb ctx))
             content-y       (:offset-px child)
             content-h       (:height (:child-size child))
-            scroll-y        (:y rect)
-            scroll-h        (:height rect)
+            scroll-y        (:y bounds)
+            scroll-h        (:height bounds)
             
             padding         (scaled 4)
             track-w         (scaled 4)
-            track-x         (+ (:x rect) (:width rect) (- track-w) (- padding))
+            track-x         (+ (:x bounds) (:width bounds) (- track-w) (- padding))
             track-y         (+ scroll-y padding)
             track-h         (- scroll-h (* 2 padding))
             track           (core/rrect-xywh track-x track-y track-w track-h (* 2 scale))

@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithContextClassic [data child ^:mut child-rect]
+(core/deftype+ WithContextClassic [data child ^:mut bounds]
   protocols/IComponent
   (-context [_ ctx]
     (merge ctx data))
@@ -8,9 +8,9 @@
   (-measure [this ctx cs]
     (measure child (protocols/-context this ctx) cs))
   
-  (-draw [this ctx rect canvas]
-    (set! child-rect rect)
-    (draw-child child (protocols/-context this ctx) child-rect canvas))
+  (-draw [this ctx bounds' canvas]
+    (set! bounds bounds')
+    (draw-child child (protocols/-context this ctx) bounds canvas))
   
   (-event [this ctx event]
     (event-child child (protocols/-context this ctx) event))

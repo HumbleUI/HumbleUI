@@ -5,13 +5,13 @@
 (core/deftype+ Backdrop []
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx ^IRect rect ^Canvas canvas]
+  (-draw-impl [_ ctx ^IRect bounds ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           filter ^ImageFilter (:filter opts)]
       (canvas/with-canvas canvas
-        (canvas/clip-rect canvas rect)
-        (.saveLayer canvas (SaveLayerRec. (.toRect rect) nil filter)))
-      (draw-child child ctx rect canvas))))
+        (canvas/clip-rect canvas bounds)
+        (.saveLayer canvas (SaveLayerRec. (.toRect bounds) nil filter)))
+      (draw-child child ctx bounds canvas))))
 
 (defn- backdrop-ctor [opts child]
   (map->Backdrop {}))

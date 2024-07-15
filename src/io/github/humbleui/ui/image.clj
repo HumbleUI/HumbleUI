@@ -14,13 +14,13 @@
     :fill    cs
     #_else   cs))
 
-(defn- img-rects [opts width height ctx ^IRect rect]
+(defn- img-rects [opts width height ctx ^IRect bounds]
   (let [{:keys [scale xpos ypos]} opts
         scale      (or scale :fit)
         xpos       (or xpos 0.5)
         ypos       (or ypos 0.5)
-        wscale     (/ (:width rect) width)
-        hscale     (/ (:height rect) height)
+        wscale     (/ (:width bounds) width)
+        hscale     (/ (:height bounds) height)
         img-scale  (case (or scale :fit)
                      :content (:scale ctx)
                      :fit     (min wscale hscale)
@@ -28,14 +28,14 @@
                      #_else   (* (:scale ctx) scale))
         img-width  (* width img-scale)
         img-height (* height img-scale)
-        img-left   (+ (:x rect)
-                     (* (:width rect) xpos)
+        img-left   (+ (:x bounds)
+                     (* (:width bounds) xpos)
                      (- (* img-width xpos)))
-        img-top    (+ (:y rect)
-                     (* (:height rect) ypos)
+        img-top    (+ (:y bounds)
+                     (* (:height bounds) ypos)
                      (- (* img-height ypos)))
         img-rect   (core/rect-xywh img-left img-top img-width img-height)
-        dst-rect   (.intersect (.toRect rect) img-rect)]
+        dst-rect   (.intersect (.toRect bounds) img-rect)]
     (when dst-rect
       (let [src-rect (-> dst-rect
                        (.offset (- img-left) (- img-top))
@@ -58,9 +58,9 @@
     (let [[_ opts _] (parse-element element)]
       (img-measure opts width height ctx cs)))
   
-  (-draw-impl [this ctx rect ^Canvas canvas]
+  (-draw-impl [this ctx bounds ^Canvas canvas]
     (let [[_ opts _]  (parse-element element)]
-      (when-some [[src-rect dst-rect] (img-rects opts width height ctx rect)]
+      (when-some [[src-rect dst-rect] (img-rects opts width height ctx bounds)]
         (.drawImageRect canvas image src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))))
   
   (-should-reconcile? [_this ctx new-element]

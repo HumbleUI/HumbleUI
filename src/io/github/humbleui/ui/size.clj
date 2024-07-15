@@ -34,8 +34,8 @@
 
 (defn node-size []
   (let [scale (or (:scale *ctx*) 1)
-        w     (or (:width (:rect *node*)) 0)
-        h     (or (:height (:rect *node*)) 0)]
+        w     (or (:width (:bounds *node*)) 0)
+        h     (or (:height (:bounds *node*)) 0)]
     (core/point (/ w scale) (/ h scale))))
 
 (defn use-size []
