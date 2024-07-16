@@ -1,4 +1,5 @@
 (ns io.github.humbleui.ui
+  (:refer-clojure :exclude [iterate])
   (:require
     [clojure.java.io :as io]
     [clojure.math :as math]

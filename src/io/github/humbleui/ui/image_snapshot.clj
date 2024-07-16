@@ -6,7 +6,7 @@
 (util/deftype+ ImageSnapshot [^:mut ^Image image]
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [this ctx bounds ^Canvas canvas]
+  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           scale   (:scale opts)
           [sx sy] (if (some? scale)
@@ -23,7 +23,7 @@
         (set! image nil))
       (when (nil? image)
         (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
-          (draw child ctx (util/irect-xywh 0 0 w h) (.getCanvas surface))
+          (draw child ctx (util/irect-xywh 0 0 w h) viewport (.getCanvas surface))
           (protocols/-set! this :image (.makeImageSnapshot surface))))
       (.drawImageRect canvas image (util/rect bounds)))))
 

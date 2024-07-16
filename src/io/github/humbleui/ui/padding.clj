@@ -17,7 +17,7 @@
         (-> (:width child-size) (+ left) (+ right))
         (-> (:height child-size) (+ top) (+ bottom)))))
   
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _]   (parse-element element)
           left         (dimension (or (:left opts)   (:horizontal opts) (:padding opts) 0) bounds ctx)
           right        (dimension (or (:right opts)  (:horizontal opts) (:padding opts) 0) bounds ctx)
@@ -30,7 +30,7 @@
                          (+ (:y bounds) top)
                          width
                          height)]
-      (draw child ctx child-bounds canvas))))
+      (draw child ctx child-bounds viewport canvas))))
 
 (defn- padding-ctor [opts child]
   (map->Padding {}))

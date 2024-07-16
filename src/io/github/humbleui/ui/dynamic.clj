@@ -11,7 +11,7 @@
       cs
       (measure child ctx cs)))
   
-  (-draw [_ ctx bounds canvas]
+  (-draw [_ ctx bounds viewport canvas]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
         (unmount child)
@@ -19,7 +19,7 @@
     (set! child-bounds bounds)
     (if (instance? Throwable child)
       (canvas/draw-rect canvas bounds (paint/fill 0xFFCC3333))
-      (draw child ctx child-bounds canvas)))
+      (draw child ctx child-bounds viewport canvas)))
   
   (-event [_ ctx event]
     (when-not (instance? Throwable child)

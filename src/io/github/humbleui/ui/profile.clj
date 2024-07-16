@@ -5,7 +5,7 @@
 (util/deftype+ Profile []
   :extends AWrapperNode  
   protocols/IComponent
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           {:keys [value]} opts]
       (when @value
@@ -22,7 +22,7 @@
               file     (profiler/stop)]
           (println "Finished profiling, " (-> (System/nanoTime) (- t0) (/ 1000000.0) (/ ops) (->> (format "%.2f"))) " ms/op, " (.getPath ^File file))
           (reset! value false)))
-      (draw child ctx bounds canvas))))
+      (draw child ctx bounds viewport canvas))))
 
 (defn- profile-ctor [opts child]
   (map->Profile {}))

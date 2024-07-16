@@ -476,6 +476,10 @@
     (<= (:y rect) (:y point))
     (< (:y point) (:bottom rect))))
 
+(defn irect-intersect [^IRect a ^IRect b]
+  (when (and a b)
+    (.intersect a b)))
+
 (defn arities [f]
   (let [methods  (.getDeclaredMethods (class f))
         fixed    (->> methods

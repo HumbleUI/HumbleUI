@@ -3,7 +3,7 @@
 (util/deftype+ RectNode []
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [opts  (parse-opts element)
           paint (util/checked-get opts :paint #(instance? Paint %))
           radii (some->>
@@ -16,7 +16,7 @@
       (if radii
         (canvas/draw-rect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) radii) paint)
         (canvas/draw-rect canvas bounds paint))
-      (draw child ctx bounds canvas))))
+      (draw child ctx bounds viewport canvas))))
 
 (defn- rect-ctor [opts child]
   (map->RectNode {}))

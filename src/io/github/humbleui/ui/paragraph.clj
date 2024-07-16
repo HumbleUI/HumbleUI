@@ -41,7 +41,7 @@
         (math/ceil (:width layout))
         (:height layout))))
   
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           paint      (or (:paint opts) (:fill-text ctx))
           layout     (util/cached *layout (:width bounds)

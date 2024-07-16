@@ -7,11 +7,11 @@
     (cond-> ctx
       focused (assoc :hui/focused? true)))
   
-  (-draw-impl [this ctx bounds canvas]
+  (-draw-impl [this ctx bounds viewport canvas]
     (some-> (::*focused ctx)
       (cond->
         focused (vswap! conj this)))
-    (draw child ctx bounds canvas))
+    (draw child ctx bounds viewport canvas))
   
   (-event-impl [this ctx event]
     (util/eager-or
@@ -51,10 +51,10 @@
 (util/deftype+ FocusController []
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [*focused (volatile! [])
           ctx'     (assoc ctx ::*focused *focused)
-          res      (draw child ctx' bounds canvas)
+          res      (draw child ctx' bounds viewport canvas)
           focused  (sort-by :focused @*focused)]
       (doseq [comp (butlast focused)]
         (util/set!! comp :focused nil)

@@ -15,7 +15,7 @@
           (:height child-size)
           (:height cs)))))
   
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [opts (parse-opts element)]
       (set! child-size (protocols/-measure child ctx (util/ipoint (:width bounds) Integer/MAX_VALUE)))
       (set! offset-px (util/clamp (scaled (or @offset 0)) 0 (- (:height child-size) (:height bounds))))
@@ -26,7 +26,7 @@
                              (update :y - offset-px)
                              (update :y math/round)
                              (assoc :height (:height child-size)))]
-          (draw child ctx child-bounds canvas)))))
+          (draw child ctx child-bounds (util/irect-intersect viewport bounds) canvas)))))
   
   (-event-impl [_ ctx event]
     (case (:event event)

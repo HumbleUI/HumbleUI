@@ -556,7 +556,7 @@
   ;                                       
   ; ├────────────────────────────────────┤
   ;            (.getWidth line)           
-  (-draw-impl [this ctx bounds ^Canvas canvas]
+  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
     (correct-ranges! *state)
     (correct-offset! this ctx)
     

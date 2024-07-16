@@ -81,10 +81,11 @@
       (assert (instance? IPoint res) (str "Expected IPoint as result, got: " res))
       res)))
 
-(defn draw [comp ctx ^IRect bounds ^Canvas canvas]
+(defn draw [comp ctx bounds viewport canvas]
   (assert (instance? IRect bounds) (str "bounds: expected IRect, got: " bounds))
+  (assert (or (nil? viewport) (instance? IRect viewport)) (str "viewport: expected IRect, got: " viewport))
   (when comp
-    (protocols/-draw comp ctx bounds canvas)))
+    (protocols/-draw comp ctx bounds viewport canvas)))
 
 (defn event [comp ctx event]
   (when comp

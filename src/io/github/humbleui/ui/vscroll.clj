@@ -4,8 +4,8 @@
   :extends AWrapperNode
   
   protocols/IComponent
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
-    (draw child ctx bounds canvas)
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+    (draw child ctx bounds viewport canvas)
     (when (> (:height (:child-size child)) (:height bounds))
       (let [{:keys [scale]} ctx
             [_ opts _]      (parse-element element)

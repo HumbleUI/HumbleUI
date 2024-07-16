@@ -35,7 +35,7 @@
   (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw-impl [_ _ctx bounds ^Canvas canvas]
+  (-draw-impl [_ _ctx bounds viewport ^Canvas canvas]
     (let [root (.getRoot dom)
           {:keys [x y width height]} bounds
           [_ opts _] (parse-element element)

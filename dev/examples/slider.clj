@@ -16,7 +16,7 @@
     (let [{:keys [scale]} ctx]
       (util/isize (* scale 32) (* scale 32))))
 
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [{:hui.slider/keys [fill-thumb
                              stroke-thumb
                              fill-thumb-active
@@ -35,7 +35,7 @@
        (let [{:keys [scale]} ui/*ctx*]
          (util/isize (* scale 4) (* scale 32))))
      :draw
-     (fn [_ ^IRect bounds canvas]
+     (fn [_ ^IRect bounds _viewport canvas]
        (let [{:keys [scale]} ui/*ctx*
              rrect (-> bounds .toRect (.withRadii (* scale 2.0)))]
          (canvas/draw-rrect canvas rrect paint)))}))
@@ -46,7 +46,7 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [{:keys [scale]}   ctx
           track-height      (+ (:height bounds) (* 2 scale))
           half-track-height (/ track-height 2)
@@ -63,7 +63,7 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [{:keys [scale]}   ctx
           track-height      (+ (:height bounds) (* 2 scale))
           half-track-height (/ track-height 2)

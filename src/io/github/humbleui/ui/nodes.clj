@@ -32,11 +32,11 @@
       (ui/maybe-render this ctx)
       (protocols/-measure-impl this ctx cs)))
     
-  (-draw [this ctx bounds' canvas]
+  (-draw [this ctx bounds' viewport canvas]
     (let [ctx (protocols/-context this ctx)]
       (protocols/-set! this :bounds bounds')
       (ui/maybe-render this ctx)
-      (protocols/-draw-impl this ctx bounds' canvas)
+      (protocols/-draw-impl this ctx bounds' viewport canvas)
       (when (and @debug/*outlines? (not (:mounted? this)))
         (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
         (protocols/-set! this :mounted? true))))
@@ -89,9 +89,9 @@
     (let [ctx (protocols/-context this ctx)]
       (measure (:child this) ctx cs)))
 
-  (-draw-impl [this ctx bounds canvas]
+  (-draw-impl [this ctx bounds viewport canvas]
     (let [ctx (protocols/-context this ctx)]
-      (draw (:child this) ctx bounds canvas)))
+      (draw (:child this) ctx bounds viewport canvas)))
   
   (-event-impl [this ctx event]
     (let [ctx (protocols/-context this ctx)]
@@ -171,7 +171,7 @@
         (user-measure child cs)
         (measure child ctx cs))))
   
-  (-draw [this ctx bounds' canvas]
+  (-draw [this ctx bounds' viewport canvas]
     (set! bounds bounds')
     (binding [*node* this
               *ctx*  ctx]
@@ -179,8 +179,8 @@
         (maybe-render this ctx))
       (util/invoke before-draw)
       (if user-draw
-        (user-draw child bounds canvas)
-        (protocols/-draw child ctx bounds canvas))
+        (user-draw child bounds viewport canvas)
+        (protocols/-draw child ctx bounds viewport canvas))
       (util/invoke after-draw)
       (when-not mounted?
         (util/invoke after-mount))

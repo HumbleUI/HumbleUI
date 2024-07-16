@@ -14,9 +14,9 @@
       (util/ipoint 0 0)
       children))
   
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (doseq [child children]
-      (draw child ctx bounds canvas)))
+      (draw child ctx bounds viewport canvas)))
   
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]

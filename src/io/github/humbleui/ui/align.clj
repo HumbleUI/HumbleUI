@@ -3,7 +3,7 @@
 (util/deftype+ Align []
   :extends AWrapperNode  
   protocols/IComponent  
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (let [[_ opts _]     element
           {:keys [x y child-x child-y]} opts
           _              (assert (or (nil? x) (number? x) (#{:left :center :right} x)) (str ":x, expected number or :left/:center/:right, got: " (pr-str x)))
@@ -51,7 +51,7 @@
                            
                            y
                            (util/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
-      (draw child ctx child-bounds canvas))))
+      (draw child ctx child-bounds viewport canvas))))
 
 (defn- align-ctor [opts child]
   (map->Align {}))

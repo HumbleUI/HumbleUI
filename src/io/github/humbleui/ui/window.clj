@@ -41,12 +41,12 @@
           paint-fn   (fn [window canvas]
                        (locking window
                          (canvas/clear canvas bg-color)
-                         (let [bounds (window/content-rect window)
-                               bounds (util/irect-xywh 0 0 (:width bounds) (:height bounds))]
+                         (let [content-rect (window/content-rect window)
+                               bounds       (util/irect-xywh 0 0 (:width content-rect) (:height content-rect))]
                            (when on-paint
                              (on-paint window canvas))
                            (when-some [app @*app-node]
-                             (protocols/-draw app (ctx-fn window) bounds canvas)))))
+                             (protocols/-draw app (ctx-fn window) bounds bounds canvas)))))
           event-fn   (fn [window event]
                        (locking window
                          (util/when-some+ [{:keys [x y]} event]

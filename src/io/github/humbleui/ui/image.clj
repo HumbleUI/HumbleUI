@@ -58,7 +58,7 @@
     (let [[_ opts _] (parse-element element)]
       (img-measure opts width height ctx cs)))
   
-  (-draw-impl [this ctx bounds ^Canvas canvas]
+  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _]  (parse-element element)]
       (when-some [[src-rect dst-rect] (img-rects opts width height ctx bounds)]
         (.drawImageRect canvas image src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))))
@@ -92,7 +92,7 @@
     (let [[_ opts _] (parse-element element)]
       (img-measure opts width height ctx cs)))
   
-  (-draw-impl [_ ctx rect ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _]     (parse-element element)
           total-duration (reduce + 0 durations)
           offset         (mod (- (util/now) start) total-duration)
@@ -104,7 +104,7 @@
                              (recur (next durations) (long (+ time (first durations))) (inc frame))))
           frame          (util/clamp frame 0 (dec (count durations)))
           next-offset    (reduce + 0 (take (inc frame) durations))]
-      (when-some [[src-rect dst-rect] (img-rects opts width height ctx rect)]
+      (when-some [[src-rect dst-rect] (img-rects opts width height ctx bounds)]
         (.drawImageRect canvas (nth images frame) src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))
       (util/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
 

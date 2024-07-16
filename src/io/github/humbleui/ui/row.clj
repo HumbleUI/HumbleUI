@@ -20,7 +20,7 @@
             (max height (:height child-size))))
         (util/ipoint width height))))
   
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _]    (parse-element element)
           gap           (-> (:gap opts 0)
                           (* (:scale ctx))
@@ -51,7 +51,7 @@
                                       (:y bounds)
                                       (max 0 child-width)
                                       (max 0 (:height bounds)))]
-            (draw child ctx child-bounds canvas)
+            (draw child ctx child-bounds viewport canvas)
             (recur known' children' (+ width gap child-width))))))))
 
 (defn- row-ctor [& children]

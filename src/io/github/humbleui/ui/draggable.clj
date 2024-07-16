@@ -18,10 +18,10 @@
   (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw-impl [this ctx bounds canvas]
+  (-draw-impl [this ctx bounds viewport canvas]
     (set! my-pos (util/ipoint (:x bounds) (:y bounds)))
     (set! child-size (measure child ctx (util/ipoint (:width bounds) (:height bounds))))
-    (draw child ctx (draggable-child-bounds this) canvas))
+    (draw child ctx (draggable-child-bounds this) viewport canvas))
   
   (-event-impl [this ctx event]
     (let [[_ opts _] (parse-element element)

@@ -54,9 +54,9 @@
 (util/deftype+ MouseListener [^:mut over?]
   :extends AWrapperNode
   protocols/IComponent
-  (-draw-impl [_ ctx bounds canvas]
+  (-draw-impl [_ ctx bounds viewport canvas]
     (set! over? (util/rect-contains? bounds (:mouse-pos ctx)))
-    (draw child ctx bounds canvas))
+    (draw child ctx bounds viewport canvas))
   
   (-event-impl [_ ctx event]
     (let [[_ opts _] (parse-element element)

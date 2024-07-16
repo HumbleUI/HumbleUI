@@ -8,9 +8,9 @@
   (-measure [this ctx cs]
     (measure child (protocols/-context this ctx) cs))
   
-  (-draw [this ctx bounds' canvas]
+  (-draw [this ctx bounds' viewport canvas]
     (set! bounds bounds')
-    (draw child (protocols/-context this ctx) bounds canvas))
+    (draw child (protocols/-context this ctx) bounds viewport canvas))
   
   (-event [this ctx event]
     (ui/event child (protocols/-context this ctx) event))

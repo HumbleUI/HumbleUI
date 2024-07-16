@@ -37,7 +37,7 @@
         (areduce ^floats widths  i res (float 0) (+ res (aget ^floats widths i)))
         (areduce ^floats heights i res (float 0) (+ res (aget ^floats heights i))))))
   
-  (-draw-impl [_ ctx bounds ^Canvas canvas]
+  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (let [{:keys [cols rows]}      (grid-opts element children)
           cs                       (util/ipoint (:width bounds) (:height bounds))
           {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
@@ -49,7 +49,7 @@
               width  (aget ^floats widths col)]
           (when-some [child (nth children (+ col (* row cols)) nil)]
             (let [child-bounds (util/irect-xywh x y width height)]
-              (draw child ctx child-bounds canvas)))
+              (draw child ctx child-bounds viewport canvas)))
           (let [[x' y'] (if (< col (dec cols))
                           [(+ x width) y]
                           [(:x bounds) (+ y height)])]

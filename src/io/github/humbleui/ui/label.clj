@@ -6,7 +6,7 @@
   (-measure-impl [this ctx cs]
     size)
   
-  (-draw-impl [this ctx bounds ^Canvas canvas]
+  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           paint      (or (:paint opts) (:fill-text ctx))]
       (.drawTextLine canvas line (:x bounds) (+ (:y bounds) (:height size)) paint)))

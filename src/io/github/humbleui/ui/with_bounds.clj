@@ -10,12 +10,12 @@
           height (/ (:height bounds 0) scale)]
       [[child-ctor-or-el (util/ipoint width height)]]))
   
-  (-draw-impl [this ctx bounds canvas]
+  (-draw-impl [this ctx bounds viewport canvas]
     (let [cs' (util/ipoint (:width bounds) (:height bounds))]
       (when (not= cs cs')
         (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?
-      (draw (:child this) ctx bounds canvas))))
+      (draw child ctx bounds viewport canvas))))
 
 (defn with-bounds-ctor [child-ctor-or-el]
   (map->WithBounds {}))
