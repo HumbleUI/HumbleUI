@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithContextClassic [data child ^:mut bounds]
+(util/deftype+ WithContextClassic [data child ^:mut bounds]
   protocols/IComponent
   (-context [_ ctx]
     (merge ctx data))
@@ -26,7 +26,7 @@
 (defn with-context-classic [data child]
   (->WithContextClassic data child nil))
 
-(core/deftype+ WithContext []
+(util/deftype+ WithContext []
   :extends AWrapperNode
   protocols/IComponent
   (-context [_ ctx]

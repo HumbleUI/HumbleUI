@@ -3,7 +3,7 @@
     [clojure.math :as math]
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
@@ -65,7 +65,7 @@
                     color (oklch->srgb l c h)]
               :when color]
         (.setColor fill color)
-        (canvas/draw-rect canvas (core/rect-xywh (math/ceil x) (math/ceil y) (math/ceil dx) (math/ceil dy)) fill)))))
+        (canvas/draw-rect canvas (util/rect-xywh (math/ceil x) (math/ceil y) (math/ceil dx) (math/ceil dy)) fill)))))
 
 (def oklab-shared "
     // https://bottosson.github.io/posts/oklab/#converting-from-linear-srgb-to-oklab
@@ -146,7 +146,7 @@
                 shader (.makeShader effect data nil nil)
                 fill   (doto (Paint.)
                          (.setShader shader))]
-      (canvas/draw-rect canvas (core/rect-xywh 0 0 1 1) fill))))
+      (canvas/draw-rect canvas (util/rect-xywh 0 0 1 1) fill))))
 
 (def ^:private ^DecimalFormat decimal-format
   (DecimalFormat. "0.##" (doto (DecimalFormatSymbols.)

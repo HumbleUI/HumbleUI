@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ WithBounds [^:mut cs]
+(util/deftype+ WithBounds [^:mut cs]
   :extends AWrapperNode
   protocols/IComponent  
   (-child-elements [this ctx new-element]
@@ -8,10 +8,10 @@
           scale  (:scale ctx)
           width  (/ (:width bounds 0) scale)
           height (/ (:height bounds 0) scale)]
-      [[child-ctor-or-el (core/ipoint width height)]]))
+      [[child-ctor-or-el (util/ipoint width height)]]))
   
   (-draw-impl [this ctx bounds canvas]
-    (let [cs' (core/ipoint (:width bounds) (:height bounds))]
+    (let [cs' (util/ipoint (:width bounds) (:height bounds))]
       (when (not= cs cs')
         (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?

@@ -14,7 +14,7 @@
         half-thumb-w      (/ thumb-w 2)
         left              (+ (:x bounds) half-thumb-w)
         width             (- (:width bounds) thumb-w)
-        ratio             (core/clamp (/ (- x delta-x left) width) 0 1)
+        ratio             (util/clamp (/ (- x delta-x left) width) 0 1)
         range             (- max min)]
     (-> ratio
       (* (quot range step))
@@ -22,12 +22,12 @@
       (* step)
       (+ min))))
 
-(core/deftype+ SliderThumb []
+(util/deftype+ SliderThumb []
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx _cs]
     (let [{:hui.slider/keys [thumb-size]} ctx]
-      (core/isize thumb-size thumb-size)))
+      (util/isize thumb-size thumb-size)))
 
   (-draw-impl [_ ctx bounds canvas]
     (let [{:hui.slider/keys [fill-thumb
@@ -41,7 +41,7 @@
       (canvas/draw-circle canvas x y r (if active? fill-thumb-active fill-thumb))
       (canvas/draw-circle canvas x y r (if active? stroke-thumb-active stroke-thumb)))))
 
-(core/deftype+ SliderTrack [fill-key]
+(util/deftype+ SliderTrack [fill-key]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -54,10 +54,10 @@
           y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
           w      (+ (:width bounds) track-height)
           r      half-track-height
-          rect   (core/rrect-xywh x y w track-height r)]
+          rect   (util/rrect-xywh x y w track-height r)]
       (canvas/draw-rect canvas rect (ctx fill-key)))))
 
-(core/deftype+ Slider [*value
+(util/deftype+ Slider [*value
                        track-active
                        track-inactive
                        thumb
@@ -70,7 +70,7 @@
     (measure thumb ctx cs))
   
   (-draw-impl [_ ctx bounds canvas]
-    (set! thumb-size (measure thumb ctx (core/isize (:width bounds) (:height bounds))))
+    (set! thumb-size (measure thumb ctx (util/isize (:width bounds) (:height bounds))))
     (let [{:keys [min max]
            :or {min 0
                 max 100}}   (parse-opts element)
@@ -86,12 +86,12 @@
           thumb-x           (+ left half-thumb-w (* ratio (- w thumb-w)))
           ctx'              (cond-> ctx
                               dragging? (assoc :hui/active? true))]
-      (draw-child track-active   ctx' (core/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) canvas)
-      (draw-child track-inactive ctx' (core/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) canvas)
-      (draw-child thumb          ctx' (core/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)         canvas)))
+      (draw-child track-active   ctx' (util/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) canvas)
+      (draw-child track-inactive ctx' (util/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) canvas)
+      (draw-child thumb          ctx' (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)         canvas)))
   
   (-event-impl [this _ctx event]
-    (core/eager-or
+    (util/eager-or
       (when (and
               (= :mouse-button (:event event))
               (= :primary (:button event))
@@ -109,16 +109,16 @@
               range             (- max min)
               ratio             (/ (- value min) range)
               thumb-x           (+ left half-thumb-w (* ratio (- width thumb-w)))
-              thumb-rect        (core/irect-xywh (- thumb-x half-thumb-w) top thumb-w thumb-h)
-              point             (core/ipoint (:x event) (:y event))]
+              thumb-rect        (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w thumb-h)
+              point             (util/ipoint (:x event) (:y event))]
           (cond
-            (core/rect-contains? thumb-rect point)
+            (util/rect-contains? thumb-rect point)
             (do
               (set! dragging? true)
               (set! delta-x (- (:x event) thumb-x))
               true)
             
-            (core/rect-contains? bounds point)
+            (util/rect-contains? bounds point)
             (do
               (set! dragging? true)
               (reset! *value (slider-value-at this (:x event)))

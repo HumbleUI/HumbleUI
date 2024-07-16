@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Stack []
+(util/deftype+ Stack []
   :extends AContainerNode
   
   protocols/IComponent
@@ -8,10 +8,10 @@
     (reduce
       (fn [size child]
         (let [{:keys [width height]} (measure child ctx cs)]
-          (core/ipoint
+          (util/ipoint
             (max (:width size) width)
             (max (:height size) height))))
-      (core/ipoint 0 0)
+      (util/ipoint 0 0)
       children))
   
   (-draw-impl [_ ctx bounds canvas]

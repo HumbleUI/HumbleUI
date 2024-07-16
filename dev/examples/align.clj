@@ -2,7 +2,7 @@
   (:require
     [clojure.string :as str]
     [examples.shared :as shared]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))

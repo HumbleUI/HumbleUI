@@ -2,7 +2,7 @@
 
 (defn with-cursor-ctor [opts child]
   (let [window (:window *ctx*)
-        cursor (core/checked-get opts :cursor keyword?)]
+        cursor (util/checked-get opts :cursor keyword?)]
     [hoverable
      {:on-hover
       (fn [_]

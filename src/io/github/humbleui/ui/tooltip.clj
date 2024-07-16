@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ RelativeRect [^:mut relative]
+(util/deftype+ RelativeRect [^:mut relative]
   :extends AWrapperNode
   
   protocols/IComponent
@@ -11,28 +11,28 @@
                 up      0
                 anchor  :top-left
                 shackle :top-right}} opts
-          child-size    (measure child ctx (core/ipoint (:width bounds) (:height bounds)))
-          child-bounds    (core/irect-xywh (:x bounds) (:y bounds) (:width child-size) (:height child-size))
-          rel-cs        (measure relative ctx (core/ipoint 0 0))
+          child-size    (measure child ctx (util/ipoint (:width bounds) (:height bounds)))
+          child-bounds    (util/irect-xywh (:x bounds) (:y bounds) (:width child-size) (:height child-size))
+          rel-cs        (measure relative ctx (util/ipoint 0 0))
           rel-cs-width  (:width rel-cs)
           rel-cs-height (:height rel-cs)
           rel-bounds      (condp = [anchor shackle]
-                          [:top-left :top-left]         (core/irect-xywh (- (:x child-bounds) left) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
-                          [:top-right :top-left]        (core/irect-xywh (- (:x child-bounds) rel-cs-width left) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
-                          [:bottom-right :top-left]     (core/irect-xywh (- (:x child-bounds) rel-cs-width left) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
-                          [:bottom-left :top-left]      (core/irect-xywh (- (:x child-bounds) left) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
-                          [:top-left :top-right]        (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
-                          [:top-right :top-right]       (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
-                          [:bottom-left :top-right]     (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
-                          [:bottom-right :top-right]    (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
-                          [:top-left :bottom-right]     (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
-                          [:top-right :bottom-right]    (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
-                          [:bottom-right :bottom-right] (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
-                          [:bottom-left :bottom-right]  (core/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
-                          [:top-left :bottom-left]      (core/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
-                          [:top-right :bottom-left]     (core/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
-                          [:bottom-left :bottom-left]   (core/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
-                          [:bottom-right :bottom-left]  (core/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height))]
+                          [:top-left :top-left]         (util/irect-xywh (- (:x child-bounds) left) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
+                          [:top-right :top-left]        (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
+                          [:bottom-right :top-left]     (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
+                          [:bottom-left :top-left]      (util/irect-xywh (- (:x child-bounds) left) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
+                          [:top-left :top-right]        (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
+                          [:top-right :top-right]       (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (- (:y child-bounds) up) rel-cs-width rel-cs-height)
+                          [:bottom-left :top-right]     (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
+                          [:bottom-right :top-right]    (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (- (:y child-bounds) rel-cs-height up) rel-cs-width rel-cs-height)
+                          [:top-left :bottom-right]     (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
+                          [:top-right :bottom-right]    (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
+                          [:bottom-right :bottom-right] (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) rel-cs-width left)) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
+                          [:bottom-left :bottom-right]  (util/irect-xywh (+ (:x child-bounds) (- (:width child-bounds) left)) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
+                          [:top-left :bottom-left]      (util/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
+                          [:top-right :bottom-left]     (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
+                          [:bottom-left :bottom-left]   (util/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
+                          [:bottom-right :bottom-left]  (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height))]
       (draw-child child ctx child-bounds canvas)
       (draw-child relative ctx rel-bounds canvas))) ;; TODO draw in tooltip overlay
   

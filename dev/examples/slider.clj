@@ -1,6 +1,6 @@
 (ns examples.slider
   (:require
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
@@ -9,12 +9,12 @@
   (:import
     [io.github.humbleui.types IRect]))
 
-(core/deftype+ SquareThumb []
+(util/deftype+ SquareThumb []
   :extends ui/ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx _cs]
     (let [{:keys [scale]} ctx]
-      (core/isize (* scale 32) (* scale 32))))
+      (util/isize (* scale 32) (* scale 32))))
 
   (-draw-impl [_ ctx bounds canvas]
     (let [{:hui.slider/keys [fill-thumb
@@ -33,14 +33,14 @@
     {:measure
      (fn [_ cs]
        (let [{:keys [scale]} ui/*ctx*]
-         (core/isize (* scale 4) (* scale 32))))
+         (util/isize (* scale 4) (* scale 32))))
      :draw
      (fn [_ ^IRect bounds canvas]
        (let [{:keys [scale]} ui/*ctx*
              rrect (-> bounds .toRect (.withRadii (* scale 2.0)))]
          (canvas/draw-rrect canvas rrect paint)))}))
 
-(core/deftype+ WideTrackLeft []
+(util/deftype+ WideTrackLeft []
   :extends ui/ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -54,10 +54,10 @@
           y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
           w      (+ (:width bounds) half-track-height)
           r      half-track-height
-          rect   (core/rrect-xywh x y w track-height r 0 0 r)]
+          rect   (util/rrect-xywh x y w track-height r 0 0 r)]
       (canvas/draw-rect canvas rect (:hui.slider/fill-track-active ctx)))))
 
-(core/deftype+ WideTrackRight []
+(util/deftype+ WideTrackRight []
   :extends ui/ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -71,7 +71,7 @@
           y      (+ (:y bounds) (/ (:height bounds) 2) (- half-track-height))
           w      (+ (:width bounds) half-track-height)
           r      half-track-height
-          rect   (core/rrect-xywh x y w track-height 0 r r 0)]
+          rect   (util/rrect-xywh x y w track-height 0 r r 0)]
       (canvas/draw-rect canvas rect (:hui.slider/fill-track-inactive ctx)))))
 
 (ui/defcomp with-slider [slider]

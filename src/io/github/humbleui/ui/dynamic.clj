@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Contextual [child-ctor ^:mut child ^:mut child-bounds]
+(util/deftype+ Contextual [child-ctor ^:mut child ^:mut child-bounds]
   protocols/IComponent
   (-measure [_ ctx cs]
     (let [child' (child-ctor ctx)]
@@ -39,13 +39,13 @@
     #(try
        (child-ctor %)
        (catch Throwable t
-         (core/log-error t)
+         (util/log-error t)
          t))
     nil nil))
 
 (defn- dynamic-impl [ctx-sym bindings body]
-  (let [syms (core/bindings->syms bindings)]
-    `(let [inputs-fn# (core/memoize-last (fn [~@syms] ~@body))]
+  (let [syms (util/bindings->syms bindings)]
+    `(let [inputs-fn# (util/memoize-last (fn [~@syms] ~@body))]
        (contextual
          (fn [~ctx-sym]
            (let [~@bindings]

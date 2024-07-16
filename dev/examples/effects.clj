@@ -3,7 +3,7 @@
     [clojure.math :as math]
     [examples.shared :as shared]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
@@ -15,7 +15,7 @@
 
 @ui/button ;; FIXME
 
-(core/deftype+ Ripple [^:mut center
+(util/deftype+ Ripple [^:mut center
                        ^:mut progress-start
                        ^:mut hovered?]
   :extends ui/AWrapperNode
@@ -29,9 +29,9 @@
                 radius 1.5}} opts
           pressed? (:pressed state)
           border-radius 10
-          rrect    (core/rrect-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (* scale border-radius))
+          rrect    (util/rrect-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (* scale border-radius))
           max-r    (* radius (Math/hypot (:width bounds) (:height bounds)))
-          progress (-> (core/now) (- (or progress-start 0)) (/ duration) (min 1))
+          progress (-> (util/now) (- (or progress-start 0)) (/ duration) (min 1))
           progress (if hovered? progress (- 1 progress))]
       (canvas/with-canvas canvas
         (.clipRRect canvas rrect true)
@@ -48,14 +48,14 @@
           (window/request-frame window)))))
   
   (-event-impl [this ctx event]
-    (core/eager-or
+    (util/eager-or
       (when (= :mouse-move (:event event))
-        (core/when-some+ [{:keys [x y]} event]
-          (let [p         (core/ipoint x y)
-                hovered?' (core/rect-contains? bounds p)]
+        (util/when-some+ [{:keys [x y]} event]
+          (let [p         (util/ipoint x y)
+                hovered?' (util/rect-contains? bounds p)]
             (when (not= hovered? hovered?')
               (set! hovered? hovered?')
-              (set! progress-start (core/now))
+              (set! progress-start (util/now))
               (let [[_ opts _] (ui/parse-element element)
                     radius (:radius opts 1.5)
                     cx     (+ (:x bounds) (/ (:width bounds) 2))
@@ -64,7 +64,7 @@
                     max-r  (* (- radius 0.5) (Math/hypot (:width bounds) (:height bounds)))
                     px     (-> (math/cos theta) (* max-r) (+ cx))
                     py     (-> (math/sin theta) (* max-r) (+ cy))]
-                (set! center (core/point px py))
+                (set! center (util/point px py))
                 true)))))
       (ui/event-child child ctx event))))
 
@@ -88,7 +88,7 @@
     (int-array [(unchecked-int 0xFF306060)
                 (unchecked-int 0xFF603060)])))
 
-(core/deftype+ Card [bg
+(util/deftype+ Card [bg
                      gradient
                      ^:mut hovered?]
   :extends ui/AWrapperNode
@@ -117,15 +117,15 @@
                         shader (Shader/makeBlend BlendMode/SRC_IN mask gradient)
                         paint  (Paint.)]
               (.setShader paint shader)
-              (canvas/draw-rect canvas (core/rect-xywh 0 0 w h) paint)))))
+              (canvas/draw-rect canvas (util/rect-xywh 0 0 w h) paint)))))
       (ui/draw-child child ctx bounds canvas)))
   
   (-event-impl [this ctx event]
-    (core/eager-or
-      (core/when-some+ [{:keys [x y]} event]
+    (util/eager-or
+      (util/when-some+ [{:keys [x y]} event]
         (when (= :mouse-move (:event event))
-          (let [hovered?' (core/rect-contains? bounds (core/ipoint x y))]
-            (core/eager-or
+          (let [hovered?' (util/rect-contains? bounds (util/ipoint x y))]
+            (util/eager-or
               (when (not= hovered? hovered?')
                 (set! hovered? hovered?')
                 true)

@@ -1,13 +1,13 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/import-vars typeface/load-typeface)
-(core/import-vars typeface/load-typefaces)
-(core/import-vars typeface/typeface)
+(util/import-vars typeface/load-typeface)
+(util/import-vars typeface/load-typefaces)
+(util/import-vars typeface/typeface)
 
 (defn- font-resolve-aliases [font-family aliases]
   (loop [res      []
          families (str/split font-family #"\s*,\s*")]
-    (core/cond+
+    (util/cond+
       (empty? families)
       res
       
@@ -33,7 +33,7 @@
   (^Font []
     (get-font {}))
   (^Font [opts]
-    (let [opts (core/merge-some
+    (let [opts (util/merge-some
                  {:font-size       (:font-size *ctx*)
                   :font-cap-height (:font-cap-height *ctx*)
                   :font-weight     (:font-weight *ctx*)

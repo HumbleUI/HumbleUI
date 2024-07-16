@@ -1,7 +1,7 @@
 (ns examples.canvas-shapes
   (:require
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -41,7 +41,7 @@
    (fn paint-point [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           p (core/ipoint 50 100)
+           p (util/ipoint 50 100)
            [x y] [250 450]]
        (canvas/with-canvas canvas
          (with-open [stroke (paint/stroke 0xFF00CCCC 8)]
@@ -141,8 +141,8 @@
    (fn paint-line [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           p1 (core/ipoint 100 450)
-           p2 (core/ipoint 300 200)
+           p1 (util/ipoint 100 450)
+           p2 (util/ipoint 300 200)
            [x1 y1 x2 y2] [250 150 200 50]]
        (canvas/with-canvas canvas
          (with-open [stroke (paint/stroke 0xFF00CCCC 1)]
@@ -155,9 +155,9 @@
    (fn paint-arc [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           arc-1 {:rect (core/irect-xywh 50 100 150 50) :start-angle 45 :sweep-angle 135 :use-center true}
-           arc-2 {:rect (core/rrect-xywh 250 150 100 50 5) :start-angle 90 :sweep-angle -135 :use-center true}
-           arc-3 {:rect (core/rect-xywh 300 300 150 100) :start-angle 135 :sweep-angle 135 :use-center false}
+           arc-1 {:rect (util/irect-xywh 50 100 150 50) :start-angle 45 :sweep-angle 135 :use-center true}
+           arc-2 {:rect (util/rrect-xywh 250 150 100 50 5) :start-angle 90 :sweep-angle -135 :use-center true}
+           arc-3 {:rect (util/rect-xywh 300 300 150 100) :start-angle 135 :sweep-angle 135 :use-center false}
            arc-4 {:left 100 :top 350 :right 150 :bottom 500 :start-angle 180 :sweep-angle -135 :use-center false}]
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFF00CCCC)]
@@ -176,9 +176,9 @@
    (fn paint-rect [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           irect (core/irect-xywh 100 50 150 50)
-           rrect (core/rrect-xywh 50 150 100 50 5)
-           rect (core/rect-xywh 100 250 150 100)]
+           irect (util/irect-xywh 100 50 150 50)
+           rrect (util/rrect-xywh 50 150 100 50 5)
+           rect (util/rect-xywh 100 250 150 100)]
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFF00CCCC)]
            (canvas/draw-string canvas "irect [100 50 150 50]" (:x irect) (- (:y irect) 8) font-ui fill-text)
@@ -193,9 +193,9 @@
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           irect (core/irect-xywh 100 50 150 50)
-           rrect (core/rrect-xywh 50 150 100 50 5)
-           rect (core/rect-xywh 100 250 150 100)]
+           irect (util/irect-xywh 100 50 150 50)
+           rrect (util/rrect-xywh 50 150 100 50 5)
+           rect (util/rect-xywh 100 250 150 100)]
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFF00CCCC)]
            (canvas/draw-string canvas "irect [100 50 150 50]" (:x irect) (- (:y irect) 8) font-ui fill-text)
@@ -219,7 +219,7 @@
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           rrect (core/rrect-xywh 50 150 100 50 5)]
+           rrect (util/rrect-xywh 50 150 100 50 5)]
        (with-open [fill (paint/fill 0xFFCC00CC)]
          (canvas/draw-string canvas "rrect [50 150 100 50 5]" (:x rrect) (- (:y rrect) 8) font-ui fill-text)
          (canvas/draw-rrect canvas rrect fill))))
@@ -227,10 +227,10 @@
    (fn paint-oval [ctx ^Canvas canvas width height scale size]
      (let [font-ui (ui/get-font)
            {:keys [fill-text]} ctx
-           rrect-1 (core/rrect-xywh 50 150 100 50 5)
-           rrect-2 (core/rrect-xywh 60 160 50 30 5)
-           srrect-1 (core/rrect-xywh 50 350 100 50 5)
-           srrect-2 (core/rrect-xywh 60 360 50 30 5)]
+           rrect-1 (util/rrect-xywh 50 150 100 50 5)
+           rrect-2 (util/rrect-xywh 60 160 50 30 5)
+           srrect-1 (util/rrect-xywh 50 350 100 50 5)
+           srrect-2 (util/rrect-xywh 60 360 50 30 5)]
        (canvas/with-canvas canvas
          (with-open [fill (paint/fill 0xFFCC00CC)
                      stroke (paint/stroke 0xFFCC00CC 1)]

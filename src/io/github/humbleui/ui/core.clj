@@ -69,7 +69,7 @@
 
 (defn invoke-callback [comp key & args]
   (let [[_ opts _] (parse-element (:element comp))]
-    (apply core/invoke (key opts) args)))
+    (apply util/invoke (key opts) args)))
 
 ;; vdom
 
@@ -116,7 +116,7 @@
           (when-some [should-render? (:should-render? node)]
             (apply should-render? (next (:element node)))))
     (protocols/-reconcile-impl node ctx (:element node))
-    (core/set!! node :dirty? false)))
+    (util/set!! node :dirty? false)))
 
 (defn make-record [^Class class]
   (let [ns   (str/replace (.getPackageName class) "_" "-")
@@ -125,18 +125,18 @@
     (ctor {})))
 
 (defn collect [key xs]
-  (core/when-some+ [cbs (not-empty (vec (keep key xs)))]
+  (util/when-some+ [cbs (not-empty (vec (keep key xs)))]
     (fn [& args]
       (doseq [cb cbs]
         (apply cb args)))))
 
 (defn collect-bool [key xs]
-  (core/when-some+ [cbs (not-empty (vec (keep key xs)))]
+  (util/when-some+ [cbs (not-empty (vec (keep key xs)))]
     (fn [& args]
       (reduce #(or %1 (apply %2 args)) false cbs))))
 
 (defn assert-arities [f g]
-  (assert (= (core/arities f) (core/arities g)) (str "Arities of node fn and render fn should match, node: " (core/arities f) ", render: " (core/arities g))))
+  (assert (= (util/arities f) (util/arities g)) (str "Arities of node fn and render fn should match, node: " (util/arities f) ", render: " (util/arities g))))
 
 (defn normalize-mixin [x]
   (cond
@@ -199,12 +199,12 @@
   ([el]
    (make-impl (map->FnNode {}) el))
   ([start-node el]
-   (core/cond+
+   (util/cond+
      (satisfies? protocols/IComponent el)
      el
 
      :let [[f & args] el
-           f (core/maybe-deref f)]
+           f (util/maybe-deref f)]
         
      :else
      (binding [*node* start-node]
@@ -212,11 +212,11 @@
                     (fn? f)    (apply f args)
                     (class? f) (make-record f))
              node (loop [res res]
-                    (core/cond+
+                    (util/cond+
                       (fn? res)
                       (do
                         (assert-arities f res)
-                        (core/set!! *node* :render res)
+                        (util/set!! *node* :render res)
                         *node*)
                
                       (satisfies? protocols/IComponent res)
@@ -226,7 +226,7 @@
                       (let [render (:render res)]
                         (when render
                           (assert-arities f render))
-                        (core/set!! *node*
+                        (util/set!! *node*
                           :user-measure   (:measure res)
                           :user-draw      (:draw res)
                           :render         render
@@ -245,16 +245,16 @@
                    
                       (sequential? res)
                       (do
-                        (core/set!! *node* :render f)
+                        (util/set!! *node* :render f)
                         *node*)
                      
                       :else
                       (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
-         (core/set!! node
+         (util/set!! node
            :element el
            :dirty? true)
          (when-some [key (:key (meta el))]
-           (core/set!! node :key key))
+           (util/set!! node :key key))
          (when-some [ref (:ref (meta el))]
            (reset! ref node))
          node)))))
@@ -264,7 +264,7 @@
    (try
      (make-impl el)
      (catch Exception e
-       (core/log-error e)
+       (util/log-error e)
        (make-impl [@(resolve 'io.github.humbleui.ui/error) e]))))
   ([el ctx]
    (binding [*ctx* ctx]
@@ -273,8 +273,8 @@
 (defn should-reconcile? [ctx old-node new-el]
   (and 
     old-node
-    (let [left  (core/maybe-deref (nth (:element old-node) 0))
-          right (core/maybe-deref (nth new-el 0))]
+    (let [left  (util/maybe-deref (nth (:element old-node) 0))
+          right (util/maybe-deref (nth new-el 0))]
       (or
         (identical? left right)
         ;; same lambdas with different captured vars still should reconcile
@@ -302,7 +302,7 @@
     el))
 
 (defn reconcile-many [ctx old-nodes new-els]
-  (core/loop+ [old-nodes-keyed (reduce
+  (util/loop+ [old-nodes-keyed (reduce
                                  (fn [m n]
                                    (if-some [key (:key n)]
                                      (assoc! m key n)
@@ -313,7 +313,7 @@
                new-els         new-els
                res             (transient [])
                keys-idxs       (transient {})]
-    (core/cond+
+    (util/cond+
       (empty? new-els)
       (do
         (doseq [node (concat
@@ -394,7 +394,7 @@
                 res       (conj! res new-node)])))))
 
 (defn force-render [node window]
-  (core/set!! node :dirty? true)
+  (util/set!! node :dirty? true)
   (.requestFrame ^Window window))
 
 ;; Nodes
@@ -402,7 +402,7 @@
 (def ctor-border
   (paint/stroke 0x80FF00FF 4))
 
-(core/defparent ANode
+(util/defparent ANode
   [^:mut element
    ^:mut mounted?
    ^:mut bounds
@@ -455,7 +455,7 @@
   
   (-unmount-impl [_this]))
 
-(core/defparent ATerminalNode
+(util/defparent ATerminalNode
   "Simple component that has no children"
   []
   :extends ANode
@@ -466,7 +466,7 @@
   (-reconcile-impl [this ctx _new-element]
     this))
 
-(core/defparent AWrapperNode
+(util/defparent AWrapperNode
   "A component that has exactly one child"
   [^:mut child]
   :extends ANode
@@ -499,7 +499,7 @@
     (unmount-child (:child this))
     (protocols/-unmount-impl this)))
 
-(core/defparent AContainerNode
+(util/defparent AContainerNode
   "A component that has multiple children"
   [^:mut children]
   :extends ANode
@@ -508,8 +508,8 @@
     (let [ctx (protocols/-context this ctx)]
       (binding [*node* this
                 *ctx*  ctx]
-        (core/eager-or
-          (reduce #(core/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
+        (util/eager-or
+          (reduce #(util/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
           (protocols/-event-impl this ctx event)))))
   
   (-iterate [this ctx cb]
@@ -521,7 +521,7 @@
   (-reconcile-impl [this ctx el']
     (let [ctx       (protocols/-context this ctx)
           child-els (protocols/-child-elements this ctx el')
-          child-els (core/flatten child-els)
+          child-els (util/flatten child-els)
           children' (reconcile-many ctx (:children this) child-els)]
       (protocols/-set! this :children children')))
   
@@ -532,7 +532,7 @@
 
 ;; FnNode
 
-(core/deftype+ FnNode [^:mut child
+(util/deftype+ FnNode [^:mut child
                        ^:mut effect
                        ^:mut should-setup?
                        ^:mut should-render?
@@ -551,7 +551,7 @@
     (binding [*node* this
               *ctx*  ctx]
       (when render
-        (set! bounds (core/irect-xywh 0 0 (:width cs) (:height cs)))
+        (set! bounds (util/irect-xywh 0 0 (:width cs) (:height cs)))
         (maybe-render this ctx))
       (if user-measure
         (user-measure child cs)
@@ -563,13 +563,13 @@
               *ctx*  ctx]
       (when render
         (maybe-render this ctx))
-      (core/invoke before-draw)
+      (util/invoke before-draw)
       (if user-draw
         (user-draw child bounds canvas)
         (protocols/-draw child ctx bounds canvas))
-      (core/invoke after-draw)
+      (util/invoke after-draw)
       (when-not mounted?
-        (core/invoke after-mount))
+        (util/invoke after-mount))
       (when (and @debug/*outlines? (not mounted?))
         (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
         (set! mounted? true))))
@@ -596,10 +596,10 @@
   (-reconcile-impl [this ctx new-element]
     (when (or
             (not (identical? (first element) (first new-element)))
-            (apply core/invoke should-setup? (next new-element)))
+            (apply util/invoke should-setup? (next new-element)))
       (make-impl this new-element))
     (when render
-      (core/invoke before-render)
+      (util/invoke before-render)
       (try
         (binding [signal/*context* (volatile! (transient #{}))
                   *ctx*            ctx]
@@ -615,7 +615,7 @@
                 (signal/effect signals
                   (force-render this window))))))
         (finally
-          (core/invoke after-render)))))
+          (util/invoke after-render)))))
   
   (-unmount [this]
     (unmount-child child)

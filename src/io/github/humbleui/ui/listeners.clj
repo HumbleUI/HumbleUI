@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ EventListener []
+(util/deftype+ EventListener []
   :extends AWrapperNode
   protocols/IComponent
   (-event-impl [_ ctx event]
@@ -32,7 +32,7 @@
     :capture? true}
    child])
 
-(core/deftype+ KeyListener [on-key-down on-key-up]
+(util/deftype+ KeyListener [on-key-down on-key-up]
   :extends AWrapperNode
   protocols/IComponent
   (-event-impl [_ ctx event]
@@ -51,11 +51,11 @@
 (defn key-listener-ctor [{:keys [on-key-up on-key-down] :as opts} child]
   (map->KeyListener {}))
 
-(core/deftype+ MouseListener [^:mut over?]
+(util/deftype+ MouseListener [^:mut over?]
   :extends AWrapperNode
   protocols/IComponent
   (-draw-impl [_ ctx bounds canvas]
-    (set! over? (core/rect-contains? bounds (:mouse-pos ctx)))
+    (set! over? (util/rect-contains? bounds (:mouse-pos ctx)))
     (draw-child child ctx bounds canvas))
   
   (-event-impl [_ ctx event]
@@ -65,15 +65,15 @@
                   on-button
                   on-over
                   on-out]} opts]
-      (core/when-some+ [{:keys [x y]} event]
-        (let [over?' (core/rect-contains? bounds (core/ipoint x y))]
+      (util/when-some+ [{:keys [x y]} event]
+        (let [over?' (util/rect-contains? bounds (util/ipoint x y))]
           (when (and (not over?) over?' on-over)
             (on-over event))
           (when (and over? (not over?') on-out)
             (on-out event))
           (set! over? over?')))
         
-      (core/eager-or
+      (util/eager-or
         (when (and on-move
                 over?
                 (= :mouse-move (:event event)))
@@ -91,13 +91,13 @@
 (defn mouse-listener-ctor [{:keys [on-move on-scroll on-button on-over on-out] :as opts} child]
   (map->MouseListener {}))
 
-(core/deftype+ TextListener []
+(util/deftype+ TextListener []
   :extends AWrapperNode
   protocols/IComponent
   (-event-impl [_ ctx event]
     (let [[_ opts _] (parse-element element)
           {:keys [on-input]} opts]
-      (core/eager-or
+      (util/eager-or
         (when (= :text-input (:event event))
           (on-input (:text event)))
         (event-child child ctx event)))))

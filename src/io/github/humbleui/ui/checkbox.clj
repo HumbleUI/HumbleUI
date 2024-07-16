@@ -1,12 +1,12 @@
 (in-ns 'io.github.humbleui.ui)
 
 (def ^:private checkbox-states
-  {[true  false]  (core/lazy-resource "ui/checkbox/on.svg")
-   [true  true]   (core/lazy-resource "ui/checkbox/on_pressed.svg")
-   [false false]  (core/lazy-resource "ui/checkbox/off.svg")
-   [false true]   (core/lazy-resource "ui/checkbox/off_pressed.svg")
-   [:mixed false] (core/lazy-resource "ui/checkbox/mixed.svg")
-   [:mixed true]  (core/lazy-resource "ui/checkbox/mixed_pressed.svg")})
+  {[true  false]  (util/lazy-resource "ui/checkbox/on.svg")
+   [true  true]   (util/lazy-resource "ui/checkbox/on_pressed.svg")
+   [false false]  (util/lazy-resource "ui/checkbox/off.svg")
+   [false true]   (util/lazy-resource "ui/checkbox/off_pressed.svg")
+   [:mixed false] (util/lazy-resource "ui/checkbox/mixed.svg")
+   [:mixed true]  (util/lazy-resource "ui/checkbox/mixed_pressed.svg")})
 
 (defn- checkbox-size [ctx]
   (let [cap-height (cap-height)

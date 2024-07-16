@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ VScroll []
+(util/deftype+ VScroll []
   :extends AWrapperNode
   
   protocols/IComponent
@@ -21,7 +21,7 @@
             track-x         (+ (:x bounds) (:width bounds) (- track-w) (- padding))
             track-y         (+ scroll-y padding)
             track-h         (- scroll-h (* 2 padding))
-            track           (core/rrect-xywh track-x track-y track-w track-h (* 2 scale))
+            track           (util/rrect-xywh track-x track-y track-w track-h (* 2 scale))
             
             thumb-w         (scaled 4)
             min-thumb-h     (scaled 16)
@@ -32,11 +32,11 @@
             thumb-y         (-> content-y (/ content-range) (* thumb-range))
             
             ; thumb-y-ratio   (/ content-y content-h)
-            ; thumb-y         (-> (* track-h thumb-y-ratio) (core/clamp 0 (- track-h min-thumb-h)) (+ track-y))
+            ; thumb-y         (-> (* track-h thumb-y-ratio) (util/clamp 0 (- track-h min-thumb-h)) (+ track-y))
             ; thumb-b-ratio   (/ (+ content-y scroll-h) content-h)
-            ; thumb-b         (-> (* track-h thumb-b-ratio) (core/clamp min-thumb-h track-h) (+ track-y))
+            ; thumb-b         (-> (* track-h thumb-b-ratio) (util/clamp min-thumb-h track-h) (+ track-y))
             
-            thumb           (core/rrect-xywh track-x (+ track-y thumb-y) thumb-w thumb-h (scaled 2))]
+            thumb           (util/rrect-xywh track-x (+ track-y thumb-y) thumb-w thumb-h (scaled 2))]
         (canvas/draw-rect canvas track fill-track)
         (canvas/draw-rect canvas thumb fill-thumb)))))
 

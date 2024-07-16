@@ -1,4 +1,4 @@
-(ns io.github.humbleui.core
+(ns io.github.humbleui.util
   (:refer-clojure :exclude [find flatten])
   (:require
     [clojure.java.io :as io]

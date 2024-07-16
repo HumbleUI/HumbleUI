@@ -6,7 +6,7 @@
     [clojure.pprint :as pprint]
     [clojure.string :as str]
     [io.github.humbleui.app :as app]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]

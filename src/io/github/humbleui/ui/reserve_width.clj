@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ ReserveWidth [^:mut probes]
+(util/deftype+ ReserveWidth [^:mut probes]
   :extends AWrapperNode
   
   protocols/IComponent
@@ -13,7 +13,7 @@
   
   (-reconcile-impl [this ctx el']
     (let [[_ opts [child-el]] (parse-element el')
-          probes'             (reconcile-many ctx probes (core/checked-get opts :probes sequential?))
+          probes'             (reconcile-many ctx probes (util/checked-get opts :probes sequential?))
           [child']            (reconcile-many ctx [child] [child-el])]
       (set! probes probes')
       (set! child child'))))

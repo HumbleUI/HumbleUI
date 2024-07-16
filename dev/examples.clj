@@ -44,7 +44,7 @@
     [examples.vscroll]
     [examples.wordle]
     [io.github.humbleui.app :as app]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -185,8 +185,8 @@
       (shared/save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
 
 (defn restore-window-rect []
-  (core/when-some+ [{:keys [screen-id x y width height]} (shared/load-state)]
-    (when-some [screen (core/find-by :id screen-id (app/screens))]
+  (util/when-some+ [{:keys [screen-id x y width height]} (shared/load-state)]
+    (when-some [screen (util/find-by :id screen-id (app/screens))]
       (let [{:keys [scale work-area]} screen
             right  (-> (:right work-area) (/ scale) int)
             bottom (-> (:bottom work-area) (/ scale) int)

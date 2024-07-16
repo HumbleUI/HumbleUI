@@ -4,11 +4,11 @@
 
 (defn- img-measure [opts width height ctx cs]
   (case (or (:scale opts) :fit)
-    :content (core/ipoint
+    :content (util/ipoint
                (math/ceil (* width (:scale ctx)))
                (math/ceil (* height (:scale ctx))))
     :fit     (let [aspect (/ width height)]
-               (core/ipoint
+               (util/ipoint
                  (min (:width cs) (* (:height cs) aspect))
                  (min (/ (:width cs) aspect) (:height cs))))
     :fill    cs
@@ -34,7 +34,7 @@
         img-top    (+ (:y bounds)
                      (* (:height bounds) ypos)
                      (- (* img-height ypos)))
-        img-rect   (core/rect-xywh img-left img-top img-width img-height)
+        img-rect   (util/rect-xywh img-left img-top img-width img-height)
         dst-rect   (.intersect (.toRect bounds) img-rect)]
     (when dst-rect
       (let [src-rect (-> dst-rect
@@ -51,7 +51,7 @@
     :catmull-rom SamplingMode/CATMULL_ROM
     (:sampling opts)))
 
-(core/deftype+ AnImage [^Image image width height aspect]
+(util/deftype+ AnImage [^Image image width height aspect]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -67,16 +67,16 @@
     (opts-match? [:src] element new-element))
   
   (-unmount-impl [this]
-    (core/close image)))
+    (util/close image)))
 
 (defn- image-ctor [opts]
-  (let [src  (core/checked-get opts :src core/slurpable?)
+  (let [src  (util/checked-get opts :src util/slurpable?)
         image (try
-                (Image/makeFromEncoded (core/slurp-bytes src))
+                (Image/makeFromEncoded (util/slurp-bytes src))
                 (catch Exception e
-                  ; (core/log-error e)
+                  ; (util/log-error e)
                   (Image/makeFromEncoded 
-                    (core/slurp-bytes
+                    (util/slurp-bytes
                       (io/resource "io/github/humbleui/ui/image/not_found.png")))))
         width  (.getWidth ^Image image)
         height (.getHeight ^Image image)]
@@ -85,7 +85,7 @@
                    :height height
                    :aspect (/ width height)})))
 
-(core/deftype+ Animation [width height durations images start]
+(util/deftype+ Animation [width height durations images start]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -95,29 +95,29 @@
   (-draw-impl [_ ctx rect ^Canvas canvas]
     (let [[_ opts _]     (parse-element element)
           total-duration (reduce + 0 durations)
-          offset         (mod (- (core/now) start) total-duration)
+          offset         (mod (- (util/now) start) total-duration)
           frame          (loop [durations durations
                                 time      0
                                 frame     0]
                            (if (>= time offset)
                              (dec frame)
                              (recur (next durations) (long (+ time (first durations))) (inc frame))))
-          frame          (core/clamp frame 0 (dec (count durations)))
+          frame          (util/clamp frame 0 (dec (count durations)))
           next-offset    (reduce + 0 (take (inc frame) durations))]
       (when-some [[src-rect dst-rect] (img-rects opts width height ctx rect)]
         (.drawImageRect canvas (nth images frame) src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))
-      (core/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
+      (util/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
 
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
 
   (-unmount-impl [this]
     (doseq [image images]
-      (core/close image))))
+      (util/close image))))
 
 (defn- animation-ctor [opts]
-  (let [src (core/checked-get opts :src core/slurpable?)]
-    (with-open [codec (Codec/makeFromData (Data/makeFromBytes (core/slurp-bytes src)))]
+  (let [src (util/checked-get opts :src util/slurpable?)]
+    (with-open [codec (Codec/makeFromData (Data/makeFromBytes (util/slurp-bytes src)))]
       (let [frames    (.getFrameCount codec)
             durations (mapv #(.getDuration ^AnimationFrameInfo %) (.getFramesInfo codec))
             info      (.getImageInfo codec)
@@ -134,4 +134,4 @@
            :height    (.getHeight codec)
            :durations durations
            :images    images
-           :start     (core/now)})))))
+           :start     (util/now)})))))

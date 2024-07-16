@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Size []
+(util/deftype+ Size []
   :extends AWrapperNode
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -9,7 +9,7 @@
           height     (some-> opts :height (dimension cs ctx))]
       (cond
         (and width height)
-        (core/ipoint width height)
+        (util/ipoint width height)
         
         (and width child)
         (assoc (measure child ctx (assoc cs :width width)) :width width)
@@ -18,13 +18,13 @@
         (assoc (measure child ctx (assoc cs :height height)) :height height)
         
         width
-        (core/ipoint width 0)
+        (util/ipoint width 0)
         
         height
-        (core/ipoint 0 height)
+        (util/ipoint 0 height)
         
         :else
-        (core/ipoint 0 0)))))
+        (util/ipoint 0 0)))))
 
 (defn size
   ([opts]

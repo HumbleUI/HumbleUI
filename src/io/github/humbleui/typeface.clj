@@ -3,7 +3,7 @@
     [clojure.java.io :as io]
     [clojure.set :as set]
     [clojure.string :as str]
-    [io.github.humbleui.core :as core])
+    [io.github.humbleui.util :as util])
   (:import
     [java.io File Writer]
     [io.github.humbleui.skija Data FontMgr FontSlant FontStyle FontWidth Typeface]))
@@ -139,7 +139,7 @@
       (let [typeface (Typeface/makeFromData what)
             family   (.getFamilyName typeface)
             style    (font-style->clj (.getFontStyle typeface))
-            key      (core/merge-some {:font-family family} style)]
+            key      (util/merge-some {:font-family family} style)]
         (swap! *typeface-cache assoc key typeface)
         typeface))))
 
@@ -160,7 +160,7 @@
 
 (defn find-typeface ^Typeface [family style]
   (let [typeface (.matchFamilyStyle (FontMgr/getDefault) family (clj->font-style style))]
-    (swap! *typeface-cache assoc (core/merge-some {:font-family family} style) typeface) ;; FIXME clean up typeface cache
+    (swap! *typeface-cache assoc (util/merge-some {:font-family family} style) typeface) ;; FIXME clean up typeface cache
     typeface))
 
 (defn typeface
@@ -178,7 +178,7 @@
      (str ":font-weight, expected one of: " (str/join "," (sort (keys weights))) " or number 0..1000, got: " (pr-str (:font-weight style))))
    (assert (or (nil? (:font-width style)) (widths (:font-width style))) (str ":font-width, expected one of: " (str/join "," (sort (keys widths))) ", got: " (pr-str (:font-width style))))
    (assert (or (nil? (:font-slant style)) (slants (:font-slant style))) (str ":font-slant, expected one of: " (str/join "," (keys slants)) ", got: " (pr-str (:font-slant style))))
-   (let [style (core/merge-some
+   (let [style (util/merge-some
                  {:font-weight 400
                   :font-width  :normal
                   :font-slant  :upright}
@@ -186,12 +186,12 @@
                    (select-keys [:font-weight :font-width :font-slant])
                    (update :font-weight weights (:font-weight style))))]
      (loop [families families]
-       (core/cond+
+       (util/cond+
          (empty? families)
          @*default
          
          :let [family (first families)
-               cached (@*typeface-cache (core/merge-some {:font-family family} style) ::not-found)]
+               cached (@*typeface-cache (util/merge-some {:font-family family} style) ::not-found)]
          
          (nil? cached)
          (recur (next families))

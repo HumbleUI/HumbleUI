@@ -26,13 +26,13 @@
 
 (defn- preceding-word [^BreakIterator word-iter text pos]
   (let [pos' (.preceding word-iter pos)]
-    (core/cond+
+    (util/cond+
       (= 0 pos')
       pos'
       
       :do (.next word-iter)
       
-      (not (core/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
+      (not (util/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
       pos'
       
       :else
@@ -44,7 +44,7 @@
       (= (count text) pos')
       pos'
       
-      (not (core/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
+      (not (util/between? (.getRuleStatus word-iter) BreakIterator/WORD_NONE BreakIterator/WORD_NONE_LIMIT))
       pos'
       
       :else
@@ -407,8 +407,8 @@
                   (or edited? (not= (:to state') (:to state)))
                   (assoc
                     :coord-to           nil
-                    :cursor-blink-pivot (core/now)))]
-    (core/cond+
+                    :cursor-blink-pivot (util/now)))]
+    (util/cond+
       (not edited?)
       state'
       
@@ -442,7 +442,7 @@
           :marked-to       nil)
         
         (and (not marked?) (not skip-undo?))
-        (update :undo core/conjv-limited (select-keys state [:text :from :to]) undo-stack-depth)))))
+        (update :undo util/conjv-limited (select-keys state [:text :from :to]) undo-stack-depth)))))
 
 (defn- get-cached [text-field _ctx key-source key-source-cached key-derived fn]
   (let [{:keys [*state]} text-field
@@ -454,7 +454,7 @@
       (when (= source source-cached)
         derived-cached)
       (let [derived (fn source state)]
-        (core/close derived-cached)
+        (util/close derived-cached)
         (swap! *state assoc
           key-source-cached source
           key-derived       derived)
@@ -505,7 +505,7 @@
       (-> *state
         (swap! assoc
           :offset (-> (- coord-to (/ bounds-width 2))
-                    (core/clamp min-offset max-offset)
+                    (util/clamp min-offset max-offset)
                     (math/round)))
         :offset)
       offset)))
@@ -519,7 +519,7 @@
       (when (> (key state) len)
         (swap! *state assoc key len)))))
 
-(core/deftype+ TextInput [*value
+(util/deftype+ TextInput [*value
                           *state
                           ^ShapingOptions features]
   :extends ATerminalNode  
@@ -533,7 +533,7 @@
                                  padding-bottom]} ctx
           metrics (:metrics @*state)
           line    (text-line this ctx)]
-      (core/ipoint
+      (util/ipoint
         (min
           (:width cs)
           (+ (* scale padding-left)
@@ -576,12 +576,12 @@
                        coord-to
                        (math/round (.getCoordAtOffset line from)))]
       (canvas/with-canvas canvas
-        (canvas/clip-rect canvas (core/rect bounds))
+        (canvas/clip-rect canvas (util/rect bounds))
         
         ;; selection
         (when selection?
           (canvas/draw-rect canvas
-            (core/rect-ltrb
+            (util/rect-ltrb
               (+ (:x bounds) (- offset) (min coord-from coord-to))
               (+ (:y bounds) (* scale padding-top) (- ascent))
               (+ (:x bounds) (- offset) (max coord-from coord-to))
@@ -602,7 +602,7 @@
                      (:hui.text-field/fill-text ctx))]
           (when line
             (when (.isClosed line)
-              (core/log "(.isClosed line)" (.isClosed line) line))
+              (util/log "(.isClosed line)" (.isClosed line) line))
             (.drawTextLine canvas line x y fill)))
         
         ;; composing region
@@ -610,7 +610,7 @@
           (let [left  (.getCoordAtOffset line marked-from)
                 right (.getCoordAtOffset line marked-to)]
             (canvas/draw-rect canvas
-              (core/rect-ltrb
+              (util/rect-ltrb
                 (+ (:x bounds) (- offset) left)
                 (+ (:y bounds) baseline (* 1 scale))
                 (+ (:x bounds) (- offset) right)
@@ -619,7 +619,7 @@
         
         ;; cursor
         (when focused?
-          (let [now                   (core/now)
+          (let [now                   (util/now)
                 cursor-width          (* scale (:hui.text-field/cursor-width ctx))
                 cursor-left           (quot cursor-width 2)
                 cursor-right          (- cursor-width cursor-left)
@@ -630,14 +630,14 @@
                                         (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))]
             (when (and cursor-visible? (not selection?))
               (canvas/draw-rect canvas
-                (core/rect-ltrb
+                (util/rect-ltrb
                   (+ (:x bounds) (- offset) coord-to (- cursor-left))
                   (+ (:y bounds) (* scale padding-top) (- ascent))
                   (+ (:x bounds) (- offset) coord-to cursor-right)
                   (+ (:y bounds) baseline descent))
                 (:hui.text-field/fill-cursor ctx)))
             (when (> cursor-blink-interval 0)
-              (core/schedule
+              (util/schedule
                 #(window/request-frame (:window ctx))
                 (- cursor-blink-interval
                   (mod (- now cursor-blink-pivot) cursor-blink-interval)))))))))
@@ -652,20 +652,20 @@
           (swap! *state assoc
             :mouse-clicks 0))
 
-        (core/cond+
+        (util/cond+
           ;; mouse down
           (and
             (= :mouse-button (:event event))
             (= :primary (:button event))
             (:pressed? event)
             bounds
-            (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
+            (util/rect-contains? bounds (util/ipoint (:x event) (:y event))))
           (let [x             (-> (:x event)
                                 (- (:x bounds))
                                 (+ offset))
                 offset'       (.getOffsetAtCoord line x)
-                now           (core/now)
-                mouse-clicks' (if (<= (- now last-mouse-click) core/double-click-threshold-ms)
+                now           (util/now)
+                mouse-clicks' (if (<= (- now last-mouse-click) util/double-click-threshold-ms)
                                 (inc mouse-clicks)
                                 1)]
             (swap! *state #(cond-> %
@@ -702,7 +702,7 @@
                     (- (:x bounds))
                     (+ offset))]
             (cond
-              (core/rect-contains? bounds (core/ipoint (:x event) (:y event)))
+              (util/rect-contains? bounds (util/ipoint (:x event) (:y event)))
               (swap! *state edit :expand-to-position (.getOffsetAtCoord line x))
               
               (< (:y event) (:y bounds))
@@ -737,7 +737,7 @@
             (try
               (invoke-callback this :on-change (:text @*state))
               (catch Throwable e
-                (core/log-error e)))
+                (util/log-error e)))
             true)
           
           ;; composing region
@@ -786,16 +786,16 @@
                 ctrl?      ((:modifiers event) :control)
                 selection? (not= from to)
                 ops        (or
-                             (core/when-case (and macos? cmd? shift?) key
+                             (util/when-case (and macos? cmd? shift?) key
                                :left  [:expand-doc-start]
                                :right [:expand-doc-end]
                                :z     [:redo])
                              
-                             (core/when-case (and macos? option? shift?) key
+                             (util/when-case (and macos? option? shift?) key
                                :left  [:expand-word-left]
                                :right [:expand-word-right])
 
-                             (core/when-case shift? key
+                             (util/when-case shift? key
                                :left  [:expand-char-left]
                                :right [:expand-char-right]
                                :up    [:expand-doc-start]
@@ -803,16 +803,16 @@
                                :home  [:expand-doc-start]
                                :end   [:expand-doc-end])
                              
-                             (core/when-case selection? key
+                             (util/when-case selection? key
                                :backspace [:kill]
                                :delete    [:kill])
                              
-                             (core/when-case (and macos? cmd? selection?) key
+                             (util/when-case (and macos? cmd? selection?) key
                                :x         [:copy :kill]
                                :c         [:copy]
                                :v         [:kill :paste])
                                
-                             (core/when-case (and macos? cmd?) key
+                             (util/when-case (and macos? cmd?) key
                                :left      [:move-doc-start]
                                :right     [:move-doc-end]
                                :a         [:select-all]
@@ -821,17 +821,17 @@
                                :v         [:paste]
                                :z         [:undo])
                              
-                             (core/when-case (and macos? option?) key
+                             (util/when-case (and macos? option?) key
                                :left      [:move-word-left]
                                :right     [:move-word-right]
                                :backspace [:delete-word-left]
                                :delete    [:delete-word-right])
                              
-                             (core/when-case (and macos? ctrl? option? shift?) key
+                             (util/when-case (and macos? ctrl? option? shift?) key
                                :b [:expand-word-left]
                                :f [:expand-word-right])
                                
-                             (core/when-case (and macos? ctrl? shift?) key
+                             (util/when-case (and macos? ctrl? shift?) key
                                :b [:expand-char-left]
                                :f [:expand-char-right]
                                :a [:expand-doc-start]
@@ -839,15 +839,15 @@
                                :p [:expand-doc-start]
                                :n [:expand-doc-end])
                              
-                             (core/when-case (and macos? ctrl? selection?) key
+                             (util/when-case (and macos? ctrl? selection?) key
                                :h [:kill]
                                :d [:kill])
                              
-                             (core/when-case (and macos? ctrl? option?) key
+                             (util/when-case (and macos? ctrl? option?) key
                                :b [:move-word-left]
                                :f [:move-word-right])
                                
-                             (core/when-case (and macos? ctrl?) key
+                             (util/when-case (and macos? ctrl?) key
                                :b [:move-char-left]
                                :f [:move-char-right]
                                :a [:move-doc-start]
@@ -858,23 +858,23 @@
                                :d [:delete-char-right]
                                :k [:delete-doc-end])
                              
-                             (core/when-case (and macos? ctrl? (not selection?)) key
+                             (util/when-case (and macos? ctrl? (not selection?)) key
                                :t [:transpose])
 
-                             (core/when-case (and (not macos?) shift? ctrl?) key
+                             (util/when-case (and (not macos?) shift? ctrl?) key
                                :z [:redo])
                              
-                             (core/when-case (and (not macos?) ctrl?) key
+                             (util/when-case (and (not macos?) ctrl?) key
                                :a [:select-all]
                                :z [:undo]
                                :y [:redo])
                              
-                             (core/when-case (and (not macos?) ctrl? selection?) key
+                             (util/when-case (and (not macos?) ctrl? selection?) key
                                :x [:copy :kill]
                                :c [:copy]
                                :v [:kill :paste])
                              
-                             (core/when-case true key
+                             (util/when-case true key
                                :left      [:move-char-left]
                                :right     [:move-char-right]
                                :up        [:move-doc-start]
@@ -898,8 +898,8 @@
   TextInputClient
   (getRectForMarkedRange [this selection-start selection-end]
     (let [{:keys [from to marked-from marked-to offset metrics]} @*state
-          {:hui.text-field/keys [padding-top]} core/*text-input-ctx*
-          line       (text-line this core/*text-input-ctx*)
+          {:hui.text-field/keys [padding-top]} util/*text-input-ctx*
+          line       (text-line this util/*text-input-ctx*)
           cap-height (Math/ceil (:cap-height metrics))
           ascent     (Math/ceil (- (- (:ascent metrics)) cap-height))
           descent    (Math/ceil (:descent metrics))
@@ -908,7 +908,7 @@
           right      (if (= (or marked-to to) (or marked-from from))
                        left
                        (.getCoordAtOffset line (or marked-to to)))]
-      (core/irect-ltrb
+      (util/irect-ltrb
         (+ (:x bounds) (- offset) left)
         (+ (:y bounds) padding-top (- ascent))
         (+ (:x bounds) (- offset) right)
@@ -916,11 +916,11 @@
   
   (getSelectedRange [_]
     (let [{:keys [from to]} @*state]
-      (core/irange from to)))
+      (util/irange from to)))
   
   (getMarkedRange [_]
     (let [{:keys [marked-from marked-to]} @*state]
-      (core/irange marked-from marked-to)))
+      (util/irange marked-from marked-to)))
   
   (getSubstring [_ start end]
     (let [{:keys [text]} @*state
@@ -944,7 +944,7 @@
                     (:*state opts)
                     (signal/signal {}))]
      (swap! *value #(or % ""))
-     (swap! *state #(core/merge-some
+     (swap! *state #(util/merge-some
                       {:text               ""
                        :font               font
                        :metrics            metrics
@@ -968,7 +968,7 @@
                        :char-iter          nil
                        :undo               nil
                        :redo               nil
-                       :cursor-blink-pivot (core/now)
+                       :cursor-blink-pivot (util/now)
                        :offset             nil
                        :selecting?         false
                        :mouse-clicks       0

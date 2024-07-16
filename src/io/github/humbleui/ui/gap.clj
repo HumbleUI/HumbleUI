@@ -1,14 +1,14 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Gap []
+(util/deftype+ Gap []
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_this ctx _cs]
     (let [[_ opts] element
           scale    (:scale ctx)]
-      (core/ipoint
-        (core/iceil (* scale (or (:width opts) 0)))
-        (core/iceil (* scale (or (:height opts) 0))))))
+      (util/ipoint
+        (util/iceil (* scale (or (:width opts) 0)))
+        (util/iceil (* scale (or (:height opts) 0))))))
   
   (-draw-impl [_this _ctx _bounds _canvas]))
 

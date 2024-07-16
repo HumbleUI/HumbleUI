@@ -3,7 +3,7 @@
     [clojure.math :as math]
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
@@ -236,7 +236,7 @@
    [ui/row
     [ui/gap {:width 45}]
     ^{:stretch 1}
-    [ui/focusable {:focused (core/now)}
+    [ui/focusable {:focused (util/now)}
      [ui/on-key-focused
       {:keymap
        {:enter #(swap! *state save)
@@ -355,7 +355,7 @@
                                                         :font-slant  :italic})
          :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
         [ui/rect {:paint paint-bg}
-         [ui/size {:width #(core/clamp (:width %) 230 550)}
+         [ui/size {:width #(util/clamp (:width %) 230 550)}
           [ui/column
            [title]
            [ui/gap {:height 25}]

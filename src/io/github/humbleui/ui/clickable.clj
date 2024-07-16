@@ -20,7 +20,7 @@
     :unpressed
     #{:held}))
 
-(core/deftype+ Clickable [*state
+(util/deftype+ Clickable [*state
                           ^:mut phase
                           ^:mut clicks
                           ^:mut last-click]
@@ -41,7 +41,7 @@
     
     (let [{:keys [on-click on-click-capture]} (parse-opts element)
           {x :x y :y}   event
-          over?         (and x y (core/rect-contains? bounds (core/ipoint x y)))
+          over?         (and x y (util/rect-contains? bounds (util/ipoint x y)))
           out?          (and x y (not over?))
           btn-down?     (and (= :mouse-button (:event event)) (:pressed? event))
           btn-up?       (and (= :mouse-button (:event event)) (not (:pressed? event)))
@@ -82,9 +82,9 @@
           clicked?      (and 
                           (= :hovered-held phase)
                           btn-up?)
-          now           (core/now)
+          now           (util/now)
           _             (when clicked?
-                          (when (> (- now last-click) core/double-click-threshold-ms)
+                          (when (> (- now last-click) util/double-click-threshold-ms)
                             (set! clicks 0))
                           (set! clicks (inc clicks))
                           (set! last-click now))
@@ -103,12 +103,12 @@
         (and
           clicked?
           on-click-capture
-          (core/invoke on-click-capture event'))
+          (util/invoke on-click-capture event'))
         (event-child child ctx event')
         (and
           clicked?
           on-click
-          (core/invoke on-click event')))))
+          (util/invoke on-click event')))))
   
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*state] element new-element))

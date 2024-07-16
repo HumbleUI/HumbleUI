@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Align []
+(util/deftype+ Align []
   :extends AWrapperNode  
   protocols/IComponent  
   (-draw-impl [_ ctx bounds canvas]
@@ -33,7 +33,7 @@
                            :center 0.5
                            :bottom 1
                            child-y)
-          child-size     (measure child ctx (core/ipoint (:width bounds) (:height bounds)))
+          child-size     (measure child ctx (util/ipoint (:width bounds) (:height bounds)))
           left           (when x
                            (+ (:x bounds)
                              (* (:width bounds) x)
@@ -44,13 +44,13 @@
                              (- (* (:height child-size) child-y))))
           child-bounds   (cond
                            (and x y)
-                           (core/irect-xywh left top (:width child-size) (:height child-size))
+                           (util/irect-xywh left top (:width child-size) (:height child-size))
                            
                            x
-                           (core/irect-xywh left (:y bounds) (:width child-size) (:height bounds))
+                           (util/irect-xywh left (:y bounds) (:width child-size) (:height bounds))
                            
                            y
-                           (core/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
+                           (util/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
       (draw-child child ctx child-bounds canvas))))
 
 (defn- align-ctor [opts child]

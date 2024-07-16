@@ -2,7 +2,7 @@
   (:require
     [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -39,7 +39,7 @@
   (when (and
           (= :mouse-move (:event e))
           (= #{:primary} (:buttons e)))
-    (swap! *paths core/update-last #(.lineTo ^Path % (:x e) (:y e))))
+    (swap! *paths util/update-last #(.lineTo ^Path % (:x e) (:y e))))
   
   true)
 
@@ -61,12 +61,12 @@
     (let [events       @*events
           mouse-events (filter #(= :mouse-move (:event %)) events)]
       ;; current position
-      (core/when-some+ [[e] (take-last 1 mouse-events)]
+      (util/when-some+ [[e] (take-last 1 mouse-events)]
         (with-open [paint (paint/fill 0xFFCC3333)]
-          (canvas/draw-rect canvas (core/rect-xywh (- (:x e) (* 3 scale)) (- (:y e) (* 3 scale)) (* 6 scale) (* 6 scale)) paint)))
+          (canvas/draw-rect canvas (util/rect-xywh (- (:x e) (* 3 scale)) (- (:y e) (* 3 scale)) (* 6 scale) (* 6 scale)) paint)))
       
       ;; projection
-      (core/when-some+ [[e2 e] (take-last 2 mouse-events)]
+      (util/when-some+ [[e2 e] (take-last 2 mouse-events)]
         (let [r (math/hypot (- (:x e) (:x e2)) (- (:y e) (:y e2)))]
           (with-open [paint (paint/stroke 0xFFCC3333 (* scale 2))]
             (canvas/draw-circle canvas (:x e) (:y e) r paint))))
@@ -74,12 +74,12 @@
       ;; event graph
       (let [point
             (fn [idx dt]
-              (core/point
+              (util/point
                 (-> width float (/ queue-size) (* idx))
                 (- height (-> dt (/ 1000000.0) (* 2 scale)))))
             
             [after-mouse after-frame]
-            (core/loopr [after-mouse (transient [])
+            (util/loopr [after-mouse (transient [])
                          after-frame (transient [])
                          last-mouse  nil
                          last-frame  nil

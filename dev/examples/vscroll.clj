@@ -2,7 +2,7 @@
   (:require
     [clojure.string :as str]
     [examples.shared :as shared]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
@@ -22,7 +22,7 @@
             child]]))))))
 
 (ui/defcomp label [& texts]
-  (let [[_ opts texts] (ui/parse-element (core/consv nil texts))
+  (let [[_ opts texts] (ui/parse-element (util/consv nil texts))
         {:keys [height] :or {height 30}} opts]
     (ui/with-resources [bg       (paint/fill 0x00CFE8FC)
                         bg-hover (paint/fill 0xFFCFE8FC)]

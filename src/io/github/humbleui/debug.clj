@@ -1,7 +1,7 @@
 (ns io.github.humbleui.debug
   (:require
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.protocols :as protocols]
@@ -87,16 +87,16 @@
           ;; events
           (when @*events?
             (canvas/translate canvas (- (+ width 10)) 0)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 0 width height) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
             (canvas/draw-string canvas "events" 4 12 font fg)
             (doseq [i     (range 1 width)
                     :let  [dt (- (event-get event-starts i) (event-get event-starts (dec i)))
                            y  (ms->y dt)]
                     :when (< dt 50)]
-              (canvas/draw-rect canvas (core/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg)))
+              (canvas/draw-rect canvas (util/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg)))
           
           ;; pacing
           (when @*pacing?
@@ -108,28 +108,28 @@
                                 (recur (dec i))
                                 (/ 1000.0 dt)))))]
               (canvas/translate canvas (- (+ width 10)) 0)
-              (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
-              (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
-              (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
-              (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+              (canvas/draw-rect canvas (util/irect-ltrb 0 0 width height) bg)
+              (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+              (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+              (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
               (canvas/draw-string canvas (format "fps %.0f" fps) 4 12 font fg)
               (doseq [i     (range 1 width)
                       :let  [dt (- (frame-get frame-starts i) (frame-get frame-starts (dec i)))
                              y  (ms->y dt)]
                       :when (< dt 50)]
-                (canvas/draw-rect canvas (core/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg))))
+                (canvas/draw-rect canvas (util/irect-ltrb i (- y 1) (+ i 1) (+ y 1)) fg))))
           
           ;; paint times
           (when @*paint?
             (canvas/translate canvas (- (+ width 10)) 0)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 0 width height) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
-            (canvas/draw-rect canvas (core/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 0 width height) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/120) width (+ (ms->y 1000/120) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/60) width (+ (ms->y 1000/60) 1)) bg)
+            (canvas/draw-rect canvas (util/irect-ltrb 0 (ms->y 1000/30) width (+ (ms->y 1000/30) 1)) bg)
             (canvas/draw-string canvas (format "paint %.2f ms" last) 4 12 font fg)
             (doseq [i    (range width)
                     :let [ms (frame-get frame-lengths i)]]
-              (canvas/draw-rect canvas (core/irect-ltrb i (ms->y ms) (+ i 1) height) fg))))))))
+              (canvas/draw-rect canvas (util/irect-ltrb i (ms->y ms) (+ i 1) height) fg))))))))
       
 
 (defmacro draw-frames [canvas window]

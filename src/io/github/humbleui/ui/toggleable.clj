@@ -10,7 +10,7 @@
                       (if (= value-on @*value)
                         value-off
                         value-on))
-                    (core/invoke on-click event))]
+                    (util/invoke on-click event))]
     (when-some [on-change (:on-change opts)]
       (add-watch *value ::on-change
         (fn [_ _ old new]

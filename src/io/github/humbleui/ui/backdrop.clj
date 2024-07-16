@@ -2,7 +2,7 @@
 
 (import '[io.github.humbleui.skija ImageFilter SaveLayerRec])
 
-(core/deftype+ Backdrop []
+(util/deftype+ Backdrop []
   :extends AWrapperNode
   protocols/IComponent
   (-draw-impl [_ ctx ^IRect bounds ^Canvas canvas]

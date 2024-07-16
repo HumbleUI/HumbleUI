@@ -1,6 +1,6 @@
 (ns examples.testbed
   (:require
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -15,7 +15,7 @@
         (fn [state]
           ; (let [e (Exception.)]
           ;   (.printStackTrace e))
-          ; (core/log "button" state)
+          ; (util/log "button" state)
           [ui/rect {:paint (paint/fill 0xFFB0D0FF)}
            [ui/padding {:padding 20}
             "8"]])]])]])

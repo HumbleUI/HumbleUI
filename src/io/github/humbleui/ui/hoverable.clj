@@ -1,13 +1,13 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Hoverable [*state]
+(util/deftype+ Hoverable [*state]
   :extends AWrapperNode
   (-event-impl [this ctx event]
-    (core/eager-or
-      (core/when-some+ [{:keys [x y]} event]
+    (util/eager-or
+      (util/when-some+ [{:keys [x y]} event]
         (let [state     @*state
               hovered?  (:hovered state)
-              hovered?' (core/rect-contains? bounds (core/ipoint x y))]
+              hovered?' (util/rect-contains? bounds (util/ipoint x y))]
           (cond
             (and (not hovered?) hovered?')
             (do

@@ -2,7 +2,7 @@
 
 (require '[clj-async-profiler.core :as profiler])
 
-(core/deftype+ Profile []
+(util/deftype+ Profile []
   :extends AWrapperNode  
   protocols/IComponent
   (-draw-impl [_ ctx bounds ^Canvas canvas]

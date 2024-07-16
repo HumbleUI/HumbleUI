@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Label [size ^TextLine line ^Font font features-ctx]
+(util/deftype+ Label [size ^TextLine line ^Font font features-ctx]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [this ctx cs]
@@ -33,7 +33,7 @@
         text         (str/join texts)
         line         (.shapeLine shaper text font features)
         metrics      (.getMetrics font)
-        size         (core/ipoint
+        size         (util/ipoint
                        (math/ceil (.getWidth line))
                        (math/ceil (.getCapHeight metrics)))]
     (map->Label 
@@ -43,6 +43,6 @@
        :features-ctx features-ctx})))
 
 (defn- label-ctor [& texts]
-  (let [[_ opts texts] (parse-element (core/consv nil texts))]
-    (core/vector* label-impl opts
+  (let [[_ opts texts] (parse-element (util/consv nil texts))]
+    (util/vector* label-impl opts
       (map signal/maybe-read texts))))

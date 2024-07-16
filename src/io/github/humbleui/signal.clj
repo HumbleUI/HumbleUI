@@ -46,7 +46,7 @@
     (set!! signal :outputs outputs')))
       
 (defn- set-state! [signal state]
-  ; (core/log "set-state!" (:name signal) state)
+  ; (util/log "set-state!" (:name signal) state)
   (when (and
           (= :eager (:type signal))
           *effects*
@@ -59,7 +59,7 @@
         (set-state! out :check)))))
 
 (defn- reset-impl! [signal value' cache']
-  ; (core/log "reset-impl!" (:name signal) value' cache')
+  ; (util/log "reset-impl!" (:name signal) value' cache')
   (set!! signal :state :clean)
   (when (not= (:value signal) value')
     (set!! signal
@@ -70,7 +70,7 @@
   value')
 
 (defn- read-dirty [signal]
-  ; (core/log "read-dirty" (:name signal))
+  ; (util/log "read-dirty" (:name signal))
   (let [*context (volatile! (transient #{}))
         {value' :value
          cache' :cache} (binding [*context* *context]
@@ -94,7 +94,7 @@
         (reset-impl! signal value' cache')))))
 
 (defn- read-check [signal]
-  ; (core/log "read-check" (:name signal))
+  ; (util/log "read-check" (:name signal))
   (loop [inputs (:inputs signal)]
     (if (empty? inputs)
       (do

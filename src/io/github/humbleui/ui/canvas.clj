@@ -1,18 +1,18 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ ACanvas [on-paint on-event]
+(util/deftype+ ACanvas [on-paint on-event]
   :extends ATerminalNode
   
   protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (core/ipoint 0 0))
+    (util/ipoint 0 0))
   
   (-draw-impl [_ ctx bounds ^Canvas canvas]
     (when on-paint
       (canvas/with-canvas canvas
-        (.clipRect canvas (core/rect bounds))
+        (.clipRect canvas (util/rect bounds))
         (.translate canvas (:x bounds) (:y bounds))
-        (on-paint ctx canvas (core/ipoint (:width bounds) (:height bounds))))))
+        (on-paint ctx canvas (util/ipoint (:width bounds) (:height bounds))))))
   
   (-event-impl [_ ctx event]
     (when on-event

@@ -30,7 +30,7 @@
                 x        :center
                 y        :center
                 bg-color 0xFFF6F6F6}} opts
-          *mouse-pos (volatile! (core/ipoint 0 0))
+          *mouse-pos (volatile! (util/ipoint 0 0))
           ref?       (instance? clojure.lang.IRef app)
           *app-node  (atom (app-node (:theme opts) app))
           ctx-fn     (fn [window]
@@ -42,15 +42,15 @@
                        (locking window
                          (canvas/clear canvas bg-color)
                          (let [bounds (window/content-rect window)
-                               bounds (core/irect-xywh 0 0 (:width bounds) (:height bounds))]
+                               bounds (util/irect-xywh 0 0 (:width bounds) (:height bounds))]
                            (when on-paint
                              (on-paint window canvas))
                            (when-some [app @*app-node]
                              (protocols/-draw app (ctx-fn window) bounds canvas)))))
           event-fn   (fn [window event]
                        (locking window
-                         (core/when-some+ [{:keys [x y]} event]
-                           (vreset! *mouse-pos (core/ipoint x y)))
+                         (util/when-some+ [{:keys [x y]} event]
+                           (vreset! *mouse-pos (util/ipoint x y)))
                          (when on-event
                            (on-event window event))
                          (when-some [app @*app-node]
@@ -67,7 +67,7 @@
                         :on-paint paint-fn
                         :on-event event-fn})
           screen     (if screen
-                       (core/find-by :id screen (app/screens))
+                       (util/find-by :id screen (app/screens))
                        (app/primary-screen))
           {:keys [scale work-area]} screen
           x          (cond

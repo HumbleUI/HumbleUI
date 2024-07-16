@@ -3,7 +3,7 @@
 (import '[io.github.humbleui.skija BreakIterator])
 
 (defn- paragraph-layout [tokens max-width cap-height line-height]
-  (core/loopr [positions (transient [])
+  (util/loopr [positions (transient [])
                x         0
                y         0
                width     0
@@ -14,7 +14,7 @@
       (cond
         ;; first token ever
         (and (= x 0) (= y 0))
-        (recur (conj! positions (core/point 0 cap-height)) token-width cap-height (max width token-width) cap-height)
+        (recur (conj! positions (util/point 0 cap-height)) token-width cap-height (max width token-width) cap-height)
         
         ;; blank — always advance, but don’t render
         blank?
@@ -22,31 +22,31 @@
         
         ;; next token fits on the same line
         (<= (+ x token-width) max-width)
-        (recur (conj! positions (core/point x y)) (+ x token-width) y (max width (+ x token-width)) height)
+        (recur (conj! positions (util/point x y)) (+ x token-width) y (max width (+ x token-width)) height)
         
         ;; have to start new line
         :else
-        (recur (conj! positions (core/point 0 (+ y line-height))) token-width (+ y line-height) (max width token-width) (+ height line-height))))
+        (recur (conj! positions (util/point 0 (+ y line-height))) token-width (+ y line-height) (max width token-width) (+ height line-height))))
     {:positions (persistent! positions)
      :width     width
      :height    height}))
 
-(core/deftype+ Paragraph [tokens *layout line-height ^Font font metrics features-ctx]
+(util/deftype+ Paragraph [tokens *layout line-height ^Font font metrics features-ctx]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
-    (let [layout (core/cached *layout (:width cs)
+    (let [layout (util/cached *layout (:width cs)
                    #(paragraph-layout tokens (:width cs) (:cap-height metrics) line-height))]
-      (core/ipoint
+      (util/ipoint
         (math/ceil (:width layout))
         (:height layout))))
   
   (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [[_ opts _] (parse-element element)
           paint      (or (:paint opts) (:fill-text ctx))
-          layout     (core/cached *layout (:width bounds)
+          layout     (util/cached *layout (:width bounds)
                        #(paragraph-layout tokens (:width bounds) (:cap-height metrics) line-height))]
-      (doseq [[pos token] (core/zip (:positions layout) tokens)
+      (doseq [[pos token] (util/zip (:positions layout) tokens)
               :when pos]
         (.drawTextLine canvas (:shaped token) (+ (:x bounds) (:x pos)) (+ (:y bounds) (:y pos)) paint))))
   
@@ -60,7 +60,7 @@
   
   (-unmount-impl [this]
     (doseq [token tokens]
-      (core/close (:shaped ^TextLine token)))))
+      (util/close (:shaped ^TextLine token)))))
 
 (defn- paragraph-split-whitespace [s]
   (let [trimmed (str/trimr s)
@@ -106,6 +106,6 @@
        :features-ctx features-ctx})))
 
 (defn- paragraph-ctor [& texts]
-  (let [[_ opts texts] (parse-element (core/consv nil texts))]
-    (core/vector* paragraph-impl opts
+  (let [[_ opts texts] (parse-element (util/consv nil texts))]
+    (util/vector* paragraph-impl opts
       (map signal/maybe-read texts))))

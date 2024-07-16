@@ -1,6 +1,6 @@
 (ns io.github.humbleui.font
   (:require
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.typeface :as typeface])
   (:import
     [java.io Writer]
@@ -58,9 +58,9 @@
 
 (defn get-font [opts]
   (let [typeface (typeface/typeface
-                   (core/checked-get opts :font-families #(and (coll? %) (every? string? %)))
+                   (util/checked-get opts :font-families #(and (coll? %) (every? string? %)))
                    opts)
-        key      (core/merge-some {:typeface typeface}
+        key      (util/merge-some {:typeface typeface}
                    (cond
                      (:font-size opts)
                      (do

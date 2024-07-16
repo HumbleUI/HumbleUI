@@ -1,6 +1,6 @@
 (ns examples.link
   (:require
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]

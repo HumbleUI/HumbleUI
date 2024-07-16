@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Row []
+(util/deftype+ Row []
   :extends AContainerNode
     
   protocols/IComponent
@@ -8,8 +8,8 @@
     (let [[_ opts _] (parse-element element)
           gap        (-> (:gap opts 0)
                        (* (:scale ctx))
-                       (core/iceil))]
-      (core/loopr [width  0
+                       (util/iceil))]
+      (util/loopr [width  0
                    height 0]
         [child children]
         (let [child-size (measure child ctx cs)]
@@ -18,14 +18,14 @@
               (+ width (:width child-size))
               (+ width gap (:width child-size)))
             (max height (:height child-size))))
-        (core/ipoint width height))))
+        (util/ipoint width height))))
   
   (-draw-impl [_ ctx bounds ^Canvas canvas]
     (let [[_ opts _]    (parse-element element)
           gap           (-> (:gap opts 0)
                           (* (:scale ctx))
-                          (core/iceil))
-          cs            (core/ipoint (:width bounds) (:height bounds))
+                          (util/iceil))
+          cs            (util/ipoint (:width bounds) (:height bounds))
           known         (for [child children]
                           (let [meta (meta (:element child))]
                             (when (= :hug (:stretch meta :hug))
@@ -46,7 +46,7 @@
                                         (:width size)
                                         (let [stretch (:stretch (meta (:element child)))]
                                           (-> space (/ total-stretch) (* stretch) (math/round)))))
-                child-bounds        (core/irect-xywh
+                child-bounds        (util/irect-xywh
                                       (+ (:x bounds) width)
                                       (:y bounds)
                                       (max 0 child-width)

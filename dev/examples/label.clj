@@ -1,7 +1,7 @@
 (ns examples.label
   (:require
     [examples.shared :as shared]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -9,7 +9,7 @@
 
 (defn use-timer []
   (let [*state (signal/signal 0)
-        cancel (core/schedule
+        cancel (util/schedule
                  #(swap! *state inc) 0 1000)]
     {:value *state
      :after-unmount cancel}))

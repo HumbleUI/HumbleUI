@@ -1,6 +1,6 @@
 (ns io.github.humbleui.event
   (:require
-    [io.github.humbleui.core :as core])
+    [io.github.humbleui.util :as util])
   (:import
     [io.github.humbleui.jwm
      EventFrame
@@ -165,7 +165,7 @@
    Key/MUTE :mute})
 
 (defn event->map [e]
-  (core/case-instance e
+  (util/case-instance e
     EventFrame
     {:event :frame}
     

@@ -2,7 +2,7 @@
   (:require
     [examples.shared :as shared]
     [clojure.string :as str]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
@@ -52,7 +52,7 @@
         [ui/grid {:cols (count header)
                   :rows (inc (count currencies))}
          (concat
-           (for [[th i] (core/zip header (range))]
+           (for [[th i] (util/zip header (range))]
              [ui/clickable
               {:on-click (on-click i)}
               [ui/padding {:padding 10}

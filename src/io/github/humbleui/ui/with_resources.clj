@@ -2,7 +2,7 @@
 
 (defn closeable [x]
   {:value x
-   :after-unmount #(core/close x)})
+   :after-unmount #(util/close x)})
 
 (defmacro with-resources [bindings & body]
   `(ui/with

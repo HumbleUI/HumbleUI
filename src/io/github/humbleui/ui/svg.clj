@@ -29,7 +29,7 @@
         [1 1 :fill] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMAX  SVGPreserveAspectRatioScale/SLICE))
       (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET))))
 
-(core/deftype+ SVG [^SVGDOM dom]
+(util/deftype+ SVG [^SVGDOM dom]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -54,7 +54,7 @@
     (.close dom)))
 
 (defn- svg-ctor [opts]
-  (let [src (core/checked-get opts :src core/slurpable?)
-        dom (with-open [data (Data/makeFromBytes (core/slurp-bytes src))]
+  (let [src (util/checked-get opts :src util/slurpable?)
+        dom (with-open [data (Data/makeFromBytes (util/slurp-bytes src))]
               (SVGDOM. data))]
     (map->SVG {:dom dom})))

@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(core/deftype+ Focusable [^:mut focused]
+(util/deftype+ Focusable [^:mut focused]
   :extends AWrapperNode  
   protocols/IComponent
   (-context [_ ctx]
@@ -14,13 +14,13 @@
     (draw-child child ctx bounds canvas))
   
   (-event-impl [this ctx event]
-    (core/eager-or
+    (util/eager-or
       (when (and
               (= :mouse-button (:event event))
               (:pressed? event)
               (not focused)
-              (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
-        (set! focused (core/now))
+              (util/rect-contains? bounds (util/ipoint (:x event) (:y event))))
+        (set! focused (util/now))
         (invoke-callback this :on-focus)
         true)
       (let [event' (cond-> event
@@ -48,7 +48,7 @@
           false)))
     @*acc))
 
-(core/deftype+ FocusController []
+(util/deftype+ FocusController []
   :extends AWrapperNode
   protocols/IComponent
   (-draw-impl [_ ctx bounds canvas]
@@ -57,7 +57,7 @@
           res      (draw-child child ctx' bounds canvas)
           focused  (sort-by :focused @*focused)]
       (doseq [comp (butlast focused)]
-        (core/set!! comp :focused nil)
+        (util/set!! comp :focused nil)
         (invoke-callback comp :on-blur))
       res))
   
@@ -65,13 +65,13 @@
     (if (and
           (= :mouse-button (:event event))
           (:pressed? event)
-          (core/rect-contains? bounds (core/ipoint (:x event) (:y event))))
+          (util/rect-contains? bounds (util/ipoint (:x event) (:y event))))
       (let [focused-before (focused this ctx)
             res            (event-child child ctx event)
             focused-after  (focused this ctx)]
         (when (< 1 (count focused-after))
           (doseq [comp focused-before]
-            (core/set!! comp :focused nil)
+            (util/set!! comp :focused nil)
             (invoke-callback comp :on-blur)))
         (or
           res
@@ -92,10 +92,10 @@
               (vreset! *prev comp)
               false)))))
     (when-some [focused @*focused]
-      (core/set!! focused :focused nil)
+      (util/set!! focused :focused nil)
       (invoke-callback focused :on-blur))
     (when-some [prev @*prev]
-      (core/set!! prev :focused (core/now))
+      (util/set!! prev :focused (util/now))
       (invoke-callback prev :on-focus))))
 
 (defn focus-next [this ctx]
@@ -116,10 +116,10 @@
               (vreset! *next comp)
               true)))))
     (when-some [focused @*focused]
-      (core/set!! focused :focused nil)
+      (util/set!! focused :focused nil)
       (invoke-callback focused :on-blur))
     (when-some [next (or @*next @*first)]
-      (core/set!! next :focused (core/now))
+      (util/set!! next :focused (util/now))
       (invoke-callback next :on-focus))))
 
 (defn focus-controller-impl [child]

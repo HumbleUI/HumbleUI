@@ -2,13 +2,13 @@
 
 (defn- draggable-child-bounds [draggable]
   (let [{:keys [my-pos child-pos child-size]} draggable]
-    (core/irect-xywh
+    (util/irect-xywh
       (+ (:x my-pos) (:x child-pos))
       (+ (:y my-pos) (:y child-pos))
       (:width child-size)
       (:height child-size))))
 
-(core/deftype+ Draggable [^:mut my-pos
+(util/deftype+ Draggable [^:mut my-pos
                           ^:mut child-pos
                           ^:mut child-size
                           ^:mut mouse-start
@@ -19,8 +19,8 @@
     cs)
   
   (-draw-impl [this ctx bounds canvas]
-    (set! my-pos (core/ipoint (:x bounds) (:y bounds)))
-    (set! child-size (measure child ctx (core/ipoint (:width bounds) (:height bounds))))
+    (set! my-pos (util/ipoint (:x bounds) (:y bounds)))
+    (set! child-size (measure child ctx (util/ipoint (:width bounds) (:height bounds))))
     (draw-child child ctx (draggable-child-bounds this) canvas))
   
   (-event-impl [this ctx event]
@@ -30,9 +30,9 @@
               (= :mouse-button (:event event))
               (= :primary (:button event))
               (:pressed? event)
-              (core/rect-contains? (draggable-child-bounds this) (core/ipoint (:x event) (:y event))))
+              (util/rect-contains? (draggable-child-bounds this) (util/ipoint (:x event) (:y event))))
         (set! mouse-start
-          (core/ipoint
+          (util/ipoint
             (- (:x child-pos) (:x event))
             (- (:y child-pos) (:y event)))))
     
@@ -44,17 +44,17 @@
                 on-drop
                 mouse-start
                 dragged)
-          (on-drop (core/ipoint
+          (on-drop (util/ipoint
                      (+ (:x mouse-start) (:x event))
                      (+ (:y mouse-start) (:y event)))))
         (set! dragged false)
         (set! mouse-start nil))
     
-      (core/eager-or
+      (util/eager-or
         (when (and
                 (= :mouse-move (:event event))
                 mouse-start)
-          (let [p (core/ipoint
+          (let [p (util/ipoint
                     (+ (:x mouse-start) (:x event))
                     (+ (:y mouse-start) (:y event)))]
             (when on-dragging (on-dragging p))

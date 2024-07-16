@@ -28,13 +28,13 @@
         ; start = now - ratio * len
         start  (:animation-start switch)
         len    (:animation-length switch)
-        now    (core/now)
+        now    (util/now)
         ratio  (min 1 (/ (- now start) len))
         ratio' (- 1 ratio)
         start' (- now (* ratio' len))]
     (protocols/-set! switch :animation-start start')))
 
-(core/deftype+ Switch [animation-length
+(util/deftype+ Switch [animation-length
                        ^:mut on?-cached
                        ^:mut animation-start]
   :extends ATerminalNode
@@ -42,7 +42,7 @@
   (-measure-impl [_ ctx _cs]
     (let [height (switch-height ctx)
           width  (math/round (* height 1.61803))]
-      (core/ipoint width height)))
+      (util/ipoint width height)))
   
   (-draw-impl [this ctx bounds canvas]
     (let [{x :x, y :y, w :width, h :height} bounds
@@ -52,7 +52,7 @@
           _                (when (not= on? on?-cached)
                              (switch-start-animation this)
                              (set! on?-cached on?))
-          now              (core/now)
+          now              (util/now)
           ratio            (min 1 (/ (- now animation-start) animation-length))
           animating?       (< ratio 1)
           fill             (let [switch-fill-enabled (if pressed?

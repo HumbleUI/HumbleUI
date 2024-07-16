@@ -5,7 +5,7 @@
     [clojure.string :as str]
     [clojure.walk :as walk]
     [io.github.humbleui.app :as app]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
@@ -43,7 +43,7 @@
       ~@(if docstring [docstring] [])
       (delay
         (when-not (@*loaded ~file)
-          (core/log (str "Loading ui/" ~file))
+          (util/log (str "Loading ui/" ~file))
           (binding [*warn-on-reflection* true]
             (load (str "/io/github/humbleui/ui/" ~file)))
           (swap! *loaded conj ~file))
@@ -113,7 +113,7 @@
   (load "/io/github/humbleui/ui/window"))
 
 (defmacro start-app! [& body]
-  `(core/thread
+  `(util/thread
      (app/start
        (fn []
          ~@body))))

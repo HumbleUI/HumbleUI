@@ -2,7 +2,7 @@
   (:require
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
@@ -97,7 +97,7 @@
     :else   (float (max (/ w h) (/ h w)))))
 
 (defn paint [paths ^Canvas canvas size full-size]
-  (core/cond+
+  (util/cond+
     :let [{:keys [width height]} size
           total-size (transduce (map :size) + 0 paths)]
     
@@ -114,7 +114,7 @@
     (canvas/with-canvas canvas
       (canvas/translate canvas 0 height)
       (canvas/rotate canvas -90)
-      (paint paths canvas (core/isize (:height size) (:width size)) full-size))
+      (paint paths canvas (util/isize (:height size) (:width size)) full-size))
     
     (> (count paths) 1)
     (let [[left left-size]
@@ -135,25 +135,25 @@
         (let [*total-h (volatile! 0)]
           (doseq [path (butlast left-paths)
                   :let [h (-> (:size path) (/ left-size) (* height) long)]]
-            (paint [path] canvas (core/isize left-width h) full-size)
+            (paint [path] canvas (util/isize left-width h) full-size)
             (canvas/translate canvas 0 h)
             (vswap! *total-h + h))
-          (paint [(last left-paths)] canvas (core/isize left-width (- height @*total-h)) full-size)))
+          (paint [(last left-paths)] canvas (util/isize left-width (- height @*total-h)) full-size)))
       (canvas/with-canvas canvas
         (canvas/translate canvas left-width 0)
-        (paint right-paths canvas (core/isize (- width left-width) height) full-size)))
+        (paint right-paths canvas (util/isize (- width left-width) height) full-size)))
 
     :let [children (:children (first paths))]
     
     (nil? children)
-    (let [rect (core/rect-xywh 0 0 width height)]
+    (let [rect (util/rect-xywh 0 0 width height)]
       (set-color canvas full-size)
       (canvas/draw-rect canvas rect fill)
       (when (and (> width 4) (> height 4))
         (canvas/draw-rect canvas rect stroke)))
     
     :else
-    (let [rect (core/rect-xywh 0 0 width height)]
+    (let [rect (util/rect-xywh 0 0 width height)]
       (paint children canvas size full-size))))
 
 (defn rescan []

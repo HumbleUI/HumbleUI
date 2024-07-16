@@ -1,7 +1,7 @@
 (ns examples.bmi-calculator
   (:require
     [clojure.math :as math]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
@@ -48,7 +48,7 @@
         (binding [*editing* true]
           (let [height  (/ @*height 100)
                 bmi     new
-                weight  (core/clamp (* bmi height height) 30 150)
+                weight  (util/clamp (* bmi height height) 30 150)
                 height' (* (math/sqrt (/ weight bmi)) 100)]
             (reset! *weight (math/round weight))
             (reset! *height (math/round height'))))))))

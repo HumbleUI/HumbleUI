@@ -3,7 +3,7 @@
     [clojure.java.io :as io]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.core :as core]
+    [io.github.humbleui.util :as util]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.event :as event])
   (:import
@@ -55,28 +55,28 @@
                            (when on-event
                              (when e
                                (when-not (#{:frame :frame-skija} type)
-                                 (core/catch-and-log
+                                 (util/catch-and-log
                                    (on-event window e)))))
                            
                            (case type
                              :window-close-request
                              (when on-close-request
-                               (core/catch-and-log
+                               (util/catch-and-log
                                  (on-close-request window)))
                              
                              :window-close
                              (when on-close
-                               (core/catch-and-log
+                               (util/catch-and-log
                                  (on-close)))
                              
                              :window-screen-change
                              (when on-screen-change
-                               (core/catch-and-log
+                               (util/catch-and-log
                                  (on-screen-change window)))
                              
                              :window-resize
                              (when on-resize
-                               (core/catch-and-log
+                               (util/catch-and-log
                                  (on-resize window)))
                              
                              :frame-skija
@@ -88,7 +88,7 @@
                                      (on-paint window canvas))
                                    (debug/draw-frames canvas window)
                                    (catch Throwable e
-                                     (core/log-error e)
+                                     (util/log-error e)
                                      (.clear canvas (unchecked-int 0xFFCC3333)))
                                    (finally
                                      (.restoreToCount canvas layer))))
@@ -101,32 +101,32 @@
         input-client (reify TextInputClient
                        (getRectForMarkedRange [_ selection-start selection-end]
                          (or
-                           (core/catch-and-log
+                           (util/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*text-input-ctx* ctx]
+                               (binding [util/*text-input-ctx* ctx]
                                  (.getRectForMarkedRange client selection-start selection-end))))
                            (IRect/makeXYWH 0 0 0 0)))
                        
                        (getSelectedRange [_]
                          (or
-                           (core/catch-and-log
+                           (util/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*text-input-ctx* ctx]
+                               (binding [util/*text-input-ctx* ctx]
                                  (.getSelectedRange client))))
-                           (core/irange -1 -1)))
+                           (util/irange -1 -1)))
                          
                        (getMarkedRange [_]
                          (or
-                           (core/catch-and-log
+                           (util/catch-and-log
                              (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                               (binding [core/*text-input-ctx* ctx]
+                               (binding [util/*text-input-ctx* ctx]
                                  (.getMarkedRange client))))
-                           (core/irange -1 -1)))
+                           (util/irange -1 -1)))
                        
                        (getSubstring [_ start end]
-                         (core/catch-and-log
+                         (util/catch-and-log
                            (when-some [{:keys [^TextInputClient client ctx]} (input-client-fn)]
-                             (binding [core/*text-input-ctx* ctx]
+                             (binding [util/*text-input-ctx* ctx]
                                (.getSubstring client start end))))))]
     (.setLayer window layer)
     (.setEventListener window listener)
