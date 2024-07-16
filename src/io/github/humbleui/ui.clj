@@ -28,6 +28,7 @@
   (load "/io/github/humbleui/ui/core")
   (load "/io/github/humbleui/ui/reconcile")
   (load "/io/github/humbleui/ui/nodes")
+  (load "/io/github/humbleui/ui/defcomp")
   (load "/io/github/humbleui/ui/dynamic")
   (load "/io/github/humbleui/ui/with")
   (load "/io/github/humbleui/ui/with_context")
