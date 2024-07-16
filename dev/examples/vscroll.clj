@@ -1,7 +1,7 @@
 (ns examples.vscroll
   (:require
     [clojure.string :as str]
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -37,7 +37,7 @@
               [ui/label {:font-features ["tnum"]} (str/join texts)]]]])]))))
 
 (ui/defcomp ui []
-  (util/table
+  (shared/table
     "Lots of items (min-thumb-h check)"
     [box
      [ui/vscroll

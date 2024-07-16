@@ -27,7 +27,7 @@
             clj-reload.util/*log-fn* log]
     (or
       (try
-        (when-some [window @@(requiring-resolve 'examples.util/*window)]
+        (when-some [window @@(requiring-resolve 'examples.shared/*window)]
           ;; do not reload in the middle of the frame
           (locking window
             (duti/reload)))

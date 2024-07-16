@@ -1,12 +1,12 @@
 (ns examples.clip
   (:require
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  (util/table
+  (shared/table
     "Without Clip"
     [ui/with-context {:font-cap-height 25}
      [ui/rect {:paint (paint/fill 0x80FFDB2C)}

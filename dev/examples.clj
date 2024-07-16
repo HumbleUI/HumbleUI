@@ -40,7 +40,7 @@
     [examples.todomvc]
     [examples.tooltip]
     [examples.treemap]
-    [examples.util :as util]
+    [examples.shared :as shared]
     [examples.vscroll]
     [examples.wordle]
     [io.github.humbleui.app :as app]
@@ -102,7 +102,7 @@
      ["Testbed" examples.testbed/ui]]]])
 
 ^:clj-reload/keep
-(util/def-durable-signal *example
+(shared/def-durable-signal *example
   (-> examples first second first first))
 
 (ui/defcomp example-header [name]
@@ -182,10 +182,10 @@
           y (-> rect :y (- (:y work-area)) (/ scale) int)
           w (-> rect :width (/ scale) int)
           h (-> rect :height (/ scale) int)]
-      (util/save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
+      (shared/save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
 
 (defn restore-window-rect []
-  (core/when-some+ [{:keys [screen-id x y width height]} (util/load-state)]
+  (core/when-some+ [{:keys [screen-id x y width height]} (shared/load-state)]
     (when-some [screen (core/find-by :id screen-id (app/screens))]
       (let [{:keys [scale work-area]} screen
             right  (-> (:right work-area) (/ scale) int)
@@ -213,6 +213,6 @@
       ;; TODO load real monitor profile
       (when (= :macos app/platform)
         (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))
-      (util/set-floating! window @util/*floating?)
-      (deliver util/*window window)))
-  @util/*window)
+      (shared/set-floating! window @shared/*floating?)
+      (deliver shared/*window window)))
+  @shared/*window)

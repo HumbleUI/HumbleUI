@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [key type])
   (:require
     [clojure.string :as str]
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]

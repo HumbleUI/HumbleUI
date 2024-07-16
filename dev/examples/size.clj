@@ -1,6 +1,6 @@
 (ns examples.size
   (:require
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -9,7 +9,7 @@
 (ui/defcomp ui []
   (let [fill (paint/fill 0x80FFDB2C)]
     (fn []
-      (util/table
+      (shared/table
         "Force child’s width"
         [ui/size {:width 50}
          [ui/rect {:paint fill}

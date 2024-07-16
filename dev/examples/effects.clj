@@ -1,7 +1,7 @@
 (ns examples.effects
   (:require
     [clojure.math :as math]
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]

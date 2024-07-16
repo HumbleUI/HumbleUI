@@ -1,4 +1,4 @@
-(ns examples.util
+(ns examples.shared 
   (:require
     [clj-reload.core :as reload]
     [clojure.java.io :as io]
@@ -41,7 +41,7 @@
 (defmethod reload/keep-methods 'def-durable-signal [_]
   (reload/keep-methods 'defonce))
 
-(defmethod reload/keep-methods 'util/def-durable-signal [_]
+(defmethod reload/keep-methods 'shared/def-durable-signal [_]
   (reload/keep-methods 'defonce))
 
 (defmacro restore-durable-signal [name]

@@ -1,7 +1,7 @@
 (ns examples.align
   (:require
     [clojure.string :as str]
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
@@ -22,7 +22,7 @@
         child]])))
 
 (ui/defcomp ui []
-  (util/table
+  (shared/table
     "Component stretch by default"
     [box
      [label "abc"]]

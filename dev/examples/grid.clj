@@ -1,6 +1,6 @@
 (ns examples.grid
   (:require
-    [examples.util :as util]
+    [examples.shared :as shared]
     [clojure.string :as str]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]

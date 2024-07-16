@@ -1,6 +1,6 @@
 (ns examples.label
   (:require
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.core :as core]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.paint :as paint]
@@ -17,7 +17,7 @@
 (ui/defcomp ui []
   (ui/with [*timer (use-timer)]
     (fn []
-      (util/table
+      (shared/table
         "With a string"
         [ui/label "String"]
         

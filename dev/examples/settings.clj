@@ -1,6 +1,6 @@
 (ns examples.settings
   (:require
-    [examples.util :as util]
+    [examples.shared :as shared]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.paint :as paint]
     [io.github.humbleui.ui :as ui]))
@@ -30,7 +30,7 @@
            [ui/column {:gap padding-inner}
             (interpose delimeter
               (list
-                [setting "Always on top" util/*floating?]
+                [setting "Always on top" shared/*floating?]
                 [setting "Frame paint time" debug/*paint?]
                 [setting "Frame pacing" debug/*pacing?]
                 [setting "Event pacing" debug/*events?]
