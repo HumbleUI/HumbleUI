@@ -1,14 +1,15 @@
 (in-ns 'io.github.humbleui.ui)
 
-(alias 'ui 'io.github.humbleui.ui)
+;; vars
 
-(require
-  '[io.github.humbleui.debug :as debug])
+(def ^:dynamic *ctx*)
 
-;; utils
+(def ^:dynamic *node*)
 
 (def ^Shaper shaper
   (Shaper/makeShapeDontWrapOrReorder))
+
+;; utils
 
 (defn dimension ^long [size cs ctx]
   (let [scale (:scale ctx)]
@@ -21,6 +22,55 @@
         (* scale size))
       (math/round)
       (long))))
+
+(defn scale
+  ([]
+   (:scale *ctx*))
+  ([ctx]
+   (:scale ctx)))
+
+(defn scaled
+  ([x]
+   (when x
+     (* x (:scale *ctx*))))
+  ([x ctx]
+   (when x
+     (* x (:scale ctx)))))
+
+(defn descaled
+  ([x]
+   (when x
+     (/ x (:scale *ctx*))))
+  ([x ctx]
+   (when x
+     (/ x (:scale ctx)))))
+
+(defn parse-element [vals]
+  (if (map? (nth vals 1))
+    [(nth vals 0) (nth vals 1) (subvec vals 2)]
+    [(nth vals 0) {} (subvec vals 1)]))
+
+(defn parse-opts [element]
+  (let [[_ opts & _] (parse-element element)]
+    opts))
+
+(defn keys-match? [keys m1 m2]
+  (=
+    (select-keys m1 keys)
+    (select-keys m2 keys)))
+
+(defn opts-match? [keys element new-element]
+  (let [[_ opts _] (parse-element element)
+        [_ new-opts _] (parse-element new-element)]
+    (keys-match? keys opts new-opts)))
+
+(defn invoke-callback [comp key & args]
+  (let [[_ opts _] (parse-element (:element comp))]
+    (apply util/invoke (key opts) args)))
+
+(defn force-render [node window]
+  (util/set!! node :dirty? true)
+  (.requestFrame ^Window window))
 
 ;; protocols
 
@@ -61,574 +111,6 @@
 (defn unmount-child [comp]
   (when comp
     (protocols/-unmount comp)))
-
-(defn parse-element [vals]
-  (if (map? (nth vals 1))
-    [(nth vals 0) (nth vals 1) (subvec vals 2)]
-    [(nth vals 0) {} (subvec vals 1)]))
-
-(defn invoke-callback [comp key & args]
-  (let [[_ opts _] (parse-element (:element comp))]
-    (apply util/invoke (key opts) args)))
-
-;; vdom
-
-(def ^:dynamic *ctx*)
-
-(def ^:dynamic *node*)
-
-(defn scale
-  ([]
-   (:scale *ctx*))
-  ([ctx]
-   (:scale ctx)))
-
-(defn scaled
-  ([x]
-   (when x
-     (* x (:scale *ctx*))))
-  ([x ctx]
-   (when x
-     (* x (:scale ctx)))))
-
-(defn descaled
-  ([x]
-   (when x
-     (/ x (:scale *ctx*))))
-  ([x ctx]
-   (when x
-     (/ x (:scale ctx)))))
-
-(declare get-font)
-
-(defn cap-height []
-  (-> (get-font) font/metrics :cap-height (/ (scale))))
-  
-(declare map->FnNode)
-
-(defn parse-opts [element]
-  (let [[_ opts & _] (parse-element element)]
-    opts))
-
-(defn maybe-render [node ctx]
-  (when (or
-          (:dirty? node)
-          (when-some [should-render? (:should-render? node)]
-            (apply should-render? (next (:element node)))))
-    (protocols/-reconcile-impl node ctx (:element node))
-    (util/set!! node :dirty? false)))
-
-(defn make-record [^Class class]
-  (let [ns   (str/replace (.getPackageName class) "_" "-")
-        name (str "map->" (.getSimpleName class))
-        ctor (ns-resolve (symbol ns) (symbol name))]
-    (ctor {})))
-
-(defn collect [key xs]
-  (util/when-some+ [cbs (not-empty (vec (keep key xs)))]
-    (fn [& args]
-      (doseq [cb cbs]
-        (apply cb args)))))
-
-(defn collect-bool [key xs]
-  (util/when-some+ [cbs (not-empty (vec (keep key xs)))]
-    (fn [& args]
-      (reduce #(or %1 (apply %2 args)) false cbs))))
-
-(defn assert-arities [f g]
-  (assert (= (util/arities f) (util/arities g)) (str "Arities of node fn and render fn should match, node: " (util/arities f) ", render: " (util/arities g))))
-
-(defn normalize-mixin [x]
-  (cond
-    (fn? x)
-    [{:render x}]
-    
-    (map? x)
-    [x]
-    
-    (and (sequential? x) (map? (first x)))
-    x
-    
-    :else
-    (throw (ex-info (str "Malformed mixin: " (pr-str x)) {:value x}))))
-
-(defn merge-mixins [a b]
-  (reduce-kv
-    (fn [m k v]
-      (let [mv (m k)]
-        (cond
-          (nil? mv)
-          (assoc m k v)
-          
-          (#{:measure :draw :render :value} k)
-          (throw (ex-info (str "Duplicate key in mixin maps: " k) {:left a, :right b}))
-          
-          (#{:should-setup? :should-render?} k)
-          (assoc m k (fn [& args]
-                       (or
-                         (apply mv args)
-                         (apply v args))))
-          
-          (#{:before-draw :after-draw :before-render :after-render :after-mount :after-unmount} k)
-          (assoc m k (fn [& args]
-                       (apply mv args)
-                       (apply v args)))
-          
-          :else
-          (throw (ex-info (str "Unexpected key in mixin: " k) {:left a, :right b})))))
-    a b))
-
-(defn with-impl [sym form body]
-  `(let [form#  ~form
-         ~sym   (:value form#)
-         mixin# (dissoc form# :value)
-         res#   ~body]
-     (reduce merge-mixins
-       (concat
-         (normalize-mixin mixin#)
-         (normalize-mixin res#)))))
-
-(defmacro with [bindings & body]
-  (if (= 0 (count bindings))
-    `(do ~@body)
-    (with-impl (first bindings) (second bindings)
-      `(with ~(nnext bindings)
-         ~@body))))
-
-(defn make-impl
-  ([el]
-   (make-impl (map->FnNode {}) el))
-  ([start-node el]
-   (util/cond+
-     (satisfies? protocols/IComponent el)
-     el
-
-     :let [[f & args] el
-           f (util/maybe-deref f)]
-        
-     :else
-     (binding [*node* start-node]
-       (let [res  (cond
-                    (fn? f)    (apply f args)
-                    (class? f) (make-record f))
-             node (loop [res res]
-                    (util/cond+
-                      (fn? res)
-                      (do
-                        (assert-arities f res)
-                        (util/set!! *node* :render res)
-                        *node*)
-               
-                      (satisfies? protocols/IComponent res)
-                      res
-                   
-                      (map? res)
-                      (let [render (:render res)]
-                        (when render
-                          (assert-arities f render))
-                        (util/set!! *node*
-                          :user-measure   (:measure res)
-                          :user-draw      (:draw res)
-                          :render         render
-                          :should-setup?  (:should-setup? res)
-                          :should-render? (:should-render? res)
-                          :before-draw    (:before-draw res)
-                          :after-draw     (:after-draw res)
-                          :before-render  (:before-render res)
-                          :after-render   (:after-render res)
-                          :after-mount    (:after-mount res)
-                          :after-unmount  (:after-unmount res))
-                        *node*)
-               
-                      (and (sequential? res) (map? (first res)))
-                      (recur (reduce merge-mixins res))
-                   
-                      (sequential? res)
-                      (do
-                        (util/set!! *node* :render f)
-                        *node*)
-                     
-                      :else
-                      (throw (ex-info (str "Unexpected return type: " res) {:f f :args args :res res}))))]
-         (util/set!! node
-           :element el
-           :dirty? true)
-         (when-some [key (:key (meta el))]
-           (util/set!! node :key key))
-         (when-some [ref (:ref (meta el))]
-           (reset! ref node))
-         node)))))
-
-(defn make
-  ([el]
-   (try
-     (make-impl el)
-     (catch Exception e
-       (util/log-error e)
-       (make-impl [@(resolve 'io.github.humbleui.ui/error) e]))))
-  ([el ctx]
-   (binding [*ctx* ctx]
-     (make el))))
-
-(defn should-reconcile? [ctx old-node new-el]
-  (and 
-    old-node
-    (let [left  (util/maybe-deref (nth (:element old-node) 0))
-          right (util/maybe-deref (nth new-el 0))]
-      (or
-        (identical? left right)
-        ;; same lambdas with different captured vars still should reconcile
-        (and
-          (and (fn? left) (fn? right))
-          (identical? (class left) (class right)))))
-    (protocols/-should-reconcile? old-node ctx new-el)))
-
-(defn keys-match? [keys m1 m2]
-  (=
-    (select-keys m1 keys)
-    (select-keys m2 keys)))
-
-(defn opts-match? [keys element new-element]
-  (let [[_ opts _] (parse-element element)
-        [_ new-opts _] (parse-element new-element)]
-    (keys-match? keys opts new-opts)))
-
-(defn autoconvert [el]
-  (cond
-    (string? el)
-    [@(resolve 'io.github.humbleui.ui/label) el]
-    
-    :else
-    el))
-
-(defn reconcile-many [ctx old-nodes new-els]
-  (util/loop+ [old-nodes-keyed (reduce
-                                 (fn [m n]
-                                   (if-some [key (:key n)]
-                                     (assoc! m key n)
-                                     m))
-                                 (transient {})
-                                 old-nodes)
-               old-nodes       (filter #(and % (nil? (:key %))) old-nodes)
-               new-els         new-els
-               res             (transient [])
-               keys-idxs       (transient {})]
-    (util/cond+
-      (empty? new-els)
-      (do
-        (doseq [node (concat
-                       old-nodes
-                       (vals (persistent! old-nodes-keyed)))]
-          (unmount node))
-        (persistent! res))
-      
-      :let [[old-node & old-nodes'] old-nodes
-            [new-el & new-els']     new-els
-            new-el                  (autoconvert new-el)
-            key                     (:key (meta new-el))]
-      
-      key
-      (let [key-idx    (inc (keys-idxs key -1))
-            keys-idxs' (assoc! keys-idxs key key-idx)
-            key'       [key key-idx]
-            new-el'    (vary-meta new-el assoc :key key')
-            old-node   (old-nodes-keyed key')]
-        (cond
-          ;; new key
-          (nil? old-node)
-          (let [new-node (make new-el' ctx)]
-            (recur [new-els   new-els'
-                    res       (conj! res new-node)
-                    keys-idxs keys-idxs']))
-          
-          ;; compatible key
-          (should-reconcile? ctx old-node new-el')
-          (do
-            (protocols/-reconcile old-node ctx new-el')
-            (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
-                    new-els         new-els'
-                    res             (conj! res old-node)
-                    keys-idxs       keys-idxs']))
-          
-          ;; non-compatible key
-          :else
-          (let [new-node (make new-el' ctx)]
-            (unmount old-node)
-            (recur [old-nodes-keyed (dissoc! old-nodes-keyed key')
-                    new-els         new-els'
-                    res             (conj! res new-node)
-                    keys-idxs       keys-idxs']))))
-
-      (should-reconcile? ctx old-node new-el)
-      (do
-        ; (println "compatible" old-node new-el)
-        (protocols/-reconcile old-node ctx new-el)
-        (recur [old-nodes old-nodes'
-                new-els   new-els'
-                res       (conj! res old-node)]))
-      
-      ;; old-node was dropped
-      (should-reconcile? ctx (first old-nodes') new-el)
-      (let [; _ (println "old-node dropped" old-node new-el)
-            _ (unmount old-node)
-            [old-node & old-nodes'] old-nodes']
-        (protocols/-reconcile old-node ctx new-el)
-        (recur [old-nodes (next old-nodes')
-                new-els   new-els'
-                res       (conj! res old-node)]))
-      
-      ;; new-el was inserted
-      (should-reconcile? ctx old-node (first new-els'))
-      (let [; _ (println "new-el inserted" old-node new-el)
-            new-node (make new-el ctx)]
-        (recur [new-els new-els'
-                res     (conj! res new-node)]))
-      
-      ;; just incompatible
-      :else
-      (let [; _ (println "incompatible" old-node new-el)
-            new-node (make new-el ctx)]
-        (unmount old-node)
-        (recur [old-nodes old-nodes'
-                new-els   new-els'
-                res       (conj! res new-node)])))))
-
-(defn force-render [node window]
-  (util/set!! node :dirty? true)
-  (.requestFrame ^Window window))
-
-;; Nodes
-
-(def ctor-border
-  (paint/stroke 0x80FF00FF 4))
-
-(util/defparent ANode
-  [^:mut element
-   ^:mut mounted?
-   ^:mut bounds
-   ^:mut key
-   ^:mut dirty?]
-  
-  protocols/IComponent
-  (-context [_ ctx]
-    ctx)
-
-  (-measure [this ctx cs]
-    (let [ctx (protocols/-context this ctx)]
-      (ui/maybe-render this ctx)
-      (protocols/-measure-impl this ctx cs)))
-    
-  (-draw [this ctx bounds' canvas]
-    (let [ctx (protocols/-context this ctx)]
-      (protocols/-set! this :bounds bounds')
-      (ui/maybe-render this ctx)
-      (protocols/-draw-impl this ctx bounds' canvas)
-      (when (and @debug/*outlines? (not (:mounted? this)))
-        (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
-        (protocols/-set! this :mounted? true))))
-  
-  (-event [this ctx event]
-    (let [ctx (protocols/-context this ctx)]
-      (protocols/-event-impl this ctx event)))
-  
-  (-event-impl [this ctx event]
-    nil)
-
-  (-child-elements [this ctx new-element]
-    (let [[_ _ child-els] (parse-element new-element)]
-      child-els))
-  
-  (-reconcile [this ctx new-element]
-    (when (not (identical? (:element this) new-element))
-      (protocols/-reconcile-impl this ctx new-element)
-      (protocols/-set! this :element new-element))
-    this)
-  
-  (-reconcile-impl [this _ctx element]
-    (throw (ex-info "Not implemented" {:element (:element this)})))
-  
-  (-should-reconcile? [_this _ctx _element]
-    true)
-  
-  (-unmount [this]
-    (protocols/-unmount-impl this))
-  
-  (-unmount-impl [_this]))
-
-(util/defparent ATerminalNode
-  "Simple component that has no children"
-  []
-  :extends ANode
-  protocols/IComponent
-  (-iterate [this _ctx cb]
-    (cb this))
-  
-  (-reconcile-impl [this ctx _new-element]
-    this))
-
-(util/defparent AWrapperNode
-  "A component that has exactly one child"
-  [^:mut child]
-  :extends ANode
-  protocols/IComponent
-  (-measure-impl [this ctx cs]
-    (let [ctx (protocols/-context this ctx)]
-      (measure (:child this) ctx cs)))
-
-  (-draw-impl [this ctx bounds canvas]
-    (let [ctx (protocols/-context this ctx)]
-      (draw-child (:child this) ctx bounds canvas)))
-  
-  (-event-impl [this ctx event]
-    (let [ctx (protocols/-context this ctx)]
-      (event-child (:child this) ctx event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (let [ctx (protocols/-context this ctx)]
-        (iterate-child (:child this) ctx cb))))
-  
-  (-reconcile-impl [this ctx el']
-    (let [ctx       (protocols/-context this ctx)
-          child-els (protocols/-child-elements this ctx el')
-          [child']  (reconcile-many ctx [(:child this)] child-els)]
-      (protocols/-set! this :child child')))
-  
-  (-unmount [this]
-    (unmount-child (:child this))
-    (protocols/-unmount-impl this)))
-
-(util/defparent AContainerNode
-  "A component that has multiple children"
-  [^:mut children]
-  :extends ANode
-  protocols/IComponent  
-  (-event [this ctx event]
-    (let [ctx (protocols/-context this ctx)]
-      (binding [*node* this
-                *ctx*  ctx]
-        (util/eager-or
-          (reduce #(util/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
-          (protocols/-event-impl this ctx event)))))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (let [ctx (protocols/-context this ctx)]
-        (some #(iterate-child % ctx cb) (:children this)))))
-  
-  (-reconcile-impl [this ctx el']
-    (let [ctx       (protocols/-context this ctx)
-          child-els (protocols/-child-elements this ctx el')
-          child-els (util/flatten child-els)
-          children' (reconcile-many ctx (:children this) child-els)]
-      (protocols/-set! this :children children')))
-  
-  (-unmount [this]
-    (doseq [child (:children this)]
-      (unmount-child child))
-    (protocols/-unmount-impl this)))
-
-;; FnNode
-
-(util/deftype+ FnNode [^:mut child
-                       ^:mut effect
-                       ^:mut should-setup?
-                       ^:mut should-render?
-                       ^:mut after-mount
-                       ^:mut before-render
-                       ^:mut user-measure
-                       ^:mut user-draw
-                       ^:mut render
-                       ^:mut after-render
-                       ^:mut before-draw
-                       ^:mut after-draw
-                       ^:mut after-unmount]
-  :extends ANode
-  protocols/IComponent
-  (-measure-impl [this ctx cs]
-    (binding [*node* this
-              *ctx*  ctx]
-      (when render
-        (set! bounds (util/irect-xywh 0 0 (:width cs) (:height cs)))
-        (maybe-render this ctx))
-      (if user-measure
-        (user-measure child cs)
-        (measure child ctx cs))))
-  
-  (-draw [this ctx bounds' canvas]
-    (set! bounds bounds')
-    (binding [*node* this
-              *ctx*  ctx]
-      (when render
-        (maybe-render this ctx))
-      (util/invoke before-draw)
-      (if user-draw
-        (user-draw child bounds canvas)
-        (protocols/-draw child ctx bounds canvas))
-      (util/invoke after-draw)
-      (when-not mounted?
-        (util/invoke after-mount))
-      (when (and @debug/*outlines? (not mounted?))
-        (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
-        (set! mounted? true))))
-
-  (-event-impl [this ctx event]
-    (binding [*node* this
-              *ctx*  ctx]
-      (event-child child ctx event)))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (when render
-        (iterate-child child ctx cb))))
-  
-  (-reconcile [this ctx new-element]
-    (when (if should-render?
-            (apply should-render? (next new-element))
-            (not (identical? element new-element)))
-      (protocols/-reconcile-impl this ctx new-element))
-    (set! element new-element)
-    this)
-  
-  (-reconcile-impl [this ctx new-element]
-    (when (or
-            (not (identical? (first element) (first new-element)))
-            (apply util/invoke should-setup? (next new-element)))
-      (make-impl this new-element))
-    (when render
-      (util/invoke before-render)
-      (try
-        (binding [signal/*context* (volatile! (transient #{}))
-                  *ctx*            ctx]
-          (let [child-el (apply render (next new-element))
-                [child'] (reconcile-many ctx [child] [child-el])
-                _        (set! child child')
-                _        (set! element new-element)
-                signals  (persistent! @@#'signal/*context*)
-                window   (:window ctx)]
-            (some-> effect signal/dispose!)
-            (set! effect
-              (when-not (empty? signals)
-                (signal/effect signals
-                  (force-render this window))))))
-        (finally
-          (util/invoke after-render)))))
-  
-  (-unmount [this]
-    (unmount-child child)
-    (some-> effect signal/dispose!)
-    (when after-unmount
-      (after-unmount)))
-  
-  java.lang.Object
-  (toString [_]
-    (pr-str element)))
-
-(defmethod print-method FnNode [o ^java.io.Writer w]
-  (.write w (str o)))
 
 ;; defcomp
 

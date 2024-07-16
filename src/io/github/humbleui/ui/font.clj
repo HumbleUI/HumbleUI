@@ -20,7 +20,6 @@
       :else
       (recur (conj res family) (next families)))))
          
-
 (defn get-font
   "Get cached instance of a font. All options are optional:
    
@@ -62,3 +61,6 @@
    {:font-family-aliases
     (merge (:font-family-aliases *ctx*) m)}
    child])
+
+(defn cap-height []
+  (-> (get-font) font/metrics :cap-height (/ (scale))))

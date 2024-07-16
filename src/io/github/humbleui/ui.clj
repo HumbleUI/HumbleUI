@@ -26,7 +26,10 @@
 
 (binding [*warn-on-reflection* true]
   (load "/io/github/humbleui/ui/core")
+  (load "/io/github/humbleui/ui/reconcile")
+  (load "/io/github/humbleui/ui/nodes")
   (load "/io/github/humbleui/ui/dynamic")
+  (load "/io/github/humbleui/ui/with")
   (load "/io/github/humbleui/ui/with_context")
   (load "/io/github/humbleui/ui/with_resources")
   (load "/io/github/humbleui/ui/size")
