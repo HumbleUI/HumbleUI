@@ -16,7 +16,7 @@
   
   (-draw-impl [_ ctx bounds canvas]
     (doseq [child children]
-      (draw-child child ctx bounds canvas)))
+      (draw child ctx bounds canvas)))
   
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]
@@ -24,7 +24,7 @@
                 *ctx*  ctx]
         (reduce 
           (fn [_ child]
-            (when-let [res (event-child child ctx event)]
+            (when-let [res (ui/event child ctx event)]
               (reduced res)))
           nil
           (reverse children))))))

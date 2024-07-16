@@ -25,7 +25,7 @@
           
             :else
             false)))
-      (event-child child ctx event)))
+      (ui/event child ctx event)))
   
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*state] element new-element))

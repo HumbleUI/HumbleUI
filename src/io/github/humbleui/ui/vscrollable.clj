@@ -33,7 +33,7 @@
       :mouse-scroll
       (when (util/rect-contains? bounds (util/ipoint (:x event) (:y event)))
         (or
-          (event-child child ctx event)
+          (ui/event child ctx event)
           (let [offset-px' (-> offset-px
                              (- (:delta-y event))
                              (util/clamp 0 (- (:height child-size) (:height bounds))))]
@@ -44,10 +44,10 @@
       
       :mouse-button
       (when (util/rect-contains? bounds (util/ipoint (:x event) (:y event)))
-        (event-child child ctx event))
+        (ui/event child ctx event))
       
       #_:else
-      (event-child child ctx event))))
+      (ui/event child ctx event))))
 
 (defn- vscrollable-ctor
   ([child]

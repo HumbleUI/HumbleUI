@@ -16,13 +16,13 @@
               ops      (loop [ops 0]
                          (if (< (- (System/nanoTime) t0) (* duration 1000000))
                            (do
-                             (draw-child child ctx bounds canvas)
+                             (draw child ctx bounds canvas)
                              (recur (inc ops)))
                            ops))
               file     (profiler/stop)]
           (println "Finished profiling, " (-> (System/nanoTime) (- t0) (/ 1000000.0) (/ ops) (->> (format "%.2f"))) " ms/op, " (.getPath ^File file))
           (reset! value false)))
-      (draw-child child ctx bounds canvas))))
+      (draw child ctx bounds canvas))))
 
 (defn- profile-ctor [opts child]
   (map->Profile {}))

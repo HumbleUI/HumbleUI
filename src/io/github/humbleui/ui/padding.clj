@@ -30,7 +30,7 @@
                          (+ (:y bounds) top)
                          width
                          height)]
-      (draw-child child ctx child-bounds canvas))))
+      (draw child ctx child-bounds canvas))))
 
 (defn- padding-ctor [opts child]
   (map->Padding {}))

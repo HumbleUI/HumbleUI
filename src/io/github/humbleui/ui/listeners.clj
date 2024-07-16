@@ -12,7 +12,7 @@
         (when (and capture?
                 (= event-type (:event event)))
           (callback event ctx)) ;; FIXME need context?
-        (event-child child ctx event)
+        (ui/event child ctx event)
         (when (and (not capture?)
                 (= event-type (:event event)))
           (callback event ctx))))))
@@ -40,7 +40,7 @@
           {:keys [on-key-down
                   on-key-up]} opts]
       (or
-        (event-child child ctx event)
+        (ui/event child ctx event)
         (when (= :key (:event event))
           (if (:pressed? event)
             (when on-key-down
@@ -56,7 +56,7 @@
   protocols/IComponent
   (-draw-impl [_ ctx bounds canvas]
     (set! over? (util/rect-contains? bounds (:mouse-pos ctx)))
-    (draw-child child ctx bounds canvas))
+    (draw child ctx bounds canvas))
   
   (-event-impl [_ ctx event]
     (let [[_ opts _] (parse-element element)
@@ -86,7 +86,7 @@
                 over?
                 (= :mouse-button (:event event)))
           (on-button event))
-        (event-child child ctx event)))))
+        (ui/event child ctx event)))))
 
 (defn mouse-listener-ctor [{:keys [on-move on-scroll on-button on-over on-out] :as opts} child]
   (map->MouseListener {}))
@@ -100,7 +100,7 @@
       (util/eager-or
         (when (= :text-input (:event event))
           (on-input (:text event)))
-        (event-child child ctx event)))))
+        (ui/event child ctx event)))))
 
 (defn text-listener-ctor [{:keys [on-input]} child]
   (map->TextListener {}))

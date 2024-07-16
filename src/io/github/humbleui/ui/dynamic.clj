@@ -5,7 +5,7 @@
   (-measure [_ ctx cs]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
-        (unmount-child child)
+        (unmount child)
         (set! child child')))
     (if (instance? Throwable child)
       cs
@@ -14,25 +14,25 @@
   (-draw [_ ctx bounds canvas]
     (let [child' (child-ctor ctx)]
       (when-not (identical? child child')
-        (unmount-child child)
+        (unmount child)
         (set! child child')))
     (set! child-bounds bounds)
     (if (instance? Throwable child)
       (canvas/draw-rect canvas bounds (paint/fill 0xFFCC3333))
-      (draw-child child ctx child-bounds canvas)))
+      (draw child ctx child-bounds canvas)))
   
   (-event [_ ctx event]
     (when-not (instance? Throwable child)
-      (event-child child ctx event)))
+      (ui/event child ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
       (when-not (instance? Throwable child)
-        (protocols/-iterate child ctx cb))))
+        (iterate child ctx cb))))
   
   (-unmount [_]
-    (unmount-child child)))
+    (unmount child)))
 
 (defn contextual [child-ctor]
   (->Contextual

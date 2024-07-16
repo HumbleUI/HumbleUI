@@ -52,7 +52,7 @@
                                       (+ (:y bounds) height)
                                       (max 0 (:width bounds))
                                       (max 0 child-height))]
-            (draw-child child ctx child-bounds canvas)
+            (draw child ctx child-bounds canvas)
             (recur known' children' (+ height gap child-height))))))))
 
 (defn- column-ctor [& children]

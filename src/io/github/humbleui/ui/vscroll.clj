@@ -5,7 +5,7 @@
   
   protocols/IComponent
   (-draw-impl [_ ctx bounds ^Canvas canvas]
-    (draw-child child ctx bounds canvas)
+    (draw child ctx bounds canvas)
     (when (> (:height (:child-size child)) (:height bounds))
       (let [{:keys [scale]} ctx
             [_ opts _]      (parse-element element)

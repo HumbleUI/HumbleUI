@@ -42,7 +42,7 @@
         (when (> progress 0)
           (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) (if pressed? ui/button-bg-pressed ui/button-bg-hovered)))
         
-        (ui/draw-child child ctx bounds canvas)
+        (ui/draw child ctx bounds canvas)
         
         (when (< 0 progress 1)
           (window/request-frame window)))))
@@ -66,7 +66,7 @@
                     py     (-> (math/sin theta) (* max-r) (+ cy))]
                 (set! center (util/point px py))
                 true)))))
-      (ui/event-child child ctx event))))
+      (ui/event child ctx event))))
 
 (defn ripple [opts child]
   (map->Ripple {}))
@@ -118,7 +118,7 @@
                         paint  (Paint.)]
               (.setShader paint shader)
               (canvas/draw-rect canvas (util/rect-xywh 0 0 w h) paint)))))
-      (ui/draw-child child ctx bounds canvas)))
+      (ui/draw child ctx bounds canvas)))
   
   (-event-impl [this ctx event]
     (util/eager-or
@@ -131,7 +131,7 @@
                 true)
               (when hovered?'
                 true)))))
-      (ui/event-child child ctx event))))
+      (ui/event child ctx event))))
 
 (defn card [opts child]
   (map->Card {}))

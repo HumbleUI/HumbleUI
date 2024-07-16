@@ -51,7 +51,7 @@
                            
                            y
                            (util/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
-      (draw-child child ctx child-bounds canvas))))
+      (draw child ctx child-bounds canvas))))
 
 (defn- align-ctor [opts child]
   (map->Align {}))

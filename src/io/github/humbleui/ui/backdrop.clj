@@ -11,7 +11,7 @@
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas bounds)
         (.saveLayer canvas (SaveLayerRec. (.toRect bounds) nil filter)))
-      (draw-child child ctx bounds canvas))))
+      (draw child ctx bounds canvas))))
 
 (defn- backdrop-ctor [opts child]
   (map->Backdrop {}))

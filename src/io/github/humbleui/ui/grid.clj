@@ -49,7 +49,7 @@
               width  (aget ^floats widths col)]
           (when-some [child (nth children (+ col (* row cols)) nil)]
             (let [child-bounds (util/irect-xywh x y width height)]
-              (draw-child child ctx child-bounds canvas)))
+              (draw child ctx child-bounds canvas)))
           (let [[x' y'] (if (< col (dec cols))
                           [(+ x width) y]
                           [(:x bounds) (+ y height)])]

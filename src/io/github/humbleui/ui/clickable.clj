@@ -26,7 +26,7 @@
                           ^:mut last-click]
   :extends AWrapperNode
   (-draw-impl [this ctx bounds canvas]
-    (draw-child (:child this) ctx bounds canvas)
+    (draw (:child this) ctx bounds canvas)
     (when (#{:unpressed :hovered-unpressed} phase)
       (set! phase (case phase
                     :unpressed         :default
@@ -104,7 +104,7 @@
           clicked?
           on-click-capture
           (util/invoke on-click-capture event'))
-        (event-child child ctx event')
+        (ui/event child ctx event')
         (and
           clicked?
           on-click

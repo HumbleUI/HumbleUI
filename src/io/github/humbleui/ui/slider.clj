@@ -86,9 +86,9 @@
           thumb-x           (+ left half-thumb-w (* ratio (- w thumb-w)))
           ctx'              (cond-> ctx
                               dragging? (assoc :hui/active? true))]
-      (draw-child track-active   ctx' (util/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) canvas)
-      (draw-child track-inactive ctx' (util/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) canvas)
-      (draw-child thumb          ctx' (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)         canvas)))
+      (draw track-active   ctx' (util/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) canvas)
+      (draw track-inactive ctx' (util/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) canvas)
+      (draw thumb          ctx' (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)         canvas)))
   
   (-event-impl [this _ctx event]
     (util/eager-or

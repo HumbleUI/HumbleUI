@@ -91,17 +91,17 @@
 
   (-draw-impl [this ctx bounds canvas]
     (let [ctx (protocols/-context this ctx)]
-      (draw-child (:child this) ctx bounds canvas)))
+      (draw (:child this) ctx bounds canvas)))
   
   (-event-impl [this ctx event]
     (let [ctx (protocols/-context this ctx)]
-      (event-child (:child this) ctx event)))
+      (ui/event (:child this) ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
       (let [ctx (protocols/-context this ctx)]
-        (iterate-child (:child this) ctx cb))))
+        (iterate (:child this) ctx cb))))
   
   (-reconcile-impl [this ctx el']
     (let [ctx       (protocols/-context this ctx)
@@ -110,7 +110,7 @@
       (protocols/-set! this :child child')))
   
   (-unmount [this]
-    (unmount-child (:child this))
+    (unmount (:child this))
     (protocols/-unmount-impl this)))
 
 (util/defparent AContainerNode
@@ -130,7 +130,7 @@
     (or
       (cb this)
       (let [ctx (protocols/-context this ctx)]
-        (some #(iterate-child % ctx cb) (:children this)))))
+        (some #(iterate % ctx cb) (:children this)))))
   
   (-reconcile-impl [this ctx el']
     (let [ctx       (protocols/-context this ctx)
@@ -141,7 +141,7 @@
   
   (-unmount [this]
     (doseq [child (:children this)]
-      (unmount-child child))
+      (unmount child))
     (protocols/-unmount-impl this)))
 
 ;; FnNode
@@ -191,13 +191,13 @@
   (-event-impl [this ctx event]
     (binding [*node* this
               *ctx*  ctx]
-      (event-child child ctx event)))
+      (ui/event child ctx event)))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
       (when render
-        (iterate-child child ctx cb))))
+        (iterate child ctx cb))))
   
   (-reconcile [this ctx new-element]
     (when (if should-render?
@@ -232,7 +232,7 @@
           (util/invoke after-render)))))
   
   (-unmount [this]
-    (unmount-child child)
+    (unmount child)
     (some-> effect signal/dispose!)
     (when after-unmount
       (after-unmount)))

@@ -15,7 +15,7 @@
       (when (not= cs cs')
         (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?
-      (draw-child (:child this) ctx bounds canvas))))
+      (draw (:child this) ctx bounds canvas))))
 
 (defn with-bounds-ctor [child-ctor-or-el]
   (map->WithBounds {}))

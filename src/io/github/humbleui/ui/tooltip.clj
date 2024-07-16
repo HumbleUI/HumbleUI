@@ -33,8 +33,8 @@
                           [:top-right :bottom-left]     (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
                           [:bottom-left :bottom-left]   (util/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
                           [:bottom-right :bottom-left]  (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height))]
-      (draw-child child ctx child-bounds canvas)
-      (draw-child relative ctx rel-bounds canvas))) ;; TODO draw in tooltip overlay
+      (draw child ctx child-bounds canvas)
+      (draw relative ctx rel-bounds canvas))) ;; TODO draw in tooltip overlay
   
   (-reconcile-impl [this ctx el']
     (let [[_ opts [child-el]] (parse-element el')

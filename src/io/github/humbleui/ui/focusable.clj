@@ -11,7 +11,7 @@
     (some-> (::*focused ctx)
       (cond->
         focused (vswap! conj this)))
-    (draw-child child ctx bounds canvas))
+    (draw child ctx bounds canvas))
   
   (-event-impl [this ctx event]
     (util/eager-or
@@ -25,7 +25,7 @@
         true)
       (let [event' (cond-> event
                      focused (assoc :focused? true))]
-        (event-child child ctx event'))))
+        (ui/event child ctx event'))))
   
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
@@ -41,7 +41,7 @@
 
 (defn focused [this ctx]
   (let [*acc (volatile! [])]
-    (iterate-child this ctx
+    (iterate this ctx
       (fn [comp]
         (when (and (instance? Focusable comp) (:focused comp))
           (vswap! *acc conj comp)
@@ -54,7 +54,7 @@
   (-draw-impl [_ ctx bounds canvas]
     (let [*focused (volatile! [])
           ctx'     (assoc ctx ::*focused *focused)
-          res      (draw-child child ctx' bounds canvas)
+          res      (draw child ctx' bounds canvas)
           focused  (sort-by :focused @*focused)]
       (doseq [comp (butlast focused)]
         (util/set!! comp :focused nil)
@@ -67,7 +67,7 @@
           (:pressed? event)
           (util/rect-contains? bounds (util/ipoint (:x event) (:y event))))
       (let [focused-before (focused this ctx)
-            res            (event-child child ctx event)
+            res            (ui/event child ctx event)
             focused-after  (focused this ctx)]
         (when (< 1 (count focused-after))
           (doseq [comp focused-before]
@@ -76,12 +76,12 @@
         (or
           res
           (< 1 (count focused-after))))
-      (event-child child ctx event))))
+      (ui/event child ctx event))))
 
 (defn focus-prev [this ctx]
   (let [*prev    (volatile! nil)
         *focused (volatile! nil)]
-    (iterate-child this ctx
+    (iterate this ctx
       (fn [comp]
         (when (instance? Focusable comp)
           (if (:focused comp)
@@ -102,7 +102,7 @@
   (let [*first   (volatile! nil)
         *focused (volatile! nil)
         *next    (volatile! nil)]
-    (iterate-child this ctx
+    (iterate this ctx
       (fn [comp]
         (when (instance? Focusable comp)
           (when (nil? @*first)

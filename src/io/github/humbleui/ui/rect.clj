@@ -16,7 +16,7 @@
       (if radii
         (canvas/draw-rect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) radii) paint)
         (canvas/draw-rect canvas bounds paint))
-      (draw-child child ctx bounds canvas))))
+      (draw child ctx bounds canvas))))
 
 (defn- rect-ctor [opts child]
   (map->RectNode {}))

@@ -21,7 +21,7 @@
   (-draw-impl [this ctx bounds canvas]
     (set! my-pos (util/ipoint (:x bounds) (:y bounds)))
     (set! child-size (measure child ctx (util/ipoint (:width bounds) (:height bounds))))
-    (draw-child child ctx (draggable-child-bounds this) canvas))
+    (draw child ctx (draggable-child-bounds this) canvas))
   
   (-event-impl [this ctx event]
     (let [[_ opts _] (parse-element element)
@@ -61,7 +61,7 @@
             (set! dragged true)
             (set! child-pos p))
           true)
-        (event-child child ctx event)))))
+        (ui/event child ctx event)))))
 
 (defn draggable-ctor
   ([child]

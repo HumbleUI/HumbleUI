@@ -12,7 +12,7 @@
                        (+ (:y bounds) dy)
                        (:width bounds)
                        (:height bounds))]
-      (draw-child child ctx child-bounds canvas))))
+      (draw child ctx child-bounds canvas))))
 
 (defn- translate-ctor [opts child]
   (map->Translate {}))

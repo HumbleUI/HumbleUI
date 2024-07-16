@@ -82,33 +82,19 @@
       res)))
 
 (defn draw [comp ctx ^IRect bounds ^Canvas canvas]
-  {:pre [(instance? IRect bounds)]}
-  (protocols/-draw comp ctx bounds canvas))
-
-(defn draw-child [comp ctx ^IRect bounds ^Canvas canvas]
+  (assert (instance? IRect bounds) (str "bounds: expected IRect, got: " bounds))
   (when comp
-    (let [count (.getSaveCount canvas)]
-      (try
-        (draw comp ctx bounds canvas)
-        (finally
-          (.restoreToCount canvas count))))))
+    (protocols/-draw comp ctx bounds canvas)))
 
 (defn event [comp ctx event]
-  (protocols/-event comp ctx event))
-
-(defn event-child [comp ctx event]
   (when comp
     (protocols/-event comp ctx event)))
 
-(defn iterate-child [comp ctx cb]
+(defn iterate [comp ctx cb]
   (when comp
     (protocols/-iterate comp ctx cb)))
 
 (defn unmount [comp]
-  (when comp
-    (protocols/-unmount comp)))
-
-(defn unmount-child [comp]
   (when comp
     (protocols/-unmount comp)))
 

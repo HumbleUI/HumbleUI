@@ -10,18 +10,18 @@
   
   (-draw [this ctx bounds' canvas]
     (set! bounds bounds')
-    (draw-child child (protocols/-context this ctx) bounds canvas))
+    (draw child (protocols/-context this ctx) bounds canvas))
   
   (-event [this ctx event]
-    (event-child child (protocols/-context this ctx) event))
+    (ui/event child (protocols/-context this ctx) event))
   
   (-iterate [this ctx cb]
     (or
       (cb this)
-      (protocols/-iterate child (protocols/-context this ctx) cb)))
+      (iterate child (protocols/-context this ctx) cb)))
   
   (-unmount [_]
-    (unmount-child child)))
+    (unmount child)))
 
 (defn with-context-classic [data child]
   (->WithContextClassic data child nil))
