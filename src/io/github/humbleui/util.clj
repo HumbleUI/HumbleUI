@@ -468,13 +468,13 @@
   (.toRect irect))
 
 (defn rect-contains? [rect point]
-  {:pre [(some? rect)
-         (some? point)]}
-  (and
-    (<= (:x rect) (:x point))
-    (< (:x point) (:right rect))
-    (<= (:y rect) (:y point))
-    (< (:y point) (:bottom rect))))
+  {:pre [(some? point)]}
+  (when rect
+    (and
+      (<= (:x rect) (:x point))
+      (< (:x point) (:right rect))
+      (<= (:y rect) (:y point))
+      (< (:y point) (:bottom rect)))))
 
 (defn irect-intersect [^IRect a ^IRect b]
   (when (and a b)

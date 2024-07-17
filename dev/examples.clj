@@ -26,8 +26,7 @@
     [examples.oklch]
     [examples.padding]
     [examples.paragraph]
-    [examples.rect]
-    
+    [examples.rect]    
     [examples.settings]
     [examples.size]
     [examples.slider]
@@ -41,6 +40,7 @@
     [examples.tooltip]
     [examples.treemap]
     [examples.shared :as shared]
+    [examples.viewport]
     [examples.vscroll]
     [examples.wordle]
     [io.github.humbleui.app :as app]
@@ -95,6 +95,7 @@
      ["OkLCH" examples.oklch/ui]
      ["Todo MVC" examples.todomvc/ui]
      ["Treemap" examples.treemap/ui]
+     ["Viewport" examples.viewport/ui]
      ["Wordle" examples.wordle/ui]]]
    ["Other"
     [["Error Handling" examples.errors/ui]

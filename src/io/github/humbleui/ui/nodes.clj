@@ -33,13 +33,14 @@
       (protocols/-measure-impl this ctx cs)))
     
   (-draw [this ctx bounds' viewport canvas]
-    (let [ctx (protocols/-context this ctx)]
-      (protocols/-set! this :bounds bounds')
-      (ui/maybe-render this ctx)
-      (protocols/-draw-impl this ctx bounds' viewport canvas)
-      (when (and @debug/*outlines? (not (:mounted? this)))
-        (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
-        (protocols/-set! this :mounted? true))))
+    (protocols/-set! this :bounds bounds')
+    (when (util/irect-intersect bounds' viewport)
+      (let [ctx (protocols/-context this ctx)]
+        (ui/maybe-render this ctx)
+        (protocols/-draw-impl this ctx bounds' viewport canvas)
+        (when (and @debug/*outlines? (not (:mounted? this)))
+          (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
+          (protocols/-set! this :mounted? true)))))
   
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]
@@ -173,20 +174,21 @@
   
   (-draw [this ctx bounds' viewport canvas]
     (set! bounds bounds')
-    (binding [*node* this
-              *ctx*  ctx]
-      (when render
-        (maybe-render this ctx))
-      (util/invoke before-draw)
-      (if user-draw
-        (user-draw child bounds viewport canvas)
-        (protocols/-draw child ctx bounds viewport canvas))
-      (util/invoke after-draw)
-      (when-not mounted?
-        (util/invoke after-mount))
-      (when (and @debug/*outlines? (not mounted?))
-        (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
-        (set! mounted? true))))
+    (when (util/irect-intersect bounds' viewport)
+      (binding [*node* this
+                *ctx*  ctx]
+        (when render
+          (maybe-render this ctx))
+        (util/invoke before-draw)
+        (if user-draw
+          (user-draw child bounds viewport canvas)
+          (protocols/-draw child ctx bounds viewport canvas))
+        (util/invoke after-draw)
+        (when-not mounted?
+          (util/invoke after-mount))
+        (when (and @debug/*outlines? (not mounted?))
+          (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
+          (set! mounted? true)))))
 
   (-event-impl [this ctx event]
     (binding [*node* this

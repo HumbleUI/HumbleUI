@@ -131,6 +131,12 @@
     (string? el)
     [@(resolve 'io.github.humbleui.ui/label) el]
     
+    (map? el)
+    [(fn [] el)]
+    
+    (fn? el)
+    [el]
+
     :else
     el))
 

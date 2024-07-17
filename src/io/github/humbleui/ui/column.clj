@@ -52,8 +52,10 @@
                                       (+ (:y bounds) height)
                                       (max 0 (:width bounds))
                                       (max 0 child-height))]
-            (draw child ctx child-bounds viewport canvas)
-            (recur known' children' (+ height gap child-height))))))))
+            (when (util/irect-intersect child-bounds viewport)
+              (draw child ctx child-bounds viewport canvas))
+            (when (< (:y child-bounds) (:bottom viewport))
+              (recur known' children' (+ height gap child-height)))))))))
 
 (defn- column-ctor [& children]
   (map->Column {}))
