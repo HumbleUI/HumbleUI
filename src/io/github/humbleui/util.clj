@@ -126,13 +126,86 @@
                  (reset! *state# [~syms value#])
                  value#))))))))
 
+(def ^:private ^:dynamic *if+-syms)
+  
+(defn- if+-rewrite-cond-impl [cond]
+  (clojure.core/cond
+    (empty? cond)
+    true
+    
+    (and
+      (= :let (first cond))
+      (empty? (second cond)))
+    (if+-rewrite-cond-impl (nnext cond))
+    
+    (= :let (first cond))
+    (let [[var val & rest] (second cond)
+          sym                (gensym)]
+      (vswap! *if+-syms conj [var sym])
+      (list 'let [var (list 'clojure.core/vreset! sym val)]
+        (if+-rewrite-cond-impl
+          (cons 
+            :let
+            (cons rest
+              (nnext cond))))))
+    
+    :else
+    (list 'and
+      (first cond)
+      (if+-rewrite-cond-impl (next cond)))))
+
+(defn- if+-rewrite-cond [cond]
+  (binding [*if+-syms (volatile! [])]
+    [(if+-rewrite-cond-impl cond) @*if+-syms]))
+
+(defn- flatten-1 [xs]
+  (vec
+    (mapcat identity xs)))
+
+(defmacro if+
+  "Allows sharing local variables between condition and then clause.
+      
+      Use `:let [...]` form (not nested!) inside `and` condition and its bindings
+      will be visible in later `and` clauses and inside `then` branch:
+      
+        (if+ (and
+               (= 1 2)
+               ;; same :let syntax as in doseq/for
+               :let [x 3
+                     y (+ x 4)]
+               ;; x and y visible downstream
+               (> y x))
+          
+          ;; then: x and y visible here!
+          (+ x y 5)
+          
+          ;; else: no x or y
+          6)"
+  [cond then else]
+  (if (and
+        (seq? cond)
+        (or
+          (= 'and (first cond))
+          (= 'clojure.core/and (first cond))))
+    (let [[cond' syms] (if+-rewrite-cond (next cond))]
+      `(let ~(flatten-1
+               (for [[_ sym] syms]
+                 [sym '(volatile! nil)]))
+         (if ~cond'
+           (let ~(flatten-1
+                   (for [[binding sym] syms]
+                     [binding (list 'deref sym)]))
+             ~then)
+           ~else)))
+    (list 'if cond then else)))
+
 (defmacro cond+ [& clauses]
   (when-some [[test expr & rest] clauses]
     (condp = test
-      :do   `(do ~expr (cond+ ~@rest))
+      :do   `(do  ~expr (cond+ ~@rest))
       :let  `(let ~expr (cond+ ~@rest))
-      :some `(or ~expr (cond+ ~@rest))
-      `(if ~test ~expr (cond+ ~@rest)))))
+      :some `(or  ~expr (cond+ ~@rest))
+      `(if+ ~test ~expr (cond+ ~@rest)))))
 
 (defmacro loop+ [bindings & body]
   (let [bindings (partition 2 bindings)

@@ -40,58 +40,59 @@
       (set! last-click 0))
     
     (let [{:keys [on-click on-click-capture]} (parse-opts element)
-          {x :x y :y}   event
-          over?         (and x y (util/rect-contains? bounds (util/ipoint x y)))
-          out?          (and x y (not over?))
-          btn-down?     (and (= :mouse-button (:event event)) (:pressed? event))
-          btn-up?       (and (= :mouse-button (:event event)) (not (:pressed? event)))
-          phase'  (case phase
-                    :default
-                    (cond
-                      over?     :hovered
-                      :else     phase)
-                          
-                    :hovered
-                    (cond
-                      out?      :default
-                      btn-down? :hovered-held
-                      :else     phase)
-                          
-                    :hovered-held
-                    (cond
-                      btn-up?   :hovered-unpressed
-                      out?      :held
-                      :else     phase)
-                          
-                    :held
-                    (cond
-                      over?     :hovered-held
-                      btn-up?   :default
-                      :else     phase)
-                          
-                    :hovered-unpressed
-                    (cond
-                      btn-down? :hovered-held
-                      out?      :unpressed
-                      :else     phase)
-                          
-                    :unpressed
-                    (cond
-                      over?     :hovered-unpressed
-                      :else     phase))
-          clicked?      (and 
-                          (= :hovered-held phase)
-                          btn-up?)
-          now           (util/now)
-          _             (when clicked?
-                          (when (> (- now last-click) util/double-click-threshold-ms)
-                            (set! clicks 0))
-                          (set! clicks (inc clicks))
-                          (set! last-click now))
-          event'        (cond-> event
-                          clicked? (assoc :clicks clicks))
-          state         @*state
-          state'        (clickable-state phase')]
+          {x :x y :y} event
+          over?       (and x y (util/rect-contains? bounds (util/ipoint x y)))
+          out?        (and x y (not over?))
+          btn-down?   (and (= :mouse-button (:event event)) (:pressed? event))
+          btn-up?     (and (= :mouse-button (:event event)) (not (:pressed? event)))
+          phase'      (case phase
+                        :default
+                        (cond
+                          over?     :hovered
+                          :else     phase)
+                              
+                        :hovered
+                        (cond
+                          out?      :default
+                          btn-down? :hovered-held
+                          :else     phase)
+                              
+                        :hovered-held
+                        (cond
+                          btn-up?   :hovered-unpressed
+                          out?      :held
+                          :else     phase)
+                              
+                        :held
+                        (cond
+                          over?     :hovered-held
+                          btn-up?   :default
+                          :else     phase)
+                              
+                        :hovered-unpressed
+                        (cond
+                          btn-down? :hovered-held
+                          out?      :unpressed
+                          :else     phase)
+                              
+                        :unpressed
+                        (cond
+                          over?     :hovered-unpressed
+                          :else     phase))
+          changed?    (not= phase phase')
+          clicked?    (and 
+                        (= :hovered-held phase)
+                        btn-up?)
+          now         (util/now)
+          _           (when clicked?
+                        (when (> (- now last-click) util/double-click-threshold-ms)
+                          (set! clicks 0))
+                        (set! clicks (inc clicks))
+                        (set! last-click now))
+          event'      (cond-> event
+                        clicked? (assoc :clicks clicks))
+          state       @*state
+          state'      (clickable-state phase')]
       
       (set! phase phase')
       
@@ -108,7 +109,9 @@
         (and
           clicked?
           on-click
-          (util/invoke on-click event')))))
+          (util/invoke on-click event'))
+        (and over? (#{:mouse-move :mouse button} (:event event)))
+        changed?)))
   
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*state] element new-element))

@@ -42,6 +42,7 @@
     [examples.shared :as shared]
     [examples.viewport]
     [examples.vscroll]
+    [examples.whiteboard]
     [examples.wordle]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.util :as util]
@@ -96,6 +97,7 @@
      ["Todo MVC" examples.todomvc/ui]
      ["Treemap" examples.treemap/ui]
      ["Viewport" examples.viewport/ui]
+     ["Whiteboard" examples.whiteboard/ui]
      ["Wordle" examples.wordle/ui]]]
    ["Other"
     [["Error Handling" examples.errors/ui]
