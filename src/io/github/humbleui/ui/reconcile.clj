@@ -52,6 +52,7 @@
      (binding [*node* start-node]
        (let [res  (cond
                     (fn? f)    (apply f args)
+                    (map? f)   f
                     (class? f) (make-record f))
              node (loop [res res]
                     (util/cond+
@@ -66,7 +67,7 @@
                    
                       (map? res)
                       (let [render (:render res)]
-                        (when render
+                        (when (and (fn? f) render)
                           (assert-arities f render))
                         (util/set!! *node*
                           :user-measure   (:measure res)
@@ -132,7 +133,7 @@
     [@(resolve 'io.github.humbleui.ui/label) el]
     
     (map? el)
-    [(fn [] el)]
+    [el]
     
     (fn? el)
     [el]
