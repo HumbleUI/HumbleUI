@@ -9,7 +9,9 @@
    (load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Regular.ttf"))
    (load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Bold.ttf"))
 
-   (dynamic ctx [scale (:scale ctx)]
+   (dynamic ctx [scale (or
+                         (:scale opts)
+                         (:scale ctx))]
      (let [cap-height (* scale 9) ; (:cap-height (font/metrics font-ui))
            fill-text  (or (:fill-text opts) (paint/fill 0xFF000000))
            fill-gray  (or (:fill-gray opts) (paint/fill 0xFF808080))
