@@ -3,7 +3,6 @@
 (util/deftype+ ReserveWidth [^:mut probes]
   :extends AWrapperNode
   
-  protocols/IComponent
   (-measure-impl [_ ctx cs]
     (let [width      (->> probes
                        (map #(-> % (measure ctx cs) :width))

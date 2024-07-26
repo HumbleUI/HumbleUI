@@ -5,26 +5,25 @@
                 thumb-size
                 bounds
                 delta-x
-                element]} slider
-        {:keys [min max step]
-         :or {min 0
-              max 100
-              step 1}}    (parse-opts element)
+                element
+                min-value
+                max-value
+                step]} slider
         {thumb-w :width}  thumb-size
         half-thumb-w      (/ thumb-w 2)
         left              (+ (:x bounds) half-thumb-w)
         width             (- (:width bounds) thumb-w)
         ratio             (util/clamp (/ (- x delta-x left) width) 0 1)
-        range             (- max min)]
+        range             (- max-value min-value)]
     (-> ratio
       (* (quot range step))
       (math/round)
       (* step)
-      (+ min))))
+      (+ min-value))))
 
 (util/deftype+ SliderThumb []
   :extends ATerminalNode
-  protocols/IComponent
+
   (-measure-impl [_ ctx _cs]
     (let [{:hui.slider/keys [thumb-size]} ctx]
       (util/isize thumb-size thumb-size)))
@@ -63,7 +62,10 @@
                        thumb
                        ^:mut thumb-size
                        ^:mut dragging?
-                       ^:mut delta-x]
+                       ^:mut delta-x
+                       ^:mut min-value
+                       ^:mut max-value
+                       ^:mut step]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx cs]
@@ -71,18 +73,15 @@
   
   (-draw-impl [_ ctx bounds viewport canvas]
     (set! thumb-size (measure thumb ctx (util/isize (:width bounds) (:height bounds))))
-    (let [{:keys [min max]
-           :or {min 0
-                max 100}}   (parse-opts element)
-          value             @*value
+    (let [value             @*value
           {left :x
            top  :y
            w    :width}     bounds
           {thumb-w :width
            thumb-h :height} thumb-size
           half-thumb-w      (/ thumb-w 2)
-          range             (- max min)
-          ratio             (/ (- value min) range)
+          range             (- max-value min-value)
+          ratio             (/ (- value min-value) range)
           thumb-x           (+ left half-thumb-w (* ratio (- w thumb-w)))
           ctx'              (cond-> ctx
                               dragging? (assoc :hui/active? true))]
@@ -96,18 +95,15 @@
               (= :mouse-button (:event event))
               (= :primary (:button event))
               (:pressed? event))
-        (let [{:keys [min max]
-               :or {min 0
-                    max 100}}   (parse-opts element)
-              value             @*value
+        (let [value             @*value
               {left :x
                top :y
                width :width}    bounds
               {thumb-w :width
                thumb-h :height} thumb-size
               half-thumb-w      (/ thumb-w 2)
-              range             (- max min)
-              ratio             (/ (- value min) range)
+              range             (- max-value min-value)
+              ratio             (/ (- value min-value) range)
               thumb-x           (+ left half-thumb-w (* ratio (- width thumb-w)))
               thumb-rect        (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w thumb-h)
               point             (util/ipoint (:x event) (:y event))]
@@ -140,7 +136,13 @@
         true)))
   
   (-should-reconcile? [_this _ctx new-element]
-    (opts-match? [:*value :track-active :track-inactive :thumb] element new-element)))
+    (opts-match? [:*value :track-active :track-inactive :thumb] element new-element))
+  
+  (-update-element [_this _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! min-value (or (util/checked-get-optional opts :min number?) 0))
+      (set! max-value (or (util/checked-get-optional opts :max number?) 100))
+      (set! step      (or (util/checked-get-optional opts :step number?) 1)))))
 
 (defn- slider-ctor [opts]
   (let [*value         (or (:*value opts) (signal/signal (or (:min opts) 0)))

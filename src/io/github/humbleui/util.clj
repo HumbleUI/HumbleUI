@@ -380,6 +380,11 @@
 (defn some-set [& args]
   (into #{} (filter some?) args))
 
+(defn update-some [m k f & args]
+  (if-some [v (get m k)]
+    (assoc m k (apply f v args))
+    m))
+
 (defn consv [x xs]
   (vec (cons x xs)))
 
@@ -413,6 +418,12 @@
 
 (defmacro checked-get [m k pred]
   `(let [v# (get ~m ~k)]
+     (if (~pred v#)
+       v#
+       (throw (ex-info (str ~(str "Getting (" k " " m "), expected: " pred ", got: ") (pr-str v#)) {})))))
+
+(defmacro checked-get-optional [m k pred]
+  `(when-some [v# (get ~m ~k)]
      (if (~pred v#)
        v#
        (throw (ex-info (str ~(str "Getting (" k " " m "), expected: " pred ", got: ") (pr-str v#)) {})))))
@@ -471,15 +482,6 @@
     :else
     (with-open [is (io/input-stream src)]
       (.readAllBytes is))))
-
-(defn cached [*atom key value-fn]
-  (let [atom @*atom]
-    (if (= key (:key atom))
-      (:value atom)
-      (:value 
-        (reset! *atom
-          {:key key
-           :value (value-fn)})))))
 
 (defn lazy-resource [path]
   (delay

@@ -2,8 +2,8 @@
 
 (import '[io.github.humbleui.skija AnimationFrameInfo Bitmap Codec Image SamplingMode])
 
-(defn- img-measure [opts width height ctx cs]
-  (case (or (:scale opts) :fit)
+(defn- img-measure [scale width height ctx cs]
+  (case scale
     :content (util/ipoint
                (math/ceil (* width (:scale ctx)))
                (math/ceil (* height (:scale ctx))))
@@ -14,12 +14,8 @@
     :fill    cs
     #_else   cs))
 
-(defn- img-rects [opts width height ctx ^IRect bounds]
-  (let [{:keys [scale xpos ypos]} opts
-        scale      (or scale :fit)
-        xpos       (or xpos 0.5)
-        ypos       (or ypos 0.5)
-        wscale     (/ (:width bounds) width)
+(defn- img-rects [scale xpos ypos width height ctx ^IRect bounds]
+  (let [wscale     (/ (:width bounds) width)
         hscale     (/ (:height bounds) height)
         img-scale  (case (or scale :fit)
                      :content (:scale ctx)
@@ -42,35 +38,47 @@
                        (.scale (/ 1 img-scale)))]
         [src-rect dst-rect]))))
 
-(defn- img-sampling [opts]
-  (case (:sampling opts)
-    nil          SamplingMode/MITCHELL
-    :nearest     SamplingMode/DEFAULT
-    :linear      SamplingMode/LINEAR
-    :mitchell    SamplingMode/MITCHELL
-    :catmull-rom SamplingMode/CATMULL_ROM
-    (:sampling opts)))
+(defn- img-update-element [this new-element]
+  (let [opts (parse-opts new-element)]
+    (util/set!! this :scale (or (util/checked-get-optional opts :scale #(or (= :fit %) (= :fill %) (= :content %) (number? %))) :fit))
+    (util/set!! this :xpos  (or (util/checked-get-optional opts :xpos number?) 0.5))
+    (util/set!! this :ypos  (or (util/checked-get-optional opts :ypos number?) 0.5))
+    (util/set!! this :sampling
+      (case (:sampling opts)
+        nil          SamplingMode/MITCHELL
+        :nearest     SamplingMode/DEFAULT
+        :linear      SamplingMode/LINEAR
+        :mitchell    SamplingMode/MITCHELL
+        :catmull-rom SamplingMode/CATMULL_ROM
+        (:sampling opts)))))
 
-(util/deftype+ AnImage [^Image image width height aspect]
+(util/deftype+ AnImage [^:mut scale
+                        ^:mut xpos
+                        ^:mut ypos
+                        ^:mut ^SamplingMode sampling
+                        ^Image image
+                        width
+                        height]
   :extends ATerminalNode
-  protocols/IComponent
+  
   (-measure-impl [_ ctx cs]
-    (let [[_ opts _] (parse-element element)]
-      (img-measure opts width height ctx cs)))
+    (img-measure scale width height ctx cs))
   
   (-draw-impl [this ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _]  (parse-element element)]
-      (when-some [[src-rect dst-rect] (img-rects opts width height ctx bounds)]
-        (.drawImageRect canvas image src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))))
+    (when-some [[src-rect dst-rect] (img-rects scale xpos ypos width height ctx bounds)]
+      (.drawImageRect canvas image src-rect dst-rect sampling #_:paint nil #_:strict false)))
   
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
+  
+  (-update-element [this _ctx new-element]
+    (img-update-element this new-element))
   
   (-unmount-impl [this]
     (util/close image)))
 
 (defn- image-ctor [opts]
-  (let [src  (util/checked-get opts :src util/slurpable?)
+  (let [src   (util/checked-get opts :src util/slurpable?)
         image (try
                 (Image/makeFromEncoded (util/slurp-bytes src))
                 (catch Exception e
@@ -80,21 +88,27 @@
                       (io/resource "io/github/humbleui/ui/image/not_found.png")))))
         width  (.getWidth ^Image image)
         height (.getHeight ^Image image)]
-    (map->AnImage {:image  image
-                   :width  width
-                   :height height
-                   :aspect (/ width height)})))
+    (map->AnImage
+      {:image  image
+       :width  width
+       :height height})))
 
-(util/deftype+ Animation [width height durations images start]
+(util/deftype+ Animation [^:mut scale
+                          ^:mut xpos
+                          ^:mut ypos
+                          ^:mut ^SamplingMode sampling
+                          width
+                          height
+                          durations
+                          images
+                          start]
   :extends ATerminalNode
-  protocols/IComponent
+  
   (-measure-impl [_ ctx cs]
-    (let [[_ opts _] (parse-element element)]
-      (img-measure opts width height ctx cs)))
+    (img-measure scale width height ctx cs))
   
   (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _]     (parse-element element)
-          total-duration (reduce + 0 durations)
+    (let [total-duration (reduce + 0 durations)
           offset         (mod (- (util/now) start) total-duration)
           frame          (loop [durations durations
                                 time      0
@@ -104,12 +118,15 @@
                              (recur (next durations) (long (+ time (first durations))) (inc frame))))
           frame          (util/clamp frame 0 (dec (count durations)))
           next-offset    (reduce + 0 (take (inc frame) durations))]
-      (when-some [[src-rect dst-rect] (img-rects opts width height ctx bounds)]
-        (.drawImageRect canvas (nth images frame) src-rect dst-rect (img-sampling opts) #_:paint nil #_:strict false))
+      (when-some [[src-rect dst-rect] (img-rects scale xpos ypos width height ctx bounds)]
+        (.drawImageRect canvas (nth images frame) src-rect dst-rect sampling #_:paint nil #_:strict false))
       (util/schedule #(window/request-frame (:window ctx)) (- next-offset offset))))
 
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
+
+  (-update-element [this _ctx new-element]
+    (img-update-element this new-element))
 
   (-unmount-impl [this]
     (doseq [image images]

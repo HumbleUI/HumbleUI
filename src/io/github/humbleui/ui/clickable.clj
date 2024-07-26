@@ -20,7 +20,7 @@
     :unpressed
     #{:held}))
 
-(util/deftype+ Clickable [*state
+(util/deftype+ Clickable [^:mut *state
                           ^:mut phase
                           ^:mut clicks
                           ^:mut last-click]
@@ -113,14 +113,16 @@
         (and over? (#{:mouse-move :mouse button} (:event event)))
         changed?)))
   
-  (-should-reconcile? [_this _ctx new-element]
-    (opts-match? [:*state] element new-element))
-  
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
       (if (fn? child-ctor-or-el)
         [[child-ctor-or-el @*state]]
-        [child-ctor-or-el]))))
+        [child-ctor-or-el])))
+  
+  (-update-element [_this ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (when-some [*state' (:*state opts)]
+        (set! *state *state')))))
 
 (defn- clickable-ctor
   "Element that can be clicked. Supports nesting (innermost will be clicked).

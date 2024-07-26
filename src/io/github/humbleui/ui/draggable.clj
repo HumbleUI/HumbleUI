@@ -8,13 +8,15 @@
       (:width child-size)
       (:height child-size))))
 
-(util/deftype+ Draggable [^:mut my-pos
+(util/deftype+ Draggable [^:mut on-dragging
+                          ^:mut on-drop
+                          ^:mut my-pos
                           ^:mut child-pos
                           ^:mut child-size
                           ^:mut mouse-start
                           ^:mut dragged]
   :extends AWrapperNode
-  protocols/IComponent
+  
   (-measure-impl [_ _ctx cs]
     cs)
   
@@ -24,44 +26,47 @@
     (draw child ctx (draggable-child-bounds this) viewport canvas))
   
   (-event-impl [this ctx event]
-    (let [[_ opts _] (parse-element element)
-          {:keys [on-dragging on-drop]} opts]
-      (when (and
-              (= :mouse-button (:event event))
-              (= :primary (:button event))
-              (:pressed? event)
-              (util/rect-contains? (draggable-child-bounds this) (util/ipoint (:x event) (:y event))))
-        (set! mouse-start
-          (util/ipoint
-            (- (:x child-pos) (:x event))
-            (- (:y child-pos) (:y event)))))
+    (when (and
+            (= :mouse-button (:event event))
+            (= :primary (:button event))
+            (:pressed? event)
+            (util/rect-contains? (draggable-child-bounds this) (util/ipoint (:x event) (:y event))))
+      (set! mouse-start
+        (util/ipoint
+          (- (:x child-pos) (:x event))
+          (- (:y child-pos) (:y event)))))
     
+    (when (and
+            (= :mouse-button (:event event))
+            (= :primary (:button event))
+            (not (:pressed? event)))
       (when (and
-              (= :mouse-button (:event event))
-              (= :primary (:button event))
-              (not (:pressed? event)))
-        (when (and
-                on-drop
-                mouse-start
-                dragged)
-          (on-drop (util/ipoint
-                     (+ (:x mouse-start) (:x event))
-                     (+ (:y mouse-start) (:y event)))))
-        (set! dragged false)
-        (set! mouse-start nil))
+              on-drop
+              mouse-start
+              dragged)
+        (on-drop (util/ipoint
+                   (+ (:x mouse-start) (:x event))
+                   (+ (:y mouse-start) (:y event)))))
+      (set! dragged false)
+      (set! mouse-start nil))
     
-      (util/eager-or
-        (when (and
-                (= :mouse-move (:event event))
-                mouse-start)
-          (let [p (util/ipoint
-                    (+ (:x mouse-start) (:x event))
-                    (+ (:y mouse-start) (:y event)))]
-            (when on-dragging (on-dragging p))
-            (set! dragged true)
-            (set! child-pos p))
-          true)
-        (ui/event child ctx event)))))
+    (util/eager-or
+      (when (and
+              (= :mouse-move (:event event))
+              mouse-start)
+        (let [p (util/ipoint
+                  (+ (:x mouse-start) (:x event))
+                  (+ (:y mouse-start) (:y event)))]
+          (when on-dragging (on-dragging p))
+          (set! dragged true)
+          (set! child-pos p))
+        true)
+      (ui/event child ctx event)))
+  
+  (-update-element [_ _ new-element]
+    (let [opts (parse-opts new-element)]
+      (set! on-dragging (:on-dragging opts))
+      (set! on-drop (:on-drop opts)))))
 
 (defn draggable-ctor
   ([child]

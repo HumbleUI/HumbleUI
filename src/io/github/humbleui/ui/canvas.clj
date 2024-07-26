@@ -1,9 +1,9 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ ACanvas [on-paint on-event]
+(util/deftype+ ACanvas [^:mut on-paint
+                        ^:mut on-event]
   :extends ATerminalNode
   
-  protocols/IComponent
   (-measure-impl [_ ctx cs]
     (util/ipoint 0 0))
   
@@ -23,8 +23,10 @@
                      event)]
         (on-event ctx event'))))
   
-  (-should-reconcile? [_this _ctx new-element]
-    (opts-match? [:on-paint :on-event] element new-element)))
+    (-update-element [this _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! on-paint (:on-paint opts))
+      (set! on-event (:on-event opts)))))
 
-(def ^:private canvas-ctor
-  map->ACanvas)
+(defn canvas-ctor [opts]
+  (map->ACanvas {}))

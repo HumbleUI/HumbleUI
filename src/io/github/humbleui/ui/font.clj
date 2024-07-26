@@ -45,8 +45,8 @@
           opts (-> opts
                  (dissoc :font-family)
                  (assoc  :font-families families)
-                 (update :font-size scaled)
-                 (update :font-cap-height scaled))]
+                 (util/update-some :font-size scaled)
+                 (util/update-some :font-cap-height scaled))]
       (font/get-font opts))))
 
 (defn with-font-family-aliases

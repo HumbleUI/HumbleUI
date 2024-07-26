@@ -17,29 +17,18 @@
       {:widths  widths
        :heights heights})))
 
-(defn- grid-opts [element children]
-  (let [[_ opts _] (parse-element element)
-        cols       (util/checked-get opts :cols (every-pred integer? pos?))
-        rows       (or
-                     (:rows opts)
-                     (-> (count children) dec (quot cols) inc))]
-    {:cols cols
-     :rows rows}))
-
-(util/deftype+ Grid []
+(util/deftype+ Grid [^:mut cols
+                     ^:mut rows]
   :extends AContainerNode
   
-  protocols/IComponent
   (-measure-impl [_ ctx cs]
-    (let [{:keys [cols rows]}      (grid-opts element children)
-          {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
+    (let [{:keys [widths heights]} (grid-measure rows cols children cs ctx)]
       (util/ipoint
         (areduce ^floats widths  i res (float 0) (+ res (aget ^floats widths i)))
         (areduce ^floats heights i res (float 0) (+ res (aget ^floats heights i))))))
   
   (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [{:keys [cols rows]}      (grid-opts element children)
-          cs                       (util/ipoint (:width bounds) (:height bounds))
+    (let [cs                       (util/ipoint (:width bounds) (:height bounds))
           {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
       (loop [x   (:x bounds)
              y   (:y bounds)
@@ -65,7 +54,14 @@
             (recur (:x bounds) (+ y height) (inc row) 0)
             
             :else
-            (recur (+ x width) y row (inc col))))))))
+            (recur (+ x width) y row (inc col)))))))
+  
+  (-update-element [_ ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! cols (util/checked-get opts :cols pos-int?))
+      (set! rows (or
+                   (util/checked-get-optional opts :rows pos-int?)
+                   (-> (count children) dec (quot cols) inc))))))
 
 (defn- grid-ctor
   ([opts]

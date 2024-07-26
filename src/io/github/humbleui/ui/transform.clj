@@ -1,18 +1,23 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Translate []
+(util/deftype+ Translate [^:mut dx
+                          ^:mut dy]
   :extends AWrapperNode 
-  protocols/IComponent  
+
   (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _] (parse-element element)
-          dx         (dimension (or (:dx opts) 0) bounds ctx)
-          dy         (dimension (or (:dy opts) 0) bounds ctx)
+    (let [dx-px        (dimension dx bounds ctx)
+          dy-px        (dimension dy bounds ctx)
           child-bounds (util/irect-xywh
-                       (+ (:x bounds) dx)
-                       (+ (:y bounds) dy)
-                       (:width bounds)
-                       (:height bounds))]
-      (draw child ctx child-bounds viewport canvas))))
+                         (+ (:x bounds) dx-px)
+                         (+ (:y bounds) dy-px)
+                         (:width bounds)
+                         (:height bounds))]
+      (draw child ctx child-bounds viewport canvas)))
+  
+  (-update-element [_this _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! dx (or (util/checked-get-optional opts :dx dimension?) 0))
+      (set! dy (or (util/checked-get-optional opts :dy dimension?) 0)))))
 
 (defn- translate-ctor [opts child]
   (map->Translate {}))

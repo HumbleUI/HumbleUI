@@ -3,7 +3,6 @@
 (util/deftype+ Stack []
   :extends AContainerNode
   
-  protocols/IComponent
   (-measure-impl [_ ctx cs]
     (reduce
       (fn [size child]

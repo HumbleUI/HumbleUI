@@ -1,22 +1,31 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ RectNode []
+(util/deftype+ RectNode [^:mut paint
+                         ^:mut radii]
   :extends AWrapperNode
-  protocols/IComponent
+
   (-draw-impl [_ ctx bounds viewport canvas]
-    (let [opts  (parse-opts element)
-          paint (util/checked-get opts :paint #(instance? Paint %))
-          radii (some->>
-                  (util/checked-get opts :radius #(or
-                                                    (nil? %)
-                                                    (number? %) 
-                                                    (and (sequential? %) (every? number? %))))
-                  (#(if (sequential? %) % [%]))
-                  (map #(scaled % ctx)))]
-      (if radii
-        (canvas/draw-rect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) radii) paint)
-        (canvas/draw-rect canvas bounds paint))
-      (draw child ctx bounds viewport canvas))))
+    (if radii
+      (canvas/draw-rect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (map #(scaled % ctx) radii)) paint)
+      (canvas/draw-rect canvas bounds paint))
+    (draw child ctx bounds viewport canvas))
+  
+  (-update-element [_this ctx new-element]
+    (let [opts (parse-opts new-element)
+          r    (get opts :radius)]
+      (set! paint (util/checked-get opts :paint #(instance? Paint %)))
+      (cond
+        (nil? r)
+        (set! radii nil)
+        
+        (number? r)
+        (set! radii [r])
+        
+        (and (sequential? r) (every? number? r))
+        (set! radii r)
+        
+        :else
+        (throw (ex-info (str "Getting (:radius opts), expected: nil | number? | [number? ...], got: " (pr-str r)) {}))))))
 
 (defn- rect-ctor [opts child]
   (map->RectNode {}))

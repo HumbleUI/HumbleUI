@@ -4,9 +4,9 @@
 
 (util/deftype+ Backdrop []
   :extends AWrapperNode
-  protocols/IComponent
+
   (-draw-impl [_ ctx ^IRect bounds viewport ^Canvas canvas]
-    (let [[_ opts _] (parse-element element)
+    (let [opts (parse-opts element)
           filter ^ImageFilter (:filter opts)]
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas bounds)

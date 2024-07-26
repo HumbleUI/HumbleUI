@@ -1,46 +1,53 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Label [size ^TextLine line ^Font font features-ctx]
+(defn label-maybe-update-text-line [this ctx element]
+  (let [[_ opts texts'] (parse-element element)
+        font'           (get-font opts)
+        features'       (concat (:font-features opts) (:font-features ctx))]
+    (when (or
+            (nil? (:text-line this))
+            (not= (:font this) font')
+            (not= (:features this) features')
+            (not= (:texts this) texts'))
+      (let [shaping-options (cond-> ShapingOptions/DEFAULT
+                              (not (empty? features'))
+                              (.withFeatures (str/join " " features')))
+            metrics         (.getMetrics font')
+            _               (util/close (:text-line this))
+            text-line       (.shapeLine shaper (str/join texts') font' shaping-options)]
+        (util/set!! this :font font')
+        (util/set!! this :features features')
+        (util/set!! this :texts texts')
+        (util/set!! this :text-line text-line)
+        (util/set!! this :size (util/ipoint
+                                 (math/ceil (.getWidth text-line))
+                                 (math/ceil (.getCapHeight metrics))))))))
+
+(util/deftype+ Label [^:mut paint
+                      ^:mut ^Font font
+                      ^:mut features
+                      ^:mut texts
+                      ^:mut ^TextLine text-line
+                      ^:mut size]
   :extends ATerminalNode
-  protocols/IComponent
+
   (-measure-impl [this ctx cs]
+    (label-maybe-update-text-line this ctx element)
     size)
   
   (-draw-impl [this ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _] (parse-element element)
-          paint      (or (:paint opts) (:fill-text ctx))]
-      (.drawTextLine canvas line (:x bounds) (+ (:y bounds) (:height size)) paint)))
+    (label-maybe-update-text-line this ctx element)
+    (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) (or paint (:fill-text ctx))))
   
-  (-should-reconcile? [_this ctx new-element]
-    (and
-      (= element new-element)
-      (let [[_ new-opts _] (parse-element new-element)]
-        (and
-          (identical? font (get-font new-opts))
-          (= features-ctx (:font-features ctx))))))
+  (-update-element [_this ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! paint (:paint opts))))
   
   (-unmount-impl [this]
-    (.close line)))
+    (.close text-line)))
 
 (defn- label-impl [opts & texts]
-  (let [font         (get-font opts)
-        features-ctx (:font-features *ctx*)
-        features     (cond-> ShapingOptions/DEFAULT
-                       (not (empty? features-ctx))
-                       (.withFeatures (str/join " " features-ctx))
-                       (not (empty? (:font-features opts)))
-                       (.withFeatures (str/join " " (:font-features opts))))
-        text         (str/join texts)
-        line         (.shapeLine shaper text font features)
-        metrics      (.getMetrics font)
-        size         (util/ipoint
-                       (math/ceil (.getWidth line))
-                       (math/ceil (.getCapHeight metrics)))]
-    (map->Label 
-      {:size         size
-       :line         line
-       :font         font
-       :features-ctx features-ctx})))
+  (map->Label {}))
 
 (defn- label-ctor [& texts]
   (let [[_ opts texts] (parse-element (util/consv nil texts))]

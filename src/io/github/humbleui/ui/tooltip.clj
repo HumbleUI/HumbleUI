@@ -1,17 +1,15 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ RelativeRect [^:mut relative]
+(util/deftype+ RelativeRect [^:mut relative
+                             ^:mut left
+                             ^:mut up
+                             ^:mut anchor
+                             ^:mut shackle]
   :extends AWrapperNode
   
   protocols/IComponent
   (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _]    (parse-element element)
-          {:keys [left up anchor shackle]
-           :or {left    0 
-                up      0
-                anchor  :top-left
-                shackle :top-right}} opts
-          child-size    (measure child ctx (util/ipoint (:width bounds) (:height bounds)))
+    (let [child-size    (measure child ctx (util/ipoint (:width bounds) (:height bounds)))
           child-bounds    (util/irect-xywh (:x bounds) (:y bounds) (:width child-size) (:height child-size))
           rel-cs        (measure relative ctx (util/ipoint 0 0))
           rel-cs-width  (:width rel-cs)
@@ -41,7 +39,14 @@
           [relative']         (reconcile-many ctx [relative] [(:relative opts)])
           [child']            (reconcile-many ctx [child] [child-el])]
       (set! relative relative')
-      (set! child child'))))
+      (set! child child')))
+  
+  (-update-element [this ctx new-element]
+    (let [[_ opts _] (parse-element element)]
+      (set! left    (or (:left opts) 0))
+      (set! up      (or (:up opts) 0))
+      (set! anchor  (or (:anchor opts) :top-left))
+      (set! shackle (or (:shackle opts) :top-right)))))
 
 (defn relative-rect-ctor
   ([relative child]

@@ -1,16 +1,15 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ VScroll []
+(util/deftype+ VScroll [^:mut fill-track
+                        ^:mut fill-thumb]
   :extends AWrapperNode
   
-  protocols/IComponent
   (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
     (draw child ctx bounds viewport canvas)
     (when (> (:height (:child-size child)) (:height bounds))
       (let [{:keys [scale]} ctx
-            [_ opts _]      (parse-element element)
-            fill-track      (or (:fill-track opts) (:hui.scroll/fill-track ctx))
-            fill-thumb      (or (:fill-thumb opts) (:hui.scroll/fill-thumb ctx))
+            fill-track      (or fill-track (:hui.scroll/fill-track ctx))
+            fill-thumb      (or fill-thumb (:hui.scroll/fill-thumb ctx))
             content-y       (:offset-px child)
             content-h       (:height (:child-size child))
             scroll-y        (:y bounds)
@@ -38,7 +37,12 @@
             
             thumb           (util/rrect-xywh track-x (+ track-y thumb-y) thumb-w thumb-h (scaled 2))]
         (canvas/draw-rect canvas track fill-track)
-        (canvas/draw-rect canvas thumb fill-thumb)))))
+        (canvas/draw-rect canvas thumb fill-thumb))))
+  
+  (-update-element [_this _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! fill-track (:fill-track opts))
+      (set! fill-thumb (:fill-thumb opts)))))
 
 (defn- vscroll-impl
   ([child]

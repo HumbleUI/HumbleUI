@@ -3,13 +3,12 @@
 (import
   '[io.github.humbleui.skija ColorAlphaType Image ImageInfo Surface])
 
-(util/deftype+ ImageSnapshot [^:mut ^Image image]
+(util/deftype+ ImageSnapshot [^:mut scale
+                              ^:mut ^Image image]
   :extends AWrapperNode
-  protocols/IComponent
+  
   (-draw-impl [this ctx bounds viewport ^Canvas canvas]
-    (let [[_ opts _] (parse-element element)
-          scale   (:scale opts)
-          [sx sy] (if (some? scale)
+    (let [[sx sy] (if (some? scale)
                     ((juxt :x :y) scale)
                     (let [m44 (.getMat (.getLocalToDevice canvas))]
                       [(nth m44 0) (nth m44 5)]))
@@ -25,7 +24,11 @@
         (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
           (draw child ctx (util/irect-xywh 0 0 w h) viewport (.getCanvas surface))
           (protocols/-set! this :image (.makeImageSnapshot surface))))
-      (.drawImageRect canvas image (util/rect bounds)))))
+      (.drawImageRect canvas image (util/rect bounds))))
+  
+  (-update-element [this _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! scale (:scale opts)))))
 
 (defn image-snapshot-ctor
   ([child]

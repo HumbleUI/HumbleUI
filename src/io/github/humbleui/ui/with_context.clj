@@ -28,7 +28,7 @@
 
 (util/deftype+ WithContext []
   :extends AWrapperNode
-  protocols/IComponent
+
   (-context [_ ctx]
     (let [[_ overrides _ ] (parse-element element)]
       (merge ctx overrides))))

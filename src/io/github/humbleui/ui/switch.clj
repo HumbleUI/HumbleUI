@@ -35,10 +35,11 @@
     (protocols/-set! switch :animation-start start')))
 
 (util/deftype+ Switch [animation-length
-                       ^:mut on?-cached
+                       ^:mut on?
+                       ^:mut pressed?
                        ^:mut animation-start]
   :extends ATerminalNode
-  protocols/IComponent
+
   (-measure-impl [_ ctx _cs]
     (let [height (switch-height ctx)
           width  (math/round (* height 1.61803))]
@@ -46,12 +47,6 @@
   
   (-draw-impl [this ctx bounds viewport canvas]
     (let [{x :x, y :y, w :width, h :height} bounds
-          [_ on? pressed?] element
-          _                (when (nil? on?-cached)
-                             (set! on?-cached on?))
-          _                (when (not= on? on?-cached)
-                             (switch-start-animation this)
-                             (set! on?-cached on?))
           now              (util/now)
           ratio            (min 1 (/ (- now animation-start) animation-length))
           animating?       (< ratio 1)
@@ -87,7 +82,14 @@
       (canvas/draw-circle canvas handle-x handle-y handle-r handle-fill)
       (when animating?
         (util/close fill)
-        (window/request-frame (:window ctx))))))
+        (window/request-frame (:window ctx)))))
+  
+  (-update-element [this _ctx new-element]
+    (let [[_ on?' pressed?'] new-element]
+      (when (and (some? on?) (not= on?' on?))
+        (switch-start-animation this))
+      (set! on? on?')
+      (set! pressed? pressed?'))))
 
 (defn- switch-impl [on? pressed?]
   (map->Switch

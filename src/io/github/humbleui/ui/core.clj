@@ -11,6 +11,11 @@
 
 ;; utils
 
+(defn dimension? [x]
+  (or
+    (number? x)
+    (fn? x)))
+
 (defn dimension ^long [size cs ctx]
   (let [scale (:scale ctx)]
     (->
@@ -30,12 +35,13 @@
    (:scale ctx)))
 
 (defn scaled
-  ([x]
-   (when x
-     (* x (:scale *ctx*))))
-  ([x ctx]
-   (when x
-     (* x (:scale ctx)))))
+  (^long [x]
+    (scaled x *ctx*))
+  (^long [x ctx]
+    (-> x
+      (* (:scale ctx))
+      math/ceil
+      long)))
 
 (defn descaled
   ([x]
@@ -45,14 +51,18 @@
    (when x
      (/ x (:scale ctx)))))
 
-(defn parse-element [vals]
-  (if (map? (nth vals 1))
-    [(nth vals 0) (nth vals 1) (subvec vals 2)]
-    [(nth vals 0) {} (subvec vals 1)]))
+(defn parse-element [el]
+  (when el
+    (if (map? (nth el 1))
+      [(nth el 0) (nth el 1) (subvec el 2)]
+      [(nth el 0) {} (subvec el 1)])))
 
-(defn parse-opts [element]
-  (let [[_ opts & _] (parse-element element)]
-    opts))
+(defn parse-opts [el]
+  (when el
+    (let [opts (nth el 1)]
+      (if (map? opts)
+        opts
+        {}))))
 
 (defn keys-match? [keys m1 m2]
   (=

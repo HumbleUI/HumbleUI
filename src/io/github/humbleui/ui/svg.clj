@@ -1,4 +1,5 @@
 (in-ns 'io.github.humbleui.ui)
+
 (import '[io.github.humbleui.skija.svg SVGDOM SVGLength SVGPreserveAspectRatio SVGPreserveAspectRatioAlign SVGPreserveAspectRatioScale])
 
 (defn- ^SVGPreserveAspectRatio svg-opts->scaling [opts]
@@ -29,7 +30,8 @@
         [1 1 :fill] (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/XMAX_YMAX  SVGPreserveAspectRatioScale/SLICE))
       (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET))))
 
-(util/deftype+ SVG [^SVGDOM dom]
+(util/deftype+ SVG [^SVGDOM dom
+                    ^:mut scaling]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]
@@ -37,9 +39,7 @@
   
   (-draw-impl [_ _ctx bounds viewport ^Canvas canvas]
     (let [root (.getRoot dom)
-          {:keys [x y width height]} bounds
-          [_ opts _] (parse-element element)
-          scaling    (svg-opts->scaling opts)]
+          {:keys [x y width height]} bounds]
       (.setWidth root (SVGLength. width))
       (.setHeight root (SVGLength. height))
       (.setPreserveAspectRatio root scaling)
@@ -49,6 +49,10 @@
   
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
+  
+  (-update-element [_thix _ctx new-element]
+    (let [opts (parse-opts new-element)]
+      (set! scaling (svg-opts->scaling opts))))
   
   (-unmount-impl [this]
     (.close dom)))

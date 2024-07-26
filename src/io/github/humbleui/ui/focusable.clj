@@ -2,7 +2,7 @@
 
 (util/deftype+ Focusable [^:mut focused]
   :extends AWrapperNode  
-  protocols/IComponent
+
   (-context [_ ctx]
     (cond-> ctx
       focused (assoc :hui/focused? true)))
@@ -50,7 +50,7 @@
 
 (util/deftype+ FocusController []
   :extends AWrapperNode
-  protocols/IComponent
+
   (-draw-impl [_ ctx bounds viewport canvas]
     (let [*focused (volatile! [])
           ctx'     (assoc ctx ::*focused *focused)

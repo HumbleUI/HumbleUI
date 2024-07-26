@@ -1,16 +1,20 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Gap []
+(util/deftype+ Gap [^:mut width
+                    ^:mut height]
   :extends ATerminalNode
-  protocols/IComponent
-  (-measure-impl [_this ctx _cs]
-    (let [[_ opts] element
-          scale    (:scale ctx)]
-      (util/ipoint
-        (util/iceil (* scale (or (:width opts) 0)))
-        (util/iceil (* scale (or (:height opts) 0))))))
   
-  (-draw-impl [_this _ctx _bounds _viewport _canvas]))
+  (-measure-impl [_this ctx cs]
+    (util/ipoint
+      (dimension width cs ctx)
+      (dimension height cs ctx)))
+  
+  (-draw-impl [_this _ctx _bounds _viewport _canvas])
+  
+  (-update-element [_this _ctx new-element]
+    (let [[_ opts] new-element]
+      (set! width (or (util/checked-get-optional opts :width dimension?) 0))
+      (set! height (or (util/checked-get-optional opts :height dimension?) 0)))))
 
 (defn- gap-ctor
   ([]
