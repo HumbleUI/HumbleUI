@@ -73,7 +73,7 @@
   "Simple component that has no children"
   []
   :extends ANode
-  protocols/IComponent
+
   (-iterate [this _ctx cb]
     (cb this))
   
@@ -84,7 +84,7 @@
   "A component that has exactly one child"
   [^:mut child]
   :extends ANode
-  protocols/IComponent
+
   (-measure-impl [this ctx cs]
     (measure (:child this) ctx cs))
 
@@ -113,7 +113,7 @@
   "A component that has multiple children"
   [^:mut children]
   :extends ANode
-  protocols/IComponent  
+
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]
       (util/eager-or
@@ -153,7 +153,7 @@
                        ^:mut after-draw
                        ^:mut after-unmount]
   :extends ANode
-  protocols/IComponent
+
   (-measure-impl [this ctx cs]
     (binding [*node* this
               *ctx*  ctx]

@@ -732,10 +732,7 @@
          (-set! [_# key# ~value-sym]
            (case key#
              ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) mut-fields))))
-       
-       (defn ~(symbol (str '-> name)) ~fields
-         (new ~name ~@fields nil)) ;; __m
-       
+              
        (defn ~(symbol (str 'map-> name)) [m#]
          (let [{:keys ~fields} m#]
            (new ~name ~@fields nil))))))

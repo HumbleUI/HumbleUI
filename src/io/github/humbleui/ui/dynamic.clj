@@ -35,13 +35,13 @@
     (unmount child)))
 
 (defn contextual [child-ctor]
-  (->Contextual
-    #(try
-       (child-ctor %)
-       (catch Throwable t
-         (util/log-error t)
-         t))
-    nil nil))
+  (map->Contextual
+    {:child-ctor
+     #(try
+        (child-ctor %)
+        (catch Throwable t
+          (util/log-error t)
+          t))}))
 
 (defn- dynamic-impl [ctx-sym bindings body]
   (let [syms (util/bindings->syms bindings)]

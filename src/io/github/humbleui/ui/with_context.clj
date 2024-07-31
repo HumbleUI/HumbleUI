@@ -24,7 +24,9 @@
     (unmount child)))
 
 (defn with-context-classic [data child]
-  (->WithContextClassic data child nil))
+  (map->WithContextClassic
+    {:data data
+     :child child}))
 
 (util/deftype+ WithContext []
   :extends AWrapperNode

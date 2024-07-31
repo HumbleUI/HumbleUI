@@ -29,14 +29,15 @@
                                 (.withFeatures (str/join " " features')))
               metrics         (.getMetrics font')
               _               (util/close (:text-line this))
-              text-line'      (.shapeLine shaper (str/join texts') font' shaping-options)]
+              text-line'      (.shapeLine shaper (str/join texts') font' shaping-options)
+              size'           (util/ipoint
+                                (math/ceil (.getWidth text-line'))
+                                (math/ceil (.getCapHeight metrics)))]
           (set! font font')
           (set! features features')
           (set! texts texts')
           (set! text-line text-line')
-          (set! size (util/ipoint
-                       (math/ceil (.getWidth text-line))
-                       (math/ceil (.getCapHeight metrics))))))))
+          (set! size size')))))
   
   (-unmount-impl [this]
     (util/close text-line)))

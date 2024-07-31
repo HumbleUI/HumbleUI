@@ -21,21 +21,21 @@
     [io.github.humbleui.skija.shaper Shaper ShapingOptions]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]))
 
-(when-not (.equalsIgnoreCase "false" (System/getProperty "io.github.humbleui.pprint-fn"))
-  (defmethod print-method clojure.lang.AFunction [o ^java.io.Writer w]
-    (.write w (clojure.lang.Compiler/demunge (.getName (class o))))))
+(defn load+ [path]
+  (binding [*warn-on-reflection* true]
+    (load path)))
 
-(binding [*warn-on-reflection* true]
-  (load "/io/github/humbleui/ui/core")
-  (load "/io/github/humbleui/ui/reconcile")
-  (load "/io/github/humbleui/ui/nodes")
-  (load "/io/github/humbleui/ui/defcomp")
-  (load "/io/github/humbleui/ui/dynamic")
-  (load "/io/github/humbleui/ui/with")
-  (load "/io/github/humbleui/ui/with_context")
-  (load "/io/github/humbleui/ui/with_resources")
-  (load "/io/github/humbleui/ui/size")
-  (load "/io/github/humbleui/ui/font"))
+(load+ "/io/github/humbleui/ui/core")
+(load+ "/io/github/humbleui/ui/print")
+(load+ "/io/github/humbleui/ui/reconcile")
+(load+ "/io/github/humbleui/ui/nodes")
+(load+ "/io/github/humbleui/ui/defcomp")
+(load+ "/io/github/humbleui/ui/dynamic")
+(load+ "/io/github/humbleui/ui/with")
+(load+ "/io/github/humbleui/ui/with_context")
+(load+ "/io/github/humbleui/ui/with_resources")
+(load+ "/io/github/humbleui/ui/size")
+(load+ "/io/github/humbleui/ui/font")
 
 (def *loaded
   (atom #{}))
@@ -49,8 +49,7 @@
       (delay
         (when-not (@*loaded ~file)
           (util/log (str "Loading ui/" ~file))
-          (binding [*warn-on-reflection* true]
-            (load (str "/io/github/humbleui/ui/" ~file)))
+          (load+ (str "/io/github/humbleui/ui/" ~file))
           (swap! *loaded conj ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
@@ -113,9 +112,8 @@
 (deflazy error   ([throwable]) "error")
 (deflazy profile ([{:keys [value]} child]) "profile")
 
-(binding [*warn-on-reflection* true]
-  (load "/io/github/humbleui/ui/theme")
-  (load "/io/github/humbleui/ui/window"))
+(load+ "/io/github/humbleui/ui/theme")
+(load+ "/io/github/humbleui/ui/window")
 
 (defmacro start-app! [& body]
   `(util/thread
