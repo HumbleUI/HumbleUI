@@ -34,11 +34,20 @@
       (draw child ctx child-bounds viewport canvas)))
   
   (-update-element [_this ctx new-element]
-    (let [opts (parse-opts new-element)]
-      (set! left   (or (:left opts)   (:horizontal opts) (:padding opts) 0))
-      (set! top    (or (:top opts)    (:vertical opts)   (:padding opts) 0))
-      (set! right  (or (:right opts)  (:horizontal opts) (:padding opts) 0))
-      (set! bottom (or (:bottom opts) (:vertical opts)   (:padding opts) 0)))))
+    (let [opts    (parse-opts new-element)
+          left'   (or (:left opts)   (:horizontal opts) (:padding opts) 0)
+          top'    (or (:top opts)    (:vertical opts)   (:padding opts) 0)
+          right'  (or (:right opts)  (:horizontal opts) (:padding opts) 0)
+          bottom' (or (:bottom opts) (:vertical opts)   (:padding opts) 0)]
+      (when (or
+              (not= left left')
+              (not= top top')
+              (not= right right')
+              (not= bottom bottom'))
+        (set! left left')
+        (set! top top')
+        (set! right right')
+        (set! bottom bottom')))))
 
 (defn- padding-ctor [opts child]
   (map->Padding {}))

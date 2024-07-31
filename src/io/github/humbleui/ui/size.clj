@@ -27,12 +27,19 @@
         (util/ipoint 0 0))))
   
   (-update-element [_this _ctx new-element]
-    (let [opts (parse-opts new-element)]
-      (set! width  (util/checked-get-optional opts :width dimension?))
-      (set! height (util/checked-get-optional opts :height dimension?)))))
+    (let [opts    (parse-opts new-element)
+          width'  (util/checked-get-optional opts :width dimension?)
+          height' (util/checked-get-optional opts :height dimension?)]
+      (when (or
+              (not= width width')
+              (not= height height'))
+        (set! width width')
+        (set! height height')))))
 
 (defn size
+  ([]
+   (map->Size {}))
   ([opts]
-   (size opts nil))
+   (map->Size {}))
   ([opts child]
    (map->Size {})))

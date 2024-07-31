@@ -53,16 +53,15 @@
 
 (defn parse-element [el]
   (when el
-    (if (map? (nth el 1))
+    (if (map? (nth el 1 nil))
       [(nth el 0) (nth el 1) (subvec el 2)]
       [(nth el 0) {} (subvec el 1)])))
 
 (defn parse-opts [el]
   (when el
-    (let [opts (nth el 1)]
-      (if (map? opts)
-        opts
-        {}))))
+    (let [opts (nth el 1 nil)]
+      (when (map? opts)
+        opts))))
 
 (defn keys-match? [keys m1 m2]
   (=

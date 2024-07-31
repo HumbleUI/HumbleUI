@@ -8,15 +8,7 @@
 (def ^:private ctor-border
   (paint/stroke 0x80FF00FF 4))
 
-(defn maybe-render [node ctx]
-  (when (or
-          (:dirty? node)
-          (when-some [should-render? (:should-render? node)]
-            (apply should-render? (next (:element node)))))
-    (let [ctx (protocols/-context node ctx)]
-      (protocols/-reconcile-impl node ctx (:element node))
-      (protocols/-update-element node ctx (:element node)))
-    (util/set!! node :dirty? false)))
+(declare maybe-render)
 
 (util/defparent ANode
   [^:mut element
@@ -94,16 +86,13 @@
   :extends ANode
   protocols/IComponent
   (-measure-impl [this ctx cs]
-    (let [ctx (protocols/-context this ctx)]
-      (measure (:child this) ctx cs)))
+    (measure (:child this) ctx cs))
 
   (-draw-impl [this ctx bounds viewport canvas]
-    (let [ctx (protocols/-context this ctx)]
-      (draw (:child this) ctx bounds viewport canvas)))
+    (draw (:child this) ctx bounds viewport canvas))
   
   (-event-impl [this ctx event]
-    (let [ctx (protocols/-context this ctx)]
-      (ui/event (:child this) ctx event)))
+    (ui/event (:child this) ctx event))
   
   (-iterate [this ctx cb]
     (or
@@ -127,11 +116,9 @@
   protocols/IComponent  
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]
-      (binding [*node* this
-                *ctx*  ctx]
-        (util/eager-or
-          (reduce #(util/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
-          (protocols/-event-impl this ctx event)))))
+      (util/eager-or
+        (reduce #(util/eager-or %1 (protocols/-event %2 ctx event)) nil (:children this))
+        (protocols/-event-impl this ctx event))))
   
   (-iterate [this ctx cb]
     (or
@@ -251,3 +238,15 @@
 
 (defmethod print-method FnNode [o ^java.io.Writer w]
   (.write w (str o)))
+
+(defn maybe-render [node ctx]
+  (when (or
+          (:dirty? node)
+          (and 
+            (instance? FnNode node)
+            (:should-render? node)
+            (apply (:should-render? node) (next (:element node)))))
+    (let [ctx (protocols/-context node ctx)]
+      (protocols/-reconcile-impl node ctx (:element node))
+      (protocols/-update-element node ctx (:element node)))
+    (util/set!! node :dirty? false)))

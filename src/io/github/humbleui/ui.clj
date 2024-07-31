@@ -54,7 +54,7 @@
           (swap! *loaded conj ~file))
         @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
 
-(deflazy gap       ([] [{:keys [width height]}]) "gap")
+(def gap size)
 (deflazy label     ([& texts]) "label")
 (deflazy paragraph ([text] [opts text]) "paragraph")
 (deflazy image     ([{:keys [file sampling scale xpos ypos]}]) "image")

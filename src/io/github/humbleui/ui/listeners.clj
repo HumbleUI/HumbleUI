@@ -17,8 +17,8 @@
     
   (-update-element [_ _ new-element]
     (let [opts (parse-opts new-element)]
-      (set! event-type (:event-type opts))
-      (set! callback   (:callback opts))
+      (set! event-type (:event opts))
+      (set! callback   (:on-event opts))
       (set! capture?   (:capture? opts)))))
 
 (defn event-listener-ctor [opts child]

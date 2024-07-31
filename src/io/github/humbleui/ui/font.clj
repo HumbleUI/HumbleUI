@@ -32,16 +32,18 @@
   (^Font []
     (get-font {}))
   (^Font [opts]
+    (get-font opts *ctx*))
+  (^Font [opts ctx]
     (let [opts (util/merge-some
-                 {:font-size       (:font-size *ctx*)
-                  :font-cap-height (:font-cap-height *ctx*)
-                  :font-weight     (:font-weight *ctx*)
-                  :font-width      (:font-width *ctx*)
-                  :font-slant      (:font-slant *ctx*)}
+                 {:font-size       (:font-size ctx)
+                  :font-cap-height (:font-cap-height ctx)
+                  :font-weight     (:font-weight ctx)
+                  :font-width      (:font-width ctx)
+                  :font-slant      (:font-slant ctx)}
                  opts)
           families (-> (:font-family opts)
-                     (or (:font-family *ctx*))
-                     (font-resolve-aliases (:font-family-aliases *ctx*)))
+                     (or (:font-family ctx))
+                     (font-resolve-aliases (:font-family-aliases ctx)))
           opts (-> opts
                  (dissoc :font-family)
                  (assoc  :font-families families)
