@@ -78,7 +78,7 @@
               :when pos]
         (.drawTextLine canvas (:shaped token) (+ (:x bounds) (:x pos)) (+ (:y bounds) (:y pos)) paint'))))
   
-  (-update-element [this ctx new-element]
+  (-reconcile-opts [this ctx new-element]
     (let [[_ opts texts'] (parse-element new-element)
           font'           (get-font opts ctx)
           metrics'        (if (= (:font this) font')

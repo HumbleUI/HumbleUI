@@ -57,7 +57,7 @@
           (when (< y (:bottom viewport))
             (recur (long (+ y gap-px child-height))))))))
       
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! gap (or (util/checked-get-optional opts :gap number?) 0)))))
 

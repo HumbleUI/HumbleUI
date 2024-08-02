@@ -138,7 +138,7 @@
   (-should-reconcile? [_this _ctx new-element]
     (opts-match? [:*value :track-active :track-inactive :thumb] element new-element))
   
-  (-update-element [_this _ctx new-element]
+  (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! min-value (or (util/checked-get-optional opts :min number?) 0))
       (set! max-value (or (util/checked-get-optional opts :max number?) 100))

@@ -27,7 +27,7 @@
                          (util/irect-xywh (:x bounds) top (:width bounds) (:height child-size)))]
       (draw child ctx child-bounds viewport canvas)))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)
           {x' :x
            y' :y

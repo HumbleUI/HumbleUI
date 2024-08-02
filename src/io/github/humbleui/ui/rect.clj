@@ -10,7 +10,7 @@
       (canvas/draw-rect canvas bounds paint))
     (draw child ctx bounds viewport canvas))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)
           r    (get opts :radius)]
       (set! paint (util/checked-get opts :paint #(instance? Paint %)))

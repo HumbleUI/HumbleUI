@@ -33,7 +33,7 @@
                          height)]
       (draw child ctx child-bounds viewport canvas)))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts    (parse-opts new-element)
           left'   (or (:left opts)   (:horizontal opts) (:padding opts) 0)
           top'    (or (:top opts)    (:vertical opts)   (:padding opts) 0)

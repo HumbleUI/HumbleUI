@@ -14,7 +14,7 @@
                          (:height bounds))]
       (draw child ctx child-bounds viewport canvas)))
   
-  (-update-element [_this _ctx new-element]
+  (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! dx (or (util/checked-get-optional opts :dx dimension?) 0))
       (set! dy (or (util/checked-get-optional opts :dy dimension?) 0)))))

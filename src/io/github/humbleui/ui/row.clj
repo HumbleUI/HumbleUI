@@ -6,8 +6,8 @@
                              (fn [child]
                                [child (-> child :element meta :stretch (or :hug)) (measure child ctx cs)])
                              children)
-        width'              (transduce (map #(-> % (nth 2) :width)) +   0 children-sizes')
-        height'             (transduce (map #(-> % (nth 2) :height))  max 0 children-sizes')
+        width'              (transduce (map #(-> % (nth 2) :width))  +   0 children-sizes')
+        height'             (transduce (map #(-> % (nth 2) :height)) max 0 children-sizes')
         hug-width'          (transduce
                               (comp
                                 (filter #(-> % (nth 1) (= :hug)))
@@ -57,7 +57,7 @@
           (when (< x (:right viewport))
             (recur (long (+ x gap-px child-width))))))))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! gap (or (util/checked-get-optional opts :gap number?) 0)))))
 

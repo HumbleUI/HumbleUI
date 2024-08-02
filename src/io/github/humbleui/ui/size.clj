@@ -26,7 +26,7 @@
         :else
         (util/ipoint 0 0))))
   
-  (-update-element [_this _ctx new-element]
+  (-reconcile-opts [_this _ctx new-element]
     (let [opts    (parse-opts new-element)
           width'  (util/checked-get-optional opts :width dimension?)
           height' (util/checked-get-optional opts :height dimension?)]

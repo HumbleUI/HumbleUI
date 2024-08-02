@@ -34,14 +34,16 @@
       (draw child ctx child-bounds viewport canvas)
       (draw relative ctx rel-bounds viewport canvas))) ;; TODO draw in tooltip overlay
   
-  (-reconcile-impl [this ctx el']
+  (-reconcile-children [this ctx el']
     (let [[_ opts [child-el]] (parse-element el')
           [relative']         (reconcile-many ctx [relative] [(:relative opts)])
           [child']            (reconcile-many ctx [child] [child-el])]
       (set! relative relative')
-      (set! child child')))
+      (util/set!! relative' :parent this)
+      (set! child child')
+      (util/set!! child' :parent this)))
   
-  (-update-element [this ctx new-element]
+  (-reconcile-opts [this ctx new-element]
     (let [[_ opts _] (parse-element element)]
       (set! left    (or (:left opts) 0))
       (set! up      (or (:up opts) 0))

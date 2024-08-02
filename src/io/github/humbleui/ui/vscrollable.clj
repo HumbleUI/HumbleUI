@@ -48,7 +48,7 @@
       #_:else
       (ui/event child ctx event)))
   
-  (-update-element [_this _ctx new-element]
+  (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts element)]
       (set! clip? (:clip? opts true))
       (when-some [offset' (:offset opts)]

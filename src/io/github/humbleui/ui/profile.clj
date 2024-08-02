@@ -22,7 +22,7 @@
         (reset! value false)))
     (draw child ctx bounds viewport canvas))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! value (:value opts)))))
 

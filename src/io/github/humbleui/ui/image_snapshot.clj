@@ -20,13 +20,14 @@
                 (not= (.getHeight image) h)))
         (.close image)
         (set! image nil))
-      (when (nil? image)
-        (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
-          (draw child ctx (util/irect-xywh 0 0 w h) viewport (.getCanvas surface))
-          (protocols/-set! this :image (.makeImageSnapshot surface))))
-      (.drawImageRect canvas image (util/rect bounds))))
+      (when (and (pos? w) (pos? h))
+        (when (nil? image)
+          (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
+            (draw child ctx (util/irect-xywh 0 0 w h) viewport (.getCanvas surface))
+            (protocols/-set! this :image (.makeImageSnapshot surface))))
+        (.drawImageRect canvas image (util/rect bounds)))))
   
-  (-update-element [this _ctx new-element]
+  (-reconcile-opts [this _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! scale (:scale opts)))))
 

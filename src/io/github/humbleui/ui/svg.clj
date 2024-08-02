@@ -50,7 +50,7 @@
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
   
-  (-update-element [_thix _ctx new-element]
+  (-reconcile-opts [_thix _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! scaling (svg-opts->scaling opts))))
   

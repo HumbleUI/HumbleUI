@@ -4,7 +4,7 @@
   :extends AWrapperNode
 
   (-draw-impl [this ctx bounds viewport canvas]
-    (let [cs' (util/ipoint (:width bounds) (:height bounds))]
+    (let [cs' (util/irect-size bounds)]
       (when (not= cs cs')
         (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?

@@ -12,9 +12,10 @@
 
 (util/defparent ANode
   [^:mut element
-   ^:mut mounted?
+   ^:mut parent
    ^:mut bounds
    ^:mut key
+   ^:mut mounted?
    ^:mut dirty?]
   
   protocols/IComponent
@@ -49,8 +50,8 @@
   (-reconcile [this ctx new-element]
     (when (not (identical? (:element this) new-element))
       (let [ctx (protocols/-context this ctx)]
-        (protocols/-reconcile-impl this ctx new-element)
-        (protocols/-update-element this ctx new-element)
+        (protocols/-reconcile-children this ctx new-element)
+        (protocols/-reconcile-opts this ctx new-element)
         (protocols/-set! this :element new-element)))
     this)
   
@@ -58,10 +59,10 @@
     (let [[_ _ child-els] (parse-element new-element)]
       child-els))
   
-  (-reconcile-impl [this _ctx element]
+  (-reconcile-children [this _ctx element]
     (throw (ex-info "Not implemented" {:element (:element this)})))
   
-  (-update-element [this ctx new-el]
+  (-reconcile-opts [this ctx new-el]
     :nop)
 
   (-unmount [this]
@@ -77,7 +78,7 @@
   (-iterate [this _ctx cb]
     (cb this))
   
-  (-reconcile-impl [this ctx new-element]
+  (-reconcile-children [this ctx new-element]
     this))
 
 (util/defparent AWrapperNode
@@ -100,10 +101,12 @@
       (let [ctx (protocols/-context this ctx)]
         (iterate (:child this) ctx cb))))
   
-  (-reconcile-impl [this ctx el']
+  (-reconcile-children [this ctx el']
     (let [child-els (protocols/-child-elements this ctx el')
           [child']  (reconcile-many ctx [(:child this)] child-els)]
-      (protocols/-set! this :child child')))
+      (protocols/-set! this :child child')
+      (when child'
+        (protocols/-set! child' :parent this))))
   
   (-unmount [this]
     (unmount (:child this))
@@ -126,11 +129,14 @@
       (let [ctx (protocols/-context this ctx)]
         (some #(iterate % ctx cb) (:children this)))))
   
-  (-reconcile-impl [this ctx el']
+  (-reconcile-children [this ctx el']
     (let [child-els (protocols/-child-elements this ctx el')
           child-els (util/flatten child-els)
           children' (reconcile-many ctx (:children this) child-els)]
-      (protocols/-set! this :children children')))
+      (protocols/-set! this :children children')
+      (doseq [child children'
+              :when child]
+        (protocols/-set! child :parent this))))
   
   (-unmount [this]
     (doseq [child (:children this)]
@@ -197,13 +203,13 @@
     (when (if should-render?
             (apply should-render? (next new-element))
             (not (identical? element new-element)))
-      (protocols/-reconcile-impl this ctx new-element))
+      (protocols/-reconcile-children this ctx new-element))
     (when-not (identical? element new-element)
-      (protocols/-update-element this ctx new-element)
+      (protocols/-reconcile-opts this ctx new-element)
       (set! element new-element))
     this)
   
-  (-reconcile-impl [this ctx new-element]
+  (-reconcile-children [this ctx new-element]
     (when (or
             (not (identical? (first element) (first new-element)))
             (apply util/invoke should-setup? (next new-element)))
@@ -247,6 +253,6 @@
             (:should-render? node)
             (apply (:should-render? node) (next (:element node)))))
     (let [ctx (protocols/-context node ctx)]
-      (protocols/-reconcile-impl node ctx (:element node))
-      (protocols/-update-element node ctx (:element node)))
+      (protocols/-reconcile-children node ctx (:element node))
+      (protocols/-reconcile-opts node ctx (:element node)))
     (util/set!! node :dirty? false)))

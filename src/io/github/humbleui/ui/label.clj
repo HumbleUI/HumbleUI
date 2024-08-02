@@ -14,7 +14,7 @@
   (-draw-impl [this ctx bounds viewport ^Canvas canvas]
     (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) (or paint (:fill-text ctx))))
 
-  (-update-element [this ctx new-element]
+  (-reconcile-opts [this ctx new-element]
     (let [[_ opts texts'] (parse-element new-element)
           font'           (get-font opts ctx)
           features'       (concat (:font-features opts) (:font-features ctx))]

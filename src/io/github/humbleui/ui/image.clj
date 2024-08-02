@@ -38,7 +38,7 @@
                        (.scale (/ 1 img-scale)))]
         [src-rect dst-rect]))))
 
-(defn- img-update-element [this new-element]
+(defn- img-reconcile-opts [this new-element]
   (let [opts (parse-opts new-element)]
     (util/set!! this :scale (or (util/checked-get-optional opts :scale #(or (= :fit %) (= :fill %) (= :content %) (number? %))) :fit))
     (util/set!! this :xpos  (or (util/checked-get-optional opts :xpos number?) 0.5))
@@ -71,8 +71,8 @@
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
   
-  (-update-element [this _ctx new-element]
-    (img-update-element this new-element))
+  (-reconcile-opts [this _ctx new-element]
+    (img-reconcile-opts this new-element))
   
   (-unmount-impl [this]
     (util/close image)))
@@ -125,8 +125,8 @@
   (-should-reconcile? [_this ctx new-element]
     (opts-match? [:src] element new-element))
 
-  (-update-element [this _ctx new-element]
-    (img-update-element this new-element))
+  (-reconcile-opts [this _ctx new-element]
+    (img-reconcile-opts this new-element))
 
   (-unmount-impl [this]
     (doseq [image images]

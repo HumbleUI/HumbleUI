@@ -39,7 +39,7 @@
         (canvas/draw-rect canvas track fill-track)
         (canvas/draw-rect canvas thumb fill-thumb))))
   
-  (-update-element [_this _ctx new-element]
+  (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! fill-track (:fill-track opts))
       (set! fill-thumb (:fill-thumb opts)))))

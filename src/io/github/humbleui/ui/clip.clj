@@ -10,7 +10,7 @@
         (canvas/clip-rect canvas bounds))
       (draw child ctx bounds (util/irect-intersect viewport bounds) canvas)))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)
           r    (get opts :radius)]
       (cond

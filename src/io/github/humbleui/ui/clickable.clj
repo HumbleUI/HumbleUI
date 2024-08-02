@@ -119,7 +119,7 @@
         [[child-ctor-or-el @*state]]
         [child-ctor-or-el])))
   
-  (-update-element [_this ctx new-element]
+  (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)]
       (when-some [*state' (:*state opts)]
         (set! *state *state')))))

@@ -15,7 +15,7 @@
               (= event-type (:event event)))
         (callback event ctx))))
     
-  (-update-element [_ _ new-element]
+  (-reconcile-opts [_ _ new-element]
     (let [opts (parse-opts new-element)]
       (set! event-type (:event opts))
       (set! callback   (:on-event opts))
@@ -50,7 +50,7 @@
           (when on-key-up
             (on-key-up event))))))
   
-  (-update-element [_ _ new-element]
+  (-reconcile-opts [_ _ new-element]
     (let [opts (parse-opts new-element)]
       (set! on-key-down (:on-key-down opts))
       (set! on-key-up   (:on-key-up opts)))))
@@ -94,7 +94,7 @@
         (on-button event))
       (ui/event child ctx event)))
     
-  (-update-element [_ _ new-element]
+  (-reconcile-opts [_ _ new-element]
     (let [opts (parse-opts new-element)]
       (set! on-move   (:on-move opts))
       (set! on-scroll (:on-scroll opts))
@@ -114,7 +114,7 @@
         (on-input (:text event)))
       (ui/event child ctx event)))
   
-  (-update-element [_ _ new-element]
+  (-reconcile-opts [_ _ new-element]
     (let [opts (parse-opts new-element)]
       (set! on-input (:on-input opts)))))
 

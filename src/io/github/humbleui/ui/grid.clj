@@ -60,7 +60,7 @@
             :else
             (recur (+ x width) y row (inc col)))))))
   
-  (-update-element [_ ctx new-element]
+  (-reconcile-opts [_ ctx new-element]
     (let [opts  (parse-opts new-element)
           cols' (util/checked-get opts :cols pos-int?)
           rows' (or

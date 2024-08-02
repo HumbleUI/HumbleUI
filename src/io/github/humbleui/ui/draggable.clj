@@ -63,7 +63,7 @@
         true)
       (ui/event child ctx event)))
   
-  (-update-element [_ _ new-element]
+  (-reconcile-opts [_ _ new-element]
     (let [opts (parse-opts new-element)]
       (set! on-dragging (:on-dragging opts))
       (set! on-drop (:on-drop opts)))))

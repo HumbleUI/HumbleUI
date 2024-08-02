@@ -84,7 +84,7 @@
         (util/close fill)
         (window/request-frame (:window ctx)))))
   
-  (-update-element [this _ctx new-element]
+  (-reconcile-opts [this _ctx new-element]
     (let [[_ on?' pressed?'] new-element]
       (when (and (some? on?) (not= on?' on?))
         (switch-start-animation this))

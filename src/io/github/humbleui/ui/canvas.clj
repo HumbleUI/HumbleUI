@@ -23,7 +23,7 @@
                      event)]
         (on-event ctx event'))))
   
-    (-update-element [this _ctx new-element]
+    (-reconcile-opts [this _ctx new-element]
     (let [opts (parse-opts new-element)]
       (set! on-paint (:on-paint opts))
       (set! on-event (:on-event opts)))))
