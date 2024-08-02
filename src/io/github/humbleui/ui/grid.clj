@@ -1,35 +1,39 @@
 (in-ns 'io.github.humbleui.ui)
 
-(defn- grid-measure [rows cols children cs ctx]
-  (let [heights (float-array rows 0)
-        widths  (float-array cols 0)]
+(defn- grid-maybe-measure [this cs ctx]
+  (let [widths  (float-array (:cols this) 0)
+        heights (float-array (:rows this) 0)
+        max-col (dec (:cols this))]
     (util/loopr [row 0
                  col 0]
-      [child children]
-      (let [row' (if (< col (dec cols)) row (inc row))
-            col' (if (< col (dec cols)) (inc col) 0)]
+      [child (:children this)]
+      (let [row' (if (< col max-col) row (inc row))
+            col' (if (< col max-col) (inc col) 0)]
         (if child
           (let [size (measure child ctx cs)]
-            (aset-float heights row (max (aget heights row) (:height size)))
             (aset-float widths  col (max (aget widths  col) (:width size)))
+            (aset-float heights row (max (aget heights row) (:height size)))
             (recur row' col'))
-          (recur row' col')))
-      {:widths  widths
-       :heights heights})))
+          (recur row' col'))))
+    (util/set!! this
+      :widths widths
+      :heights heights)))
 
 (util/deftype+ Grid [^:mut cols
-                     ^:mut rows]
+                     ^:mut rows
+                     ^:mut widths
+                     ^:mut heights]
   :extends AContainerNode
   
-  (-measure-impl [_ ctx cs]
-    (let [{:keys [widths heights]} (grid-measure rows cols children cs ctx)]
-      (util/ipoint
-        (areduce ^floats widths  i res (float 0) (+ res (aget ^floats widths i)))
-        (areduce ^floats heights i res (float 0) (+ res (aget ^floats heights i))))))
+  (-measure-impl [this ctx cs]
+    (grid-maybe-measure this cs ctx)
+    (util/ipoint
+      (areduce ^floats widths  i res (float 0) (+ res (aget ^floats widths i)))
+      (areduce ^floats heights i res (float 0) (+ res (aget ^floats heights i)))))
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [cs                       (util/ipoint (:width bounds) (:height bounds))
-          {:keys [widths heights]} (grid-measure rows cols children cs ctx)]
+  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
+    (let [cs (util/ipoint (:width bounds) (:height bounds))]
+      (grid-maybe-measure this cs ctx)
       (loop [x   (:x bounds)
              y   (:y bounds)
              row 0
@@ -57,11 +61,18 @@
             (recur (+ x width) y row (inc col)))))))
   
   (-update-element [_ ctx new-element]
-    (let [opts (parse-opts new-element)]
-      (set! cols (util/checked-get opts :cols pos-int?))
-      (set! rows (or
-                   (util/checked-get-optional opts :rows pos-int?)
-                   (-> (count children) dec (quot cols) inc))))))
+    (let [opts  (parse-opts new-element)
+          cols' (util/checked-get opts :cols pos-int?)
+          rows' (or
+                  (util/checked-get-optional opts :rows pos-int?)
+                  (-> (count children) dec (quot cols') inc))]
+      (when (or
+              (not= cols cols')
+              (not= rows rows'))
+        (set! cols cols')
+        (set! rows rows')
+        (set! widths nil)
+        (set! heights nil)))))
 
 (defn- grid-ctor
   ([opts]

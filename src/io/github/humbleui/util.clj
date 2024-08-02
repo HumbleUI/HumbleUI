@@ -511,11 +511,23 @@
 (defn irect-ltrb ^IRect [^long l ^long t ^long r ^long b]
   (IRect/makeLTRB l t r b))
 
+(defn irect-size [^IRect r]
+  (ipoint (.getWidth r) (.getHeight r)))
+
+(defn irect-position [^IRect r]
+  (ipoint (.getLeft r) (.getTop r)))
+
 (defn rect-xywh ^Rect [x y w h]
   (Rect/makeXYWH x y w h))
 
 (defn rect-ltrb ^Rect [l t r b]
   (Rect/makeLTRB l t r b))
+
+(defn rect-size [^Rect r]
+  (point (.getWidth r) (.getHeight r)))
+
+(defn rect-position [^Rect r]
+  (point (.getLeft r) (.getTop r)))
 
 (defn rrect-xywh
   (^RRect [x y w h r]
@@ -739,10 +751,26 @@
 
 ;; prototypes
 
-(defn set!! [obj & kvs]
-  (doseq [[k v] (partition 2 kvs)]
-    (protocols/-set! obj k v))
-  obj)
+(defn set!!
+  ([obj k v]
+   (protocols/-set! obj k v)
+   obj)
+  ([obj k1 v1 k2 v2]
+   (protocols/-set! obj k1 v1)
+   (protocols/-set! obj k2 v2)
+   obj)
+  ([obj k1 v1 k2 v2 k3 v3]
+   (protocols/-set! obj k1 v1)
+   (protocols/-set! obj k2 v2)
+   (protocols/-set! obj k3 v3)
+   obj)
+  ([obj k1 v1 k2 v2 k3 v3 & kvs]
+   (protocols/-set! obj k1 v1)
+   (protocols/-set! obj k2 v2)
+   (protocols/-set! obj k3 v3)
+   (doseq [[k v] (partition 2 kvs)]
+     (protocols/-set! obj k v))
+   obj))
 
 (defn update!! [this key f & args]
   (protocols/-set! this key (apply f (get this key) args)))

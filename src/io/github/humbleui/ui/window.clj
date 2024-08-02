@@ -20,7 +20,8 @@
     app))
 
 (defn window
-  (^Window [app] (window {} app))
+  (^Window [app]
+    (window {} app))
   (^Window [opts app]
     (let [{:keys [exit-on-close? title mac-icon screen width height x y bg-color on-paint on-event]
            :or {exit-on-close? true

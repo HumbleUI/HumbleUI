@@ -137,9 +137,9 @@
 (defn calc-ui [bounds]
   (let [height         (:height bounds)
         btn-height     (-> height (- (* 7 padding)) (/ 13) (* 2))
-        cap-height'    (-> btn-height (/ 3) (Math/floor))
+        cap-height'    (-> btn-height (/ 3) (Math/floor) (max 0))
         display-height (-> height (- (* 7 padding)) (/ 13) (* 3))
-        cap-height''   (-> display-height (/ 3) (Math/floor))]
+        cap-height''   (-> display-height (/ 3) (Math/floor) (max 0))]
     {:should-setup?
      (fn [bounds']
        (not= (:height bounds) (:height bounds')))
