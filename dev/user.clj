@@ -14,6 +14,8 @@
 
 (def ^:dynamic *t0*)
 
+(def monitor)
+
 (defn log [& args]
   (let [dt    (- (System/currentTimeMillis) *t0*)
         mins  (quot dt 60000)
@@ -25,24 +27,19 @@
 (defn reload []
   (binding [*t0*                     (System/currentTimeMillis)
             clj-reload.util/*log-fn* log]
-    (or
-      (try
-        (when-some [window @@(requiring-resolve 'examples.shared/*window)]
-          ;; do not reload in the middle of the frame
-          (locking window
-            (duti/reload)))
-        (catch Exception e
-          nil))
+    ;; do not reload in the middle of the frame
+    (locking monitor
       (duti/reload))))
 
 (defn -main [& args]
   (let [args (apply array-map args)
         ;; starting app
-        _    (set! *warn-on-reflection* true)
-        _    (@(requiring-resolve 'examples/-main))
+        _      (set! *warn-on-reflection* true)
+        window (@(requiring-resolve 'examples/-main))
+        _      (alter-var-root #'monitor (constantly window)) 
         ;; starting socket repl
-        port (some-> (get args "--port") parse-long)
-        _    (duti/start-socket-repl {:port port})]))
+        port   (some-> (get args "--port") parse-long)
+        _      (duti/start-socket-repl {:port port})]))
 
 (defn test-all []
   (duti/test #"io\.github\.humbleui\..*-test"))
