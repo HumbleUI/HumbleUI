@@ -60,7 +60,7 @@
             :else
             (recur (+ x width) y row (inc col)))))))
   
-  (-reconcile-opts [_ ctx new-element]
+  (-reconcile-opts [this ctx new-element]
     (let [opts  (parse-opts new-element)
           cols' (util/checked-get opts :cols pos-int?)
           rows' (or
@@ -72,7 +72,8 @@
         (set! cols cols')
         (set! rows rows')
         (set! widths nil)
-        (set! heights nil)))))
+        (set! heights nil)
+        (invalidate-size this)))))
 
 (defn- grid-ctor
   ([opts]

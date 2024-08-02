@@ -7,11 +7,10 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  [ui/center
-   [ui/vscroll
-    [ui/column
-     (for [i (range 0 100)]
-       [ui/padding {:horizontal 50
-                    :vertical 10}
-        [ui/center
-         [ui/label i]]])]]])
+  (let [*state (signal/signal #{})]
+    (fn []
+      [ui/center
+       [ui/hoverable
+        (fn [state]
+          [ui/label state])]])))
+   

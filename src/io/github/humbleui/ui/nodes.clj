@@ -14,6 +14,7 @@
   [^:mut element
    ^:mut parent
    ^:mut bounds
+   ^:mut this-size
    ^:mut key
    ^:mut mounted?
    ^:mut dirty?]
@@ -25,7 +26,11 @@
   (-measure [this ctx cs]
     (let [ctx (protocols/-context this ctx)]
       (ui/maybe-render this ctx)
-      (protocols/-measure-impl this ctx cs)))
+      (or 
+        (:this-size this)
+        (let [size' (protocols/-measure-impl this ctx cs)]
+          (util/set!! this :this-size size')
+          size'))))
     
   (-draw [this ctx bounds' viewport canvas]
     (protocols/-set! this :bounds bounds')
@@ -52,7 +57,8 @@
       (let [ctx (protocols/-context this ctx)]
         (protocols/-reconcile-children this ctx new-element)
         (protocols/-reconcile-opts this ctx new-element)
-        (protocols/-set! this :element new-element)))
+        (protocols/-set! this :element new-element)
+        (invalidate-size this)))
     this)
   
   (-child-elements [this ctx new-element]
@@ -222,6 +228,8 @@
           (let [child-el (apply render (next new-element))
                 [child'] (reconcile-many ctx [child] [child-el])
                 _        (set! child child')
+                _        (when child'
+                           (util/set!! child' :parent this))
                 signals  (persistent! @@#'signal/*context*)
                 window   (:window ctx)]
             (some-> effect signal/dispose!)

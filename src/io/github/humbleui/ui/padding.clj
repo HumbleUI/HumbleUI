@@ -33,7 +33,7 @@
                          height)]
       (draw child ctx child-bounds viewport canvas)))
   
-  (-reconcile-opts [_this ctx new-element]
+  (-reconcile-opts [this ctx new-element]
     (let [opts    (parse-opts new-element)
           left'   (or (:left opts)   (:horizontal opts) (:padding opts) 0)
           top'    (or (:top opts)    (:vertical opts)   (:padding opts) 0)
@@ -47,7 +47,8 @@
         (set! left left')
         (set! top top')
         (set! right right')
-        (set! bottom bottom')))))
+        (set! bottom bottom')
+        (invalidate-size this)))))
 
 (defn- padding-ctor [opts child]
   (map->Padding {}))

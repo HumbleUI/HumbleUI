@@ -37,7 +37,8 @@
           (set! features features')
           (set! texts texts')
           (set! text-line text-line')
-          (set! size size')))))
+          (set! size size')
+          (invalidate-size this)))))
   
   (-unmount-impl [this]
     (util/close text-line)))

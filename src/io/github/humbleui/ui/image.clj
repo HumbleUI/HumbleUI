@@ -39,8 +39,11 @@
         [src-rect dst-rect]))))
 
 (defn- img-reconcile-opts [this new-element]
-  (let [opts (parse-opts new-element)]
-    (util/set!! this :scale (or (util/checked-get-optional opts :scale #(or (= :fit %) (= :fill %) (= :content %) (number? %))) :fit))
+  (let [opts   (parse-opts new-element)
+        scale' (or (util/checked-get-optional opts :scale #(or (= :fit %) (= :fill %) (= :content %) (number? %))) :fit)]
+    (when (not= scale scale')
+      (util/set!! this :scale scale')
+      (invalidate-size this))
     (util/set!! this :xpos  (or (util/checked-get-optional opts :xpos number?) 0.5))
     (util/set!! this :ypos  (or (util/checked-get-optional opts :ypos number?) 0.5))
     (util/set!! this :sampling

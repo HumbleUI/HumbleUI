@@ -114,7 +114,8 @@
           (set! metrics metrics')
           (set! features features')
           (set! texts texts')
-          (set! tokens tokens')))))
+          (set! tokens tokens')
+          (invalidate-size this)))))
   
   (-unmount-impl [this]
     (doseq [token tokens]

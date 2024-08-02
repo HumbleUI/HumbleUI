@@ -57,9 +57,12 @@
           (when (< x (:right viewport))
             (recur (long (+ x gap-px child-width))))))))
   
-  (-reconcile-opts [_this ctx new-element]
-    (let [opts (parse-opts new-element)]
-      (set! gap (or (util/checked-get-optional opts :gap number?) 0)))))
+  (-reconcile-opts [this ctx new-element]
+    (let [opts (parse-opts new-element)
+          gap' (or (util/checked-get-optional opts :gap number?) 0)]
+      (when (not= gap gap')
+        (set! gap gap')
+        (invalidate-size this)))))
 
 (defn- row-ctor [& children]
   (map->Row {}))

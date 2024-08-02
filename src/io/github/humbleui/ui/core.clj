@@ -107,3 +107,9 @@
 (defn unmount [comp]
   (when comp
     (protocols/-unmount comp)))
+
+(defn invalidate-size [comp]
+  (loop [comp comp]
+    (when (:this-size comp)
+      (util/set!! comp :this-size nil)
+      (recur (:parent comp)))))
