@@ -5,7 +5,10 @@
                         ^:mut right
                         ^:mut bottom]
   :extends AWrapperNode  
-  
+
+  (-should-measure? [_ ctx cs]
+    (some fn? [left top right bottom]))
+
   (-measure-impl [_ ctx cs]
     (let [left-px    (dimension left cs ctx)
           top-px     (dimension top cs ctx)

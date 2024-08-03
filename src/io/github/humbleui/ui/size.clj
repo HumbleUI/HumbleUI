@@ -4,6 +4,11 @@
                      ^:mut height]
   :extends AWrapperNode
 
+  (-should-measure? [_ ctx cs]
+    (or
+      (fn? width)
+      (fn? height)))
+  
   (-measure-impl [_ ctx cs]
     (let [width-px  (some-> width (dimension cs ctx))
           height-px (some-> height (dimension cs ctx))]

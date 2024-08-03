@@ -22,11 +22,16 @@
   protocols/IComponent
   (-context [_ ctx]
     ctx)
+  
+  (-should-measure? [this ctx cs]
+    false)
 
   (-measure [this ctx cs]
     (let [ctx (protocols/-context this ctx)]
       (ui/maybe-render this ctx)
-      (or 
+      (if (and
+            (:this-size this)
+            (not (protocols/-should-measure? this ctx cs)))
         (:this-size this)
         (let [size' (protocols/-measure-impl this ctx cs)]
           (util/set!! this :this-size size')
