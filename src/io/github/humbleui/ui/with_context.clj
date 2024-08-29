@@ -1,33 +1,5 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ WithContextClassic [data child ^:mut bounds]
-  protocols/IComponent
-  (-context [_ ctx]
-    (merge ctx data))
-  
-  (-measure [this ctx cs]
-    (measure child (protocols/-context this ctx) cs))
-  
-  (-draw [this ctx bounds' viewport canvas]
-    (set! bounds bounds')
-    (draw child (protocols/-context this ctx) bounds viewport canvas))
-  
-  (-event [this ctx event]
-    (ui/event child (protocols/-context this ctx) event))
-  
-  (-iterate [this ctx cb]
-    (or
-      (cb this)
-      (iterate child (protocols/-context this ctx) cb)))
-  
-  (-unmount [_]
-    (unmount child)))
-
-(defn with-context-classic [data child]
-  (map->WithContextClassic
-    {:data data
-     :child child}))
-
 (util/deftype+ WithContext []
   :extends AWrapperNode
 

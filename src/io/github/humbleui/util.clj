@@ -111,12 +111,16 @@
        (fn ~@body))))
 
 (defmacro memo-fn [bindings & body]
-  (let [syms-left  (mapv first (partition 2 bindings))
-        syms-right (mapv second (partition 2 bindings))
-        syms       (bindings->syms bindings)]
+  (let [syms (as-> bindings %
+               (collect symbol? %)
+               (map without-ns %)
+               (into #{} %)
+               (disj % '& '_)
+               (vec %))
+        gens (mapv (fn [_] (gensym)) (range (count bindings)))]
     `(let [*state# (atom nil)]
-       (fn ~syms-right
-         (let ~bindings
+       (fn ~gens
+         (let ~(vec (mapcat vector bindings gens))
            (let [state#         @*state#
                  [args# value#] state#]
              (if (= args# ~syms)

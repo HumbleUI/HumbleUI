@@ -167,15 +167,11 @@
         [ui/profile {:value *profiling?}
          [(examples-map @*example)]]]])))
 
-(defn app-wrapper []
-  [app-impl])
-
 (defonce *app
   (atom nil))
 
 (reset! *app
-  (ui/default-theme {}
-    (ui/make [app-wrapper])))
+  app-impl)
 
 (defn maybe-save-window-rect [window event]
   (when (#{:window-move :window-resize} (:event event))

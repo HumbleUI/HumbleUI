@@ -49,6 +49,8 @@
   
   (-event [this ctx event]
     (let [ctx (protocols/-context this ctx)]
+      (when (= :window-scale-change (:event event))
+        (protocols/-reconcile-opts this ctx (:element this)))
       (protocols/-event-impl this ctx event)))
   
   (-event-impl [this ctx event]

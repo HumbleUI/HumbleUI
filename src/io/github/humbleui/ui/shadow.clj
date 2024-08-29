@@ -7,8 +7,8 @@
    (shadow-ctor opts [gap]))
   ([opts child]
    (let [paint-fn (util/memo-fn [{:keys [dx dy blur color fill]
-                                  :or {dx 0 dy 0 blur 0 color (unchecked-int 0x80000000)}} opts
-                                 {:keys [scale]} *ctx*]
+                                  :or {dx 0 dy 0 blur 0 color (unchecked-int 0x80000000)}}
+                                 {:keys [scale]}]
                     (let [r      (util/radius->sigma (* blur scale))
                           shadow (if fill
                                    (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)

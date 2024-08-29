@@ -6,12 +6,12 @@
     nil
     
     (and (instance? clojure.lang.IDeref app) (fn? @app))
-    (default-theme theme
-      (make [@app]))
+    (make
+      [default-theme theme @app])
 
     (fn? app)
-    (default-theme theme
-      (make [app]))
+    (make
+      [default-theme theme app])
 
     (instance? clojure.lang.IDeref app)
     @app
@@ -32,6 +32,7 @@
                 y        :center
                 bg-color 0xFFF6F6F6}} opts
           *mouse-pos (volatile! (util/ipoint 0 0))
+          *scale     (volatile! 0)
           ref?       (instance? clojure.lang.IRef app)
           *app-node  (atom (app-node (:theme opts) app))
           ctx-fn     (fn [window]
@@ -48,16 +49,20 @@
                              (on-paint window canvas))
                            (when-some [app @*app-node]
                              (protocols/-draw app (ctx-fn window) bounds bounds canvas)))))
-          event-fn   (fn [window event]
+          event-fn   (fn event-fn [window event]
                        (locking window
-                         (util/when-some+ [{:keys [x y]} event]
-                           (vreset! *mouse-pos (util/ipoint x y)))
-                         (when on-event
-                           (on-event window event))
-                         (when-some [app @*app-node]
-                           (when-let [result (protocols/-event app (ctx-fn window) event)]
-                             (window/request-frame window)
-                             result))))
+                         (let [scale (window/scale window)]
+                           (when (not= @*scale scale)
+                             (vreset! *scale scale)
+                             (event-fn window {:event :window-scale-change, :scale scale}))
+                           (util/when-some+ [{:keys [x y]} event]
+                             (vreset! *mouse-pos (util/ipoint x y)))
+                           (when on-event
+                             (on-event window event))
+                           (when-some [app @*app-node]
+                             (when-let [result (protocols/-event app (ctx-fn window) event)]
+                               (window/request-frame window)
+                               result)))))
           window     (window/make
                        {:on-close (when (or ref? exit-on-close?)
                                     #(do
@@ -81,8 +86,8 @@
                        (= :center y) (-> (:height work-area) (- (* height scale)) (quot 2))
                        (= :bottom y) (-> (:height work-area) (- (* height scale)))
                        :else         (* scale y))]
-      (window/set-window-size window (* scale width) (* scale height))
       (window/set-window-position window (+ (:x work-area) x) (+ (:y work-area) y))
+      (window/set-window-size window (* scale width) (* scale height))
       (window/set-title window title)
       (when (and mac-icon (= :macos app/platform))
         (window/set-icon window mac-icon))
