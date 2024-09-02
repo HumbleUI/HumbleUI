@@ -1,6 +1,6 @@
 {:paths ["src" "resources"]
  :deps
- {org.clojure/clojure                  {:mvn/version "1.11.3"}
+ {org.clojure/clojure                  {:mvn/version "1.12.0-rc2"}
   io.github.humbleui/types$clojure     {:mvn/version "0.2.0"}
   io.github.humbleui/jwm               {:mvn/version "0.4.18"  :exclusions [io.github.humbleui/types]}
   io.github.humbleui/skija-windows-x64 {:mvn/version "0.116.2" :exclusions [io.github.humbleui/types]}
@@ -18,5 +18,12 @@
                  criterium/criterium         {:mvn/version "0.4.6"}
                  com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.2.2"}}
    :jvm-opts    ["-ea"
-                 "-Duser.language=en" "-Duser.country=US" "-Dfile.encoding=UTF-8"
-                 "-Djdk.attach.allowAttachSelf" #_"-XX:+UnlockDiagnosticVMOptions" #_"-XX:+DebugNonSafepoints"]}}}
+                 "-Dclojure.main.report=stderr"
+                 "-Duser.language=en"
+                 "-Duser.country=US"
+                 "-Dfile.encoding=UTF-8"
+                 "-Djdk.attach.allowAttachSelf"
+                 "-XX:+UnlockDiagnosticVMOptions"
+                 "-XX:+DebugNonSafepoints"
+                 "-XX:+EnableDynamicAgentLoading"
+                 "-Dclj-async-profiler.output-dir=."]}}}

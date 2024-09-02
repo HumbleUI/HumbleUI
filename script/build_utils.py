@@ -18,7 +18,7 @@ mvn = "mvn.cmd" if platform.system() == "Windows" else "mvn"
 def deps_version(name):
   with open("deps.edn") as f:
     for line in f.readlines():
-      if m := re.search(re.escape(name) + '\\s*{\\s*:mvn/version\\s*"([0-9.]+)"', line):
+      if m := re.search(re.escape(name) + '\\s*{\\s*:mvn/version\\s*"([0-9A-Za-z\\.\\-]+)"', line):
         return m.group(1)
       if m := re.search(re.escape(name) + '\\s*{\\s*:git/sha\\s*"([0-9a-f]+)"', line):
         return m.group(1)

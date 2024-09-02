@@ -8,6 +8,7 @@ def main():
   return subprocess.run(["java",
     "--class-path", build_utils.classpath_join(classpath),
     "-ea",
+    "-Dclojure.main.report=stderr",
     "-Duser.language=en",
     "-Duser.country=US",
     "-Dfile.encoding=UTF-8",
@@ -17,11 +18,11 @@ def main():
     "-XX:+UnlockDiagnosticVMOptions",
     "-XX:+DebugNonSafepoints",
     "-XX:+EnableDynamicAgentLoading",
-    "-Dclj-async-profiler.output-dir=/ws/humbleui",
+    "-Dclj-async-profiler.output-dir=.",
 
     # env = {"MTL_HUD_ENABLED": "1"},
 
-    "clojure.main", "--report", "stderr", "-m", "user"],
+    "clojure.main", "-m", "user"],
     ).returncode
 
 if __name__ == '__main__':
