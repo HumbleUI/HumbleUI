@@ -7,7 +7,7 @@
   (-measure-impl [_ ctx cs]
     (util/ipoint 0 0))
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (when on-paint
       (canvas/with-canvas canvas
         (.clipRect canvas (util/rect bounds))

@@ -145,6 +145,7 @@
                        (mapcat second)
                        (into {}))]
     (fn []
+      #_[(examples-map @*example)]
       [ui/row
        [ui/vscroll
         [ui/column

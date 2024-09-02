@@ -5,7 +5,7 @@
 (util/deftype+ Profile [^:mut value]
   :extends AWrapperNode  
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (when @value
       (println "Profiling...")
       (let [t0       (System/nanoTime)
@@ -14,13 +14,13 @@
             ops      (loop [ops 0]
                        (if (< (- (System/nanoTime) t0) (* duration 1000000))
                          (do
-                           (draw child ctx bounds viewport canvas)
+                           (draw child ctx bounds container-size viewport canvas)
                            (recur (inc ops)))
                          ops))
             file     (profiler/stop)]
         (println "Finished profiling, " (-> (System/nanoTime) (- t0) (/ 1000000.0) (/ ops) (->> (format "%.2f"))) " ms/op, " (.getPath ^File file))
         (reset! value false)))
-    (draw child ctx bounds viewport canvas))
+    (draw child ctx bounds container-size viewport canvas))
   
   (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)]

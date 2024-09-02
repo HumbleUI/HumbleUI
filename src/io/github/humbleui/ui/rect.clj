@@ -4,11 +4,11 @@
                          ^:mut radii]
   :extends AWrapperNode
 
-  (-draw-impl [_ ctx bounds viewport canvas]
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
     (if radii
       (canvas/draw-rect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (map #(scaled % ctx) radii)) paint)
       (canvas/draw-rect canvas bounds paint))
-    (draw child ctx bounds viewport canvas))
+    (draw child ctx bounds container-size viewport canvas))
   
   (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)

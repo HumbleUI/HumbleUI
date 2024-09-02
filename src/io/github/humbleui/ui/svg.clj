@@ -37,7 +37,7 @@
   (-measure-impl [_ _ctx cs]
     cs)
   
-  (-draw-impl [_ _ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ _ctx bounds container-size viewport ^Canvas canvas]
     (let [root (.getRoot dom)
           {:keys [x y width height]} bounds]
       (.setWidth root (SVGLength. width))

@@ -7,7 +7,7 @@
                               ^:mut ^Image image]
   :extends AWrapperNode
   
-  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (let [[sx sy] (if (some? scale)
                     ((juxt :x :y) scale)
                     (let [m44 (.getMat (.getLocalToDevice canvas))]
@@ -23,7 +23,7 @@
       (when (and (pos? w) (pos? h))
         (when (nil? image)
           (with-open [surface (Surface/makeRaster (ImageInfo/makeS32 w h ColorAlphaType/PREMUL))]
-            (draw child ctx (util/irect-xywh 0 0 w h) viewport (.getCanvas surface))
+            (draw child ctx (util/irect-xywh 0 0 w h) container-size viewport (.getCanvas surface))
             (protocols/-set! this :image (.makeImageSnapshot surface))))
         (.drawImageRect canvas image (util/rect bounds)))))
   

@@ -1,61 +1,61 @@
 (in-ns 'io.github.humbleui.ui)
 
 (defn- column-children-sizes [this ctx cs]
-  (let [{:keys [children]} this
-        children-sizes'    (mapv
-                             (fn [child]
-                               [child (-> child :element meta :stretch (or :hug)) (measure child ctx cs)])
-                             children)
-        width'             (transduce (map #(-> % (nth 2) :width))  max 0 children-sizes')
-        height'            (transduce (map #(-> % (nth 2) :height)) +   0 children-sizes')
-        hug-height'        (transduce
-                             (comp
-                               (filter #(-> % (nth 1) (= :hug)))
-                               (map #(-> % (nth 2) :height)))
-                             + 0 children-sizes')
-        total-stretch'     (transduce
-                             (comp
-                               (filter #(-> % (nth 1) number?))
-                               (map #(-> % (nth 1))))
-                             + 0 children-sizes')]
+  (let [{:keys [gap children]} this
+        gap-px        (scaled gap ctx)
+        gaps          (-> children count dec (max 0))
+        hug-sizes     (mapv
+                        (fn [child]
+                          (let [stretch (-> child :element meta :stretch)
+                                size    (when (nil? stretch)
+                                          (measure child ctx cs))]
+                            {:child   child
+                             :stretch stretch
+                             :size    size}))
+                        children)
+        hug-height     (transduce (keep #(-> % :size :height)) + 0 hug-sizes)
+        total-stretch (transduce (keep :stretch) + 0 hug-sizes)
+        space         (-> (:height cs)
+                        (- hug-height)
+                        (- (* gap-px gaps))
+                        (max 0))
+        sizes         (mapv
+                        (fn [{:keys [child stretch size] :as m}]
+                          (if stretch
+                            (let [height (-> space (/ total-stretch) (* stretch) math/round)
+                                  size  (-> (measure child ctx (assoc cs :height height))
+                                          (assoc :height height))]
+                              (assoc m :size size))
+                            m))
+                        hug-sizes)
+        height        (+
+                        (transduce (map #(-> % :size :height))  +   0 sizes)
+                        (* gap-px gaps))
+        width         (transduce (map #(-> % :size :width)) max 0 sizes)]
     (util/set!! this
-      :children-sizes children-sizes'
-      :width          width'
-      :height         height'
-      :hug-height     hug-height'
-      :total-stretch  total-stretch')))
+      :children-sizes sizes
+      :this-size      (util/ipoint width height))))
 
 (util/deftype+ Column [^:mut gap
-                       ^:mut children-sizes
-                       ^:mut width
-                       ^:mut height
-                       ^:mut hug-height
-                       ^:mut total-stretch]
+                       ^:mut children-sizes]
   :extends AContainerNode
   
   (-measure-impl [this ctx cs]
     (column-children-sizes this ctx cs)
-    (let [gap-px (scaled gap)
-          gaps   (-> children count dec (max 0))]
-      (util/ipoint width (+ height (* gap-px gaps)))))
+    this-size)
   
-  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
-    (column-children-sizes this ctx (util/irect-size bounds))
-    (let [gap-px (scaled gap)
-          gaps   (-> children count dec (max 0))
-          space  (-> (:height bounds)
-                   (- hug-height)
-                   (- (* gap-px gaps))
-                   (max 0))]
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
+    (when-not this-size
+      (column-children-sizes this ctx container-size))
+    (let [gap-px (scaled gap ctx)]
       (util/loopr [y (:y bounds)]
-        [[child stretch child-size] children-sizes]
-        (let [child-height (if (= :hug stretch)
-                             (:height child-size)
-                             (-> space (/ total-stretch) (* stretch) math/round))
-              child-bounds (util/irect-xywh (:x bounds) y (max 0 (:width bounds)) (max 0 child-height))]
-          (draw child ctx child-bounds viewport canvas)
+        [{:keys [child stretch size]} children-sizes]
+        (let [child-bounds (util/irect-xywh (:x bounds) y (:width bounds) (:height size))
+              child-cs     (cond-> container-size
+                             stretch (assoc :height (:height size)))]
+          (draw child ctx child-bounds child-cs viewport canvas)
           (when (< y (:bottom viewport))
-            (recur (long (+ y gap-px child-height))))))))
+            (recur (long (+ y gap-px (:height size)))))))))
       
   (-reconcile-opts [this ctx new-element]
     (let [opts (parse-opts new-element)

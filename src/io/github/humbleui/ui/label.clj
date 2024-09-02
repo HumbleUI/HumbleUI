@@ -11,7 +11,7 @@
   (-measure-impl [this ctx cs]
     size)
   
-  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) (or paint (:fill-text ctx))))
 
   (-reconcile-opts [this ctx new-element]

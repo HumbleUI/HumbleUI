@@ -21,7 +21,7 @@
   :extends ui/AWrapperNode
   
   protocols/IComponent  
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (let [{:keys [scale window]} ctx
           [_ opts _] (ui/parse-element element)
           {:keys [duration radius state]
@@ -42,7 +42,7 @@
         (when (> progress 0)
           (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) (if pressed? ui/button-bg-pressed ui/button-bg-hovered)))
         
-        (ui/draw child ctx bounds viewport canvas)
+        (ui/draw child ctx bounds container-size viewport canvas)
         
         (when (< 0 progress 1)
           (window/request-frame window)))))
@@ -93,7 +93,7 @@
                      ^:mut hovered?]
   :extends ui/AWrapperNode
   protocols/IComponent  
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (let [{:keys [mouse-pos scale]} ctx
           [_ opts _] (ui/parse-element element)
           {:keys [bg gradient]
@@ -118,7 +118,7 @@
                         paint  (Paint.)]
               (.setShader paint shader)
               (canvas/draw-rect canvas (util/rect-xywh 0 0 w h) paint)))))
-      (ui/draw child ctx bounds viewport canvas)))
+      (ui/draw child ctx bounds container-size viewport canvas)))
   
   (-event-impl [this ctx event]
     (util/eager-or

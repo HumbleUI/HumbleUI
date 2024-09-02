@@ -3,11 +3,6 @@
 (util/deftype+ Size [^:mut width
                      ^:mut height]
   :extends AWrapperNode
-
-  (-should-measure? [_ ctx cs]
-    (or
-      (fn? width)
-      (fn? height)))
   
   (-measure-impl [_ ctx cs]
     (let [width-px  (some-> width (dimension cs ctx))
@@ -30,6 +25,14 @@
         
         :else
         (util/ipoint 0 0))))
+  
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
+    (let [width-px  (some-> width (dimension container-size ctx))
+          height-px (some-> height (dimension container-size ctx))
+          child-cs  (cond-> container-size
+                      width-px  (assoc :width width-px)
+                      height-px (assoc :height height-px))]
+      (draw child ctx bounds child-cs viewport canvas)))
   
   (-reconcile-opts [this _ctx new-element]
     (let [opts    (parse-opts new-element)

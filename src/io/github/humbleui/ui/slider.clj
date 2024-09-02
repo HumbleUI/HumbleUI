@@ -28,7 +28,7 @@
     (let [{:hui.slider/keys [thumb-size]} ctx]
       (util/isize thumb-size thumb-size)))
 
-  (-draw-impl [_ ctx bounds viewport canvas]
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
     (let [{:hui.slider/keys [fill-thumb
                              stroke-thumb
                              fill-thumb-active
@@ -46,7 +46,7 @@
   (-measure-impl [_ _ctx cs]
     cs)
 
-  (-draw-impl [_ ctx bounds viewport canvas]
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
     (let [{:hui.slider/keys [track-height]} ctx
           half-track-height (/ track-height 2)
           x      (- (:x bounds) half-track-height)
@@ -71,8 +71,8 @@
   (-measure-impl [_ ctx cs]
     (measure thumb ctx cs))
   
-  (-draw-impl [_ ctx bounds viewport canvas]
-    (set! thumb-size (measure thumb ctx (util/isize (:width bounds) (:height bounds))))
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
+    (set! thumb-size (measure thumb ctx container-size))
     (let [value             @*value
           {left :x
            top  :y
@@ -85,9 +85,9 @@
           thumb-x           (+ left half-thumb-w (* ratio (- w thumb-w)))
           ctx'              (cond-> ctx
                               dragging? (assoc :hui/active? true))]
-      (draw track-active   ctx' (util/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) viewport canvas)
-      (draw track-inactive ctx' (util/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) viewport canvas)
-      (draw thumb          ctx' (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)      viewport canvas)))
+      (draw track-active   ctx' (util/irect-ltrb (+ left half-thumb-w)    top thumb-x                     (+ top thumb-h)) container-size viewport canvas)
+      (draw track-inactive ctx' (util/irect-ltrb thumb-x                  top (+ left w (- half-thumb-w)) (+ top thumb-h)) container-size viewport canvas)
+      (draw thumb          ctx' (util/irect-xywh (- thumb-x half-thumb-w) top thumb-w                     thumb-h)         container-size viewport canvas)))
   
   (-event-impl [this _ctx event]
     (util/eager-or

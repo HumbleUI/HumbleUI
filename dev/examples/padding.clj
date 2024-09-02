@@ -37,7 +37,6 @@
         "Function accepts container’s size"
         [ui/rect {:paint fill}
          [ui/padding
-          {:padding (fn [cs]
-                      (* 0.2 (:width cs)))}
-          [ui/rect {:paint fill}
-           [ui/label "P"]]]]))))
+          {:horizontal (fn [cs]
+                         (* 0.2 (:width cs)))}
+          [ui/label "P"]]]))))

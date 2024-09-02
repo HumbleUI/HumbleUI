@@ -67,7 +67,7 @@
   (-measure-impl [_ ctx cs]
     (img-measure scale width height ctx cs))
   
-  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (when-some [[src-rect dst-rect] (img-rects scale xpos ypos width height ctx bounds)]
       (.drawImageRect canvas image src-rect dst-rect sampling #_:paint nil #_:strict false)))
   
@@ -110,7 +110,7 @@
   (-measure-impl [_ ctx cs]
     (img-measure scale width height ctx cs))
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (let [total-duration (reduce + 0 durations)
           offset         (mod (- (util/now) start) total-duration)
           frame          (loop [durations durations

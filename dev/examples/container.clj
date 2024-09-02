@@ -40,4 +40,45 @@
       [ui/row {:gap 10}
        [ui/size {:width #(* 0.2 (:width %))} [label "Ok"]]
        [ui/size {:width #(* 0.3 (:width %))} [label "Cancel"]]
-       [ui/size {:width #(* 0.4 (:width %))} [label "Abort request"]]]]]]])
+       [ui/size {:width #(* 0.4 (:width %))} [label "Abort request"]]]
+      
+      
+      [ui/padding {:top 10}
+       [ui/label "Container size"]]
+      [ui/row
+       ^{:stretch 1}
+       [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+        [ui/padding {:vertical 10}
+         [ui/align {:x :center}
+          [ui/label "{:stretch 1}"]]]]
+    
+       ^{:stretch 2}
+       [ui/stack
+        [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+         [ui/padding {:vertical 10}
+          [ui/align {:x :center}
+           [ui/label "{:stretch 2}"]]]]
+        [ui/align {:x :left}
+         [ui/size {:width  #(* 0.5 (:width %))
+                   :height 30}
+          [ui/rect {:paint (paint/fill 0x20000000)}
+           [ui/gap]]]]]
+    
+       [ui/size {:width 100}
+        [ui/rect {:paint (paint/fill 0xFFDDFFDD)}
+         [ui/padding {:vertical 10}
+          [ui/align {:x :center}
+           [ui/label "{:width 100}"]]]]]
+    
+       [ui/size {:width #(* 0.5 (:width %))}
+        [ui/stack
+         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+          [ui/padding {:vertical 10}
+           [ui/align {:x :center}
+            [ui/label "{:width 50%}"]]]]
+         [ui/align {:x :left}
+          [ui/size {:width  #(* 0.5 (:width %))
+                    :height 30}
+           [ui/rect {:paint (paint/fill 0x20000000)}
+            [ui/gap]]]]]]]
+      ]]]])

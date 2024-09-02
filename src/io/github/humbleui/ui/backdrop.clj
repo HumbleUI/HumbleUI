@@ -5,13 +5,13 @@
 (util/deftype+ Backdrop []
   :extends AWrapperNode
 
-  (-draw-impl [_ ctx ^IRect bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx ^IRect bounds container-size viewport ^Canvas canvas]
     (let [opts (parse-opts element)
           filter ^ImageFilter (:filter opts)]
       (canvas/with-canvas canvas
         (canvas/clip-rect canvas bounds)
         (.saveLayer canvas (SaveLayerRec. (.toRect bounds) nil filter)))
-      (draw child ctx bounds viewport canvas))))
+      (draw child ctx bounds container-size viewport canvas))))
 
 (defn- backdrop-ctor [opts child]
   (map->Backdrop {}))

@@ -14,6 +14,7 @@
   [^:mut element
    ^:mut parent
    ^:mut bounds
+   ^:mut container-size
    ^:mut this-size
    ^:mut key
    ^:mut mounted?
@@ -23,26 +24,29 @@
   (-context [_ ctx]
     ctx)
   
-  (-should-measure? [this ctx cs]
-    false)
+  (-set-container-size [this container-size]
+    (when-not (= container-size (:container-size this))
+      (util/set!! this
+        :container-size container-size
+        :this-size nil)))
 
   (-measure [this ctx cs]
     (let [ctx (protocols/-context this ctx)]
+      (protocols/-set-container-size this cs)
       (ui/maybe-render this ctx)
-      (if (and
-            (:this-size this)
-            (not (protocols/-should-measure? this ctx cs)))
+      (or
         (:this-size this)
         (let [size' (protocols/-measure-impl this ctx cs)]
           (util/set!! this :this-size size')
           size'))))
     
-  (-draw [this ctx bounds' viewport canvas]
+  (-draw [this ctx bounds' container-size viewport canvas]
     (protocols/-set! this :bounds bounds')
+    (protocols/-set-container-size this container-size)
     (when (util/irect-intersect bounds' viewport)
       (let [ctx (protocols/-context this ctx)]
         (ui/maybe-render this ctx)
-        (protocols/-draw-impl this ctx bounds' viewport canvas)
+        (protocols/-draw-impl this ctx bounds' container-size viewport canvas)
         (when (and @debug/*outlines? (not (:mounted? this)))
           (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
           (protocols/-set! this :mounted? true)))))
@@ -102,8 +106,8 @@
   (-measure-impl [this ctx cs]
     (measure (:child this) ctx cs))
 
-  (-draw-impl [this ctx bounds viewport canvas]
-    (draw (:child this) ctx bounds viewport canvas))
+  (-draw-impl [this ctx bounds container-size viewport canvas]
+    (draw (:child this) ctx bounds container-size viewport canvas))
   
   (-event-impl [this ctx event]
     (ui/event (:child this) ctx event))
@@ -183,8 +187,9 @@
         (user-measure child cs)
         (measure child ctx cs))))
   
-  (-draw [this ctx bounds' viewport canvas]
+  (-draw [this ctx bounds' container-size viewport canvas]
     (set! bounds bounds')
+    (protocols/-set-container-size this container-size)
     (when (util/irect-intersect bounds' viewport)
       (binding [*node* this
                 *ctx*  ctx]
@@ -192,8 +197,8 @@
           (maybe-render this ctx))
         (util/invoke before-draw)
         (if user-draw
-          (user-draw child bounds viewport canvas)
-          (protocols/-draw child ctx bounds viewport canvas))
+          (user-draw child bounds container-size viewport canvas)
+          (protocols/-draw child ctx bounds container-size viewport canvas))
         (util/invoke after-draw)
         (when-not mounted?
           (util/invoke after-mount))

@@ -45,7 +45,7 @@
           width  (math/round (* height 1.61803))]
       (util/ipoint width height)))
   
-  (-draw-impl [this ctx bounds viewport canvas]
+  (-draw-impl [this ctx bounds container-size viewport canvas]
     (let [{x :x, y :y, w :width, h :height} bounds
           now              (util/now)
           ratio            (min 1 (/ (- now animation-start) animation-length))

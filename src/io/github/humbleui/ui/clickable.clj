@@ -25,8 +25,8 @@
                           ^:mut clicks
                           ^:mut last-click]
   :extends AWrapperNode
-  (-draw-impl [this ctx bounds viewport canvas]
-    (draw (:child this) ctx bounds viewport canvas)
+  (-draw-impl [this ctx bounds container-size viewport canvas]
+    (draw (:child this) ctx bounds container-size viewport canvas)
     (when (#{:unpressed :hovered-unpressed} phase)
       (set! phase (case phase
                     :unpressed         :default

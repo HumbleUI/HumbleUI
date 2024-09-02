@@ -71,7 +71,7 @@
     (paragraph-maybe-relayout this (:width cs))
     (util/ipoint (math/ceil (:width layout)) (:height layout)))
   
-  (-draw-impl [this ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (paragraph-maybe-relayout this (:width bounds))
     (let [paint' (or paint (:fill-text ctx))]
       (doseq [[pos token] (util/zip (:positions layout) tokens)

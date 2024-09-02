@@ -3,12 +3,12 @@
 (util/deftype+ WithBounds [^:mut cs]
   :extends AWrapperNode
 
-  (-draw-impl [this ctx bounds viewport canvas]
+  (-draw-impl [this ctx bounds container-size viewport canvas]
     (let [cs' (util/irect-size bounds)]
       (when (not= cs cs')
         (set! cs cs')
         (force-render this (:window ctx))) ;; TODO better way?
-      (draw child ctx bounds viewport canvas)))
+      (draw child ctx bounds container-size viewport canvas)))
   
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)

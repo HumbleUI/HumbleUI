@@ -4,8 +4,8 @@
                         ^:mut fill-thumb]
   :extends AWrapperNode
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (draw child ctx bounds viewport canvas)
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
+    (draw child ctx bounds container-size viewport canvas)
     (when (> (:height (:child-size child)) (:height bounds))
       (let [{:keys [scale]} ctx
             fill-track      (or fill-track (:hui.scroll/fill-track ctx))

@@ -6,9 +6,6 @@
                         ^:mut bottom]
   :extends AWrapperNode  
 
-  (-should-measure? [_ ctx cs]
-    (some fn? [left top right bottom]))
-
   (-measure-impl [_ ctx cs]
     (let [left-px    (dimension left cs ctx)
           top-px     (dimension top cs ctx)
@@ -22,19 +19,22 @@
         (-> (:width child-size) (+ left-px) (+ right-px))
         (-> (:height child-size) (+ top-px) (+ bottom-px)))))
   
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [left-px      (dimension left bounds ctx)
-          top-px       (dimension top bounds ctx)
-          right-px     (dimension right bounds ctx)
-          bottom-px    (dimension bottom bounds ctx)
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
+    (let [left-px      (dimension left container-size ctx)
+          top-px       (dimension top container-size ctx)
+          right-px     (dimension right container-size ctx)
+          bottom-px    (dimension bottom container-size ctx)
           width        (-> (:width bounds) (- left-px) (- right-px) (max 0))
           height       (-> (:height bounds) (- top-px) (- bottom-px) (max 0))
           child-bounds (util/irect-xywh
                          (+ (:x bounds) left-px)
                          (+ (:y bounds) top-px)
                          width
-                         height)]
-      (draw child ctx child-bounds viewport canvas)))
+                         height)
+          child-cs     (util/ipoint
+                         (-> (:width container-size) (- left-px) (- right-px) (max 0))
+                         (-> (:height container-size) (- left-px) (- right-px) (max 0)))]
+      (draw child ctx child-bounds child-cs viewport canvas)))
   
   (-reconcile-opts [this ctx new-element]
     (let [opts    (parse-opts new-element)

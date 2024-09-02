@@ -48,7 +48,7 @@
                            (when on-paint
                              (on-paint window canvas))
                            (when-some [app @*app-node]
-                             (protocols/-draw app (ctx-fn window) bounds bounds canvas)))))
+                             (protocols/-draw app (ctx-fn window) bounds (util/ipoint (:width content-rect) (:height content-rect)) bounds canvas)))))
           event-fn   (fn event-fn [window event]
                        (locking window
                          (let [scale (window/scale window)]

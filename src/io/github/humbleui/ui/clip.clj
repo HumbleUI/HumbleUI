@@ -3,12 +3,12 @@
 (util/deftype+ Clip [^:mut radii]
   :extends AWrapperNode
 
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (canvas/with-canvas canvas
       (if radii
         (.clipRRect canvas (util/rrect-complex-xywh (:x bounds) (:y bounds) (:width bounds) (:height bounds) (map #(scaled % ctx) radii)) true)
         (canvas/clip-rect canvas bounds))
-      (draw child ctx bounds (util/irect-intersect viewport bounds) canvas)))
+      (draw child ctx bounds container-size (util/irect-intersect viewport bounds) canvas)))
   
   (-reconcile-opts [_this ctx new-element]
     (let [opts (parse-opts new-element)

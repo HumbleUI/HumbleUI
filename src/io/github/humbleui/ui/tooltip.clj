@@ -8,10 +8,10 @@
   :extends AWrapperNode
   
   protocols/IComponent
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
-    (let [child-size    (measure child ctx (util/ipoint (:width bounds) (:height bounds)))
-          child-bounds    (util/irect-xywh (:x bounds) (:y bounds) (:width child-size) (:height child-size))
-          rel-cs        (measure relative ctx (util/ipoint 0 0))
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
+    (let [child-size    (measure child ctx container-size)
+          child-bounds  (util/irect-xywh (:x bounds) (:y bounds) (:width child-size) (:height child-size))
+          rel-cs        (measure relative ctx container-size)
           rel-cs-width  (:width rel-cs)
           rel-cs-height (:height rel-cs)
           rel-bounds      (condp = [anchor shackle]
@@ -31,8 +31,8 @@
                             [:top-right :bottom-left]     (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) up)) rel-cs-width rel-cs-height)
                             [:bottom-left :bottom-left]   (util/irect-xywh (- (:x child-bounds) left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height)
                             [:bottom-right :bottom-left]  (util/irect-xywh (- (:x child-bounds) rel-cs-width left) (+ (:y child-bounds) (- (:height child-bounds) rel-cs-height up)) rel-cs-width rel-cs-height))]
-      (draw child ctx child-bounds viewport canvas)
-      (draw relative ctx rel-bounds viewport canvas))) ;; TODO draw in tooltip overlay
+      (draw child ctx child-bounds container-size viewport canvas)
+      (draw relative ctx rel-bounds container-size viewport canvas))) ;; TODO draw in tooltip overlay
   
   (-reconcile-children [this ctx el']
     (let [[_ opts [child-el]] (parse-element el')

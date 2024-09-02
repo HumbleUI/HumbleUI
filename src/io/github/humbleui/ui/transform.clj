@@ -4,7 +4,7 @@
                           ^:mut dy]
   :extends AWrapperNode 
 
-  (-draw-impl [_ ctx bounds viewport ^Canvas canvas]
+  (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
     (let [dx-px        (dimension dx bounds ctx)
           dy-px        (dimension dy bounds ctx)
           child-bounds (util/irect-xywh
@@ -12,7 +12,7 @@
                          (+ (:y bounds) dy-px)
                          (:width bounds)
                          (:height bounds))]
-      (draw child ctx child-bounds viewport canvas)))
+      (draw child ctx child-bounds container-size viewport canvas)))
   
   (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts new-element)]

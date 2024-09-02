@@ -66,9 +66,9 @@
                               ^:mut over?]
   :extends AWrapperNode
 
-  (-draw-impl [_ ctx bounds viewport canvas]
+  (-draw-impl [_ ctx bounds container-size viewport canvas]
     (set! over? (util/rect-contains? bounds (:mouse-pos ctx)))
-    (draw child ctx bounds viewport canvas))
+    (draw child ctx bounds container-size viewport canvas))
   
   (-event-impl [_ ctx event]
     (util/when-some+ [{:keys [x y]} event]
