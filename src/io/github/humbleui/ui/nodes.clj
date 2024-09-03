@@ -24,15 +24,18 @@
   (-context [_ ctx]
     ctx)
   
-  (-set-container-size [this container-size]
+  (-set-container-size [this ctx container-size]
     (when-not (= container-size (:container-size this))
+      (protocols/-set-container-size-impl this ctx container-size)
       (util/set!! this
         :container-size container-size
         :this-size nil)))
+  
+  (-set-container-size-impl [this ctx container-size])
 
   (-measure [this ctx cs]
     (let [ctx (protocols/-context this ctx)]
-      (protocols/-set-container-size this cs)
+      (protocols/-set-container-size this ctx cs)
       (ui/maybe-render this ctx)
       (or
         (:this-size this)
@@ -42,7 +45,7 @@
     
   (-draw [this ctx bounds' container-size viewport canvas]
     (protocols/-set! this :bounds bounds')
-    (protocols/-set-container-size this container-size)
+    (protocols/-set-container-size this ctx container-size)
     (when (util/irect-intersect bounds' viewport)
       (let [ctx (protocols/-context this ctx)]
         (ui/maybe-render this ctx)
@@ -189,7 +192,7 @@
   
   (-draw [this ctx bounds' container-size viewport canvas]
     (set! bounds bounds')
-    (protocols/-set-container-size this container-size)
+    (protocols/-set-container-size this ctx container-size)
     (when (util/irect-intersect bounds' viewport)
       (binding [*node* this
                 *ctx*  ctx]

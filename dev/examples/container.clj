@@ -81,4 +81,38 @@
                     :height 30}
            [ui/rect {:paint (paint/fill 0x20000000)}
             [ui/gap]]]]]]]
+      
+      [ui/padding {:top 10}
+       [ui/label "Dynamic Stretch"]]
+      [ui/align {:x :left}
+       [ui/column
+        [ui/row
+         [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label ":hug"]]]]
+         ^{:stretch 1}
+         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label "{:stretch 1}"]]]]
+         [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label ":hug"]]]]]
+        [ui/row
+         [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label ":hug long"]]]]
+         ^{:stretch 1}
+         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label "{:stretch 1}"]]]]
+         [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+          [ui/padding {:padding 10}
+           [ui/align {:x :center}
+            [ui/label ":hug long"]]]]]]]
+      
       ]]]])
