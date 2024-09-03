@@ -147,18 +147,19 @@
     (fn []
       #_[(examples-map @*example)]
       [ui/row
-       [ui/vscroll
-        [ui/column
-         (for [[section examples] examples]
-           (list
-             [ui/gap {:height 10}]
-             [example-header section]
-             (for [[name _] (sort-by first examples)]
-               [example-label name])))
-         [ui/gap {:height 10}]
-         [ui/padding {:horizontal 20}
-          [ui/button {:on-click (fn [_] (reset! *profiling? true))} "Profile"]]
-         [ui/gap {:height 10}]]]
+       [ui/align {:y :top}
+        [ui/vscroll
+         [ui/column
+          (for [[section examples] examples]
+            (list
+              [ui/gap {:height 10}]
+              [example-header section]
+              (for [[name _] (sort-by first examples)]
+                [example-label name])))
+          [ui/gap {:height 10}]
+          [ui/padding {:horizontal 20}
+           [ui/button {:on-click (fn [_] (reset! *profiling? true))} "Profile"]]
+          [ui/gap {:height 10}]]]]
     
        [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
         [ui/gap {:width 1}]]
