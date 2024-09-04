@@ -1,13 +1,12 @@
 (ns examples.tooltip
   (:require
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui]))
+        [io.github.humbleui.ui :as ui]))
 
 (defn tooltip [opts child]
   [ui/tooltip
    (update opts :tip
      (fn [text]
-       [ui/rect {:paint (paint/fill 0xFFE9E9E9)}
+       [ui/rect {:paint {:fill 0xFFE9E9E9}}
         [ui/padding {:padding 10}
          [ui/label text]]]))
    child])

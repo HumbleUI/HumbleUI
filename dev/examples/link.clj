@@ -2,8 +2,7 @@
   (:require
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []

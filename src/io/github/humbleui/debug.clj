@@ -3,11 +3,11 @@
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
+        [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal])
   (:import
-    [io.github.humbleui.jwm Window]))
+    [io.github.humbleui.jwm Window]
+    [io.github.humbleui.skija Paint]))
 
 (defonce *paint?
   (signal/signal false))
@@ -79,8 +79,8 @@
         (- (:width rect) (* scale 3 10))
         (- (:height rect) (* scale (+ height 10))))
       (canvas/scale canvas scale)
-      (with-open [bg   (paint/fill 0x4033CC33)
-                  fg   (paint/fill 0xFF33CC33)
+      (with-open [bg   (doto (Paint.) (.setColor (unchecked-int 0x4033CC33)))
+                  fg   (doto (Paint.) (.setColor (unchecked-int 0xFF33CC33)))
                   font (font/make-with-size nil 11)]
         (let [ms->y #(- height (-> % (* height) (/ max-time-ms)))
               last  (frame-get frame-lengths (dec width))]
@@ -102,7 +102,7 @@
           (when @*pacing?
             (let [fps   (loop [i (dec width)]
                           (if (<= i 1)
-                            0
+                            0.0
                             (let [dt (- (frame-get frame-starts i) (frame-get frame-starts (dec i)))]
                               (if (> dt 50)
                                 (recur (dec i))

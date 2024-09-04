@@ -2,8 +2,7 @@
   (:require
     [clojure.string :as str]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui]))
+        [io.github.humbleui.ui :as ui]))
 
 (def text
   "An interface is humane if it is responsive to human needs and considerate of human frailties. If you want to create a humane interface, you must have an understanding of the relevant information on how both humans and machines operate. In addition, you must cultivate in yourself a sensitivity to the difficulties that people experience. That is not necessarily a simple undertaking. We become accustomed to the ways that products work to the extent that we come to accept their methods as a given, even when their interfaces are unnecessarily complex, confusing, wasteful, and provocative of human error.
@@ -26,7 +25,7 @@ It does not take much technical knowledge to see, for example, that higher-bandw
   ([opts text]
    (let [opts' (merge {:features ["cv01" "cv02" "cv09" "cv10" "ss03" "ss04"]} opts)]
      [ui/align {:x :left}
-      [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
+      [ui/rect {:paint {:fill 0xFFEEEEEE}}
        [ui/paragraph opts' text]]])))
 
 (ui/defcomp ui []
@@ -36,9 +35,9 @@ It does not take much technical knowledge to see, for example, that higher-bandw
      [ui/padding {:padding 20}
       [ui/shadow {:dy 2 :blur 4 :color 0x33000000}
        [ui/shadow {:dy 5 :blur 20 :color 0x20000000}
-        [ui/rect {:paint (paint/fill 0xFFFFFFFF)}
+        [ui/rect {:paint {:fill 0xFFFFFFFF}}
          [ui/padding {:vertical 40 :horizontal 60}
-          [ui/rect {:paint (paint/stroke 0xFFEEEEEE 2)}
+          [ui/rect {:paint {:stroke 0xFFEEEEEE, :width 2}}
            [ui/column
             [paragraph
              {:font-cap-height 20

@@ -4,8 +4,7 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [java.nio ByteBuffer ByteOrder]
@@ -57,7 +56,7 @@
         dx    (max 1 (/ width steps))
         dy    (max 1 (/ height steps))
         l     @*l]
-    (with-open [fill (paint/fill 0xFFFFFFFF)]
+    (with-open [fill (ui/paint {:fill 0xFFFFFFFF} ctx)]
       (doseq [y (range 0.0 height dy)
               :let [c (-> y (/ height) (->> (- 1.0)) (* 0.35))]
               x (range 0.0 width dx)

@@ -3,8 +3,7 @@
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defn use-timer []
@@ -31,7 +30,7 @@
         "Plain string"
         
         "Custom paint"
-        [ui/label {:paint (paint/fill 0xFFCC3333)}
+        [ui/label {:paint {:fill 0xFFCC3333}}
          "Red"]
         
         "Custom font properties"

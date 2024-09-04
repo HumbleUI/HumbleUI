@@ -9,8 +9,7 @@
     [io.github.humbleui.util :as util]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]))

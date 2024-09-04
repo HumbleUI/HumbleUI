@@ -9,8 +9,7 @@
     [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
+        [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window])
@@ -27,6 +26,7 @@
 
 (load+ "/io/github/humbleui/ui/core")
 (load+ "/io/github/humbleui/ui/print")
+(load+ "/io/github/humbleui/ui/paint")
 (load+ "/io/github/humbleui/ui/reconcile")
 (load+ "/io/github/humbleui/ui/nodes")
 (load+ "/io/github/humbleui/ui/defcomp")
@@ -35,6 +35,7 @@
 (load+ "/io/github/humbleui/ui/with_resources")
 (load+ "/io/github/humbleui/ui/size")
 (load+ "/io/github/humbleui/ui/font")
+(load+ "/io/github/humbleui/ui/focusable")
 
 (def *loaded
   (atom #{}))
@@ -102,8 +103,6 @@
 (deflazy mouse-listener ([{:keys [on-move on-scroll on-button on-over on-out]} child]) "listeners")
 (deflazy text-listener  ([{:keys [on-input]} child]) "listeners")
 
-(deflazy focusable        ([{:keys [focused on-focus on-blur]} child]) "focusable")
-(deflazy focus-controller ([child]) "focusable")
 (deflazy with-cursor      ([{:keys [cursor]}]) "with_cursor")
 (deflazy text-input       ([] [{:keys [*value *state on-change]}]) "text_field")
 (deflazy text-field       ([] [{:keys [*value *state on-change focused on-focus on-blur keymap]}]) "text_field")

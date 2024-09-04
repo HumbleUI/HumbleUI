@@ -36,10 +36,14 @@ def deps():
     ]
 
   if args.skija_dir:
+    skija_dir = args.skija_dir if os.path.isabs(args.skija_dir) else build_utils.execdir + '/' + args.skija_dir
+    classifier = build_utils.system + '-' + build_utils.arch
+    
     deps += [
-      build_utils.execdir + '/' + args.skija_dir + '/platform/build',
-      build_utils.execdir + '/' + args.skija_dir + '/platform/target/classes',
-      build_utils.execdir + '/' + args.skija_dir + '/shared/target/classes',
+      skija_dir + f'/platform/target/{classifier}/native',
+      skija_dir + f'/platform/target/{classifier}/classes',
+      skija_dir + '/shared/target/classes-java9',
+      skija_dir + '/shared/target/classes',
     ]
   else:
     skija_native = f'skija-{build_utils.system}-{build_utils.arch}'

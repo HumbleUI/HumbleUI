@@ -36,8 +36,10 @@
             ; thumb-b         (-> (* track-h thumb-b-ratio) (util/clamp min-thumb-h track-h) (+ track-y))
             
             thumb           (util/rrect-xywh track-x (+ track-y thumb-y) thumb-w thumb-h (scaled 2))]
-        (canvas/draw-rect canvas track fill-track)
-        (canvas/draw-rect canvas thumb fill-thumb))))
+        (with-paint ctx [paint fill-track]
+          (canvas/draw-rect canvas track paint))
+        (with-paint ctx [paint fill-thumb]
+          (canvas/draw-rect canvas thumb paint)))))
   
   (-reconcile-opts [_this _ctx new-element]
     (let [opts (parse-opts new-element)]

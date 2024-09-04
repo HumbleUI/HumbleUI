@@ -6,7 +6,7 @@
 (alias 'ui 'io.github.humbleui.ui)
 
 (def ^:private ctor-border
-  (paint/stroke 0x80FF00FF 4))
+  {:stroke 0x80FF00FF, :width 2})
 
 (declare maybe-render)
 
@@ -51,7 +51,8 @@
         (ui/maybe-render this ctx)
         (protocols/-draw-impl this ctx bounds' container-size viewport canvas)
         (when (and @debug/*outlines? (not (:mounted? this)))
-          (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) ui/ctor-border)
+          (with-paint ctx [paint ctor-border]
+            (canvas/draw-rect canvas (-> ^io.github.humbleui.types.IRect bounds' .toRect (.inflate 4)) paint))
           (protocols/-set! this :mounted? true)))))
   
   (-event [this ctx event]
@@ -206,7 +207,8 @@
         (when-not mounted?
           (util/invoke after-mount))
         (when (and @debug/*outlines? (not mounted?))
-          (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) ctor-border)
+          (with-paint ctx [paint ctor-border]
+            (canvas/draw-rect canvas (-> ^IRect bounds .toRect (.inflate 4)) paint))
           (set! mounted? true)))))
 
   (-event-impl [this ctx event]

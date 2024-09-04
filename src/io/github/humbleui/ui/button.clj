@@ -1,13 +1,13 @@
 (in-ns 'io.github.humbleui.ui)
 
 (def button-bg-pressed
-  (paint/fill 0xFFA2C7EE))
+  {:fill 0xFFA2C7EE})
 
 (def button-bg-hovered
-  (paint/fill 0xFFCFE8FC))
+  {:fill 0xFFCFE8FC})
 
 (def button-bg
-  (paint/fill 0xFFB2D7FE))
+  {:fill 0xFFB2D7FE})
 
 (ui/defcomp button-look-ctor [state child]
   (let [cap-height (cap-height)]

@@ -3,8 +3,7 @@
     [clojure.math :as math]
     [io.github.humbleui.app :as app]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.util :as util])
   (:import
@@ -35,13 +34,13 @@
       (canvas/scale canvas zoom)
       (canvas/translate canvas (/ visible-width 2) (/ visible-height 2))
       (canvas/translate canvas (- (:x state)) (- (:y state)))
-      (with-open [dot-fill    (paint/fill 0x80808080)
-                  line-stroke (paint/stroke 0x80808080 1)
-                  center-fill (paint/fill 0x80FF0000)
-                  path-stroke (doto (paint/stroke 0xFFFF0080 5)
-                                (.setStrokeJoin PaintStrokeJoin/ROUND)
-                                (.setStrokeCap PaintStrokeCap/ROUND))]
-        
+      (with-open [dot-fill    (ui/paint {:fill 0x80808080} ctx)
+                  line-stroke (ui/paint {:stroke 0x80808080} ctx)
+                  center-fill (ui/paint {:fill 0x80FF0000} ctx)
+                  path-stroke (ui/paint {:stroke 0xFFFF0080
+                                         :width  5
+                                         :join   :round
+                                         :cap    :round})]
         ;; dots
         (doseq [x (range (-> visible-left (- dot-radius) (quot grid-step) (* grid-step)) (+ visible-right dot-radius) grid-step)
                 :when (not= x 0.0)
@@ -128,7 +127,7 @@
   [ui/clickable
    {:on-click (fn [_] (on-click))}
    [ui/shadow {:dy 1 :blur 3 :color 0x40000000}
-    [ui/rect {:paint  (paint/fill 0xFFFFFFFF)
+    [ui/rect {:paint  {:fill 0xFFFFFFFF}
               :radius 4}
      [ui/padding {:padding 10}
       child]]]])

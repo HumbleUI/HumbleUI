@@ -580,15 +580,16 @@
         
         ;; selection
         (when selection?
-          (canvas/draw-rect canvas
-            (util/rect-ltrb
-              (+ (:x bounds) (- offset) (min coord-from coord-to))
-              (+ (:y bounds) (* scale padding-top) (- ascent))
-              (+ (:x bounds) (- offset) (max coord-from coord-to))
-              (+ (:y bounds) baseline descent))
-            (if focused?
-              (:hui.text-field/fill-selection-active ctx)
-              (:hui.text-field/fill-selection-inactive ctx))))
+          (with-paint ctx [paint (if focused?
+                                   (:hui.text-field/fill-selection-active ctx)
+                                   (:hui.text-field/fill-selection-inactive ctx))]
+            (canvas/draw-rect canvas
+              (util/rect-ltrb
+                (+ (:x bounds) (- offset) (min coord-from coord-to))
+                (+ (:y bounds) (* scale padding-top) (- ascent))
+                (+ (:x bounds) (- offset) (max coord-from coord-to))
+                (+ (:y bounds) baseline descent))
+              paint)))
         
         ;; text
         (let [placeholder? (= "" text)
@@ -603,7 +604,8 @@
           (when line
             (when (.isClosed line)
               (util/log "(.isClosed line)" (.isClosed line) line))
-            (.drawTextLine canvas line x y fill)))
+            (with-paint ctx [paint fill]
+              (.drawTextLine canvas line x y paint))))
         
         ;; composing region
         (when (and marked-from marked-to)
@@ -629,13 +631,14 @@
                                         (<= cursor-blink-interval 0)
                                         (<= (mod (- now cursor-blink-pivot) (* 2 cursor-blink-interval)) cursor-blink-interval))]
             (when (and cursor-visible? (not selection?))
-              (canvas/draw-rect canvas
-                (util/rect-ltrb
-                  (+ (:x bounds) (- offset) coord-to (- cursor-left))
-                  (+ (:y bounds) (* scale padding-top) (- ascent))
-                  (+ (:x bounds) (- offset) coord-to cursor-right)
-                  (+ (:y bounds) baseline descent))
-                (:hui.text-field/fill-cursor ctx)))
+              (with-paint ctx [paint (:hui.text-field/fill-cursor ctx)]
+                (canvas/draw-rect canvas
+                  (util/rect-ltrb
+                    (+ (:x bounds) (- offset) coord-to (- cursor-left))
+                    (+ (:y bounds) (* scale padding-top) (- ascent))
+                    (+ (:x bounds) (- offset) coord-to cursor-right)
+                    (+ (:y bounds) baseline descent))
+                  paint)))
             (when (> cursor-blink-interval 0)
               (util/schedule
                 #(window/request-frame (:window ctx))

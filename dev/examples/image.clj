@@ -1,14 +1,10 @@
 (ns examples.image
   (:require
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui]))
-
-(def border
-  (paint/stroke 0x20000000 2))
+        [io.github.humbleui.ui :as ui]))
 
 (defn img [opts]
   [ui/size {:width (:w opts) :height (:h opts)}
-   [ui/rect {:paint border}
+   [ui/rect {:paint {:stroke 0x20000000, :width 2}}
     [ui/image
      {:scale (:scale opts)
       :xpos  (:xpos opts)

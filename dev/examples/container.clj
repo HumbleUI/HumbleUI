@@ -1,10 +1,9 @@
 (ns examples.container
   (:require
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui]))
+        [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp label [text]
-  [ui/rect {:paint (paint/fill 0xFFB2D7FE)}
+  [ui/rect {:paint {:fill 0xFFB2D7FE}}
    [ui/center
     [ui/padding {:padding 10}
      [ui/label text]]]])
@@ -47,39 +46,39 @@
        [ui/label "Container size"]]
       [ui/row
        ^{:stretch 1}
-       [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+       [ui/rect {:paint {:fill 0xFFDDFFFF}}
         [ui/padding {:vertical 10}
          [ui/align {:x :center}
           [ui/label "{:stretch 1}"]]]]
     
        ^{:stretch 2}
        [ui/stack
-        [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+        [ui/rect {:paint {:fill 0xFFFFDDFF}}
          [ui/padding {:vertical 10}
           [ui/align {:x :center}
            [ui/label "{:stretch 2}"]]]]
         [ui/align {:x :left}
          [ui/size {:width  #(* 0.5 (:width %))
                    :height 30}
-          [ui/rect {:paint (paint/fill 0x20000000)}
+          [ui/rect {:paint {:fill 0x20000000}}
            [ui/gap]]]]]
     
        [ui/size {:width 100}
-        [ui/rect {:paint (paint/fill 0xFFDDFFDD)}
+        [ui/rect {:paint {:fill 0xFFDDFFDD}}
          [ui/padding {:vertical 10}
           [ui/align {:x :center}
            [ui/label "{:width 100}"]]]]]
     
        [ui/size {:width #(* 0.5 (:width %))}
         [ui/stack
-         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+         [ui/rect {:paint {:fill 0xFFFFFFDD}}
           [ui/padding {:vertical 10}
            [ui/align {:x :center}
             [ui/label "{:width 50%}"]]]]
          [ui/align {:x :left}
           [ui/size {:width  #(* 0.5 (:width %))
                     :height 30}
-           [ui/rect {:paint (paint/fill 0x20000000)}
+           [ui/rect {:paint {:fill 0x20000000}}
             [ui/gap]]]]]]]
       
       [ui/padding {:top 10}
@@ -87,30 +86,30 @@
       [ui/align {:x :left}
        [ui/column
         [ui/row
-         [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+         [ui/rect {:paint {:fill 0xFFFFDDFF}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label ":hug"]]]]
          ^{:stretch 1}
-         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+         [ui/rect {:paint {:fill 0xFFFFFFDD}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label "{:stretch 1}"]]]]
-         [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+         [ui/rect {:paint {:fill 0xFFDDFFFF}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label ":hug"]]]]]
         [ui/row
-         [ui/rect {:paint (paint/fill 0xFFFFDDFF)}
+         [ui/rect {:paint {:fill 0xFFFFDDFF}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label ":hug long"]]]]
          ^{:stretch 1}
-         [ui/rect {:paint (paint/fill 0xFFFFFFDD)}
+         [ui/rect {:paint {:fill 0xFFFFFFDD}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label "{:stretch 1}"]]]]
-         [ui/rect {:paint (paint/fill 0xFFDDFFFF)}
+         [ui/rect {:paint {:fill 0xFFDDFFFF}}
           [ui/padding {:padding 10}
            [ui/align {:x :center}
             [ui/label ":hug long"]]]]]]]

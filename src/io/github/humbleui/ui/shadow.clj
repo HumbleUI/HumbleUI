@@ -13,8 +13,8 @@
                           shadow (if fill
                                    (ImageFilter/makeDropShadow (* dx scale) (* dy scale) r r color)
                                    (ImageFilter/makeDropShadowOnly (* dx scale) (* dy scale) r r color))
-                          paint  (-> (paint/fill (or fill 0xFFFFFFFF))
-                                   (paint/set-image-filter shadow))]
+                          paint  (-> (paint {:fill (or fill 0xFFFFFFFF)})
+                                   (.setImageFilter shadow))]
                       paint))]
      (fn render
        ([opts]
@@ -43,11 +43,11 @@
                           (abs (* dx scale))
                           (abs (* dy scale))))
                outer  (util/rect-ltrb (- extra) (- extra) (+ width extra) (+ height extra))]
-           (with-open [paint  (paint/fill color)
+           (with-open [paint  (ui/paint {:fill color})
                        filter (MaskFilter/makeBlur FilterBlurMode/NORMAL (util/radius->sigma blur'))
                        path   (Path.)]
              (.addRect path outer)
              (.addRect path inner PathDirection/COUNTER_CLOCKWISE)
-             (paint/set-mask-filter paint filter)
+             (.setMaskFilter paint filter)
              (canvas/translate canvas (* dx scale) (* dy scale))
              (.drawPath canvas path paint))))}]]))

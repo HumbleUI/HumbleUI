@@ -1,8 +1,7 @@
 (ns examples.button
   (:require
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defonce *clicks
@@ -95,10 +94,10 @@
         [ui/label "Radio " *value]]])))
 
 (def custom-button-bg
-  (paint/fill 0xFF007BFF))
+  {:fill 0xFF007BFF})
 
 (def custom-button-text
-  (paint/fill 0xFFFFFFFF))
+  {:fill 0xFFFFFFFF})
 
 (ui/defcomp custom-look [state child]
   [ui/translate {:dy (if (:pressed state) 2 0)}

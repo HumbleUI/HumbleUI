@@ -2,8 +2,7 @@
   (:require
     [examples.shared :as shared]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defn label [*atom s]
@@ -12,7 +11,7 @@
      (swap! *atom conj s))
    :render
    (fn [*atom s]
-     [ui/rect {:paint (paint/fill 0x80FFDB2C)}
+     [ui/rect {:paint {:fill 0x80FFDB2C}}
       [ui/padding {:horizontal 40 :vertical 10}
        (str s)]])})
 

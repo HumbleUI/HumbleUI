@@ -4,8 +4,7 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Canvas]))
@@ -51,16 +50,16 @@
                     :completed? false})}))
 
 (def paint-bg
-  (paint/fill 0xFFF5F5F5))
+  {:fill 0xFFF5F5F5})
 
 (def paint-completed
-  (paint/fill 0xFFD9D9D9))
+  {:fill 0xFFD9D9D9})
 
 (def paint-label
-  (paint/fill 0xFF4D4D4D))
+  {:fill 0xFF4D4D4D})
 
 (defn divider []
-  [ui/rect {:paint (paint/fill 0xFFEDEDED)}
+  [ui/rect {:paint {:fill 0xFFEDEDED}}
    [ui/gap {:height 1}]])
 
 (defn strikethrough []
@@ -69,10 +68,10 @@
     [ui/gap {:height 1}]]])
 
 (def paint-footer
-  (paint/fill 0xFF777777))
+  {:fill 0xFF777777})
 
 (def paint-transparent
-  (paint/fill 0x00000000))
+  {:fill 0x00000000})
 
 (defn add-todo [state]
   (let [text (:text (:new-todo state))]
@@ -108,7 +107,7 @@
    [ui/label
     {:font-weight 100
      :font-size   100
-     :paint (paint/fill 0x26AF2F2F)}
+     :paint {:fill 0x26AF2F2F}}
     "todos"]])
 
 (defn body [child]
@@ -126,7 +125,7 @@
         [ui/shadow {:dy 1 :blur 1 :fill 0xFFF6F6F6 :color 0x33000000}]])
      [ui/padding {:bottom 10}
       [ui/shadow {:dy 1 :blur 1 :fill 0xFFFFFFFF :color 0x33000000}
-       [ui/rect {:paint (paint/fill 0xFFFFFFFF)}
+       [ui/rect {:paint {:fill 0xFFFFFFFF}}
         child]]]]))
 
 (defn capture-clicks [child]
@@ -167,7 +166,7 @@
   (cursor *state :new-todo))
 
 (defn new-todo []
-  [ui/rect {:paint (paint/fill 0xFFFEFEFE)}
+  [ui/rect {:paint {:fill 0xFFFEFEFE}}
    [ui/size {:height 66}
     [ui/shadow-inset {:dy -2, :blur 1, :color 0x08000000}
      [ui/row
@@ -244,7 +243,7 @@
       [ui/with-cursor {:cursor :ibeam}
        [ui/padding {:top 0.5 :right 1.5 :bottom 0.5}
         [ui/shadow-inset {:dy -1, :blur 5, :color 0x33000000}
-         [ui/rect {:paint (paint/stroke 0xFF999999 (* 1 (:scale ui/*ctx*)))}
+         [ui/rect {:paint {:stroke 0xFF999999}}
           [ui/align {:y :center}
            [ui/with-context
             {:hui.text-field/padding-left 10}
@@ -282,7 +281,7 @@
                     hovered?  0x19AF2F2F
                     :else     0x00000000)]
         [ui/rect {:radius 3
-                  :paint  (paint/stroke color (* 1 scale))}
+                  :paint  {:stroke color}}
          [ui/padding {:padding 7}
           [ui/label label]]]))]])
 
@@ -344,28 +343,27 @@
    [ui/vscroll {:clip? false}
     [ui/align {:x :center}
      [ui/padding {:padding 20}
-      [ui/focus-controller
-       [ui/with-context
-        {:font-family                     "Helvetica Neue, Helvetica, Arial"
-         :font-size                       24
-         :font-weight                     300
-         :hui.text-field/font-placeholder (ui/get-font {:font-family "Helvetica Neue, Helvetica, Arial"
-                                                        :font-size   24
-                                                        :font-weight 300
-                                                        :font-slant  :italic})
-         :hui.text-field/fill-placeholder (paint/fill 0xFFF1F1F1)}
-        [ui/rect {:paint paint-bg}
-         [ui/size {:width #(util/clamp (:width %) 230 550)}
-          [ui/column
-           [title]
-           [ui/gap {:height 25}]
-           [capture-clicks
-            [body
-             (if-let [empty? (empty? (:todos @*state))]
+      [ui/with-context
+       {:font-family                     "Helvetica Neue, Helvetica, Arial"
+        :font-size                       24
+        :font-weight                     300
+        :hui.text-field/font-placeholder (ui/get-font {:font-family "Helvetica Neue, Helvetica, Arial"
+                                                       :font-size   24
+                                                       :font-weight 300
+                                                       :font-slant  :italic})
+        :hui.text-field/fill-placeholder {:fill 0xFFF1F1F1}}
+       [ui/rect {:paint paint-bg}
+        [ui/size {:width #(util/clamp (:width %) 230 550)}
+         [ui/column
+          [title]
+          [ui/gap {:height 25}]
+          [capture-clicks
+           [body
+            (if-let [empty? (empty? (:todos @*state))]
+              [new-todo]
+              [ui/column
                [new-todo]
-               [ui/column
-                [new-todo]
-                [divider]
-                [todos]
-                [divider]
-                [footer]])]]]]]]]]]]])
+               [divider]
+               [todos]
+               [divider]
+               [footer]])]]]]]]]]]])

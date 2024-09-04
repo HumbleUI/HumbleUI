@@ -4,8 +4,7 @@
     [clojure.string :as str]
     [examples.shared :as shared]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def padding 4)
@@ -151,39 +150,29 @@
         [key {:width (+ (* 2 25) padding), :code :backspace} "⌫"]]]]]))
 
 (defn ui []
-  (let [scale             (:scale ui/*ctx*)
-        fill-black        (paint/fill 0xFF000000)
-        fill-white        (paint/fill 0xFFFFFFFF)
-        fill-light-gray   (paint/fill 0xFFD4D6DA)
-        fill-dark-gray    (paint/fill 0xFF777C7E)
-        fill-green        (paint/fill 0xFF6AAA64)
-        fill-yellow       (paint/fill 0xFFC9B457)
-        stroke-light-gray (paint/stroke 0xFFD4D6DA (* 2 scale))
-        stroke-dark-gray  (paint/stroke 0xFF777C7E (* 2 scale))]
-    (fn []
-      [ui/with-context
-       {:fill-white        fill-white
-        :fill-black        fill-black
-        :fill-light-gray   fill-light-gray
-        :fill-dark-gray    fill-dark-gray
-        :fill-green        fill-green
-        :fill-yellow       fill-yellow
-        :stroke-light-gray stroke-light-gray
-        :stroke-dark-gray  stroke-dark-gray}
-       [ui/key-listener {:on-key-down #(type! (:key %))}
-        [ui/text-listener {:on-input #(type! (str/upper-case %))}
-         [ui/padding {:padding 20}
-          [ui/column
-           [ui/align {:x :center}
-            [ui/clickable
-             {:on-click (fn [_] (reset! *state (empty-state)))}
-             [ui/padding {:padding 10}
-              [ui/label {:font-weight :bold, :paint fill-black} "↻ Reset"]]]]
-           [ui/gap {:height padding}]
-           ^{:stretch 1} [ui/gap]
-           [ui/align {:x :center}
-            [field]]
-           ^{:stretch 1} [ui/gap]
-           [ui/gap {:height padding}]
-           [ui/align {:x :center}
-            [keyboard]]]]]]])))
+  [ui/with-context
+   {:fill-white        {:fill 0xFFFFFFFF}
+    :fill-black        {:fill 0xFF000000}
+    :fill-light-gray   {:fill 0xFFD4D6DA}
+    :fill-dark-gray    {:fill 0xFF777C7E}
+    :fill-green        {:fill 0xFF6AAA64}
+    :fill-yellow       {:fill 0xFFC9B457}
+    :stroke-light-gray {:stroke 0xFFD4D6DA, :width 2}
+    :stroke-dark-gray  {:stroke 0xFF777C7E, :width 2}}
+   [ui/key-listener {:on-key-down #(type! (:key %))}
+    [ui/text-listener {:on-input #(type! (str/upper-case %))}
+     [ui/padding {:padding 20}
+      [ui/column
+       [ui/align {:x :center}
+        [ui/clickable
+         {:on-click (fn [_] (reset! *state (empty-state)))}
+         [ui/padding {:padding 10}
+          [ui/label {:font-weight :bold, :paint {:fill 0xFF000000}} "↻ Reset"]]]]
+       [ui/gap {:height padding}]
+       ^{:stretch 1} [ui/gap]
+       [ui/align {:x :center}
+        [field]]
+       ^{:stretch 1} [ui/gap]
+       [ui/gap {:height padding}]
+       [ui/align {:x :center}
+        [keyboard]]]]]]])

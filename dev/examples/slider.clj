@@ -2,8 +2,7 @@
   (:require
     [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
+        [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -22,23 +21,25 @@
                              fill-thumb-active
                              stroke-thumb-active]
            :hui/keys        [active?]} ctx]
-      (canvas/draw-rect canvas bounds (if active? fill-thumb-active fill-thumb))
-      (canvas/draw-rect canvas bounds (if active? stroke-thumb-active stroke-thumb)))))
+      (ui/with-paint ctx [paint (if active? fill-thumb-active fill-thumb)]
+        (canvas/draw-rect canvas bounds paint))
+      (ui/with-paint ctx [paint (if active? stroke-thumb-active stroke-thumb)]
+        (canvas/draw-rect canvas bounds paint)))))
 
 (defn square-thumb []
   (map->SquareThumb {}))
 
 (defn line-thumb []
-  (let [paint (paint/fill 0xFF0080FF)]
-    {:measure
-     (fn [_ cs]
-       (let [{:keys [scale]} ui/*ctx*]
-         (util/isize (* scale 4) (* scale 32))))
-     :draw
-     (fn [_ ^IRect bounds _container-size _viewport canvas]
-       (let [{:keys [scale]} ui/*ctx*
-             rrect (-> bounds .toRect (.withRadii (* scale 2.0)))]
-         (canvas/draw-rrect canvas rrect paint)))}))
+  {:measure
+   (fn [_ cs]
+     (let [{:keys [scale]} ui/*ctx*]
+       (util/isize (* scale 4) (* scale 32))))
+   :draw
+   (fn [ctx ^IRect bounds _container-size _viewport canvas]
+     (let [{:keys [scale]} ui/*ctx*
+           rrect (-> bounds .toRect (.withRadii (* scale 2.0)))]
+       (ui/with-paint ctx [paint {:fill 0xFF0080FF}]
+         (canvas/draw-rrect canvas rrect paint))))})
 
 (util/deftype+ WideTrackLeft []
   :extends ui/ATerminalNode
@@ -55,7 +56,8 @@
           w      (+ (:width bounds) half-track-height)
           r      half-track-height
           rect   (util/rrect-xywh x y w track-height r 0 0 r)]
-      (canvas/draw-rect canvas rect (:hui.slider/fill-track-active ctx)))))
+      (ui/with-paint ctx [paint (:hui.slider/fill-track-active ctx)]
+        (canvas/draw-rect canvas rect paint)))))
 
 (util/deftype+ WideTrackRight []
   :extends ui/ATerminalNode
@@ -72,13 +74,14 @@
           w      (+ (:width bounds) half-track-height)
           r      half-track-height
           rect   (util/rrect-xywh x y w track-height 0 r r 0)]
-      (canvas/draw-rect canvas rect (:hui.slider/fill-track-inactive ctx)))))
+      (ui/with-paint ctx [paint (:hui.slider/fill-track-inactive ctx)]
+        (canvas/draw-rect canvas rect paint)))))
 
 (ui/defcomp with-slider [slider]
   (let [{:keys [max *value]} (second slider)]
     [ui/row
      ^{:stretch 1}
-     [ui/rect {:paint (paint/fill 0xFFFFFFFF)}
+     [ui/rect {:paint {:fill 0xFFFFFFFF}}
       slider]
      [ui/align {:y :center}
       [ui/size {:width 100}

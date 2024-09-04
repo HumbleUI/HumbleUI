@@ -3,14 +3,10 @@
     [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui]
+        [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window])
   (:import
     [io.github.humbleui.skija Color4f Paint]))
-
-(def ^Paint stroke
-  (paint/stroke 0xFFFFFFFF 0.05))
 
 (defn ease-cubic [t]
   (if (< t 0.5)
@@ -40,42 +36,42 @@
     (canvas/translate canvas (/ width 2) (/ height 2))
     ; (canvas/draw-string canvas (str fps) 0 0 font fill-text)
     (canvas/scale canvas (/ (min width height) 2.5))
+    (with-open [stroke (ui/paint {:stroke 0xFFFFFFFF, :width 0.05} ctx)]
+      (case interpolation
+        :no
+        (let [a (angle t)]
+          (.setColor stroke (unchecked-int 0xFFFFFFFF))
+          (canvas/draw-circle canvas (math/sin a) (math/cos a) 0.1 stroke))
     
-    (case interpolation
-      :no
-      (let [a (angle t)]
-        (.setColor stroke (unchecked-int 0xFFFFFFFF))
-        (canvas/draw-circle canvas (math/sin a) (math/cos a) 0.1 stroke))
-    
-      :inbetweens
-      (let [frames (max 1 (quot 60 fps))
-            alpha  (/ 2 frames)
-            color  (Color4f. ^floats (into-array Float/TYPE [1 1 1 alpha]))]
-        (.setColor4f stroke color)
-        (doseq [frame (range 0 frames)
-                :let [t (- t (* frame 1/60))
-                      a (angle t)]]
-          (canvas/draw-circle canvas (math/sin a) (math/cos a) 0.1 stroke)))
+        :inbetweens
+        (let [frames (max 1 (quot 60 fps))
+              alpha  (/ 2 frames)
+              color  (Color4f. ^floats (into-array Float/TYPE [1 1 1 alpha]))]
+          (.setColor4f stroke color)
+          (doseq [frame (range 0 frames)
+                  :let [t (- t (* frame 1/60))
+                        a (angle t)]]
+            (canvas/draw-circle canvas (math/sin a) (math/cos a) 0.1 stroke)))
       
-      :blur
-      (let [a       (angle t)
-            [x y]   [(math/sin a) (math/cos a)]
-            pa      (angle (- t (/ 1 fps)))
-            [px py] [(math/sin pa) (math/cos pa)]
-            v       (math/hypot (- x px) (- y py))
-            a'      (if (<= t 0.5)
-                      (- a (* 0.5 Math/PI))
-                      (+ a (* 0.5 Math/PI)))
-            [dx dy] [(* v (math/sin a')) (* v (math/cos a'))]
-            frames  100
-            alpha   (/ 2 frames)
-            color   (Color4f. ^floats (into-array Float/TYPE [1 1 1 alpha]))]
-        (.setColor4f stroke color)
-        (doseq [frame (range 0 frames)
-                :let [x' (+ x (* (/ frame frames) dx))
-                      y' (+ y (* (/ frame frames) dy))]]
-          (canvas/draw-circle canvas x' y' 0.1 stroke))
-        (canvas/draw-line canvas x y (+ x dx) (+ y dy) stroke)))
+        :blur
+        (let [a       (angle t)
+              [x y]   [(math/sin a) (math/cos a)]
+              pa      (angle (- t (/ 1 fps)))
+              [px py] [(math/sin pa) (math/cos pa)]
+              v       (math/hypot (- x px) (- y py))
+              a'      (if (<= t 0.5)
+                        (- a (* 0.5 Math/PI))
+                        (+ a (* 0.5 Math/PI)))
+              [dx dy] [(* v (math/sin a')) (* v (math/cos a'))]
+              frames  100
+              alpha   (/ 2 frames)
+              color   (Color4f. ^floats (into-array Float/TYPE [1 1 1 alpha]))]
+          (.setColor4f stroke color)
+          (doseq [frame (range 0 frames)
+                  :let [x' (+ x (* (/ frame frames) dx))
+                        y' (+ y (* (/ frame frames) dy))]]
+            (canvas/draw-circle canvas x' y' 0.1 stroke))
+          (canvas/draw-line canvas x y (+ x dx) (+ y dy) stroke))))
     
     (window/request-frame window)))
 
@@ -86,14 +82,14 @@
     [ui/label (str fps)]]])
 
 (defn ui-impl [bounds]
-  (let [fill-text              (paint/fill 0xFFFFFFFF)
+  (let [fill-text              {:fill 0xFFFFFFFF}
         {:keys [width height]} bounds]
     {:should-setup?
      (fn [bounds']
        (not= bounds bounds'))
      :render
      (fn [_]
-       [ui/rect {:paint (paint/fill 0xFF0D1924)}
+       [ui/rect {:paint {:fill 0xFF0D1924}}
         [ui/with-context {:fill-text fill-text
                           :font-cap-height 15}
          [ui/padding {:padding 20}

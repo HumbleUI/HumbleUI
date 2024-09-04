@@ -3,29 +3,23 @@
     [clojure.string :as str]
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp box
   ([child]
    (box {} child))
   ([opts child]
-   (ui/with-resources [border (paint/stroke 0x40000000 (ui/scaled 1))]
-     (fn render
-       ([child]
-        (render {} child))
-       ([opts child]
-        (let [{:keys [height] :or {height 100}} opts]
-          [ui/rect {:paint border}
-           [ui/size {:height height}
-            child]]))))))
+   (let [{:keys [height] :or {height 100}} opts]
+     [ui/rect {:paint {:stroke 0x40000000}}
+      [ui/size {:height height}
+       child]])))
 
 (ui/defcomp label [& texts]
   (let [[_ opts texts] (ui/parse-element (util/consv nil texts))
         {:keys [height] :or {height 30}} opts]
-    (ui/with-resources [bg       (paint/fill 0x00CFE8FC)
-                        bg-hover (paint/fill 0xFFCFE8FC)]
+    (ui/with-resources [bg       {:fill 0x00CFE8FC}
+                        bg-hover {:fill 0xFFCFE8FC}]
       (fn [& texts]
         [ui/hoverable
          (fn [state]

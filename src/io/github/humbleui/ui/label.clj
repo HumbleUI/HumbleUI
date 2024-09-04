@@ -12,7 +12,8 @@
     size)
   
   (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
-    (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) (or paint (:fill-text ctx))))
+    (with-paint ctx [paint (or paint (:fill-text ctx))]
+      (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) paint)))
 
   (-reconcile-opts [this ctx new-element]
     (let [[_ opts texts'] (parse-element new-element)

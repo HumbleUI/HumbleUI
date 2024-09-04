@@ -3,8 +3,7 @@
     [clojure.string :as str]
     [clojure.test :as test :refer [are deftest]]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Font Typeface]))
@@ -115,7 +114,7 @@
      (let [color' (if (:pressed state)
                     (bit-or 0x80000000 (bit-and 0xFFFFFF color))
                     color)]
-       [ui/rect {:paint (paint/fill color')}
+       [ui/rect {:paint {:fill color'}}
         [ui/center
          [ui/label {:features ["tnum"]} text]]]))])
 
@@ -148,14 +147,14 @@
        (let [state @*state]
          [ui/with-context
           {:font-cap-height cap-height'
-           :fill-text       (paint/fill 0xFFEBEBEB)}
-          [ui/rect {:paint (paint/fill color-display)}
+           :fill-text       {:fill 0xFFEBEBEB}}
+          [ui/rect {:paint {:fill color-display}}
            [ui/padding {:padding padding}
           
             [ui/column {:gap padding}
              ;; display
              ^{:stretch 3}
-             [ui/rect {:paint (paint/fill 0xFF404040)}
+             [ui/rect {:paint {:fill 0xFF404040}}
               [ui/padding {:horizontal #(/ (:height %) 3)}
                [ui/align {:x :right :y :center}
                 (let [val (get state (:screen state))]

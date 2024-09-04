@@ -3,23 +3,20 @@
     [clojure.string :as str]
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp label [text]
-  [ui/rect {:paint (paint/fill 0x80FFDB2C)}
+  [ui/rect {:paint {:fill "FFDB2C80"}}
    [ui/center
     [ui/padding {:padding 4}
      [ui/column {:gap 5}
       (seq (str/split text #"\n"))]]]])
 
 (ui/defcomp box [child]
-  (let [border (paint/stroke 0x40000000 (ui/scaled 1))]
-    (fn [child]
-      [ui/rect {:paint border}
-       [ui/size {:width 100 :height 100}
-        child]])))
+  [ui/rect {:paint {:stroke "00000040"}}
+   [ui/size {:width 100 :height 100}
+    child]])
 
 (ui/defcomp ui []
   (shared/table

@@ -1,8 +1,7 @@
 (ns examples.text-field-debug
   (:require
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defn render-form [form]
@@ -28,16 +27,15 @@
   [ui/align {:y :top}
    [ui/vscroll
     [ui/padding {:padding 20}
-     [ui/focus-controller
-      [ui/column {:gap 10}
-       [ui/with-context
-        {:hui.text-field/fill-cursor    (paint/fill 0xFF03BFFF)
-         :hui.text-field/fill-selection-active (paint/fill 0x4003BFFF)
-         :hui.text-field/cursor-width   2}
-        [ui/text-field {:focused (util/now)
-                        :*state *state
-                        :placeholder "Type here"}]]
-       [ui/label (str "\"" (:text @*state) "\"")]
-       ^{:stretch 1}
-       [ui/vscroll
-        [render-form @*state]]]]]]])
+     [ui/column {:gap 10}
+      [ui/with-context
+       {:hui.text-field/fill-cursor    {:fill 0xFF03BFFF}
+        :hui.text-field/fill-selection-active {:fill 0x4003BFFF}
+        :hui.text-field/cursor-width   2}
+       [ui/text-field {:focused (util/now)
+                       :*state *state
+                       :placeholder "Type here"}]]
+      [ui/label (str "\"" (:text @*state) "\"")]
+      ^{:stretch 1}
+      [ui/vscroll
+       [render-form @*state]]]]]])

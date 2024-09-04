@@ -37,8 +37,10 @@
           x (+ (:x bounds) (/ (:width bounds) 2))
           y (+ (:y bounds) (/ (:height bounds) 2))
           r (/ (:height bounds) 2)]
-      (canvas/draw-circle canvas x y r (if active? fill-thumb-active fill-thumb))
-      (canvas/draw-circle canvas x y r (if active? stroke-thumb-active stroke-thumb)))))
+      (with-paint ctx [paint (if active? fill-thumb-active fill-thumb)]
+        (canvas/draw-circle canvas x y r paint))
+      (with-paint ctx [paint (if active? stroke-thumb-active stroke-thumb)]
+        (canvas/draw-circle canvas x y r paint)))))
 
 (util/deftype+ SliderTrack [fill-key]
   :extends ATerminalNode
@@ -54,7 +56,8 @@
           w      (+ (:width bounds) track-height)
           r      half-track-height
           rect   (util/rrect-xywh x y w track-height r)]
-      (canvas/draw-rect canvas rect (ctx fill-key)))))
+      (with-paint ctx [paint (ctx fill-key)]
+        (canvas/draw-rect canvas rect paint)))))
 
 (util/deftype+ Slider [*value
                        track-active

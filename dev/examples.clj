@@ -25,6 +25,7 @@
     [examples.link]
     [examples.oklch]
     [examples.padding]
+    [examples.paint]
     [examples.paragraph]
     [examples.rect]    
     [examples.settings]
@@ -47,7 +48,6 @@
     [io.github.humbleui.app :as app]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui])
@@ -63,6 +63,7 @@
      ["Clip" examples.clip/ui]
      ["Label" examples.label/ui]
      ["Padding" examples.padding/ui]
+     ["Paint" examples.paint/ui]
      ["Rect" examples.rect/ui]
      ["Size" examples.size/ui]
      ["VScroll" examples.vscroll/ui]]]
@@ -113,31 +114,27 @@
    [ui/label {:font-weight :bold} name]])
 
 (ui/defcomp example-label [name]
-  (let [fill-selected (paint/fill 0xFFB2D7FE)
-        fill-active   (paint/fill 0xFFA2C7EE)
-        fill-hovered  (paint/fill 0xFFE1EFFA)]
-    (fn [name]
-      [ui/hoverable
-       {:on-hover
-        (fn [e]
-          (when
-            (if (= :macos app/platform)
-              (:mac-command (:modifiers e))
-              (:control (:modifiers e)))
-            (reset! *example name)))}
-       [ui/clickable
-        {:on-click
-         (fn [_]
-           (reset! *example name))}
-        (fn [state]
-          (let [label [ui/padding {:horizontal 20 :vertical 10}
-                       [ui/label name]]
-                selected? (= name @*example)]
-            (cond
-              selected?        [ui/rect {:paint fill-selected} label]
-              (:pressed state) [ui/rect {:paint fill-active} label]
-              (:hovered state) [ui/rect {:paint fill-hovered} label]
-              :else            label)))]])))
+  [ui/hoverable
+   {:on-hover
+    (fn [e]
+      (when
+        (if (= :macos app/platform)
+          (:mac-command (:modifiers e))
+          (:control (:modifiers e)))
+        (reset! *example name)))}
+   [ui/clickable
+    {:on-click
+     (fn [_]
+       (reset! *example name))}
+    (fn [state]
+      (let [label [ui/padding {:horizontal 20 :vertical 10}
+                   [ui/label name]]
+            selected? (= name @*example)]
+        (cond
+          selected?        [ui/rect {:paint {:fill "B2D7FE"}} label]
+          (:pressed state) [ui/rect {:paint {:fill "A2C7EE"}} label]
+          (:hovered state) [ui/rect {:paint {:fill "E1EFFA"}} label]
+          :else            label)))]])
 
 (ui/defcomp app-impl []
   (let [*profiling?  (signal/signal false)
@@ -161,7 +158,7 @@
            [ui/button {:on-click (fn [_] (reset! *profiling? true))} "Profile"]]
           [ui/gap {:height 10}]]]]
     
-       [ui/rect {:paint (paint/fill 0xFFEEEEEE)}
+       [ui/rect {:paint {:fill "EEE"}}
         [ui/gap {:width 1}]]
     
        ^{:stretch 1}

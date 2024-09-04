@@ -1,22 +1,22 @@
 (in-ns 'io.github.humbleui.ui)
 
-(def ^Paint switch-fill-enabled
-  (paint/fill 0xFF0080FF))
+(def switch-fill-enabled
+  0xFF0080FF)
 
-(def ^Paint switch-fill-disabled
-  (paint/fill 0xFFD9D9D9))
+(def switch-fill-disabled
+  0xFFD9D9D9)
 
-(def ^Paint switch-fill-handle
-  (paint/fill 0xFFFFFFFF))
+(def switch-fill-handle
+  0xFFFFFFFF)
 
-(def ^Paint switch-fill-enabled-active
-  (paint/fill 0xFF0060E0))
+(def switch-fill-enabled-active
+  0xFF0060E0)
 
-(def ^Paint switch-fill-disabled-active
-  (paint/fill 0xFFBBBBBB))
+(def switch-fill-disabled-active
+  0xFFBBBBBB)
 
-(def ^Paint switch-fill-handle-active
-  (paint/fill 0xFFE0E0E0))
+(def switch-fill-handle-active
+  0xFFE0E0E0)
 
 (defn- switch-height [ctx]
   (let [cap-height (* (scale) (cap-height))
@@ -57,14 +57,14 @@
                                                         switch-fill-disabled-active
                                                         switch-fill-disabled)]
                              (condp = [on? animating?]
-                               [true  true]  (paint/fill
-                                               (Color/makeLerp
-                                                 (.getColor switch-fill-enabled)
-                                                 (.getColor switch-fill-disabled) ratio))
-                               [false true]  (paint/fill
-                                               (Color/makeLerp
-                                                 (.getColor switch-fill-disabled)
-                                                 (.getColor switch-fill-enabled) ratio))
+                               [true  true]  (Color/makeLerp
+                                               (unchecked-int switch-fill-enabled)
+                                               (unchecked-int switch-fill-disabled)
+                                               ratio)
+                               [false true]  (Color/makeLerp
+                                               (unchecked-int switch-fill-disabled)
+                                               (unchecked-int switch-fill-enabled)
+                                               ratio)
                                [true  false] switch-fill-enabled
                                [false false] switch-fill-disabled))
           padding          (/ h 16)
@@ -78,10 +78,11 @@
           handle-fill      (if pressed?
                              switch-fill-handle-active
                              switch-fill-handle)]
-      (canvas/draw-rect canvas (RRect/makeXYWH x y w h (/ h 2)) fill)
-      (canvas/draw-circle canvas handle-x handle-y handle-r handle-fill)
+      (with-paint ctx [paint {:fill fill}]
+        (canvas/draw-rect canvas (RRect/makeXYWH x y w h (/ h 2)) paint))
+      (with-paint ctx [paint {:fill handle-fill}]
+        (canvas/draw-circle canvas handle-x handle-y handle-r paint))
       (when animating?
-        (util/close fill)
         (window/request-frame (:window ctx)))))
   
   (-reconcile-opts [this _ctx new-element]

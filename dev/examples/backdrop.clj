@@ -2,8 +2,7 @@
   (:require
     [clojure.math :as math]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
+        [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode ImageFilter]))
 
@@ -29,7 +28,7 @@
     [ui/clip {:radius 8}
      [ui/backdrop {:filter filter}
       [ui/stack
-       [ui/rect {:paint (paint/fill color)}
+       [ui/rect {:paint {:fill color}}
         [ui/gap {:width 100, :height 100}]]
        [ui/center
         [ui/column {:gap 10}
@@ -48,7 +47,7 @@
      [ui/align {:x :center}
       [ui/checkbox {} "Toggle me"]]]]
    [ui/draggable {:pos (util/ipoint 10 10)}
-    [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}
+    [ui/with-context {:fill-text {:fill 0xFFFFFFFF}}
      [square "Blur: 5" (blur 5) 0x40000000]]]
    [ui/draggable {:pos (util/ipoint 120 10)}
     [square "Blur: 10" (blur 10) 0x80FFFFFF]]

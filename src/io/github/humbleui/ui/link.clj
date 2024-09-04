@@ -19,10 +19,10 @@
         metrics       (font/metrics font)
         position      (descaled (:underline-position metrics))
         thickness     (descaled (:underline-thickness metrics))]
-    (with-resources [paint         (paint/fill color)
-                     paint-visited (paint/fill color-visited)
-                     paint-hovered (paint/fill color-hovered)
-                     paint-pressed (paint/fill color-pressed)]
+    (with-resources [paint         {:fill color}
+                     paint-visited {:fill color-visited}
+                     paint-hovered {:fill color-hovered}
+                     paint-pressed {:fill color-pressed}]
       (fn [on-click child]
         [center
          [with-cursor {:cursor :pointing-hand}

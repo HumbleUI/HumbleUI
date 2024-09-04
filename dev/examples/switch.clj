@@ -1,8 +1,7 @@
 (ns examples.switch
   (:require
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def *state-first
@@ -18,9 +17,9 @@
 
 (defn ui []
   (let [padding-inner   12
-        fill-bg         (paint/fill 0xFFF2F2F2)
-        stroke-bg       (paint/stroke 0xFFE0E0E0 (ui/scaled 0.5))
-        fill-delimiter  (paint/fill 0xFFE7E7E7)]
+        fill-bg         {:fill 0xFFF2F2F2}
+        stroke-bg       {:stroke 0xFFE0E0E0, :width 0.5}
+        fill-delimiter  {:fill 0xFFE7E7E7}]
     (fn []
       [ui/align {:y :center}
        [ui/vscroll

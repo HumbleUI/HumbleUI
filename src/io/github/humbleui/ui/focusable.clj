@@ -24,8 +24,10 @@
         (invoke-callback this :on-focus)
         true)
       (let [event' (cond-> event
-                     focused (assoc :focused? true))]
-        (ui/event child ctx event'))))
+                     focused (assoc :focused? true))
+            ctx'   (cond-> ctx
+                     focused (assoc :hui/focused? true))]
+        (ui/event child ctx' event'))))
   
   (-child-elements [this ctx new-element]
     (let [[_ _ [child-ctor-or-el]] (parse-element new-element)]
@@ -33,7 +35,7 @@
         [[child-ctor-or-el (if focused #{:focused} #{})]]
         [child-ctor-or-el]))))
 
-(defn focusable-ctor
+(defn focusable
   ([child]
    (map->Focusable {}))
   ([{:keys [focused on-focus on-blur] :as opts} child]
@@ -47,6 +49,8 @@
           (vswap! *acc conj comp)
           false)))
     @*acc))
+
+(declare focus-prev focus-next)
 
 (util/deftype+ FocusController []
   :extends AWrapperNode
@@ -62,20 +66,47 @@
       res))
   
   (-event-impl [this ctx event]
-    (if (and
-          (= :mouse-button (:event event))
-          (:pressed? event)
-          (util/rect-contains? bounds (util/ipoint (:x event) (:y event))))
-      (let [focused-before (focused this ctx)
+    (util/cond+
+      ;; tab key
+      (and
+        (= :key (:event event))
+        (= :tab (:key event))
+        (:pressed? event))
+      (do
+        (if (:shift (:modifiers event))
+          (focus-prev (-> this :child :child) ctx)
+          (focus-next (-> this :child :child) ctx))
+        true)
+    
+      ;; click
+      (and
+        (= :mouse-button (:event event))
+        (:pressed? event))
+      (let [point          (util/ipoint (:x event) (:y event))
+            focused-before (focused this ctx)
             res            (ui/event child ctx event)
             focused-after  (focused this ctx)]
-        (when (< 1 (count focused-after))
-          (doseq [comp focused-before]
+        (util/cond+
+          ;; unfocus previous selections
+          (< 1 (count focused-after))
+          (do
+            (doseq [comp focused-before]
+              (util/set!! comp :focused nil)
+              (invoke-callback comp :on-blur))
+            true)
+            
+          ;; unfocus if clicked outside
+          (and
+            (= focused-before focused-after)
+            :let [comp (first focused-after)]
+            comp
+            (not (util/rect-contains? (:bounds comp) point)))
+          (do
             (util/set!! comp :focused nil)
-            (invoke-callback comp :on-blur)))
-        (or
-          res
-          (< 1 (count focused-after))))
+            (invoke-callback comp :on-blur)
+            true)))
+
+      :else
       (ui/event child ctx event))))
 
 (defn focus-prev [this ctx]
@@ -125,17 +156,5 @@
 (defn focus-controller-impl [child]
   (map->FocusController {}))
 
-(defcomp focus-controller-ctor [child]
-  [event-listener
-   {:event    :key
-    :on-event (fn [e ctx]
-                (when (and
-                        (:pressed? e)
-                        (= :tab (:key e)))
-                  (if (:shift (:modifiers e))
-                    (focus-prev (-> &node :child :child :child) ctx)
-                    (focus-next (-> &node :child :child :child) ctx))
-                  true))
-    :capture? true}
-   [focus-controller-impl
-    child]])
+(defcomp focus-controller [child]
+  (map->FocusController {}))

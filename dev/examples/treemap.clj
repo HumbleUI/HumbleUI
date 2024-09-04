@@ -3,8 +3,7 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -75,7 +74,8 @@
   4)
 
 (def ^Paint fill
-  (paint/fill 0xFF33CC33))
+  (ui/paint
+    {:fill 0xFF33CC33}))
 
 (defn set-color [^Canvas canvas full-size]
   (let [m    (.getLocalToDeviceAsMatrix33 canvas)
@@ -87,16 +87,13 @@
                 (unchecked-int))]
     (.setColor fill color)))
 
-(def stroke
-  (paint/stroke 0xFFF6F6F6 2))
-
 (defn aspect [w h]
   (cond
     (= h 0) Float/POSITIVE_INFINITY
     (= w 0) Float/POSITIVE_INFINITY
     :else   (float (max (/ w h) (/ h w)))))
 
-(defn paint [paths ^Canvas canvas size full-size]
+(defn paint [ctx paths ^Canvas canvas size full-size]
   (util/cond+
     :let [{:keys [width height]} size
           total-size (transduce (map :size) + 0 paths)]
@@ -114,7 +111,7 @@
     (canvas/with-canvas canvas
       (canvas/translate canvas 0 height)
       (canvas/rotate canvas -90)
-      (paint paths canvas (util/isize (:height size) (:width size)) full-size))
+      (paint ctx paths canvas (util/isize (:height size) (:width size)) full-size))
     
     (> (count paths) 1)
     (let [[left left-size]
@@ -135,13 +132,13 @@
         (let [*total-h (volatile! 0)]
           (doseq [path (butlast left-paths)
                   :let [h (-> (:size path) (/ left-size) (* height) long)]]
-            (paint [path] canvas (util/isize left-width h) full-size)
+            (paint ctx [path] canvas (util/isize left-width h) full-size)
             (canvas/translate canvas 0 h)
             (vswap! *total-h + h))
-          (paint [(last left-paths)] canvas (util/isize left-width (- height @*total-h)) full-size)))
+          (paint ctx [(last left-paths)] canvas (util/isize left-width (- height @*total-h)) full-size)))
       (canvas/with-canvas canvas
         (canvas/translate canvas left-width 0)
-        (paint right-paths canvas (util/isize (- width left-width) height) full-size)))
+        (paint ctx right-paths canvas (util/isize (- width left-width) height) full-size)))
 
     :let [children (:children (first paths))]
     
@@ -150,11 +147,12 @@
       (set-color canvas full-size)
       (canvas/draw-rect canvas rect fill)
       (when (and (> width 4) (> height 4))
-        (canvas/draw-rect canvas rect stroke)))
+        (ui/with-paint ctx [paint {:stroke 0xFFF6F6F6, :width 2}]
+          (canvas/draw-rect canvas rect paint))))
     
     :else
     (let [rect (util/rect-xywh 0 0 width height)]
-      (paint children canvas size full-size))))
+      (paint ctx children canvas size full-size))))
 
 (defn rescan []
   (when-some [f ^Future @*future]
@@ -185,10 +183,10 @@
           [ui/column {:gap 10}
            [ui/row
             ^{:stretch progress}
-            [ui/rect {:paint (paint/fill 0xFF33CC33)}
+            [ui/rect {:paint {:fill 0xFF33CC33}}
              [ui/gap {:height 10}]]
             ^{:stretch (- 1 progress)}
-            [ui/rect {:paint (paint/fill 0xFFCCCCCC)}
+            [ui/rect {:paint {:fill 0xFFCCCCCC}}
              [ui/gap {:height 10}]]]
            [ui/label (str "Scanning " (-> progress (* 100) int (str "%")))]]]]
          
@@ -197,5 +195,5 @@
         [ui/image-snapshot
          [ui/canvas
           {:on-paint
-           (fn [_ canvas size]
-             (paint [state] canvas size size))}]])]]))
+           (fn [ctx canvas size]
+             (paint ctx [state] canvas size size))}]])]]))

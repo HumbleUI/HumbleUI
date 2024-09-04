@@ -3,8 +3,7 @@
     [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.ui :as ui])
+        [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.types IPoint]
     [io.github.humbleui.skija Canvas PaintStrokeCap PaintStrokeJoin Path]))
@@ -51,9 +50,10 @@
         {:keys [width height]} size]
     
     ;; paths
-    (with-open [paint (doto (paint/stroke 0x80000000 (* scale 5))
-                        (.setStrokeJoin PaintStrokeJoin/ROUND)
-                        (.setStrokeCap PaintStrokeCap/ROUND))]
+    (with-open [paint (ui/paint {:stroke 0x80000000
+                                 :width  5
+                                 :join   :round
+                                 :cap    :round} ctx)]
       (doseq [path @*paths]
         (.drawPath canvas path paint)))
     
@@ -62,13 +62,13 @@
           mouse-events (filter #(= :mouse-move (:event %)) events)]
       ;; current position
       (util/when-some+ [[e] (take-last 1 mouse-events)]
-        (with-open [paint (paint/fill 0xFFCC3333)]
+        (with-open [paint (ui/paint {:fill 0xFFCC3333} ctx)]
           (canvas/draw-rect canvas (util/rect-xywh (- (:x e) (* 3 scale)) (- (:y e) (* 3 scale)) (* 6 scale) (* 6 scale)) paint)))
       
       ;; projection
       (util/when-some+ [[e2 e] (take-last 2 mouse-events)]
         (let [r (math/hypot (- (:x e) (:x e2)) (- (:y e) (:y e2)))]
-          (with-open [paint (paint/stroke 0xFFCC3333 (* scale 2))]
+          (with-open [paint (ui/paint {:stroke 0xFFCC3333, :width 2} ctx)]
             (canvas/draw-circle canvas (:x e) (:y e) r paint))))
       
       ;; event graph
@@ -100,13 +100,13 @@
                   (inc idx)))
               [(persistent! after-mouse)
                (persistent! after-frame)])]
-        (with-open [paint (paint/stroke 0xFFDDDDDD (* scale 1))]
+        (with-open [paint (ui/paint {:stroke 0xFFDDDDDD} ctx)]
           (doseq [dt (range 0 34000000 (/ 1000000000 120))]
             (canvas/draw-line canvas (point 0 dt) (point queue-size dt) paint)))
 
-        (with-open [paint (paint/stroke 0xFF808080 (* scale 1))]
+        (with-open [paint (ui/paint {:stroke 0xFF808080} ctx)]
           (canvas/draw-polygon canvas after-frame paint))
-        (with-open [paint (paint/stroke 0xFF8080FF (* scale 1))]
+        (with-open [paint (ui/paint {:stroke 0xFF8080FF} ctx)]
           (canvas/draw-polygon canvas after-mouse paint))))
 
     ;; event
@@ -114,7 +114,8 @@
       (loop [y  (+ 10 (* 20 scale))
              kv (sort-by first event)]
         (when-some [[k v] (first kv)]
-          (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui fill-text)
+          (ui/with-paint ctx [paint fill-text]
+            (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui paint))
           (recur (+ y (* 20 scale)) (next kv)))))))
 
 (ui/defcomp ui []

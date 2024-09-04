@@ -5,8 +5,7 @@
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.protocols :as protocols]
+        [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window])
@@ -37,10 +36,12 @@
         (.clipRRect canvas rrect true)
         
         (when (< progress 1)
-          (.drawPaint canvas ui/button-bg))
+          (ui/with-paint ctx [paint ui/button-bg]
+            (.drawPaint canvas paint)))
         
         (when (> progress 0)
-          (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) (if pressed? ui/button-bg-pressed ui/button-bg-hovered)))
+          (ui/with-paint ctx [paint (if pressed? ui/button-bg-pressed ui/button-bg-hovered)]
+            (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) paint)))
         
         (ui/draw child ctx bounds container-size viewport canvas)
         
@@ -97,9 +98,10 @@
     (let [{:keys [mouse-pos scale]} ctx
           [_ opts _] (ui/parse-element element)
           {:keys [bg gradient]
-           :or {bg       (paint/fill 0xFF202020)
+           :or {bg       {:fill 0xFF202020}
                 gradient default-gradient}} opts]
-      (canvas/draw-rect canvas bounds bg)
+      (ui/with-paint ctx [paint bg]
+        (canvas/draw-rect canvas bounds paint))
       (when hovered?
         (canvas/with-canvas canvas
           (canvas/clip-rect canvas bounds)
@@ -147,7 +149,7 @@
 
        [ui/clip {:radius 10}
         [card {}
-         [ui/with-context {:fill-text (paint/fill 0xFFFFFFFF)}
+         [ui/with-context {:fill-text {:fill 0xFFFFFFFF}}
           [ui/padding {:horizontal 30
                        :vertical 20}
            [ui/column

@@ -7,11 +7,13 @@
     
     (and (instance? clojure.lang.IDeref app) (fn? @app))
     (make
-      [default-theme theme @app])
+      [default-theme theme
+       [focus-controller @app]])
 
     (fn? app)
     (make
-      [default-theme theme app])
+      [default-theme theme
+       [focus-controller app]])
 
     (instance? clojure.lang.IDeref app)
     @app

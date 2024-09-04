@@ -3,12 +3,11 @@
     [clojure.string :as str]
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.paint :as paint]
-    [io.github.humbleui.signal :as signal]
+        [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  (let [fill (paint/fill 0x80FFDB2C)]
+  (let [fill {:fill 0x80FFDB2C}]
     (fn []
       (shared/table
         "Without padding"
