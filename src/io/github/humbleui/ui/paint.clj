@@ -6,6 +6,69 @@
   {\0 0, \1 1, \2 2, \3 3, \4 4, \5 5, \6 6, \7 7, \8 8, \9 9,
    \a 10, \A 10, \b 11, \B 11, \c 12, \C 12, \d 13, \D 13, \e 14, \E 14, \f 15, \F 15})
 
+(defn- color->nonlinear ^double [^double x]
+  (if (>= x 0.0031308)
+    (-> (math/pow x (/ 1.0 2.4))
+      (* 1.055)
+      (- 0.055))
+    (* 12.92 x)))
+
+(defn- color->linear ^double [^double x]
+  (let [sign (if (neg? x) -1 1)
+        abs  (* x sign)]
+    (if (<= abs 0.04045)
+      (/ x 12.92)
+      (-> abs (+ 0.055) (/ 1.055) (math/pow 2.4) (* sign)))))
+
+(defn color-oklch->srgb ^Color4f [^Color4f color]
+  (let [l  (.getR color)
+        c  (.getG color)
+        h  (.getB color)
+        
+        ;; oklch -> oklab
+        hr (math/to-radians h)
+        a  (* c (math/cos hr))
+        b  (* c (math/sin hr))
+        
+        ;; oklab -> srgb
+        l'  (+ l (* +0.3963377774 a) (* +0.2158037573 b))
+        m'  (+ l (* -0.1055613458 a) (* -0.0638541728 b))
+        s'  (+ l (* -0.0894841775 a) (* -1.2914855480 b))
+        l'' (* l' l' l')
+        m'' (* m' m' m')
+        s'' (* s' s' s')
+        lr  (+ (* +4.0767416621 l'') (* -3.3077115913 m'') (* +0.2309699292 s''))
+        lg  (+ (* -1.2684380046 l'') (* +2.6097574011 m'') (* -0.3413193965 s''))
+        lb  (+ (* -0.0041960863 l'') (* -0.7034186147 m'') (* +1.7076147010 s''))]
+    ; (when (and (<= 0.0 lr 1.0) (<= 0.0 lg 1.0) (<= 0.0 lb 1.0))
+    (Color4f. lr lg lb (.getA color))))
+
+(defn color-p3->srgb ^Color4f [^Color4f color]
+  (let [r  (.getR color)
+        g  (.getG color)
+        b  (.getB color)
+        ;; p3 -> p3-linear
+        r' (color->linear r)
+        g' (color->linear g)
+        b' (color->linear b)
+        ;; p3 -> CIE XYZ (D65)
+        x  (+ (* r' 0.4865709486482162) (+ (* g' 0.26566769316909306) (* b' 0.1982172852343625)))
+        y  (+ (* r' 0.2289745640697488) (+ (* g' 0.6917385218365064)  (* b' 0.079286914093745)))
+        z  (+ (* r' 0.0000000000000000) (+ (* g' 0.04511338185890264) (* b' 1.043944368900976)))
+        ;; CIE XYZ (D65) -> sRGB
+        lr (+ (* x  3.2404542) (+ (* y -1.5371385) (* z -0.4985314)))
+        lg (+ (* x -0.9692660) (+ (* y  1.8760108) (* z  0.0415560)))
+        lb (+ (* x  0.0556434) (+ (* y -0.2040259) (* z  1.0572252)))]
+    ; (when (and (<= 0.0 lr 1.0) (<= 0.0 lg 1.0) (<= 0.0 lb 1.0))
+    (Color4f. lr lg lb (.getA color))))
+
+(defn- color->srgb ^Color4f [^Color4f color model]
+  (case model
+    nil         color
+    :srgb       color
+    :display-p3 (color-p3->srgb color) #_(.convert (ColorSpace/getDisplayP3) (ColorSpace/getSRGB) color)
+    :oklch      (color-oklch->srgb color)))
+
 (defn- paint-color ^Color4f [spec]
   (util/cond+
     (string? spec)
@@ -47,8 +110,8 @@
     (throw (ex-info (str "Expected 3 or 4 values, got: " (pr-str spec)) {:spec spec}))
     
     (some float? spec)
-    (let [_ (when (not (every? #(and (<= 0.0 %) (<= % 1.0)) spec))
-              (throw (ex-info (str "Expected floats between 0..1, got: " (pr-str spec)) {:spec spec})))
+    (let [; _ (when (not (every? #(and (<= 0.0 %) (<= % 1.0)) spec))
+          ;     (throw (ex-info (str "Expected floats between 0..1, got: " (pr-str spec)) {:spec spec})))
           r (float (nth spec 0))
           g (float (nth spec 1))
           b (float (nth spec 2))
@@ -76,13 +139,6 @@
     :else
     (throw (ex-info (str "Malfromed color: " (pr-str spec)) {:spec spec}))))
 
-(defn paint-color-space ^ColorSpace [spec]
-  (when-some [cs (:color-space spec)]
-    (case cs
-      :srgb       (ColorSpace/getSRGB)
-      :display-p3 (ColorSpace/getDisplayP3)
-      (throw (ex-info (str "Unexpected :color-space: " cs {:spec spec}))))))
-
 (defn paint
   "Colors:
    
@@ -93,19 +149,20 @@
      \"C3F\"             - RGB
      int[3]              - RGB,  each int 0..255
      int[4]              - RGBA, each int 0..255
-     float[3]            - RGB,  each float 0..1
-     float[4]            - RGBA, each float 0..1
+     float[3]            - RGB,  float range depending on model
+     float[4]            - RGBA, float range depending on model
    
-   Color spaces:
+   Color models:
    
      :srgb
      :display-p3
+     :oklch
    
    Specs:
 
      {:fill \"0088FF\"}  - Fill with just color (sRGB)
-     {:fill <float[4]>  
-      :color-space <cs>} - Different color space
+     {:fill  <float[4]>  
+      :model <model>}    - Different color model
      {:stroke 0xCC33FF}  - Stroke with default width (1)
      {:stroke 0xCC33FF
       :width 1}          - Stroke with custom width
@@ -115,45 +172,41 @@
       :join  <:miter | :round | :bevel>
       :miter <float>}    - Stroke other params"
   (^Paint [spec]
-   (paint spec *ctx*))
+    (paint spec *ctx*))
   (^Paint [spec ctx]
-   (util/cond+
-     :let [fill (:fill spec)]
+    (util/cond+
+      :let [model (:model spec)
+            fill  (:fill spec)]
     
-     fill
-     (let [p (Paint.)]
-       (when-some [color (paint-color fill)]
-         (if-some [cs (paint-color-space spec)]
-           (.setColor4f p color cs)
-           (.setColor4f p color))
-         p))
+      fill
+      (let [color (-> fill paint-color (color->srgb model))]
+        (doto (Paint.)
+          (.setColor4f color)))
         
-     :let [stroke (:stroke spec)]
+      :let [stroke (:stroke spec)]
     
-     stroke
-     (let [p (Paint.)]
-       (.setMode p PaintMode/STROKE)
-       (when-some [color (paint-color stroke)]
-         (if-some [cs (paint-color-space spec)]
-           (.setColor4f p color cs)
-           (.setColor4f p color)))
-       (let [width (or (:width spec) 1)]
-         (.setStrokeWidth p (* width (:scale ctx))))
-       (when-some [cap (:cap spec)]
-         (.setStrokeCap p (case cap
-                            :butt   PaintStrokeCap/BUTT
-                            :round  PaintStrokeCap/ROUND
-                            :square PaintStrokeCap/SQUARE)))
-       (when-some [join (:join spec)]
-         (.setStrokeJoin p (case join
-                             :miter  PaintStrokeJoin/MITER
-                             :round  PaintStrokeJoin/ROUND
-                             :bevel  PaintStrokeJoin/BEVEL)))
+      stroke
+      (let [color (-> stroke paint-color (color->srgb model))
+            width (-> (:width spec) (or 1.0) (* (:scale ctx)))
+            p     (doto (Paint.)
+                    (.setMode PaintMode/STROKE)            
+                    (.setColor4f color)
+                    (.setStrokeWidth width))]
+        (when-some [cap (:cap spec)]
+          (.setStrokeCap p (case cap
+                             :butt   PaintStrokeCap/BUTT
+                             :round  PaintStrokeCap/ROUND
+                             :square PaintStrokeCap/SQUARE)))
+        (when-some [join (:join spec)]
+          (.setStrokeJoin p (case join
+                              :miter  PaintStrokeJoin/MITER
+                              :round  PaintStrokeJoin/ROUND
+                              :bevel  PaintStrokeJoin/BEVEL)))
                              
-       p)
+        p)
     
-     :else
-     (throw (ex-info "Unknown paint spec, expected {:fill ...} or {:stroke ...}" {:spec spec})))))
+      :else
+      (throw (ex-info "Unknown paint spec, expected {:fill ...} or {:stroke ...}" {:spec spec})))))
 
 (defmacro with-paint [ctx [binding specs] & body]
   `(let [specs#  ~specs

@@ -3,7 +3,7 @@
     [clojure.string :as str]
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
@@ -37,16 +37,42 @@
       [ui/rect {:paint {:fill [1 0.87 0.13 0.5]}}
        [ui/size {:width 100 :height 50}]]
       
-      "Color space"
-      [ui/column
-       (for [color ["F00" "0F0" "00F" "FF0" "F0F" "0FF"]]
-         [ui/size {:width 100}
+      "Out of range sRGB"
+      [ui/size {:width 100}
+       [ui/column
+        (for [[c1 c2] [[[1.0 0 0] [1.0930663624351615 -0.22674197356975417 -0.15013458093711937]]
+                       [[0 1.0 0] [-0.5116049825853448, 1.0182656579378029, -0.3106746212905826]]
+                       [[0 0 1.0] [0, -2.6895152771544416e-16, 1.0420216193529395]]]]
           [ui/row
-           (for [cs [nil :srgb :display-p3]]
-             ^{:stretch 1}
-             [ui/rect {:paint {:fill color
-                               :color-space cs}}
-              [ui/size {:height 25}]])]])]
+           ^{:stretch 1}
+           [ui/rect {:paint {:fill c1}}
+            [ui/size {:height 50}]]
+           ^{:stretch 1}
+           [ui/rect {:paint {:fill c2}}
+            [ui/size {:height 50}]]])]]
+      
+      "Color space"
+      [ui/size {:width 100}
+       [ui/row
+        (for [[model colors] [[:srgb       ["F00" "0F0" "00F" "FF0" "F0F" "0FF"]]
+                              [:oklch      [[0.63 0.26  29]
+                                            [0.87 0.29 142]
+                                            [0.45 0.31 264]
+                                            [0.97 0.21 110]
+                                            [0.70 0.32 328]
+                                            [0.91 0.15 195]]]
+                              [:display-p3 ["F00" "0F0" "00F" "FF0" "F0F" "0FF"]]
+                              [:oklch      [[0.64 0.29  28]
+                                            [0.84 0.36 145]
+                                            [0.46 0.32 264]
+                                            [0.96 0.24 110]
+                                            [0.72 0.36 331]
+                                            [0.89 0.20 193]]]]]
+          ^{:stretch 1}
+          [ui/column
+           (for [color colors]
+             [ui/rect {:paint {:fill color, :model model}}
+              [ui/size {:width 10 :height 25}]])])]]
 
       "ARGB unsigned int (Skia native)"
       [ui/rect {:paint {:fill 0x80FFDD22}}

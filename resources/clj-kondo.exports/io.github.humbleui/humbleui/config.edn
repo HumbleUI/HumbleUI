@@ -1,8 +1,6 @@
 {:hooks
  {:analyze-call
-  {io.github.humbleui.ui.dynamic/dynamic hooks.dynamic/dynamic-hook
-   io.github.humbleui.ui/dynamic         hooks.dynamic/dynamic-hook
-   io.github.humbleui.core/loopr         hooks.loopr/loopr-hook
+  {io.github.humbleui.core/loopr         hooks.loopr/loopr-hook
    io.github.humbleui.core/cond+         hooks.cond+/cond+-hook}}
  :lint-as
  {io.github.humbleui.core/deftype+          clojure.core/deftype
@@ -11,5 +9,4 @@
   io.github.humbleui.core/for-vec           clojure.core/for
   io.github.humbleui.core/for-map           clojure.core/for
   io.github.humbleui.core/thread            clojure.core/future
-  io.github.humbleui.core/doto-some         clojure.core/doto
-  io.github.humbleui.core/spy               clojure.core/identity}}
+  io.github.humbleui.core/doto-some         clojure.core/doto}}
