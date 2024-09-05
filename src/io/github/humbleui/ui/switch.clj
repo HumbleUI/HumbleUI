@@ -35,9 +35,9 @@
     (protocols/-set! switch :animation-start start')))
 
 (util/deftype+ Switch [animation-length
-                       ^:mut on?
-                       ^:mut pressed?
-                       ^:mut animation-start]
+                       on?
+                       pressed?
+                       animation-start]
   :extends ATerminalNode
 
   (-measure-impl [_ ctx _cs]

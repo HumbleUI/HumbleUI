@@ -63,12 +63,12 @@
                        track-active
                        track-inactive
                        thumb
-                       ^:mut thumb-size
-                       ^:mut dragging?
-                       ^:mut delta-x
-                       ^:mut min-value
-                       ^:mut max-value
-                       ^:mut step]
+                       thumb-size
+                       dragging?
+                       delta-x
+                       min-value
+                       max-value
+                       step]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ ctx cs]

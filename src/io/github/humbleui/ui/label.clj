@@ -1,11 +1,11 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Label [^:mut paint
-                      ^:mut ^Font font
-                      ^:mut features
-                      ^:mut texts
-                      ^:mut ^TextLine text-line
-                      ^:mut size]
+(util/deftype+ Label [paint
+                      ^Font font
+                      features
+                      texts
+                      ^TextLine text-line
+                      size]
   :extends ATerminalNode
 
   (-measure-impl [this ctx cs]

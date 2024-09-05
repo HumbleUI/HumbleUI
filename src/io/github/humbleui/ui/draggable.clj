@@ -8,13 +8,13 @@
       (:width child-size)
       (:height child-size))))
 
-(util/deftype+ Draggable [^:mut on-dragging
-                          ^:mut on-drop
-                          ^:mut my-pos
-                          ^:mut child-pos
-                          ^:mut child-size
-                          ^:mut mouse-start
-                          ^:mut dragged]
+(util/deftype+ Draggable [on-dragging
+                          on-drop
+                          my-pos
+                          child-pos
+                          child-size
+                          mouse-start
+                          dragged]
   :extends AWrapperNode
   
   (-measure-impl [_ _ctx cs]

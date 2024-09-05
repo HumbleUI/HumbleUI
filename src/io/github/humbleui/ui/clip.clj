@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Clip [^:mut radii]
+(util/deftype+ Clip [radii]
   :extends AWrapperNode
 
   (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]

@@ -31,7 +31,7 @@
       (SVGPreserveAspectRatio. SVGPreserveAspectRatioAlign/NONE SVGPreserveAspectRatioScale/MEET))))
 
 (util/deftype+ SVG [^SVGDOM dom
-                    ^:mut scaling]
+                    scaling]
   :extends ATerminalNode
   protocols/IComponent
   (-measure-impl [_ _ctx cs]

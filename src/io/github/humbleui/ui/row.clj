@@ -35,10 +35,10 @@
       :hug-width      hug-width
       :total-stretch  total-stretch)))
 
-(util/deftype+ Row [^:mut gap
-                    ^:mut children-sizes
-                    ^:mut hug-width
-                    ^:mut total-stretch]
+(util/deftype+ Row [gap
+                    children-sizes
+                    hug-width
+                    total-stretch]
   :extends AContainerNode
     
   (-measure-impl [this ctx cs]

@@ -1,7 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Translate [^:mut dx
-                          ^:mut dy]
+(util/deftype+ Translate [dx
+                          dy]
   :extends AWrapperNode 
 
   (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]

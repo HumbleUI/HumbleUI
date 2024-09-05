@@ -1,9 +1,9 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Padding [^:mut left
-                        ^:mut top
-                        ^:mut right
-                        ^:mut bottom]
+(util/deftype+ Padding [left
+                        top
+                        right
+                        bottom]
   :extends AWrapperNode  
 
   (-measure-impl [_ ctx cs]

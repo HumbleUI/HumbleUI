@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ ReserveWidth [^:mut probes]
+(util/deftype+ ReserveWidth [probes]
   :extends AWrapperNode
   
   (-measure-impl [_ ctx cs]

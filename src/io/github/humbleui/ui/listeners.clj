@@ -1,8 +1,8 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ EventListener [^:mut event-type
-                              ^:mut callback
-                              ^:mut capture?]
+(util/deftype+ EventListener [event-type
+                              callback
+                              capture?]
   :extends AWrapperNode
   
   (-event-impl [_ ctx event]
@@ -36,8 +36,8 @@
     :capture? true}
    child])
 
-(util/deftype+ KeyListener [^:mut on-key-down
-                            ^:mut on-key-up]
+(util/deftype+ KeyListener [on-key-down
+                            on-key-up]
   :extends AWrapperNode
   
   (-event-impl [_ ctx event]
@@ -58,12 +58,12 @@
 (defn key-listener-ctor [{:keys [on-key-up on-key-down] :as opts} child]
   (map->KeyListener {}))
 
-(util/deftype+ MouseListener [^:mut on-move
-                              ^:mut on-scroll
-                              ^:mut on-button
-                              ^:mut on-over
-                              ^:mut on-out
-                              ^:mut over?]
+(util/deftype+ MouseListener [on-move
+                              on-scroll
+                              on-button
+                              on-over
+                              on-out
+                              over?]
   :extends AWrapperNode
 
   (-draw-impl [_ ctx bounds container-size viewport canvas]
@@ -105,7 +105,7 @@
 (defn mouse-listener-ctor [{:keys [on-move on-scroll on-button on-over on-out] :as opts} child]
   (map->MouseListener {}))
 
-(util/deftype+ TextListener [^:mut on-input]
+(util/deftype+ TextListener [on-input]
   :extends AWrapperNode
   
   (-event-impl [_ ctx event]

@@ -1,9 +1,9 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ VScrollable [^:mut clip?
-                            ^:mut offset-px
-                            ^:mut offset
-                            ^:mut child-size]
+(util/deftype+ VScrollable [clip?
+                            offset-px
+                            offset
+                            child-size]
   :extends AWrapperNode
   
   (-measure-impl [_ ctx cs]

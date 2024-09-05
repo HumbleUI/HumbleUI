@@ -55,10 +55,10 @@
         :catmull-rom SamplingMode/CATMULL_ROM
         (:sampling opts)))))
 
-(util/deftype+ AnImage [^:mut scale
-                        ^:mut xpos
-                        ^:mut ypos
-                        ^:mut ^SamplingMode sampling
+(util/deftype+ AnImage [scale
+                        xpos
+                        ypos
+                        ^SamplingMode sampling
                         ^Image image
                         width
                         height]
@@ -96,10 +96,10 @@
        :width  width
        :height height})))
 
-(util/deftype+ Animation [^:mut scale
-                          ^:mut xpos
-                          ^:mut ypos
-                          ^:mut ^SamplingMode sampling
+(util/deftype+ Animation [scale
+                          xpos
+                          ypos
+                          ^SamplingMode sampling
                           width
                           height
                           durations

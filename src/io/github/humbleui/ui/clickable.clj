@@ -20,10 +20,10 @@
     :unpressed
     #{:held}))
 
-(util/deftype+ Clickable [^:mut *state
-                          ^:mut phase
-                          ^:mut clicks
-                          ^:mut last-click]
+(util/deftype+ Clickable [*state
+                          phase
+                          clicks
+                          last-click]
   :extends AWrapperNode
   (-draw-impl [this ctx bounds container-size viewport canvas]
     (draw (:child this) ctx bounds container-size viewport canvas)

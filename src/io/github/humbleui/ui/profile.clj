@@ -2,7 +2,7 @@
 
 (require '[clj-async-profiler.core :as profiler])
 
-(util/deftype+ Profile [^:mut value]
+(util/deftype+ Profile [value]
   :extends AWrapperNode  
   
   (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]

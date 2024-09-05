@@ -19,10 +19,10 @@
       :widths widths
       :heights heights)))
 
-(util/deftype+ Grid [^:mut cols
-                     ^:mut rows
-                     ^:mut widths
-                     ^:mut heights]
+(util/deftype+ Grid [cols
+                     rows
+                     widths
+                     heights]
   :extends AContainerNode
   
   (-measure-impl [this ctx cs]

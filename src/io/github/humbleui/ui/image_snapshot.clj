@@ -3,8 +3,8 @@
 (import
   '[io.github.humbleui.skija ColorAlphaType Image ImageInfo Surface])
 
-(util/deftype+ ImageSnapshot [^:mut scale
-                              ^:mut ^Image image]
+(util/deftype+ ImageSnapshot [scale
+                              ^Image image]
   :extends AWrapperNode
   
   (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]

@@ -1,7 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ RectNode [^:mut paint-spec
-                         ^:mut radii]
+(util/deftype+ RectNode [paint-spec
+                         radii]
   :extends AWrapperNode
 
   (-draw-impl [_ ctx bounds container-size viewport canvas]

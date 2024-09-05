@@ -11,14 +11,14 @@
 (declare maybe-render)
 
 (util/defparent ANode
-  [^:mut element
-   ^:mut parent
-   ^:mut bounds
-   ^:mut container-size
-   ^:mut this-size
-   ^:mut key
-   ^:mut mounted?
-   ^:mut dirty?]
+  [element
+   parent
+   bounds
+   container-size
+   this-size
+   key
+   mounted?
+   dirty?]
   
   protocols/IComponent
   (-context [_ ctx]
@@ -104,7 +104,7 @@
 
 (util/defparent AWrapperNode
   "A component that has exactly one child"
-  [^:mut child]
+  [child]
   :extends ANode
 
   (-measure-impl [this ctx cs]
@@ -135,7 +135,7 @@
 
 (util/defparent AContainerNode
   "A component that has multiple children"
-  [^:mut children]
+  [children]
   :extends ANode
 
   (-event [this ctx event]
@@ -166,19 +166,19 @@
 
 ;; FnNode
 
-(util/deftype+ FnNode [^:mut child
-                       ^:mut effect
-                       ^:mut should-setup?
-                       ^:mut should-render?
-                       ^:mut after-mount
-                       ^:mut before-render
-                       ^:mut user-measure
-                       ^:mut user-draw
-                       ^:mut render
-                       ^:mut after-render
-                       ^:mut before-draw
-                       ^:mut after-draw
-                       ^:mut after-unmount]
+(util/deftype+ FnNode [child
+                       effect
+                       should-setup?
+                       should-render?
+                       after-mount
+                       before-render
+                       user-measure
+                       user-draw
+                       render
+                       after-render
+                       before-draw
+                       after-draw
+                       after-unmount]
   :extends ANode
 
   (-measure-impl [this ctx cs]

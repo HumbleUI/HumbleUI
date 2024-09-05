@@ -14,9 +14,9 @@
 
 @ui/button ;; FIXME
 
-(util/deftype+ Ripple [^:mut center
-                       ^:mut progress-start
-                       ^:mut hovered?]
+(util/deftype+ Ripple [center
+                       progress-start
+                       hovered?]
   :extends ui/AWrapperNode
   
   protocols/IComponent  
@@ -91,7 +91,7 @@
 
 (util/deftype+ Card [bg
                      gradient
-                     ^:mut hovered?]
+                     hovered?]
   :extends ui/AWrapperNode
   protocols/IComponent  
   (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]

@@ -35,10 +35,10 @@
       :hug-height     hug-height
       :total-stretch  total-stretch)))
 
-(util/deftype+ Column [^:mut gap
-                       ^:mut children-sizes
-                       ^:mut hug-height
-                       ^:mut total-stretch]
+(util/deftype+ Column [gap
+                       children-sizes
+                       hug-height
+                       total-stretch]
   :extends AContainerNode
   
   (-measure-impl [this ctx cs]

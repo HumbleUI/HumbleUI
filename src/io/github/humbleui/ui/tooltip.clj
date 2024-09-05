@@ -1,10 +1,10 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ RelativeRect [^:mut relative
-                             ^:mut left
-                             ^:mut up
-                             ^:mut anchor
-                             ^:mut shackle]
+(util/deftype+ RelativeRect [relative
+                             left
+                             up
+                             anchor
+                             shackle]
   :extends AWrapperNode
   
   protocols/IComponent

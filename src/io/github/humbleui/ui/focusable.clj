@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Focusable [^:mut focused]
+(util/deftype+ Focusable [focused]
   :extends AWrapperNode  
 
   (-context [_ ctx]

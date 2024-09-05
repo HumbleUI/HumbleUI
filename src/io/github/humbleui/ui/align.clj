@@ -1,9 +1,9 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Align [^:mut x
-                      ^:mut y
-                      ^:mut child-x
-                      ^:mut child-y]
+(util/deftype+ Align [x
+                      y
+                      child-x
+                      child-y]
   :extends AWrapperNode  
 
   (-draw-impl [_ ctx bounds container-size viewport canvas]

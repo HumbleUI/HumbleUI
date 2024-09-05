@@ -1,7 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ Size [^:mut width
-                     ^:mut height]
+(util/deftype+ Size [width
+                     height]
   :extends AWrapperNode
   
   (-measure-impl [_ ctx cs]

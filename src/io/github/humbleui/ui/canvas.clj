@@ -1,7 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ ACanvas [^:mut on-paint
-                        ^:mut on-event]
+(util/deftype+ ACanvas [on-paint
+                        on-event]
   :extends ATerminalNode
   
   (-measure-impl [_ ctx cs]

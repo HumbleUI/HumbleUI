@@ -686,10 +686,10 @@
   "Same as deftype, but:
 
    1. Can “inherit” default protocols/method impls from parent (:extends)
-   2. Uses ^:mut instead of ^:unsynchronized-mutable
+   2. All fields ^:unsynchronized-mutable by default
    3. Allows using type annotations in protocol arglist
    4. Read mutable fields through ILookup: (:field instance)
-   5. Write to mutable fields from outside through ISettable: (-set! instance key value)
+   5. Write fields from outside through ISettable: (-set! instance key value)
    6. Allow with-meta"
   [name fields & body]
   (let [[parent body] (if (= :extends (first body))
@@ -698,11 +698,9 @@
                              (throw (ex-info (str "Can't resolve parent symbol: " sym) {:symbol sym})))
                            body'])
                         [nil body])
-        update-field  #(vary-meta % set/rename-keys {:mut :unsynchronized-mutable})
         fields        (->> (concat fields (:fields parent))
-                        (map update-field)
+                        (map #(vary-meta % assoc :unsynchronized-mutable true))
                         vec)
-        mut-fields    (filter #(:unsynchronized-mutable (meta %)) fields)
         protocols     (->> body
                         (filter symbol?)
                         (map qualify-symbol)
@@ -746,7 +744,7 @@
          protocols/ISettable
          (-set! [_# key# ~value-sym]
            (case key#
-             ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) mut-fields))))
+             ~@(mapcat #(vector (keyword %) (list 'set! % value-sym)) fields))))
               
        (defn ~(symbol (str 'map-> name)) [m#]
          (let [{:keys ~fields} m#]

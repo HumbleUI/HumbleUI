@@ -56,15 +56,15 @@
            :height    height})))))
     
 
-(util/deftype+ Paragraph [^:mut paint
-                          ^:mut ^Font font
-                          ^:mut metrics
-                          ^:mut features
-                          ^:mut texts
-                          ^:mut tokens
-                          ^:mut line-height
-                          ^:mut max-width
-                          ^:mut layout]
+(util/deftype+ Paragraph [paint
+                          ^Font font
+                          metrics
+                          features
+                          texts
+                          tokens
+                          line-height
+                          max-width
+                          layout]
   :extends ATerminalNode
 
   (-measure-impl [this ctx cs]

@@ -1,7 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
-(util/deftype+ VScroll [^:mut fill-track
-                        ^:mut fill-thumb]
+(util/deftype+ VScroll [fill-track
+                        fill-thumb]
   :extends AWrapperNode
   
   (-draw-impl [_ ctx bounds container-size viewport ^Canvas canvas]
