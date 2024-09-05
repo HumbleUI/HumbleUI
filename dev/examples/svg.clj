@@ -4,11 +4,11 @@
         [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
-(ui/defcomp svg [width height xpos ypos scale]
+(ui/defcomp svg [width height x y scale]
   [ui/clip
    [ui/rect {:paint {:fill 0xFF90DC48}}
     [ui/size {:width width, :height height}
-     [ui/svg {:xpos xpos :ypos ypos :scale scale, :src "dev/images/ratio.svg"}]]]])
+     [ui/svg {:x x :y y :scale scale, :src "dev/images/ratio.svg"}]]]])
 
 (ui/defcomp ui []
   [ui/with-bounds

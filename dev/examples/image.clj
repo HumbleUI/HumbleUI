@@ -1,14 +1,14 @@
 (ns examples.image
   (:require
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn img [opts]
   [ui/size {:width (:w opts) :height (:h opts)}
    [ui/rect {:paint {:stroke 0x20000000, :width 2}}
     [ui/image
      {:scale (:scale opts)
-      :xpos  (:xpos opts)
-      :ypos  (:ypos opts)
+      :x     (:x opts)
+      :y     (:y opts)
       :src   "dev/images/face_100w.png"}]]])
 
 (defn ui []
@@ -45,35 +45,39 @@
        [ui/label "Not found"]
        [ui/gap]
      
+       ;; 170 = x * 4 + y * 3
+       
        ;; scaling
        [ui/row {:gap 10}
         [ui/column {:gap 10}
-         [img {:w 170 :h 50 :scale :fit :xpos 0}]
-         [img {:w 170 :h 50 :scale :fit :xpos 0.5}]
-         [img {:w 170 :h 50 :scale :fit :xpos 1}]
+         [img {:w 170 :h 35 :scale :fit :x :left}]
+         [img {:w 170 :h 35 :scale :fit :x 0.25}]
+         [img {:w 170 :h 35 :scale :fit :x :center}]
+         [img {:w 170 :h 35 :scale :fit :x :right}]
          [ui/label ":fit"]]
         [ui/gap]
       
         [ui/column {:gap 10}
-         [img {:w 170 :h 50 :scale :fill :ypos 0}]
-         [img {:w 170 :h 50 :scale :fill :ypos 0.5}]
-         [img {:w 170 :h 50 :scale :fill :ypos 1}]
+         [img {:w 170 :h 35 :scale :fill :y :top}]
+         [img {:w 170 :h 35 :scale :fill :y 0.25}]
+         [img {:w 170 :h 35 :scale :fill :y :center}]
+         [img {:w 170 :h 35 :scale :fill :y :bottom}]
          [ui/label ":fill"]]
         [ui/gap]
       
         [ui/column {:gap 10}
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0   :ypos 0}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0.5 :ypos 0}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 1   :ypos 0}]]
+          [img {:w 50 :h 50 :scale 0.333 :x :left   :y :top}]
+          [img {:w 50 :h 50 :scale 0.333 :x :center :y :top}]
+          [img {:w 50 :h 50 :scale 0.333 :x :right   :y :top}]]
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0   :ypos 0.5}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0.5 :ypos 0.5}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 1   :ypos 0.5}]]
+          [img {:w 50 :h 50 :scale 0.333 :x :left   :y :center}]
+          [img {:w 50 :h 50 :scale 0.333 :x :center :y :center}]
+          [img {:w 50 :h 50 :scale 0.333 :x :right   :y :center}]]
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0   :ypos 1}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 0.5 :ypos 1}]
-          [img {:w 50 :h 50 :scale 0.333 :xpos 1   :ypos 1}]]
+          [img {:w 50 :h 50 :scale 0.333 :x :left   :y :bottom}]
+          [img {:w 50 :h 50 :scale 0.333 :x :center :y :bottom}]
+          [img {:w 50 :h 50 :scale 0.333 :x :right   :y :bottom}]]
          [ui/label ":scale 0.333"]]
         [ui/gap]
       
@@ -85,32 +89,34 @@
        [ui/row {:gap 10}
         [ui/column {:gap 10}
          [ui/row {:gap 10}
-          [img {:w 50 :h 170 :scale :fit :ypos 0}]
-          [img {:w 50 :h 170 :scale :fit :ypos 0.5}]
-          [img {:w 50 :h 170 :scale :fit :ypos 1}]]
+          [img {:w 35 :h 170 :scale :fit :y :top}]
+          [img {:w 35 :h 170 :scale :fit :y 0.25}]
+          [img {:w 35 :h 170 :scale :fit :y :center}]
+          [img {:w 35 :h 170 :scale :fit :y :bottom}]]
          [ui/label ":fit"]]
         [ui/gap]
       
         [ui/column {:gap 10}
          [ui/row {:gap 10}
-          [img {:w 50 :h 170 :scale :fill :xpos 0}]
-          [img {:w 50 :h 170 :scale :fill :xpos 0.5}]
-          [img {:w 50 :h 170 :scale :fill :xpos 1}]]
+          [img {:w 35 :h 170 :scale :fill :x :left}]
+          [img {:w 35 :h 170 :scale :fill :x 0.25}]
+          [img {:w 35 :h 170 :scale :fill :x :center}]
+          [img {:w 35 :h 170 :scale :fill :x :right}]]
          [ui/label ":fill"]]
         [ui/gap]
       
         [ui/column {:gap 10}
       
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0   :ypos 0}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0.5 :ypos 0}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 1   :ypos 0}]]
+          [img {:w 50 :h 50 :scale 1.5 :x :left   :y :top}]
+          [img {:w 50 :h 50 :scale 1.5 :x :center :y :top}]
+          [img {:w 50 :h 50 :scale 1.5 :x :right   :y :top}]]
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0   :ypos 0.5}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0.5 :ypos 0.5}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 1   :ypos 0.5}]]
+          [img {:w 50 :h 50 :scale 1.5 :x :left   :y :center}]
+          [img {:w 50 :h 50 :scale 1.5 :x :center :y :center}]
+          [img {:w 50 :h 50 :scale 1.5 :x :right   :y :center}]]
          [ui/row {:gap 10}
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0   :ypos 1}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 0.5 :ypos 1}]
-          [img {:w 50 :h 50 :scale 1.5 :xpos 1   :ypos 1}]]
+          [img {:w 50 :h 50 :scale 1.5 :x :left   :y :bottom}]
+          [img {:w 50 :h 50 :scale 1.5 :x :center :y :bottom}]
+          [img {:w 50 :h 50 :scale 1.5 :x :right   :y :bottom}]]
          [ui/label ":scale 1.5"]]]]]]]])

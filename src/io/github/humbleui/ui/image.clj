@@ -44,8 +44,20 @@
     (when (not= scale scale')
       (util/set!! this :scale scale')
       (invalidate-size this))
-    (util/set!! this :xpos  (or (util/checked-get-optional opts :xpos number?) 0.5))
-    (util/set!! this :ypos  (or (util/checked-get-optional opts :ypos number?) 0.5))
+    (let [xpos (:x opts)]
+      (util/set!! this :xpos (case xpos
+                               nil     0.5
+                               :left   0.0
+                               :center 0.5
+                               :right  1.0
+                               xpos)))
+    (let [ypos (:y opts)]
+      (util/set!! this :ypos (case ypos
+                               nil     0.5
+                               :top    0.0
+                               :center 0.5
+                               :bottom 1.0
+                               ypos)))
     (util/set!! this :sampling
       (case (:sampling opts)
         nil          SamplingMode/MITCHELL
