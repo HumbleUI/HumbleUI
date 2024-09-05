@@ -29,7 +29,7 @@
    :typing  ""})
 
 (def *state
-  (signal/signal (empty-state)
+  (ui/signal (empty-state)
     #_{:word    "QUART"
        :guesses ["CRANE" "START" ...]
        :typing  "SSRAT"}))

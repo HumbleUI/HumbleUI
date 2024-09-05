@@ -247,7 +247,7 @@
 (defmacro effect [inputs & body]
   `(effect-named "anon-effect" ~inputs ~@body))
 
-(defn mapv [f *xs]
+#_(defn mapv [f *xs]
   (signal*
     :mapv
     (fn [old-val cache]
@@ -257,10 +257,11 @@
         {:cache xs
          :value xs'}))))
 
-(def ^:dynamic *internal*
+
+#_(def ^:dynamic *internal*
   false)
 
-(defn- link-ref [*atom]
+#_(defn- link-ref [*atom]
   (let [*signal (signal @*atom)]
     (add-watch *atom ::sync
       (fn [_ _ _ new]

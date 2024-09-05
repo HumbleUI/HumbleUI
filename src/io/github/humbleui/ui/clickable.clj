@@ -31,7 +31,7 @@
       (set! phase (case phase
                     :unpressed         :default
                     :hovered-unpressed :hovered))
-      (signal/reset-changed! *state (clickable-state phase))
+      (ui/reset-changed! *state (clickable-state phase))
       (force-render this (:window ctx))))
 
   (-event-impl [this ctx event]
@@ -146,6 +146,6 @@
   [opts child]
   (map->Clickable
     {:phase       :default
-     :*state      (or (:*state opts) (signal/signal #{}))
+     :*state      (or (:*state opts) (signal #{}))
      :clicks      0
      :last-click  0}))

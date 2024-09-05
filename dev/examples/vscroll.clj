@@ -62,7 +62,7 @@
          [label i])]]]
     
     "Offset state"
-    (let [offset (signal/signal 0)]
+    (let [offset (ui/signal 0)]
       [ui/column {:gap 10}
        [box {:height 200}
         [ui/vscroll {:offset offset}
@@ -75,7 +75,7 @@
           offset " dip"]]]])
     
     "Synced scrolls"
-    (let [offset (signal/signal 0)]
+    (let [offset (ui/signal 0)]
       [box {:height 200}
        [ui/row
         [ui/vscroll {:offset offset}

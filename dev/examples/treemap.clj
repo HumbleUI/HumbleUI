@@ -15,18 +15,18 @@
     [io.github.humbleui.skija Canvas Paint]))
 
 (defonce *state
-  (signal/signal nil))
+  (ui/signal nil))
 
 (def *path
-  (signal/signal
+  (ui/signal
     {:text (System/getProperty "user.home")
      :placeholder "Path to scan"}))
 
 (def *progress
-  (signal/signal 0.0))
+  (ui/signal 0.0))
 
 (def *future
-  (signal/signal nil))
+  (ui/signal nil))
 
 (def link-options
   (into-array LinkOption [LinkOption/NOFOLLOW_LINKS]))

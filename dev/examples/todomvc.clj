@@ -15,7 +15,7 @@
 ;; FIXME free cursors somehow
 
 (defn cursor-in [*signal path]
-  (let [*res (signal/signal (get-in @*signal path))]
+  (let [*res (ui/signal (get-in @*signal path))]
     (add-watch *signal *res
       (fn [_ _ old new]
         (let [old (get-in old path)
@@ -36,7 +36,7 @@
   (cursor-in *signal [key]))
 
 (def *state
-  (signal/signal
+  (ui/signal
     {:new-todo {:text ""
                 :placeholder "What needs to be done?"}
      :mode     :all

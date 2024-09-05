@@ -2,7 +2,7 @@
   (:require
     [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
-        [io.github.humbleui.protocols :as protocols]
+    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
@@ -89,7 +89,7 @@
         [ui/label *value " / " max]]]]]))
 
 (ui/defcomp ui []
-  (let [*state0 (signal/signal 500)]
+  (let [*state0 (ui/signal 500)]
     [ui/align {:y :center}
      [ui/vscroll
       [ui/padding {:padding 20}
@@ -130,7 +130,7 @@
            :track-active   (map->WideTrackLeft {})
            :track-inactive (map->WideTrackRight {})}]]
      
-        (let [*state1 (signal/signal 12)]
+        (let [*state1 (ui/signal 12)]
           [with-slider 
            [ui/slider
             {:*value *state1
@@ -138,7 +138,7 @@
              :max    66
              :step   3}]])
 
-        (let [*state2 (signal/signal 2)]
+        (let [*state2 (ui/signal 2)]
           [with-slider 
            [ui/slider
             {:*value *state2

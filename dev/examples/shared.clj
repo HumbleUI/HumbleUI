@@ -29,7 +29,7 @@
   (let [key (keyword (clojure.core/name name))]
     `(do
        (defonce ~name
-         (signal/signal
+         (ui/signal
            (or
              (get (load-state) ~key)
              ~init)))

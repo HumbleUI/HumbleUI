@@ -148,7 +148,7 @@
       (set! step      (or (util/checked-get-optional opts :step number?) 1)))))
 
 (defn- slider-ctor [opts]
-  (let [*value         (or (:*value opts) (signal/signal (or (:min opts) 0)))
+  (let [*value         (or (:*value opts) (signal (or (:min opts) 0)))
         track-active   (or (some-> (:track-active opts) make) (map->SliderTrack {:fill-key :hui.slider/fill-track-active}))
         track-inactive (or (some-> (:track-inactive opts) make) (map->SliderTrack {:fill-key :hui.slider/fill-track-inactive}))
         thumb          (or (some-> (:thumb opts) make) (map->SliderThumb {}))]

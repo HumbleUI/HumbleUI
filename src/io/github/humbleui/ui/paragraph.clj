@@ -127,4 +127,4 @@
 (defn- paragraph-ctor [& texts]
   (let [[_ opts texts] (parse-element (util/consv nil texts))]
     (util/vector* paragraph-impl opts
-      (map signal/maybe-read texts))))
+      (map maybe-read texts))))

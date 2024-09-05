@@ -113,3 +113,19 @@
     (when (:this-size comp)
       (util/set!! comp :this-size nil)
       (recur (:parent comp)))))
+
+;; signals
+
+(defmacro signal
+  "Observable derived computation"
+  [& body]
+  `(signal/signal ~@body))
+
+(defmacro effect [inputs & body]
+  `(signal/effect ~inputs ~@body))
+
+(def ^{:arglists '([signal value'])} reset-changed!
+  signal/reset-changed!)
+
+(def ^{:arglists '([signal])} maybe-read
+  signal/maybe-read)

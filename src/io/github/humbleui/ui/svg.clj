@@ -6,7 +6,7 @@
   (let [{:keys [preserve-aspect-ratio x y scale]
          :or {preserve-aspect-ratio true
               scale :fit}} opts
-        x (case x
+        x (condp = x
             0   :left
             0.0 :left
             nil :center
@@ -14,7 +14,7 @@
             1   :right
             1.0 :right
             x)
-        y (case y
+        y (condp = y
             0   :top
             0.0 :top
             nil :center

@@ -9,17 +9,17 @@
   false)
 
 (def *height
-  (signal/signal 180))
+  (ui/signal 180))
 
 (def *weight
-  (signal/signal 80))
+  (ui/signal 80))
 
 ; 30 / 2.2 / 2.2
 ; 6..150
 ; 80 / 1.8 / 1.8
 
 (def *bmi
-  (signal/signal 25))
+  (ui/signal 25))
 
 (add-watch *height ::update
   (fn [_ _ old new]

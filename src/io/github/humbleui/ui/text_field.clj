@@ -942,10 +942,10 @@
          features (reduce #(.withFeatures ^ShapingOptions %1 ^String %2) ShapingOptions/DEFAULT features)
          *value   (or
                     (:*value opts)
-                    (signal/signal ""))
+                    (signal ""))
          *state   (or
                     (:*state opts)
-                    (signal/signal {}))]
+                    (signal {}))]
      (swap! *value #(or % ""))
      (swap! *state #(util/merge-some
                       {:text               ""

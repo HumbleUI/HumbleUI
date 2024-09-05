@@ -50,4 +50,4 @@
 (defn- label-ctor [& texts]
   (let [[_ opts texts] (parse-element (util/consv nil texts))]
     (util/vector* label-impl opts
-      (map signal/maybe-read texts))))
+      (map maybe-read texts))))

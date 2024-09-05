@@ -16,7 +16,7 @@
   (def currencies tail))
 
 (def *state
-  (signal/signal
+  (ui/signal
     {:sort-col   0
      :sort-dir   :asc
      :currencies currencies}))

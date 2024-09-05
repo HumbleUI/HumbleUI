@@ -55,4 +55,4 @@
    (map->Hoverable
      {:*state (or
                 (:*state opts)
-                (signal/signal #{}))})))
+                (signal #{}))})))

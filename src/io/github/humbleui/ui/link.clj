@@ -14,7 +14,7 @@
   (let [color-pressed (or
                         color-pressed
                         color-hovered)
-        visited       (or visited (signal/signal false))
+        visited       (or visited (signal false))
         font          (get-font)
         metrics       (font/metrics font)
         position      (descaled (:underline-position metrics))

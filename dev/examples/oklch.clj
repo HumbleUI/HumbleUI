@@ -42,13 +42,13 @@
         (Color/makeRGB r g b)))))
 
 (def *l
-  (signal/signal 0.65))
+  (ui/signal 0.65))
 
 (def *c
-  (signal/signal 0.1))
+  (ui/signal 0.1))
 
 (def *h
-  (signal/signal 180))
+  (ui/signal 180))
 
 (defn on-paint [ctx canvas size]
   (let [{:keys [width height]} size

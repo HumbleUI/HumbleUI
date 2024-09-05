@@ -19,11 +19,11 @@
   (shared/table
     "Virtualized rendering: column"
     (let [*atom  (atom [])
-          *drawn (signal/signal [])]
+          *drawn (ui/signal [])]
       {:before-draw
        #(reset! *atom [])
        :after-draw
-       #(signal/reset-changed! *drawn @*atom)
+       #(ui/reset-changed! *drawn @*atom)
        :render
        (fn []
          [ui/center
@@ -40,11 +40,11 @@
     
     "Virtualized rendering: grid"
     (let [*atom  (atom [])
-          *drawn (signal/signal [])]
+          *drawn (ui/signal [])]
       {:before-draw
        #(reset! *atom [])
        :after-draw
-       #(signal/reset-changed! *drawn @*atom)
+       #(ui/reset-changed! *drawn @*atom)
        :render
        (fn []
          [ui/center

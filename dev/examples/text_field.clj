@@ -17,7 +17,7 @@
     :hui.text-field/padding-right         (float padding-h)}
    [ui/text-field
     (assoc opts :*state
-      (signal/signal
+      (ui/signal
         {:text        text
          :placeholder placeholder
          :from        from

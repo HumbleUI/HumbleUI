@@ -10,7 +10,7 @@
     [io.github.humbleui.skija Canvas PaintStrokeCap PaintStrokeJoin Path]))
 
 (def *state
-  (signal/signal
+  (ui/signal
     {:x      0
      :y      0
      :zoom   1
@@ -18,7 +18,7 @@
      :drag-y nil}))
 
 (def *paths
-  (signal/signal []))
+  (ui/signal []))
 
 (defn on-paint [state ctx canvas size]
   (let [zoom           (* (:zoom state) (:scale ctx))

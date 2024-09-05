@@ -3,10 +3,10 @@
 (ui/defcomp toggleable-ctor [opts child-ctor-or-el]
   (let [value-on  (:value-on opts true)
         value-off (:value-off opts)
-        *value    (or (:*value opts) (signal/signal value-off))
+        *value    (or (:*value opts) (signal value-off))
         on-click  (:on-click opts)
         on-click' (fn [event]
-                    (signal/reset-changed! *value
+                    (reset-changed! *value
                       (if (= value-on @*value)
                         value-off
                         value-on))

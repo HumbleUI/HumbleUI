@@ -21,7 +21,7 @@
     [ui/label form]))
 
 (def *state
-  (signal/signal {:text ""}))
+  (ui/signal {:text ""}))
 
 (defn ui []
   [ui/align {:y :top}

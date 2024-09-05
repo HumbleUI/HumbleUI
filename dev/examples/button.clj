@@ -5,14 +5,14 @@
     [io.github.humbleui.ui :as ui]))
 
 (defonce *clicks
-  (signal/signal 0))
+  (ui/signal 0))
 
 (defonce *selected
-  (signal/signal nil))
+  (ui/signal nil))
 
 (ui/defcomp external-state []
-  (let [*state  (signal/signal #{})
-        *clicks (signal/signal 0)]
+  (let [*state  (ui/signal #{})
+        *clicks (ui/signal 0)]
     (fn []
       [ui/row {:gap 10}
        [ui/align {:y :top}
@@ -31,8 +31,8 @@
       [ui/label "Inline state: " state]])])
 
 (ui/defcomp nested-bubble []
-  (let [*outer (signal/signal 0)
-        *inner (signal/signal 0)]
+  (let [*outer (ui/signal 0)
+        *inner (ui/signal 0)]
     (fn []
       [ui/row {:gap 10}
        [ui/button {:name "outer" :on-click (fn [_] (swap! *outer inc))}
@@ -44,8 +44,8 @@
          [ui/label "Inner: " *inner]]]])))
 
 (ui/defcomp nested-capture-prevent []
-  (let [*outer (signal/signal 0)
-        *inner (signal/signal 0)]
+  (let [*outer (ui/signal 0)
+        *inner (ui/signal 0)]
     (fn []
       [ui/row {:gap 10}
        [ui/button {:on-click-capture (fn [_] (swap! *outer inc))}
@@ -57,8 +57,8 @@
          [ui/label "Inner: " *inner]]]])))
 
 (ui/defcomp nested-capture []
-  (let [*outer (signal/signal 0)
-        *inner (signal/signal 0)]
+  (let [*outer (ui/signal 0)
+        *inner (ui/signal 0)]
     (fn []
       [ui/row {:gap 10}
        [ui/button {:on-click-capture (fn [_] (swap! *outer inc) false)}
@@ -70,7 +70,7 @@
          [ui/label "Inner: " *inner]]]])))
 
 (ui/defcomp toggle []
-  (let [*value (signal/signal nil)]
+  (let [*value (ui/signal nil)]
     (fn []
       [ui/row {:gap 10}
        [ui/toggle-button {:*value *value} "Toggle"]
@@ -78,7 +78,7 @@
         [ui/label (if @*value "ON" "OFF")]]])))
 
 (ui/defcomp radio []
-  (let [*value (signal/signal :one)]
+  (let [*value (ui/signal :one)]
     (fn []
       [ui/row {:gap 10}
        [ui/toggle-button {:*value *value
@@ -125,10 +125,10 @@
   [ui/row {:gap 10}
    [ui/align {:x :left}
     [ui/shadow {:blur @*clicks}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Outset shadow"]]]
+     [ui/button {:on-click (fn [_] (swap! *clicks inc))} "Outset shadow"]]]
    [ui/align {:x :left}
     [ui/shadow-inset {:blur @*clicks}
-     [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))} "Inset shadow"]]]])
+     [ui/button {:on-click (fn [_] (swap! *clicks inc))} "Inset shadow"]]]])
 
 (ui/defcomp ui []
   [ui/align {:y :center}
@@ -157,7 +157,7 @@
          [with-shadow]]
           
         [ui/align {:x :left}
-         [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/button {:on-click (fn [_] (swap! *clicks inc))}
           [ui/row {:gap 5}
            [ui/size {:width 14, :height 14}
             [ui/image {:src "dev/images/add.png"}]]
@@ -165,7 +165,7 @@
             [ui/label "With PNG icon"]]]]]
 
         [ui/align {:x :left}
-         [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/button {:on-click (fn [_] (swap! *clicks inc))}
           [ui/row {:gap 5}
            [ui/size {:width 14, :height 14}
             [ui/svg {:src "dev/images/add.svg"}]]
@@ -173,7 +173,7 @@
             [ui/label "With SVG icon"]]]]]
                     
         [ui/align {:x :left}
-         [ui/button {:on-click (fn [_] (signal/swap! *clicks inc))}
+         [ui/button {:on-click (fn [_] (swap! *clicks inc))}
           [ui/label "Dynamic label: " *clicks]]]
         
         [ui/align {:x :left}

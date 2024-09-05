@@ -6,13 +6,13 @@
     [io.github.humbleui.ui :as ui]))
 
 (def *celsius
-  (signal/signal
+  (ui/signal
     {:text "5"
      :from 1
      :to   1}))
 
 (def *fahrenheit
-  (signal/signal
+  (ui/signal
     {:text "41"}))
 
 (def ^:dynamic *editing* false)

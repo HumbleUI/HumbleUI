@@ -9,7 +9,7 @@
     [io.github.humbleui.util :as util]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.font :as font]
-        [io.github.humbleui.protocols :as protocols]
+    [io.github.humbleui.protocols :as protocols]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.window :as window])

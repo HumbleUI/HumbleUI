@@ -18,7 +18,7 @@
   (-draw-impl [_ ctx bounds container-size viewport canvas]
     (set! child-size (protocols/-measure child ctx (util/ipoint (:width container-size) Integer/MAX_VALUE)))
     (set! offset-px (util/clamp (scaled (or @offset 0)) 0 (- (:height child-size) (:height bounds))))
-    (signal/reset-changed! offset (descaled (math/round offset-px)))
+    (reset-changed! offset (descaled (math/round offset-px)))
     (canvas/with-canvas canvas
       (when clip?
         (canvas/clip-rect canvas bounds))
@@ -63,4 +63,4 @@
      {:offset-px 0
       :offset    (or
                    (:offset opts)
-                   (signal/signal 0))})))
+                   (signal 0))})))

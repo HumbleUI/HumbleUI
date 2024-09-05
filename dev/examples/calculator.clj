@@ -9,7 +9,7 @@
     [io.github.humbleui.skija Font Typeface]))
 
 (def *state
-  (signal/signal
+  (ui/signal
     {:b "0"
      :screen :b}))
 

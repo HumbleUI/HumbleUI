@@ -7,7 +7,7 @@
     [clojure.walk :as walk]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.error :as error]
-        [io.github.humbleui.protocols :as protocols])
+    [io.github.humbleui.protocols :as protocols])
   (:import
     [io.github.humbleui.skija Canvas]
     [io.github.humbleui.types IPoint IRange IRect Point Rect RRect]

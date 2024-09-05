@@ -5,10 +5,10 @@
     [io.github.humbleui.ui :as ui]))
 
 (def *state-first
-  (signal/signal true))
+  (ui/signal true))
 
 (def *state-second
-  (signal/signal false))
+  (ui/signal false))
 
 (add-watch *state-first :watch
   (fn [_ _ old new]

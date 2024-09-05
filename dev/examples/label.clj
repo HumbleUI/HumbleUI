@@ -7,7 +7,7 @@
     [io.github.humbleui.ui :as ui]))
 
 (defn use-timer []
-  (let [*state (signal/signal 0)
+  (let [*state (ui/signal 0)
         cancel (util/schedule
                  #(swap! *state inc) 0 1000)]
     {:value *state

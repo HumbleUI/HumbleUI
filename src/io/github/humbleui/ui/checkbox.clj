@@ -20,7 +20,7 @@
   ([opts child]
    (let [value-on  (if (contains? opts :value-on) (:value-on opts) true)
          value-off (if (contains? opts :value-off) (:value-off opts) false)
-         *value    (or (:*value opts) (signal/signal value-off))
+         *value    (or (:*value opts) (signal value-off))
          opts'     (assoc opts
                      :value-on  value-on
                      :value-off value-off

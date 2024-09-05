@@ -137,7 +137,7 @@
           :else            label)))]])
 
 (ui/defcomp app-impl []
-  (let [*profiling?  (signal/signal false)
+  (let [*profiling?  (ui/signal false)
         examples-map (->> examples
                        (mapcat second)
                        (into {}))]
