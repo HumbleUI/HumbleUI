@@ -150,9 +150,12 @@
       (let [ctx (protocols/-context this ctx)]
         (some #(iterate % ctx cb) (:children this)))))
   
+  (-child-elements [this ctx new-element]
+    (let [[_ _ child-els] (parse-element new-element)]
+      (util/flatten child-els)))
+  
   (-reconcile-children [this ctx el']
     (let [child-els (protocols/-child-elements this ctx el')
-          child-els (util/flatten child-els)
           children' (reconcile-many ctx (:children this) child-els)]
       (protocols/-set! this :children children')
       (doseq [child children'

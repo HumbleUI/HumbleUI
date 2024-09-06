@@ -1,9 +1,7 @@
 (in-ns 'io.github.humbleui.ui)
 
 (defn- row-children-sizes [this ctx cs]
-  (let [{:keys [gap children]} this
-        gap-px         (scaled gap ctx)
-        gaps           (-> children count dec (max 0))
+  (let [{:keys [children]} this
         hug-sizes      (mapv
                          (fn [child]
                            (let [stretch (-> child :element meta :stretch)
@@ -17,7 +15,6 @@
         total-stretch  (transduce (keep :stretch) + 0 hug-sizes)
         space          (-> (:width cs)
                          (- hug-width)
-                         (- (* gap-px gaps))
                          (max 0))
         sizes          (mapv
                          (fn [{:keys [child stretch size] :as m}]
@@ -27,7 +24,7 @@
                                (assoc m :size size))
                              m))
                          hug-sizes)
-        width          (+ (transduce (map #(-> % :size :width))  +   0 sizes) (* gap-px gaps))
+        width          (transduce (map #(-> % :size :width))  +   0 sizes)
         height         (transduce (map #(-> % :size :height)) max 0 sizes)]
     (util/set!! this
       :this-size      (util/ipoint width height)
@@ -35,8 +32,7 @@
       :hug-width      hug-width
       :total-stretch  total-stretch)))
 
-(util/deftype+ Row [gap
-                    children-sizes
+(util/deftype+ Row [children-sizes
                     hug-width
                     total-stretch]
   :extends AContainerNode
@@ -48,11 +44,8 @@
   (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (when-not this-size
       (row-children-sizes this ctx container-size))
-    (let [gap-px (scaled gap ctx)
-          gaps   (-> children count dec (max 0))
-          space  (-> (:width bounds)
+    (let [space  (-> (:width bounds)
                    (- hug-width)
-                   (- (* gap-px gaps))
                    (max 0))]
       (util/loopr [x (:x bounds)]
         [{:keys [child stretch size]} children-sizes]
@@ -64,14 +57,21 @@
                              stretch (assoc :width child-width))]
           (draw child ctx child-bounds child-cs viewport canvas)
           (when (< x (:right viewport))
-            (recur (long (+ x gap-px child-width))))))))
-  
-  (-reconcile-opts [this ctx new-element]
-    (let [opts (parse-opts new-element)
-          gap' (or (util/checked-get-optional opts :gap number?) 0)]
-      (when (not= gap gap')
-        (set! gap gap')
-        (invalidate-size this)))))
+            (recur (long (+ x child-width))))))))
+    
+  (-child-elements [this ctx new-element]
+    (let [[_ opts child-els] (parse-element new-element)
+          child-els          (util/flatten child-els)
+          gap                (:gap opts)
+          gap                (if (number? gap)
+                               [size {:width gap}]
+                               gap)]
+      (cond->> child-els
+        gap
+        (interpose gap)
+        
+        (:align opts)
+        (map #(vector align {:y (:align opts)} %))))))
 
 (defn- row-ctor [& children]
   (map->Row {}))
