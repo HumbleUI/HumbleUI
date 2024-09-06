@@ -2,7 +2,7 @@
   (:require
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.ui :as ui])
+    [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.types IPoint Point]
     [io.github.humbleui.skija Canvas]))

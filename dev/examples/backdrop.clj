@@ -2,7 +2,7 @@
   (:require
     [clojure.math :as math]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.ui :as ui])
+    [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode ImageFilter]))
 

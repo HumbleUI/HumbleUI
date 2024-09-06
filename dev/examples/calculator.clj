@@ -3,7 +3,7 @@
     [clojure.string :as str]
     [clojure.test :as test :refer [are deftest]]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Font Typeface]))

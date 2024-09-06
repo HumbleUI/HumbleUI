@@ -2,9 +2,30 @@
 
 (import '[io.github.humbleui.skija Color4f ColorSpace Paint PaintMode PaintStrokeCap PaintStrokeJoin])
 
-(def ^:private paint-hex-chars
-  {\0 0, \1 1, \2 2, \3 3, \4 4, \5 5, \6 6, \7 7, \8 8, \9 9,
-   \a 10, \A 10, \b 11, \B 11, \c 12, \C 12, \d 13, \D 13, \e 14, \E 14, \f 15, \F 15})
+(defn ^:private paint-hex-chars ^long [ch]
+  (case ch
+    \0 0
+    \1 1
+    \2 2
+    \3 3
+    \4 4
+    \5 5
+    \6 6
+    \7 7
+    \8 8
+    \9 9
+    \a 10
+    \A 10
+    \b 11
+    \B 11
+    \c 12
+    \C 12
+    \d 13
+    \D 13
+    \e 14
+    \E 14
+    \f 15
+    \F 15))
 
 (defn- color->nonlinear ^double [^double x]
   (if (>= x 0.0031308)
@@ -31,17 +52,16 @@
         b  (* c (math/sin hr))
         
         ;; oklab -> srgb
-        l'  (+ l (* +0.3963377774 a) (* +0.2158037573 b))
-        m'  (+ l (* -0.1055613458 a) (* -0.0638541728 b))
-        s'  (+ l (* -0.0894841775 a) (* -1.2914855480 b))
-        l'' (* l' l' l')
-        m'' (* m' m' m')
-        s'' (* s' s' s')
-        lr  (+ (* +4.0767416621 l'') (* -3.3077115913 m'') (* +0.2309699292 s''))
-        lg  (+ (* -1.2684380046 l'') (* +2.6097574011 m'') (* -0.3413193965 s''))
-        lb  (+ (* -0.0041960863 l'') (* -0.7034186147 m'') (* +1.7076147010 s''))]
-    ; (when (and (<= 0.0 lr 1.0) (<= 0.0 lg 1.0) (<= 0.0 lb 1.0))
-    (Color4f. lr lg lb (.getA color))))
+        l'  (+ l (+ (* +0.3963377774 a) (* +0.2158037573 b)))
+        m'  (+ l (+ (* -0.1055613458 a) (* -0.0638541728 b)))
+        s'  (+ l (+ (* -0.0894841775 a) (* -1.2914855480 b)))
+        l'' (* l' (* l' l'))
+        m'' (* m' (* m' m'))
+        s'' (* s' (* s' s'))
+        lr  (+ (* +4.0767416621 l'') (+ (* -3.3077115913 m'') (* +0.2309699292 s'')))
+        lg  (+ (* -1.2684380046 l'') (+ (* +2.6097574011 m'') (* -0.3413193965 s'')))
+        lb  (+ (* -0.0041960863 l'') (+ (* -0.7034186147 m'') (* +1.7076147010 s'')))]
+    (Color4f. (color->nonlinear (max 0 lr)) (color->nonlinear (max 0 lg)) (color->nonlinear (max 0 lb)) (.getA color))))
 
 (defn color-p3->srgb ^Color4f [^Color4f color]
   (let [r  (.getR color)
@@ -55,18 +75,17 @@
         x  (+ (* r' 0.4865709486482162) (+ (* g' 0.26566769316909306) (* b' 0.1982172852343625)))
         y  (+ (* r' 0.2289745640697488) (+ (* g' 0.6917385218365064)  (* b' 0.079286914093745)))
         z  (+ (* r' 0.0000000000000000) (+ (* g' 0.04511338185890264) (* b' 1.043944368900976)))
-        ;; CIE XYZ (D65) -> sRGB
+        ;; CIE XYZ (D65) -> linear sRGB
         lr (+ (* x  3.2404542) (+ (* y -1.5371385) (* z -0.4985314)))
         lg (+ (* x -0.9692660) (+ (* y  1.8760108) (* z  0.0415560)))
         lb (+ (* x  0.0556434) (+ (* y -0.2040259) (* z  1.0572252)))]
-    ; (when (and (<= 0.0 lr 1.0) (<= 0.0 lg 1.0) (<= 0.0 lb 1.0))
-    (Color4f. lr lg lb (.getA color))))
+    (Color4f. (color->nonlinear (max 0 lr)) (color->nonlinear (max 0 lg)) (color->nonlinear (max 0 lb)) (.getA color))))
 
 (defn- color->srgb ^Color4f [^Color4f color model]
   (case model
     nil         color
     :srgb       color
-    :display-p3 (color-p3->srgb color) #_(.convert (ColorSpace/getDisplayP3) (ColorSpace/getSRGB) color)
+    :display-p3 (color-p3->srgb color) #_(.convert (ColorSpace/getDisplayP3) (ColorSpace/getSRGB) color) #_color
     :oklch      (color-oklch->srgb color)))
 
 (defn- paint-color ^Color4f [spec]
@@ -109,35 +128,20 @@
     (not (#{3 4} (count spec)))
     (throw (ex-info (str "Expected 3 or 4 values, got: " (pr-str spec)) {:spec spec}))
     
-    (some float? spec)
+    :else
     (let [; _ (when (not (every? #(and (<= 0.0 %) (<= % 1.0)) spec))
           ;     (throw (ex-info (str "Expected floats between 0..1, got: " (pr-str spec)) {:spec spec})))
           r (float (nth spec 0))
           g (float (nth spec 1))
           b (float (nth spec 2))
           a (float (nth spec 3 1.0))]
-      (Color4f. r g b a))
-    
-    :let [cnt (count spec)]
-    
-    (not (every? #(and (<= 0 %) (<= % 255)) spec))
-    (throw (ex-info (str "Expected ints between 0..255, got: " (pr-str spec)) {:spec spec}))
-    
-    (= 3 cnt)
-    (let [r (nth spec 0)
-          g (nth spec 1)
-          b (nth spec 2)]
-      (Color4f. (/ r 255.0) (/ g 255.0) (/ b 255.0) 1.0))
-    
-    (= 4 cnt)
-    (let [r (nth spec 0)
-          g (nth spec 1)
-          b (nth spec 2)
-          a (nth spec 3)]
-      (Color4f. (/ r 255.0) (/ g 255.0) (/ b 255.0) (/ a 255.0)))
-    
-    :else
-    (throw (ex-info (str "Malfromed color: " (pr-str spec)) {:spec spec}))))
+      (Color4f. r g b a))))
+
+(defn color-space [model]
+  nil
+  #_(if (= :display-p3 model)
+      (ColorSpace/getDisplayP3)
+      (ColorSpace/getSRGB)))
 
 (defn paint
   "Colors:
@@ -181,7 +185,7 @@
       fill
       (let [color (-> fill paint-color (color->srgb model))]
         (doto (Paint.)
-          (.setColor4f color)))
+          (.setColor4f color (color-space model))))
         
       :let [stroke (:stroke spec)]
     
@@ -190,7 +194,7 @@
             width (-> (:width spec) (or 1.0) (* (:scale ctx)))
             p     (doto (Paint.)
                     (.setMode PaintMode/STROKE)            
-                    (.setColor4f color)
+                    (.setColor4f color (color-space model))
                     (.setStrokeWidth width))]
         (when-some [cap (:cap spec)]
           (.setStrokeCap p (case cap

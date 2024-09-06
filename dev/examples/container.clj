@@ -1,6 +1,6 @@
 (ns examples.container
   (:require
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp label [text]
   [ui/rect {:paint {:fill 0xFFB2D7FE}}

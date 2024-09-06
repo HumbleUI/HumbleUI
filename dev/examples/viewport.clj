@@ -2,7 +2,7 @@
   (:require
     [examples.shared :as shared]
     [io.github.humbleui.font :as font]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defn label [*atom s]

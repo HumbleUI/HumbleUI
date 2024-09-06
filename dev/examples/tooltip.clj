@@ -1,6 +1,6 @@
 (ns examples.tooltip
   (:require
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn tooltip [opts child]
   [ui/tooltip

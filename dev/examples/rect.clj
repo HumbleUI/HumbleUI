@@ -2,7 +2,7 @@
   (:require
     [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
   (shared/table

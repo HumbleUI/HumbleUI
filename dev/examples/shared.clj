@@ -9,7 +9,7 @@
     [io.github.humbleui.util :as util]
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.font :as font]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]))
@@ -107,7 +107,7 @@
                 :let [left ['ui/padding {:padding 10}
                             ['ui/align {:x :left :y :top}
                              row]]
-                      lines (slurp-source *file* name)
+                      lines (slurp-source *file* (str "\"" name "\""))
                       right ['ui/padding {:padding 10}
                              ['ui/column {:gap 10}
                               ['ui/label {:font-weight :bold} name]

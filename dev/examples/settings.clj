@@ -2,7 +2,7 @@
   (:require
     [examples.shared :as shared]
     [io.github.humbleui.debug :as debug]
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (defn setting [name signal]
   [ui/row

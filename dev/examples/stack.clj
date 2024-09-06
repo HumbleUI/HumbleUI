@@ -1,6 +1,6 @@
 (ns examples.stack
   (:require
-        [io.github.humbleui.ui :as ui]))
+    [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
   [ui/align {:y :center}

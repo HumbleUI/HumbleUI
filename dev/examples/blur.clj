@@ -1,6 +1,6 @@
 (ns examples.blur
   (:require
-        [io.github.humbleui.ui :as ui])
+    [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija FilterTileMode ImageFilter]))
 

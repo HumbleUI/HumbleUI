@@ -1,7 +1,7 @@
 (ns examples.text-field-debug
   (:require
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defn render-form [form]

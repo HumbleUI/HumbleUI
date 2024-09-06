@@ -1,7 +1,7 @@
 (ns examples.switch
   (:require
     [io.github.humbleui.font :as font]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (def *state-first

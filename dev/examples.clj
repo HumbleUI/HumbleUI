@@ -14,6 +14,7 @@
     [examples.canvas-shapes]
     [examples.checkbox]
     [examples.clip]
+    [examples.color]
     [examples.container]
     [examples.effects]
     [examples.errors]
@@ -61,6 +62,7 @@
   [["Documented"
     [["Align" examples.align/ui]
      ["Clip" examples.clip/ui]
+     ["Color" examples.color/ui]
      ["Label" examples.label/ui]
      ["Padding" examples.padding/ui]
      ["Paint" examples.paint/ui]

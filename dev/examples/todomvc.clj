@@ -4,7 +4,7 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])
   (:import
     [io.github.humbleui.skija Canvas]))

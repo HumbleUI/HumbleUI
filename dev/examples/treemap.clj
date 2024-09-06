@@ -3,7 +3,7 @@
     [clojure.string :as str]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.window :as window]
     [io.github.humbleui.ui :as ui])
   (:import

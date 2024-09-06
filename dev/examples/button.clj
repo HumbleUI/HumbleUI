@@ -1,7 +1,7 @@
 (ns examples.button
   (:require
     [io.github.humbleui.util :as util]
-        [io.github.humbleui.signal :as signal]
+    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (defonce *clicks

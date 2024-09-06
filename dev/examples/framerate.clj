@@ -3,7 +3,7 @@
     [clojure.math :as math]
     [io.github.humbleui.canvas :as canvas]
     [io.github.humbleui.font :as font]
-        [io.github.humbleui.ui :as ui]
+    [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window])
   (:import
     [io.github.humbleui.skija Color4f Paint]))
