@@ -5,6 +5,7 @@
         hug-sizes     (mapv
                         (fn [child]
                           (let [stretch (-> child :element meta :stretch)
+                                stretch (if (true? stretch) 1 stretch)
                                 size    (when (nil? stretch)
                                           (measure child ctx cs))]
                             {:child   child
