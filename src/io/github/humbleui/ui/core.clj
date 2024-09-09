@@ -83,12 +83,19 @@
 
 ;; protocols
 
-(defn measure [comp ctx ^IPoint cs]
-  (assert (instance? IPoint cs) (str "Expected IPoint as cs, got: " cs))
-  (when comp
-    (let [res (protocols/-measure comp ctx cs)]
-      (assert (instance? IPoint res) (str "Expected IPoint as result, got: " res))
-      res)))
+(defn measure
+  ([comp]
+   (let [ctx *ctx*
+         size (measure comp ctx (util/ipoint 0 0))]
+     (util/ipoint
+       (descaled (:width size) ctx)
+       (descaled (:height size) ctx))))
+  ([comp ctx ^IPoint cs]
+   (assert (instance? IPoint cs) (str "Expected IPoint as cs, got: " cs))
+   (when comp
+     (let [res (protocols/-measure comp ctx cs)]
+       (assert (instance? IPoint res) (str "Expected IPoint as result, got: " res))
+       res))))
 
 (defn draw [comp ctx bounds container-size viewport canvas]
   (assert (instance? IRect bounds) (str "bounds: expected IRect, got: " bounds))
