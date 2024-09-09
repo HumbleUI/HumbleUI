@@ -1,73 +1,87 @@
 (ns examples.grid
   (:require
-    [examples.shared :as shared]
     [clojure.string :as str]
+    [examples.shared :as shared]
     [io.github.humbleui.util :as util]
-    [io.github.humbleui.font :as font]
     [io.github.humbleui.signal :as signal]
-    [io.github.humbleui.typeface :as typeface]
     [io.github.humbleui.ui :as ui]))
 
-(let [[head & tail]
-      (->> (slurp "dev/examples/currency.csv")
-        (str/split-lines)
-        (mapv #(str/split % #",")))]
-  (def header head)
-  (def currencies tail))
+(ui/defcomp label [text]
+  [ui/rect {:paint [{:fill   "FFDB2C80"}
+                    {:stroke "808080"}]}
+   [ui/padding {:padding 10}
+    [ui/align {:x :left :y :top}
+     [ui/label text]]]])
 
-(def *state
-  (ui/signal
-    {:sort-col   0
-     :sort-dir   :asc
-     :currencies currencies}))
-
-(defn on-click [i]
-  (fn [e]
-    (swap! *state
-      (fn [{:keys [sort-col sort-dir] :as state}]
-        (cond
-          (not= i sort-col)
-          {:sort-col   i
-           :sort-dir   :asc
-           :currencies (->> currencies (sort-by #(nth % i)))}
-          
-          (= :asc sort-dir)
-          {:sort-col   i
-           :sort-dir   :desc
-           :currencies (->> currencies (sort-by #(nth % i)) reverse)}
-          
-          (= :desc sort-dir)
-          {:sort-col   i
-           :sort-dir   :asc
-           :currencies (->> currencies (sort-by #(nth % i)))})))))
-
-(defn ui []
-  (let [{:keys [currencies
-                sort-col
-                sort-dir]} @*state]
-    [ui/align {:y :center}
-     [ui/vscroll
-      [ui/align {:x :center}
-       [ui/padding {:padding 20}
-        [ui/grid {:cols (count header)
-                  :rows (inc (count currencies))}
-         (concat
-           (for [[th i] (util/zip header (range))]
-             [ui/clickable
-              {:on-click (on-click i)}
-              [ui/padding {:padding 10}
-               [ui/reserve-width
-                {:probes [[ui/label (str th " ⏶")]
-                          [ui/label (str th " ⏷")]]}
-                [ui/align {:x :left}
-                 [ui/label {:font-weight :bold}
-                  (str th
-                    (case (when (= i sort-col)
-                            sort-dir)
-                      :asc  " ⏶"
-                      :desc " ⏷"
-                      nil   ""))]]]]])
-           (for [row currencies
-                 s   row]
-             [ui/padding {:padding 10}
-              [ui/label s]]))]]]]]))
+(ui/defcomp ui []
+  (shared/table
+    "Simple hug grid"
+    [ui/grid {:cols 2}
+     [label "Lorem"]
+     [label "ipsum"]
+     [label "dolor"]
+     [label "sit"]
+     [label "amet,"]
+     [label "consectetur"]]
+    
+    "Incomplete"
+    [ui/grid {:cols 2}
+     [label "Lorem"]
+     [label "ipsum"]
+     [label "dolor"]
+     [label "sit"]
+     [label "amet,"]]
+    
+    "Even gap"
+    [ui/grid {:cols 2
+              :gap  8}
+     [label "Lorem"]
+     [label "ipsum"]
+     [label "dolor"]
+     [label "sit"]
+     [label "amet,"]
+     [label "consectetur"]]
+    
+    "Uneven gap"
+    [ui/grid {:cols    2
+              :col-gap 16
+              :row-gap 8}
+     [label "Lorem"]
+     [label "ipsum"]
+     [label "dolor"]
+     [label "sit"]
+     [label "amet,"]
+     [label "consectetur"]]
+    
+    "Stretch"
+    [ui/size {:height 200}
+     [ui/grid {:cols [:hug {:stretch 1} :hug]
+               :rows [:hug {:stretch 1} :hug]}
+      (map #(vector label %)
+        (str/split "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed"
+          #"\s"))]]
+    
+    "Last row spec is repeated"
+    [ui/size {:height 300}
+     [ui/grid {:cols [:hug {:stretch 1} :hug]
+               :rows [:hug {:stretch 1} :hug]}
+      (map #(vector label %)
+        (str/split "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
+          #"\s"))]]
+    
+    "Colspan"
+    [ui/grid {:cols 3}
+     [label "Lorem"]
+     [label "ipsum"]
+     [label "dolor"]
+     
+     ^{:col-span 2}
+     [label "sit"]
+     [label "amet,"]
+     
+     [label "consectetur"]
+     ^{:col-span 2}
+     [label "adipiscing"]
+     
+     ^{:col-span 3}
+     [label "elit,"]]))

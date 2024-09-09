@@ -12,7 +12,7 @@
                              :stretch stretch
                              :size    size}))
                         children)
-        hug-height     (transduce (keep #(-> % :size :height)) + 0 hug-sizes)
+        hug-height    (transduce (keep #(-> % :size :height)) + 0 hug-sizes)
         total-stretch (transduce (keep :stretch) + 0 hug-sizes)
         space         (-> (:height cs)
                         (- hug-height)

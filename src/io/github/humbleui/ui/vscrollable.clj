@@ -17,16 +17,17 @@
   
   (-draw-impl [_ ctx bounds container-size viewport canvas]
     (set! child-size (protocols/-measure child ctx (util/ipoint (:width container-size) Integer/MAX_VALUE)))
-    (set! offset-px (util/clamp (scaled (or @offset 0)) 0 (- (:height child-size) (:height bounds))))
-    (reset-changed! offset (descaled (math/round offset-px)))
-    (canvas/with-canvas canvas
-      (when clip?
-        (canvas/clip-rect canvas bounds))
-      (let [child-bounds (-> bounds
-                           (update :y - offset-px)
-                           (update :y math/round)
-                           (assoc :height (:height child-size)))]
-        (draw child ctx child-bounds (assoc container-size :height Integer/MAX_VALUE) (util/irect-intersect viewport bounds) canvas))))
+    (let [max-offset (max 0 (- (:height child-size) (:height bounds)))]
+      (set! offset-px (util/clamp (scaled (or @offset 0) ctx) 0 max-offset))
+      (reset-changed! offset (descaled (math/round offset-px) ctx))
+      (canvas/with-canvas canvas
+        (when clip?
+          (canvas/clip-rect canvas bounds))
+        (let [child-bounds (-> bounds
+                             (update :y - offset-px)
+                             (update :y math/round)
+                             (assoc :height (:height child-size)))]
+          (draw child ctx child-bounds (assoc container-size :height Integer/MAX_VALUE) (util/irect-intersect viewport bounds) canvas)))))
   
   (-event-impl [_ ctx event]
     (case (:event event)
@@ -39,7 +40,7 @@
                              (util/clamp 0 (- (:height child-size) (:height bounds))))]
             (when (not= offset-px offset-px')
               (set! offset-px offset-px')
-              (reset! offset (descaled (math/round offset-px')))
+              (reset! offset (descaled (math/round offset-px') ctx))
               (window/request-frame (:window ctx))))))
       
       :mouse-button
