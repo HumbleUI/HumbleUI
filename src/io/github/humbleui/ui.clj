@@ -96,6 +96,7 @@
 (deflazy switch        ([{:keys [value-on value-off *value on-change]}]) "switch")
 (deflazy checkbox      ([{:keys [value-on value-off *value on-change]} child]) "checkbox")
 (deflazy tooltip       ([{:keys [tip left up anchor shackle]} child]) "tooltip")
+(deflazy hsplit        ([left right] [{:keys [width gap]} left right]) "split")
 
 (deflazy event-listener ([{:keys [event on-event capture?]} child]) "listeners")
 (deflazy on-key-focused ([{:keys [keymap]} child]) "listeners")

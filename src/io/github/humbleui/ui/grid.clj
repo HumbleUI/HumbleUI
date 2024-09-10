@@ -2,6 +2,8 @@
 
 (defn- grid-maybe-measure [this cs ctx]
   (let [{:keys [cols rows col-gap row-gap children]} this
+        col-gap-px  (scaled col-gap ctx)
+        row-gap-px  (scaled row-gap ctx)
         widths      (float-array (count cols) 0)
         heights     (float-array (count rows) 0)
         indices     (for [row (range (count rows))
@@ -31,7 +33,7 @@
                       (reduce + 0))
         col-space   (-> (:width cs)
                       (- hug-width)
-                      (- (* col-gap (dec (count cols))))
+                      (- (* col-gap-px (dec (count cols))))
                       (max 0))
         _           (doseq [[i col] (util/zip (range) cols)
                             :when (not= :hug col)
@@ -48,7 +50,7 @@
                       (reduce + 0))
         row-space   (-> (:height cs)
                       (- hug-height)
-                      (- (* row-gap (dec (count rows))))
+                      (- (* row-gap-px (dec (count rows))))
                       (max 0))
         _           (doseq [[i row] (util/zip (range) rows)
                             :when (not= :hug row)
@@ -80,7 +82,9 @@
     (when-not this-size
       (grid-maybe-measure this container-size ctx))
     (let [cols-count (count cols)
-          rows-count (count rows)]
+          rows-count (count rows)
+          col-gap-px (scaled col-gap ctx)
+          row-gap-px (scaled row-gap ctx)]
       (loop [x         (:x bounds)
              y         (:y bounds)
              row       0
@@ -92,7 +96,7 @@
               width    (+
                          (reduce + 0
                            (map #(aget ^floats widths %) (range col (+ col col-span))))
-                         (* col-gap (dec col-span)))
+                         (* col-gap-px (dec col-span)))
               col'     (+ col col-span)]
           (when child
             (let [child-bounds (util/irect-xywh x y width height)]
@@ -106,13 +110,13 @@
             :done ;; skip rest of cols
             
             (>= col' cols-count)
-            (recur (:x bounds) (+ y (+ height row-gap)) (inc row) 0 (inc child-idx))
+            (recur (:x bounds) (+ y (+ height row-gap-px)) (inc row) 0 (inc child-idx))
             
             (>= (+ x width) (:right viewport)) ;; skip rest of current row
-            (recur (:x bounds) (+ y (+ height row-gap)) (inc row) 0 (inc child-idx))
+            (recur (:x bounds) (+ y (+ height row-gap-px)) (inc row) 0 (inc child-idx))
             
             :else
-            (recur (+ x (+ width col-gap)) y row (long col') (inc child-idx)))))))
+            (recur (+ x (+ width col-gap-px)) y row (long col') (inc child-idx)))))))
   
   (-reconcile-opts [this ctx new-element]
     (let [opts           (parse-opts new-element)
