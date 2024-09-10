@@ -6,26 +6,34 @@
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []
-  [ui/grid {:cols [:hug {:stretch 1} :hug]
-            :rows [:hug {:stretch 1} :hug]
-            :col-gap 20
-            :row-gap 10}
-   [ui/rect {:paint {:fill [0.80 0.25   0] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   [ui/rect {:paint {:fill [0.80 0.25  30] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   [ui/rect {:paint {:fill [0.80 0.25  60] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   
-   [ui/rect {:paint {:fill [0.80 0.25  90] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   [ui/rect {:paint {:fill [0.80 0.25 120] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   [ui/rect {:paint {:fill [0.80 0.25 150] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   
-   ^{:col-span 2}
-   [ui/rect {:paint {:fill [0.80 0.25 180] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   [ui/rect {:paint {:fill [0.80 0.25 210] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   
-   [ui/rect {:paint {:fill [0.80 0.25 240] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   ^{:col-span 2}
-   [ui/rect {:paint {:fill [0.80 0.25 270] :model :oklch}} [ui/gap {:width 40 :height 40}]]
-   
-   ^{:col-span 3}
-   [ui/rect {:paint {:fill [0.80 0.25 300] :model :oklch}} [ui/gap {:width 40 :height 40}]]])
-                   
+  (let [*open (ui/signal false)]
+    (fn []
+      [ui/center
+       [ui/column
+        [ui/button
+         {:on-click (fn [_]
+                      (swap! *open not))}
+         [ui/label "Toggle: " @*open]]
+        (when @*open
+          [ui/overlay
+           [ui/size {:width #(:width %)
+                     :height #(:height %)}
+            [ui/padding {:top 10 :right 10 :bottom 10 :left 10}
+             [ui/shadow {:dy 2, :blur 10, :color 0x20000000}
+              [ui/shadow {:dy 0, :blur 4, :color 0x10000000}
+              
+               [ui/rect {:paint {:fill "FD2"}}
+                [ui/gap]]]
+              #_[ui/clip {:radius 4}
+                 [ui/rect {:paint {:fill "FFF"}}
+                  [ui/vscroll
+                   [ui/padding {:vertical 4}
+                    [ui/column
+                     (for [i (range 40)]
+                       [ui/clickable {}
+                        (fn [state]
+                          [ui/rect {:paint {:fill (cond
+                                                    (:hovered state) "B9DCFD"
+                                                    :else            "FFF")}}
+                           [ui/padding {:padding 10}
+                            [ui/label "Item " i]]])])]]]]]]]]])]])))

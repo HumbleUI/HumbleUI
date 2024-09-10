@@ -36,6 +36,7 @@
 (load+ "/io/github/humbleui/ui/size")
 (load+ "/io/github/humbleui/ui/font")
 (load+ "/io/github/humbleui/ui/focusable")
+(load+ "/io/github/humbleui/ui/overlay")
 
 (def *loaded
   (atom #{}))

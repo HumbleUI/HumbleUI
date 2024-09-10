@@ -121,36 +121,39 @@
         [ui/size {:width width} [ui/button "Cancel"]]]])))
 
 (ui/defcomp ui []
-  @*state ;; FIXME
   [ui/padding {:padding 8}
-   [ui/grid {:cols [:hug :hug {:stretch 1}]
-             :rows [:hug {:stretch 1} :hug]
-             :row-gap 8}
-    [ui/gap]
-    [ui/gap]
-    [ui/row {:gap 8 :align :center}
-     [ui/button
-      {:on-click
-       (fn [_]
-         (swap! *state change-to (io/file (System/getProperty "user.home"))))}
-      [ui/label {:font-family "SF Pro Text"} "􀎞"]]
-     [ui/button 
-      {:on-click
-       (fn [_]
-         (swap! *state change-to
-           (some-> @*state :current File/.getParentFile)))}
-      [ui/label {:font-family "SF Pro Text"} "􀄶"]]
-     [ui/label (File/.getCanonicalPath (:current @*state))]]
+   [ui/with-bounds
+    (fn [bounds]
+      [ui/grid {:cols [:hug :hug {:stretch 1}]
+                :rows [:hug {:stretch 1} :hug]
+                :row-gap 8}
+       [ui/gap]
+       [ui/gap]
+       [ui/row {:gap 8 :align :center}
+        [ui/button
+         {:on-click
+          (fn [_]
+            (swap! *state change-to (io/file (System/getProperty "user.home"))))}
+         [ui/label {:font-family "SF Pro Text"} "􀎞"]]
+        [ui/button 
+         {:on-click
+          (fn [_]
+            (swap! *state change-to
+              (some-> @*state :current File/.getParentFile)))}
+         [ui/label {:font-family "SF Pro Text"} "􀄶"]]
+        [ui/label (File/.getCanonicalPath (:current @*state))]]
      
-    [ui/size {:width (max 0 (:width @*state))}
-     [roots-list]]
+       [ui/size {:width (-> (:width @*state)
+                          (max 0)
+                          (min (- (:width bounds) 8)))}
+        [roots-list]]
      
-    [ui/draggable
-     {:on-drag (fn [e]
-                 (swap! *state update :width + (-> e :delta-last :x)))}
-     [ui/gap {:width 8}]]
+       [ui/draggable
+        {:on-drag (fn [e]
+                    (swap! *state update :width + (-> e :delta-last :x)))}
+        [ui/gap {:width 8}]]
      
-    [file-list]
+       [file-list]
      
-    ^{:col-span 3}
-    [buttons]]])
+       ^{:col-span 3}
+       [buttons]])]])

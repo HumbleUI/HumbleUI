@@ -133,7 +133,7 @@
           rows'          (cond
                            (int? rows')        (repeat rows' :hug)
                            (sequential? rows') rows'
-                           (nil? rows)         (repeat rows-count :hug)
+                           (nil? rows')        (repeat rows-count :hug)
                            :else               (throw (ex-info (str "Expected :rows to be int? or sequential?, got: " rows') {:rows rows'})))
           rows'          (if (< (* (count rows') (count cols')) children-count)
                            (concat rows' (repeat (- rows-count (count rows')) :hug))

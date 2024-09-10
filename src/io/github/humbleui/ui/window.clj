@@ -5,18 +5,15 @@
     (nil? app)
     nil
     
-    (and (instance? clojure.lang.IDeref app) (fn? @app))
-    (make
-      [default-theme theme
-       [focus-controller @app]])
-
+    (instance? clojure.lang.IDeref app)
+    (recur theme @app)
+    
     (fn? app)
     (make
       [default-theme theme
-       [focus-controller app]])
-
-    (instance? clojure.lang.IDeref app)
-    @app
+       [focus-controller
+        [overlay-root
+         app]]])
 
     :else
     app))
