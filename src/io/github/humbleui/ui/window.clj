@@ -50,18 +50,19 @@
                              (protocols/-draw app (ctx-fn window) bounds (util/ipoint (:width content-rect) (:height content-rect)) bounds canvas)))))
           event-fn   (fn event-fn [window event]
                        (locking window
-                         (let [scale (window/scale window)]
-                           (when (not= @*scale scale)
-                             (vreset! *scale scale)
-                             (event-fn window {:event :window-scale-change, :scale scale}))
-                           (util/when-some+ [{:keys [x y]} event]
-                             (vreset! *mouse-pos (util/ipoint x y)))
-                           (when on-event
-                             (on-event window event))
-                           (when-some [app @*app-node]
-                             (when-let [result (protocols/-event app (ctx-fn window) event)]
-                               (window/request-frame window)
-                               result)))))
+                         (when-not (window/closed? window)
+                           (let [scale (window/scale window)]
+                             (when (not= @*scale scale)
+                               (vreset! *scale scale)
+                               (event-fn window {:event :window-scale-change, :scale scale}))))
+                         (util/when-some+ [{:keys [x y]} event]
+                           (vreset! *mouse-pos (util/ipoint x y)))
+                         (when on-event
+                           (on-event window event))
+                         (when-some [app @*app-node]
+                           (when-let [result (protocols/-event app (ctx-fn window) event)]
+                             (window/request-frame window)
+                             result))))
           window     (window/make
                        {:on-close (when (or ref? exit-on-close?)
                                     #(do
