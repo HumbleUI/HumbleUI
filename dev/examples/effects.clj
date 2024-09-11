@@ -36,14 +36,17 @@
         (.clipRRect canvas rrect true)
         
         (when (< progress 1)
-          (ui/with-paint ctx [paint ui/button-bg]
+          (ui/with-paint ctx [paint (-> ui/button-styles :default :body)]
             (.drawPaint canvas paint)))
         
         (when (> progress 0)
-          (ui/with-paint ctx [paint (if pressed? ui/button-bg-pressed ui/button-bg-hovered)]
+          (ui/with-paint ctx [paint (if pressed?
+                                      (-> ui/button-styles :default :body-pressed)
+                                      (-> ui/button-styles :default :body-hovered))]
             (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) paint)))
         
-        (ui/draw child ctx bounds container-size viewport canvas)
+        (let [ctx' (assoc ctx :fill-text (-> ui/button-styles :default :text))]
+          (ui/draw child ctx' bounds container-size viewport canvas))
         
         (when (< 0 progress 1)
           (window/request-frame window)))))

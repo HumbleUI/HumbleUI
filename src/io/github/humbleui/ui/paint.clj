@@ -217,11 +217,13 @@
          ctx#    ~ctx
          specs#  (if (sequential? specs#) specs# [specs#])
          paints# (for [spec# specs#]
-                   (if (instance? Paint spec#)
-                     spec#
-                     (paint spec# ctx#)))]
+                   (cond
+                     (nil? spec#)            nil
+                     (instance? Paint spec#) spec#
+                     :else                   (paint spec# ctx#)))]
      (try
        (doseq [paint#  paints#
+               :when paint#
                :let [~binding paint#]]
          ~@body)
        (finally

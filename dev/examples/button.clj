@@ -27,7 +27,7 @@
 (ui/defcomp inline-state []
   [ui/clickable {:on-click (fn [e] (reset! *clicks (:clicks e)))}
    (fn [state]
-     [ui/button-look state
+     [(@ui/button-look :basic) state
       [ui/label "Inline state: " state]])])
 
 (ui/defcomp nested-bubble []
@@ -155,7 +155,14 @@
     
         [ui/align {:x :left}
          [with-shadow]]
-          
+        
+        [ui/align {:x :left}
+         [ui/row {:gap 10}
+          [ui/button {:on-click (fn [_] (swap! *clicks inc)) :style :basic} ":basic"]
+          [ui/button {:on-click (fn [_] (swap! *clicks inc)) :style :default} ":default"]
+          [ui/button {:on-click (fn [_] (swap! *clicks inc)) :style :outlined} ":outlined"]
+          [ui/button {:on-click (fn [_] (swap! *clicks inc)) :style :flat} ":flat"]]]
+        
         [ui/align {:x :left}
          [ui/button {:on-click (fn [_] (swap! *clicks inc))}
           [ui/row {:gap 5}
