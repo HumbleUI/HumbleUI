@@ -207,10 +207,7 @@
                               :round  PaintStrokeJoin/ROUND
                               :bevel  PaintStrokeJoin/BEVEL)))
                              
-        p)
-    
-      :else
-      (throw (ex-info "Unknown paint spec, expected {:fill ...} or {:stroke ...}" {:spec spec})))))
+        p))))
 
 (defmacro with-paint [ctx [binding specs] & body]
   `(let [specs#  ~specs

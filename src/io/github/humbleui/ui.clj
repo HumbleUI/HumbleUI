@@ -84,8 +84,8 @@
 (deflazy shadow       ([opts] [opts child]) "shadow")
 (deflazy shadow-inset ([opts] [opts child]) "shadow")
 
-(deflazy hoverable     ([{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
-(deflazy clickable     ([{:keys [on-click on-click-capture]} child]) "clickable")
+(deflazy hoverable     ([child] [{:keys [on-hover on-out *hoverable?]} child]) "hoverable")
+(deflazy clickable     ([child] [{:keys [on-click on-click-capture]} child]) "clickable")
 (deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "toggleable")
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
 (deflazy button-look   ([state child]) "button")

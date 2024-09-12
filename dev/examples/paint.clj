@@ -53,4 +53,10 @@
                             :join   join}}
            [ui/size {:height 50}]])]]
       
-      )))
+      "No paint"
+      [ui/rect {:paint nil}
+       [ui/size {:width 100 :height 50}]]
+      
+      "Nil paint"
+      [ui/rect {:paint {:fill nil}}
+       [ui/size {:width 100 :height 50}]])))

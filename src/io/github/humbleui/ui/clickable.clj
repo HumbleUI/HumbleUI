@@ -143,9 +143,11 @@
    :hovered :: mouse hovers over object
    :pressed :: mouse is held over object
    :held    :: mouse started over object and is still held"
-  [opts child]
-  (map->Clickable
-    {:phase       :default
-     :*state      (or (:*state opts) (signal #{}))
-     :clicks      0
-     :last-click  0}))
+  ([child]
+   (clickable {} child))
+  ([opts child]
+   (map->Clickable
+     {:phase       :default
+      :*state      (or (:*state opts) (signal #{}))
+      :clicks      0
+      :last-click  0})))
