@@ -1,0 +1,17 @@
+(ns ^:no-doc hooks.deflazy
+  "A clj-kondo hook to allow linting of humbleui `loopr` macro."
+  (:require
+    [clj-kondo.hooks-api :as api]))
+
+(defn deflazy-hook 
+  "(deflazy paragraph ([text] [opts text]) \"paragraph\")"
+  [form]
+  (let [[_ name arglists file] (:children (:node form))]
+    {:node
+     (api/list-node
+       (list*
+         (api/token-node 'defn)
+         name
+         (for [arglist arglists]
+         (api/list-node
+           (list arglist)))))}))

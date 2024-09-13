@@ -1,12 +1,13 @@
 {:hooks
  {:analyze-call
-  {io.github.humbleui.core/loopr         hooks.loopr/loopr-hook
-   io.github.humbleui.core/cond+         hooks.cond+/cond+-hook}}
+  {io.github.humbleui.ui/deflazy     hooks.deflazy/deflazy-hook
+   io.github.humbleui.util/loopr     hooks.loopr/loopr-hook
+   io.github.humbleui.util/condp     hooks.condplus/condplus-hook}}
  :lint-as
- {io.github.humbleui.core/deftype+          clojure.core/deftype
-  io.github.humbleui.core/when-some+        clojure.core/when-some
-  io.github.humbleui.core/defn-memoize-last clojure.core/defn
-  io.github.humbleui.core/for-vec           clojure.core/for
-  io.github.humbleui.core/for-map           clojure.core/for
-  io.github.humbleui.core/thread            clojure.core/future
-  io.github.humbleui.core/doto-some         clojure.core/doto}}
+ {io.github.humbleui.ui/defcomp      clojure.core/defn
+  io.github.humbleui.util/deftype+   clojure.core/deftype
+  io.github.humbleui.util/for-map    clojure.core/for
+  io.github.humbleui.util/for-vec    clojure.core/for
+  io.github.humbleui.util/memo-fn    clojure.core/fn
+  io.github.humbleui.util/thread     clojure.core/future
+  io.github.humbleui.util/when-some+ clojure.core/when-some}}

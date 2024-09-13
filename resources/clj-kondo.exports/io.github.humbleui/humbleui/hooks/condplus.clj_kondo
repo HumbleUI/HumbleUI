@@ -1,9 +1,9 @@
-(ns ^:no-doc hooks.cond+
+(ns ^:no-doc hooks.condplus
   "A clj-kondo hook to allow linting of humbleui `cond+` macro."
   (:require
     [clj-kondo.hooks-api :as api]))
 
-(defn cond+-hook [form]
+(defn condplus-hook [form]
   (let [[_ test expr & rest] (:children (:node form))
         tail (when rest
                (api/list-node
