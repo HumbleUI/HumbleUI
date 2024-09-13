@@ -88,27 +88,6 @@
   (when (instance? AutoCloseable o)
     (.close ^AutoCloseable o)))
 
-(defn memoize-last [ctor]
-  (let [*state (volatile! nil)]
-    (fn [& args']
-      (or
-        (when-some [[args value] @*state]
-          (if (= args args')
-            value
-            (close value)))
-        (let [value' (try
-                       (apply ctor args')
-                       (catch Throwable t
-                         (log-error t)
-                         t))]
-          (vreset! *state [args' value'])
-          value')))))
-
-(defmacro defn-memoize-last [name & body]
-  `(def ~name
-     (memoize-last
-       (fn ~@body))))
-
 (defmacro memo-fn [bindings & body]
   (let [syms (as-> bindings %
                (collect symbol? %)

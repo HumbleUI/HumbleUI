@@ -45,14 +45,19 @@
   ([name arglists file]
    `(deflazy ~name nil ~arglists ~file))
   ([name docstring arglists file]
-   `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
-      ~@(if docstring [docstring] [])
-      (delay
-        (when-not (@*loaded ~file)
-          (util/log (str "Loading ui/" ~file))
-          (load+ (str "/io/github/humbleui/ui/" ~file))
-          (swap! *loaded conj ~file))
-        @(resolve (quote ~(symbol "io.github.humbleui.ui" (str name "-ctor"))))))))
+   (let [ctor-sym (symbol "io.github.humbleui.ui" (str name "-ctor"))]
+     `(def ~(vary-meta name assoc :arglists (list 'quote arglists))
+        ~@(if docstring [docstring] [])
+        (delay
+          (when-not (@*loaded ~file)
+            (util/log (str "Loading ui/" ~file))
+            (load+ (str "/io/github/humbleui/ui/" ~file))
+            (swap! *loaded conj ~file)
+            (let [var-from# (resolve (quote ~ctor-sym))
+                  var-to#   (ns-resolve 'io.github.humbleui.ui (quote ~name))]
+              (when-some [doc# (:doc (meta var-from#))]
+                (alter-meta! var-to# assoc :doc doc#))))
+          @(resolve (quote ~ctor-sym)))))))
 
 (def gap size)
 (deflazy label     ([& texts]) "label")
