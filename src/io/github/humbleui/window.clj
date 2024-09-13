@@ -9,7 +9,7 @@
   (:import
     [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
-    [io.github.humbleui.skija Surface]
+    [io.github.humbleui.skija ColorSpace Surface]
     [io.github.humbleui.types IRect]
     [java.util.function Consumer]))
 
@@ -136,6 +136,9 @@
                              (binding [util/*text-input-ctx* ctx]
                                (.getSubstring client start end))))))]
     (.setLayer window layer)
+    (when (= :macos app/platform)
+      ;; TODO load real monitor profile
+      (set! (.-_colorSpace ^LayerMetalSkija layer) (ColorSpace/getDisplayP3)))
     (.setEventListener window listener)
     ; (.setTextInputEnabled window true)
     (.setTextInputClient window input-client)
@@ -152,6 +155,14 @@
 
 (defn set-visible [^Window window ^Boolean value]
   (.setVisible window value)
+  window)
+
+(defn focus [^Window window]
+  (.focus window)
+  window)
+
+(defn bring-to-front [^Window window]
+  (.bringToFront window)
   window)
 
 (defn set-window-position [^Window window ^long x ^long y]

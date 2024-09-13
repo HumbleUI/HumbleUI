@@ -1,5 +1,6 @@
 (ns io.github.humbleui.docs
   (:require
+    [io.github.humbleui.app :as app]
     [io.github.humbleui.docs.align :as align]
     [io.github.humbleui.docs.clip :as clip]
     [io.github.humbleui.docs.color :as color]
@@ -18,6 +19,15 @@
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]))
 
+(defonce *window
+  (atom nil))
+
+(defonce *example
+  (ui/signal "Align"))
+
+(defonce *app
+  (atom nil))
+
 (def examples
   [["Align" align/ui]
    ["Clip" clip/ui]
@@ -33,9 +43,6 @@
    ["Size" size/ui]
    ["Split" split/ui]
    ["VScroll" vscroll/ui]])
-
-(defonce *example
-  (ui/signal "Align"))
 
 (ui/defcomp example-label [name]
   [ui/clickable
@@ -54,28 +61,30 @@
 (ui/defcomp app []
   (let [examples-map (into {"DevTools" devtools/ui} examples)]
     (fn []
-      [ui/hsplit {:width 150
-                  :gap [ui/rect {:paint {:fill "CCC"}}
-                        [ui/gap {:width 1}]]}
-       [ui/align {:y :top}
-        [ui/vscroll
-         [ui/padding {:bottom 10}
-          [ui/column
-           (for [[name _] examples]
-             [example-label name])
-           [ui/gap {:height 10}]
-           [example-label "DevTools"]]]]]
-       [ui/clip
-        [(examples-map @*example)]]])))
-
-(defonce *app
-  (atom nil))
+      [ui/key-listener
+       {:on-key-down
+        (fn [e]
+          (when (and
+                  (= :w (:key e))
+                  (contains? (:modifiers e)
+                    (if (= :macos app/platform) :mac-command :ctrl)))
+            (window/close @*window)))}
+       [ui/hsplit {:width 150
+                   :gap [ui/rect {:paint {:fill "CCC"}}
+                         [ui/gap {:width 1}]]}
+        [ui/align {:y :top}
+         [ui/vscroll
+          [ui/padding {:bottom 10}
+           [ui/column
+            (for [[name _] examples]
+              [example-label name])
+            [ui/gap {:height 10}]
+            [example-label "DevTools"]]]]]
+        [ui/clip
+         [(examples-map @*example)]]]])))
 
 (reset! *app
   app)
-
-(defonce *window
-  (atom nil))
 
 (defn open! []
   (ui/start-app!
