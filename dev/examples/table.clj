@@ -1,6 +1,5 @@
 (ns examples.table
   (:require
-    [examples.shared :as shared]
     [clojure.string :as str]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]

@@ -31,6 +31,9 @@
 (defn content-rect [^Window window]
   (.getContentRect window))
 
+(defonce *windows
+  (atom {}))
+
 (defn make
   ":on-close-request (fn [window])
    :on-close         (fn [])
@@ -38,9 +41,11 @@
    :on-resize        (fn [window])
    :on-paint         (fn [window canvas])
    :on-event         (fn [window event])"
+  ^Window
   [{:keys [on-close-request on-close on-screen-change on-resize on-paint on-event]
     :or {on-close-request close}}]
   (let [window       (App/makeWindow)
+        _            (swap! *windows assoc window {})
         layer        (condp = Platform/CURRENT
                        Platform/MACOS   (LayerMetalSkija.)
                        Platform/WINDOWS (LayerD3D12Skija.)
@@ -65,9 +70,11 @@
                                  (on-close-request window)))
                              
                              :window-close
-                             (when on-close
-                               (util/catch-and-log
-                                 (on-close)))
+                             (do
+                               (swap! *windows dissoc window)
+                               (when on-close
+                                 (util/catch-and-log
+                                   (on-close))))
                              
                              :window-screen-change
                              (when on-screen-change
@@ -135,6 +142,7 @@
     window))
 
 (defn set-title [^Window window ^String title]
+  (swap! *windows update window assoc :title title)
   (.setTitle window title)
   window)
 
@@ -170,6 +178,16 @@
    (.hideMouseCursorUntilMoved window))
   ([^Window window value]
    (.hideMouseCursorUntilMoved window value)))
+
+(defn z-order [^Window window]
+  (condp = (.getZOrder window)
+    ZOrder/NORMAL       :normal
+    ZOrder/FLOATING     :floating
+    ZOrder/MODAL_PANEL  :modal-panel
+    ZOrder/MAIN_MENU    :main-menu
+    ZOrder/STATUS       :status
+    ZOrder/POP_UP_MENU  :pop-up-menu
+    ZOrder/SCREEN_SAVER :screen-saver))
 
 (defn set-z-order [^Window window order]
   (.setZOrder window

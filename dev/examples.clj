@@ -1,9 +1,9 @@
 (ns examples
   (:require
+    [clj-reload.core :as reload]
     [clojure.edn :as edn]
-    [clojure.java.io :as io]
+    [clojure.java.io :as io]    
     [examples.7guis-converter]
-    [examples.align]
     [examples.animation]
     [examples.backdrop]
     [examples.blur]
@@ -13,29 +13,16 @@
     [examples.canvas]
     [examples.canvas-shapes]
     [examples.checkbox]
-    [examples.clip]
-    [examples.column]
-    [examples.color]
     [examples.effects]
     [examples.errors]
     [examples.file-picker]
     [examples.framerate]
-    [examples.grid]
     [examples.image]
     [examples.image-snapshot]
-    [examples.label]
     [examples.link]
     [examples.oklch]
-    [examples.overlay]
-    [examples.padding]
-    [examples.paint]
     [examples.paragraph]
-    [examples.rect]    
-    [examples.row]    
-    [examples.settings]
-    [examples.size]
     [examples.slider]
-    [examples.split]
     [examples.stack]
     [examples.svg]
     [examples.switch]
@@ -46,39 +33,61 @@
     [examples.todomvc]
     [examples.tooltip]
     [examples.treemap]
-    [examples.shared :as shared]
     [examples.viewport]
-    [examples.vscroll]
     [examples.whiteboard]
     [examples.wordle]
     [io.github.humbleui.app :as app]
-    [io.github.humbleui.util :as util]
+    [io.github.humbleui.debug :as debug]
+    [io.github.humbleui.docs :as docs]
+    [io.github.humbleui.docs.devtools :as devtools]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.signal :as signal]
-    [io.github.humbleui.window :as window]
-    [io.github.humbleui.ui :as ui])
-  (:import
-    [io.github.humbleui.jwm.skija LayerMetalSkija]
-    [io.github.humbleui.skija ColorSpace]))
+    [io.github.humbleui.ui :as ui]
+    [io.github.humbleui.util :as util]
+    [io.github.humbleui.window :as window]))
 
-; TODO https://www.egui.rs/
+(defn load-state []
+  (let [file (io/file ".state")]
+    (when (.exists file)
+      (edn/read-string (slurp file)))))
+
+(defn save-state [m]
+  (let [file   (io/file ".state")
+        state  (or (load-state) {})
+        state' (merge state m)]
+    (spit file (pr-str state'))))
+
+(defmacro restore-durable-signal [name]
+  (let [key (keyword (clojure.core/name name))]
+    `(do
+       (when-some [val# (~key (load-state))]
+         (reset! ~name val#))
+
+       (add-watch ~name ::save-state
+         (fn [_# _# _# new#]
+           (save-state {~key new#}))))))
+
+(restore-durable-signal debug/*paint?)
+
+(restore-durable-signal debug/*pacing?)
+
+(restore-durable-signal debug/*events?)
+
+(restore-durable-signal debug/*outlines?)
+
+(restore-durable-signal debug/*continuous-render?)
+
+(defonce *example
+  (signal/signal "DevTools"))
+
+(restore-durable-signal *example)
+
+(defonce *window
+  (promise))
 
 (def examples
   [["Documented"
-    [["Align" examples.align/ui]
-     ["Clip" examples.clip/ui]
-     ["Color" examples.color/ui]
-     ["Column" examples.column/ui]
-     ["Grid" examples.grid/ui]
-     ["Label" examples.label/ui]
-     ["Overlay" examples.overlay/ui]
-     ["Padding" examples.padding/ui]
-     ["Paint" examples.paint/ui]
-     ["Rect" examples.rect/ui]
-     ["Row" examples.row/ui]
-     ["Size" examples.size/ui]
-     ["Split" examples.split/ui]
-     ["VScroll" examples.vscroll/ui]]]
+    docs/examples]
    ["Components"
     [["Animation" examples.animation/ui]
      ["Backdrop" examples.backdrop/ui]
@@ -114,12 +123,8 @@
      ["Wordle" examples.wordle/ui]]]
    ["Other"
     [["Error Handling" examples.errors/ui]
-     ["Settings" examples.settings/ui]
+     ["DevTools" devtools/ui]
      ["Testbed" examples.testbed/ui]]]])
-
-^:clj-reload/keep
-(shared/def-durable-signal *example
-  (-> examples first second first first))
 
 (ui/defcomp example-header [name]
   [ui/padding {:horizontal 20 :vertical 10}
@@ -155,7 +160,9 @@
                        (into {}))]
     (fn []
       #_[(examples-map @*example)]
-      [ui/row
+      [ui/hsplit {:width 150
+                  :gap [ui/rect {:paint {:fill "CCC"}}
+                        [ui/gap {:width 1}]]}
        [ui/align {:y :top}
         [ui/vscroll
          [ui/column
@@ -169,11 +176,6 @@
           [ui/padding {:horizontal 20}
            [ui/button {:on-click (fn [_] (reset! *profiling? true))} "Profile"]]
           [ui/gap {:height 10}]]]]
-    
-       [ui/rect {:paint {:fill "EEE"}}
-        [ui/gap {:width 1}]]
-    
-       ^{:stretch 1}
        [ui/clip
         [ui/profile {:value *profiling?}
          [(examples-map @*example)]]]])))
@@ -192,10 +194,10 @@
           y (-> rect :y (- (:y work-area)) (/ scale) int)
           w (-> rect :width (/ scale) int)
           h (-> rect :height (/ scale) int)]
-      (shared/save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
+      (save-state {:screen-id id, :x x, :y y, :width w, :height h}))))
 
 (defn restore-window-rect []
-  (util/when-some+ [{:keys [screen-id x y width height]} (shared/load-state)]
+  (util/when-some+ [{:keys [screen-id x y width height]} (load-state)]
     (when-some [screen (util/find-by :id screen-id (app/screens))]
       (let [{:keys [scale work-area]} screen
             right  (-> (:right work-area) (/ scale) int)
@@ -207,22 +209,18 @@
         {:screen screen-id, :x x, :y y, :width width, :height height}))))
 
 (defn -main [& args]
-  ;; setup window
   (ui/start-app!
-    (let [opts   (merge
-                   {:title    "Humble 🐝 UI"
-                    :mac-icon "dev/images/icon.icns"
-                    :screen   (:id (first (app/screens)))
-                    :width    800
-                    :height   800
-                    :x        :center
-                    :y        :center
-                    :on-event #'maybe-save-window-rect}
-                   (restore-window-rect))
-          window (ui/window opts *app)]
-      ;; TODO load real monitor profile
-      (when (= :macos app/platform)
-        (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3)))
-      (shared/set-floating! window @shared/*floating?)
-      (deliver shared/*window window)))
-  @shared/*window)
+    (deliver *window
+      (ui/window
+        (merge
+          {:title    "Humble 🐝 UI"
+           :mac-icon "dev/images/icon.icns"
+           :screen   (:id (first (app/screens)))
+           :width    800
+           :height   800
+           :x        :center
+           :y        :center
+           :on-event #'maybe-save-window-rect}
+          (restore-window-rect))
+        *app)))
+  @*window)

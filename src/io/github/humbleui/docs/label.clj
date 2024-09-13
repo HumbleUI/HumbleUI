@@ -1,6 +1,6 @@
-(ns examples.label
+(ns io.github.humbleui.docs.label
   (:require
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.font :as font]
     [io.github.humbleui.signal :as signal]

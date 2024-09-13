@@ -1,5 +1,9 @@
 (in-ns 'io.github.humbleui.ui)
 
+(import
+  '[io.github.humbleui.jwm.skija LayerMetalSkija]
+  '[io.github.humbleui.skija ColorSpace])
+
 (defn- app-node [theme app]
   (cond
     (nil? app)
@@ -89,8 +93,11 @@
       (window/set-window-position window (+ (:x work-area) x) (+ (:y work-area) y))
       (window/set-window-size window (* scale width) (* scale height))
       (window/set-title window title)
-      (when (and mac-icon (= :macos app/platform))
-        (window/set-icon window mac-icon))
+      (when (= :macos app/platform)
+        ;; TODO load real monitor profile
+        (set! (.-_colorSpace ^LayerMetalSkija (.getLayer window)) (ColorSpace/getDisplayP3))
+        (when mac-icon
+          (window/set-icon window mac-icon)))
       (window/set-visible window true)
       (when ref?
         (add-watch app ::redraw

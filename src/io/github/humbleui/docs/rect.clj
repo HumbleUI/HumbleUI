@@ -1,6 +1,6 @@
-(ns examples.rect
+(ns io.github.humbleui.docs.rect
   (:require
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.ui :as ui]))
 

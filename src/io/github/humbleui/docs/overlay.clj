@@ -1,7 +1,7 @@
-(ns examples.overlay
+(ns io.github.humbleui.docs.overlay
   (:require
     [clojure.string :as str]
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui])

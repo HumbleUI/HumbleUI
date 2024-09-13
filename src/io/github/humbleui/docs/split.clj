@@ -1,6 +1,6 @@
-(ns examples.split
+(ns io.github.humbleui.docs.split
   (:require
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))

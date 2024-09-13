@@ -1,7 +1,7 @@
-(ns examples.column
+(ns io.github.humbleui.docs.column
   (:require
     [clojure.string :as str]
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))

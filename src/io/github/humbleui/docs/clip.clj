@@ -1,6 +1,6 @@
-(ns examples.clip
+(ns io.github.humbleui.docs.clip
   (:require
-    [examples.shared :as shared]
+    [io.github.humbleui.docs.shared :as shared]
     [io.github.humbleui.util :as util]
     [io.github.humbleui.ui :as ui]))
 
