@@ -3,20 +3,14 @@
     [io.github.humbleui.jwm App Platform Screen]
     [io.github.humbleui.jwm.impl Library]))
 
+(defonce *started?
+  (atom false))
+
 (def platform
   (condp = Platform/CURRENT
     Platform/WINDOWS :windows
     Platform/X11     :x11
     Platform/MACOS   :macos))
-
-(defn init []
-  (Library/load))
-
-(defn start [^Runnable cb]
-  (App/start cb))
-
-(defn terminate []
-  (App/terminate))
 
 (defmacro doui-async [& forms]
   `(let [p# (promise)]
@@ -28,6 +22,21 @@
      (if (instance? Throwable res#)
        (throw res#)
        res#)))
+
+(defn init []
+  (Library/load))
+
+(defn start [^Runnable cb]
+  (if @*started?
+    (doui
+      (cb))
+    (do
+      (reset! *started? true)
+      (App/start cb))))
+
+(defn terminate []
+  (reset! *started? false)
+  (App/terminate))
 
 (defn- screen->clj [^Screen screen]
   {:id        (.getId screen)

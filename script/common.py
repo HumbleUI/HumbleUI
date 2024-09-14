@@ -69,7 +69,7 @@ def dev_deps():
     # "/Users/tonsky/ws/duti/src",
     build_utils.fetch_maven("lambdaisland", "deep-diff2", "2.11.216", repo = clojars),
     build_utils.fetch_maven("fipp", "fipp", "0.6.26", repo = clojars),
-    build_utils.fetch_maven("org.clojure", "core.rrb-vector", "0.1.2", repo = clojars),
+    build_utils.fetch_maven("org.clojure", "core.rrb-vector", "0.1.2"),
     build_utils.fetch_maven("lambdaisland", "clj-diff", "1.4.78", repo = clojars),
     build_utils.fetch_maven("mvxcvi", "arrangement", "2.1.0", repo = clojars),    
   ]
