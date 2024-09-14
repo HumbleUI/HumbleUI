@@ -46,7 +46,7 @@
      el
 
      :let [[f & args] el
-           f (util/maybe-deref f)]
+           f (maybe-deref f)]
         
      :else
      (binding [*node* start-node]
@@ -116,8 +116,8 @@
 (defn should-reconcile? [ctx old-node new-el]
   (and 
     old-node
-    (let [left  (util/maybe-deref (nth (:element old-node) 0))
-          right (util/maybe-deref (nth new-el 0))]
+    (let [left  (maybe-deref (nth (:element old-node) 0))
+          right (maybe-deref (nth new-el 0))]
       (or
         (identical? left right)
         ;; same lambdas with different captured vars still should reconcile

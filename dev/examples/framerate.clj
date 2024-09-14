@@ -34,7 +34,7 @@
         t     (-> t (* fps) math/round (/ fps) double)]
     ; (canvas/clear canvas 0xFFFFFFFF)
     (canvas/translate canvas (/ width 2) (/ height 2))
-    ; (canvas/draw-string canvas (str fps) 0 0 font fill-text)
+    ; (canvas/draw-string canvas (str fps) 0 0 font paint)
     (canvas/scale canvas (/ (min width height) 2.5))
     (with-open [stroke (ui/paint {:stroke 0xFFFFFFFF, :width 0.05} ctx)]
       (case interpolation
@@ -82,7 +82,7 @@
     [ui/label (str fps)]]])
 
 (defn ui-impl [bounds]
-  (let [fill-text              {:fill 0xFFFFFFFF}
+  (let [paint {:fill 0xFFFFFFFF}
         {:keys [width height]} bounds]
     {:should-setup?
      (fn [bounds']
@@ -90,7 +90,7 @@
      :render
      (fn [_]
        [ui/rect {:paint {:fill 0xFF0D1924}}
-        [ui/with-context {:fill-text fill-text
+        [ui/with-context {:paint paint
                           :font-cap-height 15}
          [ui/padding {:padding 20}
           (let [gap   10

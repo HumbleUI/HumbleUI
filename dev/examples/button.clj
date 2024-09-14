@@ -27,7 +27,7 @@
 (ui/defcomp inline-state []
   [ui/clickable {:on-click (fn [e] (reset! *clicks (:clicks e)))}
    (fn [state]
-     [(@ui/button-look :basic) state
+     [((resolve 'io.github.humbleui.ui/button-look-ctor) :basic) state
       [ui/label "Inline state: " state]])])
 
 (ui/defcomp nested-bubble []

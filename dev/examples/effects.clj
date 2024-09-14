@@ -44,7 +44,7 @@
                                       (-> ui/button-styles :default :body-hovered))]
             (canvas/draw-circle canvas (:x center) (:y center) (* max-r progress) paint)))
         
-        (let [ctx' (assoc ctx :fill-text (-> ui/button-styles :default :text))]
+        (let [ctx' (assoc ctx :paint (-> ui/button-styles :default :text))]
           (ui/draw child ctx' bounds container-size viewport canvas))
         
         (when (< 0 progress 1)
@@ -151,7 +151,7 @@
 
        [ui/clip {:radius 10}
         [card {}
-         [ui/with-context {:fill-text {:fill 0xFFFFFFFF}}
+         [ui/with-context {:paint {:fill 0xFFFFFFFF}}
           [ui/padding {:horizontal 30
                        :vertical 20}
            [ui/column

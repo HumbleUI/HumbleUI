@@ -65,7 +65,19 @@
           :bottom 1
           child-y')))))
 
-(defn- align-ctor [opts child]
+(defn- align-ctor
+  "Align single child inside larger container. Options are:
+   
+     :x       :: :left | :center | :right  | <number 0..1>
+     :y       :: :top  | :center | :bottom | <number 0..1>
+     :child-x :: :left | :center | :right  | <number 0..1>
+     :child-y :: :top  | :center | :bottom | <number 0..1>
+   
+   When number is specified, e.g. :x 0.7 :child-x :0.2, then parent’s 70% width
+   point will be aligned with child’s 20% widht point.
+   
+   :child-x/:child-y are considered equal to :x/:y if not specified"
+  [opts child]
   (map->Align {}))
 
 (defn- center-ctor [child]

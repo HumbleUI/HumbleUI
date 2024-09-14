@@ -78,7 +78,7 @@
 (restore-durable-signal debug/*continuous-render?)
 
 (defonce *example
-  (signal/signal "DevTools"))
+  (ui/signal "DevTools"))
 
 (restore-durable-signal *example)
 
@@ -144,14 +144,13 @@
      (fn [_]
        (reset! *example name))}
     (fn [state]
-      (let [label [ui/padding {:horizontal 20 :vertical 10}
-                   [ui/label name]]
-            selected? (= name @*example)]
-        (cond
-          selected?        [ui/rect {:paint {:fill "B2D7FE"}} label]
-          (:pressed state) [ui/rect {:paint {:fill "A2C7EE"}} label]
-          (:hovered state) [ui/rect {:paint {:fill "E1EFFA"}} label]
-          :else            label)))]])
+      [ui/rect {:paint {:fill 
+                        (cond
+                          (= name @*example) "B2D7FE"
+                          (:pressed state)   "A2C7EE"
+                          (:hovered state)   "E1EFFA")}}
+       [ui/padding {:horizontal 20 :vertical 10}
+        [ui/label name]]])]])
 
 (ui/defcomp app-impl []
   (let [*profiling?  (ui/signal false)

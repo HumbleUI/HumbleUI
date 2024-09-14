@@ -74,5 +74,30 @@
         (:align opts)
         (map #(vector align {:x (:align opts)} %))))))
 
-(defn- column-ctor [& children]
+(defn- column-ctor
+  "Container component. Children take minimal height by default (hug):
+   
+     [ui/column
+       [ui/gap {:height 10}]
+       [ui/gap {:height 20}]]
+   
+   Add ^:stretch metadata to make children occupy all leftover space after hugs:
+   
+     [ui/column
+       ^:stretch [ui/gap]
+       [ui/gap]]
+   
+   Stretch can be a number, in that case space is divided proportionally:
+   
+     [ui/column
+       ^{:stretch 1} [ui/gap]
+       ^{:stretch 2} [ui/gap]]
+   
+   Column’s width and all of its childrens’ widths are set to the widest child.
+   
+   Options are:
+   
+     :gap   :: <number> | <markup> - what to put between children
+     :align :: :left | :center | :right | <number> - horizontal align to apply to all children"
+  [& children]
   (map->Column {}))

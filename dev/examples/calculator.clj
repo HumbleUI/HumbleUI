@@ -147,7 +147,7 @@
        (let [state @*state]
          [ui/with-context
           {:font-cap-height cap-height'
-           :fill-text       {:fill 0xFFEBEBEB}}
+           :paint           {:fill 0xFFEBEBEB}}
           [ui/rect {:paint {:fill color-display}}
            [ui/padding {:padding padding}
           

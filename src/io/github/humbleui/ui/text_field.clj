@@ -600,7 +600,7 @@
               y    (+ (:y bounds) baseline)
               fill (if placeholder?
                      (:hui.text-field/fill-placeholder ctx)
-                     (:hui.text-field/fill-text ctx))]
+                     (:hui.text-field/paint ctx))]
           (when line
             (when (.isClosed line)
               (util/log "(.isClosed line)" (.isClosed line) line))
@@ -617,7 +617,7 @@
                 (+ (:y bounds) baseline (* 1 scale))
                 (+ (:x bounds) (- offset) right)
                 (+ (:y bounds) baseline (* 2 scale)))
-              (:hui.text-field/fill-text ctx))))
+              (:hui.text-field/paint ctx))))
         
         ;; cursor
         (when focused?

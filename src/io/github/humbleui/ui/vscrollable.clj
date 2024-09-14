@@ -57,6 +57,11 @@
         (set! offset offset')))))
 
 (defn- vscrollable-ctor
+  "Vertical scroll container without a scrollbar. Child will have infinite
+   vertical space constraint. Options are:
+   
+     :offset :: <signal <number>> - controls/represent vertical offset
+     :clip?  :: <boolean>, default true - whether to clip or not"
   ([child]
    (vscrollable-ctor {} child))
   ([opts child]

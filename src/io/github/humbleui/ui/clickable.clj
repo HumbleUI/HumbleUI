@@ -129,20 +129,22 @@
    
    Options are:
    
-   :on-click         :: (fn [event]), what to do on click
-   :on-click-capture :: (fn [event]), what to do on click before children
-                        have a chance to handle it
-   :*state           :: signal, controls/represent state
+     :on-click         :: (fn [event]) - what to do on click
+     :on-click-capture :: (fn [event]) - what to do on click before children
+                          have a chance to handle it
+     :*state           :: signal       - controls/represent state
    
    Event is map with keys:
    
-   :clicks  :: long, number of consequitive clicks
+     :clicks  :: long - number of consequitive clicks
    
    *state contains a set that might include:
    
-   :hovered :: mouse hovers over object
-   :pressed :: mouse is held over object
-   :held    :: mouse started over object and is still held"
+     :hovered :: mouse hovers over object
+     :pressed :: mouse is held over object
+     :held    :: mouse started over object and is still held
+   
+   Child can be a markup or (fn [state])"
   ([child]
    (clickable {} child))
   ([opts child]

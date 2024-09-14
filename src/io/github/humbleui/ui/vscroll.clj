@@ -53,6 +53,13 @@
    (map->VScroll {})))
 
 (defn- vscroll-ctor
+  "Vertical scroll container with a scrollbar. Child will have infinite vertical
+   space constraint. Options are:
+
+     :offset     :: <signal <number>> - controls/represent vertical offset
+     :clip?      :: <boolean>, default true - whether to clip or not
+     :fill-track :: <paint-spec> - color of the track
+     :fill-thumb :: <paint-spec> - color of the thumb"
   ([child]
    (vscroll-ctor {} child))
   ([opts child]

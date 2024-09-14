@@ -92,7 +92,18 @@
   (-unmount-impl [this]
     (util/close image)))
 
-(defn- image-ctor [opts]
+(defn- image-ctor
+  "PNG/JPEG/WebP image. Options are:
+   
+     :src      :: <string> | <bytes> | <InputStream> | <URI> - image source. Required
+     :scale    :: :fit | :fill | :content | <number> - how to fill parent container
+                  If set to <number>, will scale off original image’s size
+     :x        :: :left | :center | :right | <number> - similar to `align`, how to
+                  position image inside container if it’s set to fill/fit/<number>
+     :y        :: :top | :center | :bottom | <number> - same as :x but vertical
+     :sampling :: :nearest | :linear | :mitchell | :catmull-rom | <SamplingMode> -
+                  algorithm to scale image"
+  [opts]
   (let [src   (util/checked-get opts :src util/slurpable?)
         image (try
                 (Image/makeFromEncoded (util/slurp-bytes src))
@@ -147,7 +158,18 @@
     (doseq [image images]
       (util/close image))))
 
-(defn- animation-ctor [opts]
+(defn- animation-ctor
+  "GIF/animated WebP image. Options are:
+   
+     :src      :: <string> | <bytes> | <InputStream> | <URI> - image source. Required
+     :scale    :: :fit | :fill | :content | <number> - how to fill parent container
+                  If set to <number>, will scale off original image’s size
+     :x        :: :left | :center | :right | <number> - similar to `align`, how to
+                  position image inside container if it’s set to fill/fit/<number>
+     :y        :: :top | :center | :bottom | <number> - same as :x but vertical
+     :sampling :: :nearest | :linear | :mitchell | :catmull-rom | <SamplingMode> -
+                  algorithm to scale image"
+  [opts]
   (let [src (util/checked-get opts :src util/slurpable?)]
     (with-open [codec (Codec/makeFromData (Data/makeFromBytes (util/slurp-bytes src)))]
       (let [frames    (.getFrameCount codec)

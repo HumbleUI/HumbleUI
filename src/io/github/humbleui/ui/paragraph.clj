@@ -73,7 +73,7 @@
   
   (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
     (paragraph-maybe-relayout this (:width bounds))
-    (with-paint ctx [paint' (or paint (:fill-text ctx))]
+    (with-paint ctx [paint' (or paint (:paint ctx))]
       (doseq [[pos token] (util/zip (:positions layout) tokens)
               :when pos]
         (.drawTextLine canvas (:shaped token) (+ (:x bounds) (:x pos)) (+ (:y bounds) (:y pos)) paint'))))
@@ -127,4 +127,4 @@
 (defn- paragraph-ctor [& texts]
   (let [[_ opts texts] (parse-element (util/consv nil texts))]
     (util/vector* paragraph-impl opts
-      (map maybe-read texts))))
+      (map maybe-deref texts))))

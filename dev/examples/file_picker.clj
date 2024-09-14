@@ -49,10 +49,10 @@
                          :model :oklch}}
         [ui/padding {:padding 8}
          [ui/with-context
-          {:fill-text {:fill (cond
-                               @*selected "FFF"
-                               (.isHidden file) "AAA"
-                               :else "000")}}
+          {:paint {:fill (cond
+                           @*selected "FFF"
+                           (.isHidden file) "AAA"
+                           :else "000")}}
           [ui/row {:gap 4}
            [file-icon file]
            [ui/label (.getName file)]]]]]])))
@@ -90,10 +90,10 @@
                            :model :oklch}}
           [ui/padding {:padding 8}
            [ui/with-context
-            {:fill-text {:fill (cond
-                                 @*selected "FFF"
-                                 (.isHidden file) "AAA"
-                                 :else "000")}}
+            {:paint {:fill (cond
+                             @*selected "FFF"
+                             (.isHidden file) "AAA"
+                             :else "000")}}
             [ui/row {:gap 4}
              [file-icon file]
              [ui/label (.getName file)]]]]])])))

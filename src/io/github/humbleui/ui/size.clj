@@ -46,9 +46,23 @@
         (invalidate-size this)))))
 
 (defn size
+  "Wrapper that sets one or both child’s dimensions. Options are:
+   
+     :width  :: <number> | (fn [size]) - absolute value or function of parent’s size
+     :height :: <number> | (fn [size]) - absolute value or function of parent’s size"
+  ([child]
+   (map->Size {}))
+  ([opts child]
+   (map->Size {})))
+
+(defn gap
+  "A component that doesn’t render but occupies space. Options are:
+   
+     :width  :: <number> | (fn [size]) - absolute value or function of parent’s size
+     :height :: <number> | (fn [size]) - absolute value or function of parent’s size
+   
+   You can specify one, both or neither."
   ([]
    (map->Size {}))
   ([opts]
-   (map->Size {}))
-  ([opts child]
    (map->Size {})))

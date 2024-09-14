@@ -53,5 +53,17 @@
         (set! bottom bottom')
         (invalidate-size this)))))
 
-(defn- padding-ctor [opts child]
+(defn- padding-ctor
+  "Adds padding to element. Options are:
+   
+     :padding    :: <number> | (fn [size]) - equal padding from all four sides
+     :horizontal :: <number> | (fn [size]) - equal horizontal padding
+     :vertical   :: <number> | (fn [size]) - equal vertical padding
+     :left       :: <number> | (fn [size]) - padding from the left
+     :right      :: <number> | (fn [size]) - padding from the right
+     :top        :: <number> | (fn [size]) - padding from the top
+     :bottom     :: <number> | (fn [size]) - padding from the bottom
+   
+   More specific values override more generice ones."
+  [opts child]
   (map->Padding {}))

@@ -58,7 +58,7 @@
       [ui/button {} "Click me"]]
      [ui/align {:x :center}
       [ui/checkbox {} "Toggle me"]]]]
-   [ui/with-context {:fill-text {:fill 0xFFFFFFFF}}
+   [ui/with-context {:paint {:fill 0xFFFFFFFF}}
     [square (util/ipoint 10 10) "Blur: 5" (blur 5) 0x40000000]]
    [square (util/ipoint 120 10) "Blur: 10" (blur 10) 0x80FFFFFF]
    [square (util/ipoint 10 120) "Blur: 20" (blur 20) 0x40CC3333]

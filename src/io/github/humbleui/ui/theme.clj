@@ -11,7 +11,7 @@
    (load-typeface (io/resource "io/github/humbleui/fonts/FiraCode-Bold.ttf"))
    (let [ctx-fn (util/memo-fn [opts {:keys [scale]}]
                   (let [cap-height (* scale 9) ; (:cap-height (font/metrics font-ui))
-                        fill-text  (or (:fill-text opts) {:fill 0xFF000000})
+                        paint      (or (:paint opts) {:fill 0xFF000000})
                         fill-gray  (or (:fill-gray opts) {:fill 0xFF808080})
                         theme      {:font-family     "Inter"
                                     :font-cap-height 9
@@ -19,8 +19,8 @@
                                     {"sans-serif" "Inter"
                                      "monospace"  "Fira Code"}
                        
-                                    :fill-text      fill-text
-                                    :fill-gray      fill-gray
+                                    :paint     paint
+                                    :fill-gray fill-gray
                          
                                     :hui.scroll/fill-track     {:fill 0x10000000}
                                     :hui.scroll/fill-thumb     {:fill 0x60000000}
@@ -38,9 +38,9 @@
                                     ; :hui.text-field/font-placeholder        nil
                                     ; :hui.text-field/font-features           []
                                     :hui.text-field/cursor-blink-interval   500
-                                    :hui.text-field/fill-text               fill-text
+                                    :hui.text-field/paint                   paint
                                     :hui.text-field/fill-placeholder        fill-gray
-                                    :hui.text-field/fill-cursor             fill-text
+                                    :hui.text-field/fill-cursor             paint
                                     :hui.text-field/fill-selection-active   {:fill 0xFFB1D7FF}
                                     :hui.text-field/fill-selection-inactive {:fill 0xFFDDDDDD}
                                     :hui.text-field/fill-bg-active          {:fill 0xFFFFFFFF}

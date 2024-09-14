@@ -59,7 +59,6 @@
                 (alter-meta! var-to# assoc :doc doc#))))
           @(resolve (quote ~ctor-sym)))))))
 
-(def gap size)
 (deflazy label     ([& texts]) "label")
 (deflazy paragraph ([text] [opts text]) "paragraph")
 (deflazy image     ([{:keys [file sampling scale xpos ypos]}]) "image")
@@ -93,7 +92,6 @@
 (deflazy clickable     ([child] [{:keys [on-click on-click-capture]} child]) "clickable")
 (deflazy toggleable    ([{:keys [value-on value-off *value on-change]} child]) "toggleable")
 (deflazy draggable     ([{:keys [pos on-dragging on-drop]} child]) "draggable")
-(deflazy button-look   ([state child]) "button")
 (deflazy button        ([{:keys [on-click]} child]) "button")
 (deflazy toggle-button ([{:keys [*value]} child]) "button")
 (deflazy link          ([{:keys [on-click visited]} child]) "link")
@@ -120,7 +118,9 @@
 (load+ "/io/github/humbleui/ui/theme")
 (load+ "/io/github/humbleui/ui/window")
 
-(defmacro start-app! [& body]
+(defmacro start-app!
+  "Initializes event loop. You usually want to create your first window here"
+  [& body]
   `(util/thread
      (app/start
        (fn []

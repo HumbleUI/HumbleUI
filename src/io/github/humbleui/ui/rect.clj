@@ -28,5 +28,13 @@
         :else
         (throw (ex-info (str "Getting (:radius opts), expected: nil | number? | [number? ...], got: " (pr-str r)) {}))))))
 
-(defn- rect-ctor [opts child]
+(defn- rect-ctor
+  "A wrapper that fills the background. Options are:
+   
+     :paint  :: <paint-spec> - color of the rectangle
+     :radius :: <number> | [<number>] - all radii
+                                        or [x-radius y-radius]
+                                        or [top-left top-right bottom-right bottom-left]
+                                        or [tlx tly trx try brx brx blx bly]"
+  [opts child]
   (map->RectNode {}))

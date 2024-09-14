@@ -46,7 +46,7 @@
   (log-event {:event :frame})
   
   (let [font-ui (ui/get-font nil ctx)
-        {:keys [fill-text scale]} ctx
+        {:keys [paint scale]} ctx
         {:keys [width height]} size]
     
     ;; paths
@@ -114,7 +114,7 @@
       (loop [y  (+ 10 (* 20 scale))
              kv (sort-by first event)]
         (when-some [[k v] (first kv)]
-          (ui/with-paint ctx [paint fill-text]
+          (ui/with-paint ctx [paint paint]
             (canvas/draw-string canvas (str k " " v) (* 10 scale) y font-ui paint))
           (recur (+ y (* 20 scale)) (next kv)))))))
 

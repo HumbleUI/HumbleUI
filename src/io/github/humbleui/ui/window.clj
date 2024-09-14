@@ -19,6 +19,26 @@
     app))
 
 (defn window
+  "Should be run on UI thread. Creates a new window.
+  
+   App is a component fn, a var/ref to it, or an ANode instance. If it’s a var/ref,
+   it will be monitored and re-rendered on change.
+   
+   Options are:
+   
+   :exit-on-close? :: <boolean>, default to true - If JVM process should be
+                      stopped when this window is closed
+   :title          :: <string> - window title
+   :mac-icon       :: <string> - path .icns file
+   :screen         :: <long>   - id of screen where this window should be positioned
+   :width          :: <long>   - initial window width in dip
+   :height         :: <long>   - initial window height in dip
+   :x              :: <long>   - initial window left offset in dip
+   :y              :: <long>   - initial window top offset in dip
+   :bg-color       :: <int>    - window background color
+   :theme          :: {...}    - theme map to pass to ui/default-theme
+   :on-paint       :: (fn [window canvas]) - draw function before app is drawn
+   :on-event       :: (fn [window event])  - event function"
   (^Window [app]
     (window {} app))
   (^Window [opts app]

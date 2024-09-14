@@ -198,11 +198,6 @@
 (defn signal? [x]
   (instance? Signal x))
 
-(defn maybe-read [signal-or-value]
-  (if (instance? Signal signal-or-value)
-    @signal-or-value
-    signal-or-value))
-
 (defn reset! [signal value']
   (clojure.core/reset! signal value'))
 

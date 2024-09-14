@@ -124,15 +124,43 @@
 ;; signals
 
 (defmacro signal
-  "Observable derived computation"
+  "Observable derived computation. Create by providing a value:
+   
+     (signal 123)
+   
+   Build deriver computations by dereferencing inside `signal`:
+   
+     (def *width
+       (signal 1280))
+     
+     (def *height
+       (signal (-> @*width (/ 16) (* 9))))
+   
+     @*height ;; -> 720
+   
+     (reset! *width 1920)
+   
+     @*height ;; -> 1080"
   [& body]
   `(signal/signal ~@body))
 
-(defmacro effect [inputs & body]
+(defmacro effect
+  "Do something when any of the inputs change.
+   
+     (def *width
+       (signal 1280))
+   
+     (effect [*width]
+       (println @*width))
+   
+     (reset! *width 1920)
+     ;; -> 1920"
+  [inputs & body]
   `(signal/effect ~inputs ~@body))
 
 (def ^{:arglists '([signal value'])} reset-changed!
   signal/reset-changed!)
 
-(def ^{:arglists '([signal])} maybe-read
-  signal/maybe-read)
+(def ^{:arglists '([ref-or-val])} maybe-deref
+  "If argument is an IDeref, dereference. Otherwise, return as is"
+  util/maybe-deref)

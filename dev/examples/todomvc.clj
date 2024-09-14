@@ -107,7 +107,7 @@
    [ui/label
     {:font-weight 100
      :font-size   100
-     :paint {:fill 0x26AF2F2F}}
+     :paint       {:fill 0x26AF2F2F}}
     "todos"]])
 
 (defn body [child]
@@ -328,7 +328,7 @@
    [ui/with-context
     {:font-size   14
      :font-weight 300
-     :fill-text   paint-footer}
+     :paint       paint-footer}
     [ui/padding {:horizontal 15}
      [ui/stack
       [ui/align {:x :left, :y :center}

@@ -71,7 +71,16 @@
   (-unmount-impl [this]
     (.close dom)))
 
-(defn- svg-ctor [opts]
+(defn- svg-ctor
+  "SVG image. Options are:
+   
+     :src      :: <string> | <bytes> | <InputStream> | <URI> - image source. Required
+     :preserve-aspect-ratio :: <boolean>, deafult true - if aspect ratio should be preserved
+     :scale    :: :fit | :fill - how to fill parent container. Irrelevant if false
+     :x        :: :left | :center | :right | 0 | 0.5 | 1 - similar to `align`, how to
+                  position image inside container
+     :y        :: :top | :center | :bottom | 0 | 0.5 | 1 - same as :y but vertical"
+  [opts]
   (let [src (util/checked-get opts :src util/slurpable?)
         dom (with-open [data (Data/makeFromBytes (util/slurp-bytes src))]
               (SVGDOM. data))]

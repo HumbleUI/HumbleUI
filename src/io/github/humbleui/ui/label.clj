@@ -12,7 +12,7 @@
     size)
   
   (-draw-impl [this ctx bounds container-size viewport ^Canvas canvas]
-    (with-paint ctx [paint (or paint (:fill-text ctx))]
+    (with-paint ctx [paint (or paint (:paint ctx))]
       (.drawTextLine canvas text-line (:x bounds) (+ (:y bounds) (:height size)) paint)))
 
   (-reconcile-opts [this ctx new-element]
@@ -47,7 +47,21 @@
 (defn- label-impl [opts & texts]
   (map->Label {}))
 
-(defn- label-ctor [& texts]
+(defn- label-ctor
+  "Single-line text label. Options are:
+   
+     :paint           :: <paint-spec> - what color should text be
+     :font-features   :: [<string>]   - like \"tnum\", \"+cv09\", \"-dlig\", \"wdth=100\", \"wdth[10:20]=100\",
+                                        values in brackets specify range in string
+     :font-family     :: <string>     - Font families, comma-separated
+     :font-size       :: <number>     - Font size in dip
+     :font-cap-height :: <number>     - Cap height in dip
+     :font-weight     :: <number>     - 0...1000, default 400
+     :font-width      :: :ultra-condensed | :extra-condensed | :condensed | :semi-condensed | :normal | :semi-expanded | :expanded | :extra-expanded | :ultra-expanded
+     :font-slant      :: :upright | :italic | :oblique
+   
+   Same options can be set through context."
+  [& texts]
   (let [[_ opts texts] (parse-element (util/consv nil texts))]
     (util/vector* label-impl opts
-      (map maybe-read texts))))
+      (map maybe-deref texts))))

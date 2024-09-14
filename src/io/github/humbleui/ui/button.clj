@@ -40,22 +40,38 @@
     (fn [state child]
       (let [cap-height (cap-height)]
         [rect {:radius 4
-               :paint  (cond
-                         (and 
-                           (:selected state)
-                           (:pressed state)) (or body-hovered body)
-                         (:selected state)   (or body-pressed body)
-                         (:pressed state)    (or body-pressed body)
-                         (:hovered state)    (or body-hovered body)
-                         :else               body)}
+               :paint  (or
+                         (cond
+                           (and 
+                             (:selected state)
+                             (:pressed state)) body-hovered
+                           (:selected state)   body-pressed
+                           (:pressed state)    body-pressed
+                           (:hovered state)    body-hovered)
+                         body)}
          [padding {:horizontal (* 2 cap-height)
                    :vertical   cap-height}
           [center
-           [with-context {:fill-text (or text
-                                       (:fill-text *ctx*))}
+           [with-context {:paint (or
+                                   (cond
+                                     (and 
+                                       (:selected state)
+                                       (:pressed state)) text-hovered
+                                     (:selected state)   text-pressed
+                                     (:pressed state)    text-pressed
+                                     (:hovered state)    text-hovered)
+                                   text
+                                   (:paint *ctx*))}
             child]]]]))))
 
 (defcomp button-ctor
+  "A button. Options are
+   
+     :on-click         :: (fn [event]), what to do on click
+     :on-click-capture :: (fn [event]), what to do on click before children
+                                        have a chance to handle it
+     :*state           :: signal, controls/represent state
+     :style            :: :default | :basic | :flat | :outlined"
   ([child]
    (button-ctor {} child))
   ([opts child]
@@ -66,7 +82,16 @@
          (button-look-ctor (:style opts)))
        state child])]))
 
-(defcomp toggle-button-ctor [opts child]
+(defcomp toggle-button-ctor
+  "A button that can be toggled on and off. Options are
+   
+     :value-on  :: any          - value to set when button is pressed
+     :value-off :: any          - value to set when button is unpressed
+     :*value    :: signal       - controls/represent state
+     :on-click  :: (fn [event]) - what to do on click
+     :on-change :: (fn [value]) - what to do when state changes
+     :style     :: :default | :basic | :flat | :outlined"
+  [opts child]
   [toggleable opts
    (fn [state]
      [(or

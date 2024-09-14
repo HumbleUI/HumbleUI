@@ -74,5 +74,30 @@
         (:align opts)
         (map #(vector align {:y (:align opts)} %))))))
 
-(defn- row-ctor [& children]
+(defn- row-ctor
+    "Container component. Children take minimal width by default (hug):
+   
+     [ui/row
+       [ui/gap {:width 10}]
+       [ui/gap {:width 20}]]
+   
+   Add ^:stretch metadata to make children occupy all leftover space after hugs:
+   
+     [ui/row
+       ^:stretch [ui/gap]
+       [ui/gap]]
+   
+   Stretch can be a number, in that case space is divided proportionally:
+   
+     [ui/row
+       ^{:stretch 1} [ui/gap]
+       ^{:stretch 2} [ui/gap]]
+   
+   Row’s height and all of its childrens’ heights are set to the tallest child.
+   
+   Options are:
+   
+     :gap   :: <number> | <markup> - what to put between children
+     :align :: :top | :center | :bottom | <number> - vertical align to apply to all children"
+  [& children]
   (map->Row {}))
