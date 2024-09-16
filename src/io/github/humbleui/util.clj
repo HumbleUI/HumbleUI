@@ -449,6 +449,7 @@
   (or
     (string? src)
     (bytes? src)
+    (instance? java.io.File src)
     (instance? java.io.InputStream src)
     (instance? java.net.URL src)
     (instance? java.net.URI src)))

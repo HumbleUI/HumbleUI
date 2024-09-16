@@ -13,6 +13,10 @@
      [ui/gap {:width  50
               :height 50}]]
     
+    "Shorthand for when width == height"
+    [ui/rect {:paint {:fill "FD2"}}
+     [ui/gap {:size 50}]]
+    
     "Can be used only in one direction. Horizontal"
     [ui/row
      "A"

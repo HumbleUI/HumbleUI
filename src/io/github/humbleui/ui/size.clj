@@ -36,8 +36,12 @@
   
   (-reconcile-opts [this _ctx new-element]
     (let [opts    (parse-opts new-element)
-          width'  (util/checked-get-optional opts :width dimension?)
-          height' (util/checked-get-optional opts :height dimension?)]
+          width'  (or
+                    (util/checked-get-optional opts :width dimension?)
+                    (util/checked-get-optional opts :size dimension?))
+          height' (or
+                    (util/checked-get-optional opts :height dimension?)
+                    (util/checked-get-optional opts :size dimension?))]
       (when (or
               (not= width width')
               (not= height height'))

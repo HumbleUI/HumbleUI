@@ -26,6 +26,12 @@
          [ui/rect {:paint fill}
           [ui/center
            "abc"]]]
+        
+        "Shorthand for when width == height"
+        [ui/size {:size 50}
+         [ui/rect {:paint fill}
+          [ui/center
+           "abc"]]]
          
         "Does not grow on overflow"
         [ui/size {:width 10 :height 20}
