@@ -146,7 +146,7 @@
    
    Child can be a markup or (fn [state])"
   ([child]
-   (clickable {} child))
+   (clickable-ctor {} child))
   ([opts child]
    (map->Clickable
      {:phase       :default

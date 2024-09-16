@@ -8,7 +8,6 @@
     [examples.backdrop]
     [examples.blur]
     [examples.bmi-calculator]
-    [examples.button]
     [examples.calculator]
     [examples.canvas]
     [examples.canvas-shapes]
@@ -91,7 +90,6 @@
    ["Components"
     [["Animation" examples.animation/ui]
      ["Backdrop" examples.backdrop/ui]
-     ["Button" examples.button/ui]
      ["Canvas" examples.canvas/ui]
      ["Canvas Shapes" examples.canvas-shapes/ui]
      ["Checkbox" examples.checkbox/ui]

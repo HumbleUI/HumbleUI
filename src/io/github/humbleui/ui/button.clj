@@ -91,10 +91,12 @@
      :on-click  :: (fn [event]) - what to do on click
      :on-change :: (fn [value]) - what to do when state changes
      :style     :: :default | :basic | :flat | :outlined"
-  [opts child]
-  [toggleable opts
-   (fn [state]
-     [(or
-        (:hui.button/look *ctx*)
-        (button-look-ctor (:style opts)))
-      state child])])
+  ([child]
+   (toggle-button-ctor {} child))
+  ([opts child]
+   [toggleable opts
+    (fn [state]
+      [(or
+         (:hui.button/look *ctx*)
+         (button-look-ctor (:style opts)))
+       state (if (fn? child) (child state) child)])]))

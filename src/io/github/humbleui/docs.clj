@@ -2,6 +2,7 @@
   (:require
     [io.github.humbleui.app :as app]
     [io.github.humbleui.docs.align :as align]
+    [io.github.humbleui.docs.button :as button]
     [io.github.humbleui.docs.clip :as clip]
     [io.github.humbleui.docs.color :as color]
     [io.github.humbleui.docs.column :as column]
@@ -15,6 +16,7 @@
     [io.github.humbleui.docs.row :as row]
     [io.github.humbleui.docs.size :as size]
     [io.github.humbleui.docs.split :as split]
+    [io.github.humbleui.docs.toggle-button :as toggle-button]
     [io.github.humbleui.docs.vscroll :as vscroll]
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.window :as window]))
@@ -30,6 +32,7 @@
 
 (def examples
   [["Align" align/ui]
+   ["Button" button/ui]
    ["Clip" clip/ui]
    ["Color" color/ui]
    ["Column" column/ui]
@@ -42,6 +45,7 @@
    ["Row" row/ui]
    ["Size" size/ui]
    ["Split" split/ui]
+   ["Toggle button" toggle-button/ui]
    ["VScroll" vscroll/ui]])
 
 (ui/defcomp example-label [name]
