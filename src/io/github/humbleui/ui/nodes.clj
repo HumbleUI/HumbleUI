@@ -236,29 +236,29 @@
     this)
   
   (-reconcile-children [this ctx new-element]
-    (when (or
-            (not (identical? (first element) (first new-element)))
-            (apply util/invoke should-setup? (next new-element)))
-      (make-impl this new-element))
-    (when render
-      (util/invoke before-render)
-      (try
-        (binding [signal/*context* (volatile! (transient #{}))
-                  *ctx*            ctx]
-          (let [child-el (apply render (next new-element))
-                [child'] (reconcile-many ctx [child] [child-el])
-                _        (set! child child')
-                _        (when child'
-                           (util/set!! child' :parent this))
-                signals  (persistent! @@#'signal/*context*)
-                window   (:window ctx)]
-            (some-> effect signal/dispose!)
-            (set! effect
-              (when-not (empty? signals)
-                (signal/effect signals
-                  (force-render this window))))))
-        (finally
-          (util/invoke after-render)))))
+    (binding [*ctx* ctx]
+      (when (or
+              (not (identical? (first element) (first new-element)))
+              (apply util/invoke should-setup? (next new-element)))
+        (make-impl this new-element))
+      (when render
+        (util/invoke before-render)
+        (try
+          (binding [signal/*context* (volatile! (transient #{}))]
+            (let [child-el (apply render (next new-element))
+                  [child'] (reconcile-many ctx [child] [child-el])
+                  _        (set! child child')
+                  _        (when child'
+                             (util/set!! child' :parent this))
+                  signals  (persistent! @@#'signal/*context*)
+                  window   (:window ctx)]
+              (some-> effect signal/dispose!)
+              (set! effect
+                (when-not (empty? signals)
+                  (signal/effect signals
+                    (force-render this window))))))
+          (finally
+            (util/invoke after-render))))))
   
   (-unmount [this]
     (unmount child)

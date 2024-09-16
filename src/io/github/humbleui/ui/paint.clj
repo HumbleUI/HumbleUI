@@ -151,16 +151,14 @@
      \"CC33FF\"          - RRGGBB
      \"CC33FF80\"        - RRGGBBAA
      \"C3F\"             - RGB
-     int[3]              - RGB,  each int 0..255
-     int[4]              - RGBA, each int 0..255
      float[3]            - RGB,  float range depending on model
      float[4]            - RGBA, float range depending on model
    
    Color models:
    
-     :srgb
-     :display-p3
-     :oklch
+     :srgb               - [0..1, 0..1, 0..1]
+     :display-p3         - [0..1, 0..1, 0..1]
+     :oklch              - [0..1, 0..0.4, 0..360]
    
    Specs:
 
@@ -179,6 +177,9 @@
     (paint spec *ctx*))
   (^Paint [spec ctx]
     (util/cond+
+      (or (string? spec) (int? spec))
+      (recur {:fill spec} ctx)
+      
       :let [model (:model spec)
             fill  (:fill spec)]
     

@@ -17,6 +17,13 @@
       [ui/rect {:paint {:stroke "0088FF80"}}
        [ui/size {:width 100 :height 50}]]
       
+      "Assume fill on naked value"
+      [ui/column {:gap 5}
+       [ui/rect {:paint "B99E00"}
+        [ui/size {:width 100 :height 15}]]
+       [ui/rect {:paint 0xFFDABE02}
+        [ui/size {:width 100 :height 15}]]]
+      
       "Stroke width"
       [ui/rect {:paint {:stroke "0088FF"
                         :width  6}}

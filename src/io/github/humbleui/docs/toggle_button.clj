@@ -1,9 +1,6 @@
 (ns io.github.humbleui.docs.toggle-button
   (:require
-    [clojure.string :as str]
     [io.github.humbleui.docs.shared :as shared]
-    [io.github.humbleui.util :as util]
-    [io.github.humbleui.signal :as signal]
     [io.github.humbleui.ui :as ui]))
 
 (ui/defcomp ui []

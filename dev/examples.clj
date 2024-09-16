@@ -158,7 +158,7 @@
     (fn []
       #_[(examples-map @*example)]
       [ui/hsplit {:width 150
-                  :gap [ui/rect {:paint {:fill "CCC"}}
+                  :gap [ui/rect {:paint {:fill "DDD"}}
                         [ui/gap {:width 1}]]}
        [ui/align {:y :top}
         [ui/vscroll

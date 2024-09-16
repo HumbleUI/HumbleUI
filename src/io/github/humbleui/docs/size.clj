@@ -37,9 +37,4 @@
         [ui/size {:width (fn [cs]
                            (* 0.25 (:width cs)))}
          [ui/rect {:paint fill}
-          "abc"]]
-    
-        "Child can be omitted"
-        [ui/rect {:paint fill}
-         [ui/size {:width 50 :height 50}]]
-        ))))
+          "abc"]]))))
