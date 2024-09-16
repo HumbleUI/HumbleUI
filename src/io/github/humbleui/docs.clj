@@ -18,6 +18,7 @@
     [io.github.humbleui.docs.row :as row]
     [io.github.humbleui.docs.size :as size]
     [io.github.humbleui.docs.split :as split]
+    [io.github.humbleui.docs.svg :as svg]
     [io.github.humbleui.docs.toggle-button :as toggle-button]
     [io.github.humbleui.docs.vscroll :as vscroll]
     [io.github.humbleui.ui :as ui]
@@ -49,6 +50,7 @@
    ["Row" row/ui]
    ["Size" size/ui]
    ["Split" split/ui]
+   ["SVG" svg/ui]
    ["Toggle button" toggle-button/ui]
    ["VScroll" vscroll/ui]])
 

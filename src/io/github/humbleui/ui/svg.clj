@@ -82,6 +82,11 @@
      :y        :: :top | :center | :bottom | 0 | 0.5 | 1 - same as :y but vertical"
   [opts]
   (let [src (util/checked-get opts :src util/slurpable?)
-        dom (with-open [data (Data/makeFromBytes (util/slurp-bytes src))]
+        dom (with-open [data (Data/makeFromBytes
+                               (try
+                                 (util/slurp-bytes src)
+                                 (catch Exception e
+                                   (util/slurp-bytes
+                                     (io/resource "io/github/humbleui/ui/svg/not_found.svg")))))]
               (SVGDOM. data))]
     (map->SVG {:dom dom})))
