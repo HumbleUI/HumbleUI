@@ -37,54 +37,6 @@
               icon]
              "Increment"]])]
       
-        "State signal"
-        [ui/button
-         {:*state *state}
-         [ui/label *state]]
-      
-        "Inline signal"
-        [ui/clickable
-         (fn [state]
-           [((resolve 'io.github.humbleui.ui/button-look-ctor) :basic) state
-            [ui/label state]])]
-      
-        "Nesting with :on-click"
-        [ui/button {:on-click (fn [_] (swap! *outer inc))}
-         [ui/column {:gap 10 :align :center}
-          [ui/label "Outer: " *outer]
-          [ui/button  {:on-click (fn [_] (swap! *inner inc))}
-           [ui/label "Inner: " *inner]]]]
-       
-        "Nesting with :on-click-capture and short-circuiting"
-        [ui/button
-         {:on-click-capture
-          (fn [_]
-            (swap! *outer inc)
-            true)}
-         [ui/column {:gap 10 :align :center}
-          [ui/label "Outer: " *outer]
-          [ui/button
-           {:on-click-capture
-            (fn [_]
-              (swap! *inner inc)
-              true)}
-           [ui/label "Inner: " *inner]]]]
-       
-        "Nesting with :on-click-capture and pass-through"
-        [ui/button
-         {:on-click-capture
-          (fn [_]
-            (swap! *outer inc)
-            false)}
-         [ui/column {:gap 10 :align :center}
-          [ui/label "Outer: " *outer]
-          [ui/button
-           {:on-click-capture
-            (fn [_] 
-              (swap! *inner inc)
-              false)}
-           [ui/label "Inner: " *inner]]]]
-      
         "Custom look"
         [ui/clickable
          (fn [state]

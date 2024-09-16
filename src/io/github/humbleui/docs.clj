@@ -3,6 +3,7 @@
     [io.github.humbleui.app :as app]
     [io.github.humbleui.docs.align :as align]
     [io.github.humbleui.docs.button :as button]
+    [io.github.humbleui.docs.clickable :as clickable]
     [io.github.humbleui.docs.clip :as clip]
     [io.github.humbleui.docs.color :as color]
     [io.github.humbleui.docs.column :as column]
@@ -36,6 +37,7 @@
 (def examples
   [["Align" align/ui]
    ["Button" button/ui]
+   ["Clickable" clickable/ui]
    ["Clip" clip/ui]
    ["Color" color/ui]
    ["Column" column/ui]
