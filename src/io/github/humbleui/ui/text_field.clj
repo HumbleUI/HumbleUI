@@ -611,13 +611,14 @@
         (when (and marked-from marked-to)
           (let [left  (.getCoordAtOffset line marked-from)
                 right (.getCoordAtOffset line marked-to)]
-            (canvas/draw-rect canvas
-              (util/rect-ltrb
-                (+ (:x bounds) (- offset) left)
-                (+ (:y bounds) baseline (* 1 scale))
-                (+ (:x bounds) (- offset) right)
-                (+ (:y bounds) baseline (* 2 scale)))
-              (:hui.text-field/paint ctx))))
+            (with-paint ctx [paint (:hui.text-field/paint ctx)]
+              (canvas/draw-rect canvas
+                                (util/rect-ltrb
+                                  (+ (:x bounds) (- offset) left)
+                                  (+ (:y bounds) baseline (* 1 scale))
+                                  (+ (:x bounds) (- offset) right)
+                                  (+ (:y bounds) baseline (* 2 scale)))
+                                paint))))
         
         ;; cursor
         (when focused?
