@@ -109,5 +109,8 @@
           (.focus)
           (.bringToFront))))))
 
+(defn -main [& args]
+  (open!))
+
 (comment
   (open!))
