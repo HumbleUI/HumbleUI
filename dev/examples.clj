@@ -20,6 +20,7 @@
     [examples.link]
     [examples.oklch]
     [examples.paragraph]
+    [examples.sand]
     [examples.slider]
     [examples.stack]
     [examples.switch]
@@ -109,6 +110,7 @@
      ["File Picker" examples.file-picker/ui]
      ["Framerate" examples.framerate/ui]
      ["OkLCH" examples.oklch/ui]
+     ["Sand" examples.sand/ui]
      ["Table" examples.table/ui]
      ["Todo MVC" examples.todomvc/ui]
      ["Treemap" examples.treemap/ui]
@@ -195,8 +197,8 @@
       (let [{:keys [scale work-area]} screen
             right  (-> (:right work-area) (/ scale) int)
             bottom (-> (:bottom work-area) (/ scale) int)
-            x      (min (- right 500) x)
-            y      (min (- bottom 500) y)
+            x      (-> x (min (- right 500)) (max 0))
+            y      (-> y (min (- bottom 500)) (max 0))
             width  (min (- right x) width)
             height (min (- bottom y) height)]
         {:screen screen-id, :x x, :y y, :width width, :height height}))))
