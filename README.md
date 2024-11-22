@@ -95,7 +95,7 @@ Run REPL server:
 ./script/repl.py
 ```
 
-To reload demo app using `tools.namespace`, evaluate:
+To reload demo app using `clj-reload`, evaluate:
 
 ```
 (user/reload)
@@ -110,13 +110,11 @@ To reload demo app using `tools.namespace`, evaluate:
 ```clj
 (require '[io.github.humbleui.ui :as ui])
 
-(def ui
-  (ui/default-theme {}
-    (ui/center
-      (ui/label "Hello from Humble UI! 👋"))))
-
-(ui/start-app!
-  (ui/window
-    {:title "Humble 🐝 UI"}
-    #'ui))
+(ui/defcomp app []
+  [ui/center
+   [ui/label "Hello, world"]])
+  
+(defn -main [& args]
+  (ui/start-app!
+    (ui/window #'app)))
 ```
