@@ -869,6 +869,10 @@
                                :z [:redo])
                              
                              (util/when-case (and (not macos?) ctrl?) key
+                               :left [:move-word-left]
+                               :right [:move-word-right]
+                               :backspace [:delete-word-left]
+                               :delete [:delete-word-right]
                                :a [:select-all]
                                :z [:undo]
                                :y [:redo])
