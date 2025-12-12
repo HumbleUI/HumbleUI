@@ -1,6 +1,6 @@
 {
   description = "HumbleUI - Clojure Desktop UI framework";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/release-25.11";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   outputs =
     inputs:
@@ -16,7 +16,7 @@
         {
           devShells.default = pkgs.mkShell {
             nativeBuildInputs = with pkgs; [
-              jdk22
+              javaPackages.compiler.openjdk25
               python3
             ];
             LD_LIBRARY_PATH = "${pkgs.libGL}/lib/:$LD_LIBRARY_PATH";
