@@ -6,7 +6,8 @@
    [io.github.humbleui.util :as util]
    [io.github.humbleui.window :as window])
   (:import
-   [io.github.humbleui.skija Canvas Color4f ImageFilter Paint Path PathEffect]
+   [io.github.humbleui.skija Canvas Color4f ImageFilter Paint PathBuilder PathEffect]
+   [io.github.humbleui.types Point]
    [java.util Arrays]))
 
 (def *state
@@ -48,12 +49,13 @@
           (* t t t (:y d)))}))
 
 (defn draw-path [^Canvas canvas points paint]
-  (with-open [path (Path.)]
-    (.moveTo path (-> points first :x) (-> points first :y))
+  (with-open [builder (PathBuilder.)]
+    (.moveTo builder (-> points first :x) (-> points first :y))
     (doseq [{:keys [x y]} (next points)]
-      (.lineTo path x y))
-    (.closePath path)
-    (.drawPath canvas path paint)))
+      (.lineTo builder x y))
+    (.closePath builder)
+    (with-open [path (.build builder)]
+      (.drawPath canvas path paint))))
 
 (defn on-paint [ctx ^Canvas canvas size]
   (let [scale     (:scale ctx)
@@ -94,11 +96,12 @@
       ;; mirror
       (ui/with-paint ctx [^Paint paint-mirror {:stroke "FFF" :width (/ 1 scale)}]
         (with-open [effect (PathEffect/makeDash (float-array [3 3]) 0)
-                    path   (Path.)]
+                    builder (PathBuilder.)]
           (.setPathEffect paint-mirror effect)            
-          (.moveTo path (:x a) (:y a))
-          (.cubicTo path (:x b) (:y b) (:x c) (:y c) (:x d) (:y d))
-          (.drawPath canvas path paint-mirror)))
+          (.moveTo builder (:x a) (:y a))
+          (.cubicTo builder (:x b) (:y b) (:x c) (:y c) (:x d) (:y d))
+          (with-open [path (.build builder)]
+            (.drawPath canvas path paint-mirror))))
                     
       ;; handles
       (ui/with-paint ctx [paint-handles {:stroke "71DFC2" :width (/ 1 scale)}]

@@ -7,7 +7,7 @@
     [io.github.humbleui.ui :as ui]
     [io.github.humbleui.util :as util])
   (:import
-    [io.github.humbleui.skija Canvas PaintStrokeCap PaintStrokeJoin Path]))
+    [io.github.humbleui.skija Canvas PaintStrokeCap PaintStrokeJoin PathBuilder]))
 
 (def *state
   (ui/signal
@@ -58,8 +58,15 @@
         ; (canvas/draw-rect canvas (util/rect-xywh (- (:x state) 10) (- (:y state) 10) 20 20) center-fill)
         
         ;; paths
-        (doseq [path @*paths]
-          (.drawPath ^Canvas canvas path path-stroke))))))
+        (doseq [points @*paths]
+          (when (seq points)
+            (with-open [builder (PathBuilder.)
+                        path (do
+                               (.moveTo builder (:x (first points)) (:y (first points)))
+                               (doseq [{:keys [x y]} (rest points)]
+                                 (.lineTo builder x y))
+                               (.build builder))]
+              (.drawPath ^Canvas canvas path path-stroke))))))))
 
 (defn on-event [ctx event]
   (util/cond+
@@ -78,12 +85,12 @@
       (= :mouse-button (:event event))
       (= :primary (:button event))
       (= true (:pressed? event)))
-    (swap! *paths conj (doto (Path.) (.moveTo x-abs y-abs)))
+    (swap! *paths conj [{:x x-abs :y y-abs}])
     
     (and
       (= :mouse-move (:event event))
       (= #{:primary} (:buttons event)))
-    (swap! *paths util/update-last #(.lineTo ^Path % x-abs y-abs))
+    (swap! *paths util/update-last conj {:x x-abs :y y-abs})
     
     (and
       (= :mouse-button (:event event))

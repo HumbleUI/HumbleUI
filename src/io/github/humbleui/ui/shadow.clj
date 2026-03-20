@@ -1,6 +1,6 @@
 (in-ns 'io.github.humbleui.ui)
 
-(import '[io.github.humbleui.skija FilterBlurMode ImageFilter MaskFilter Path PathDirection PathOp])
+(import '[io.github.humbleui.skija FilterBlurMode ImageFilter MaskFilter PathBuilder PathDirection])
 
 (defn shadow-ctor
   ([opts]
@@ -46,9 +46,10 @@
                outer  (util/rect-ltrb (- extra) (- extra) (+ width extra) (+ height extra))]
            (with-open [paint  (ui/paint {:fill color})
                        filter (MaskFilter/makeBlur FilterBlurMode/NORMAL (util/radius->sigma blur'))
-                       outer-path (Path/makeRect outer)
-                       inner-path (Path/makeRect inner PathDirection/COUNTER_CLOCKWISE)
-                       path       (Path/makeCombining outer-path inner-path PathOp/XOR)]
+                       builder (PathBuilder.)]
+             (.addRect builder outer)
+             (.addRect builder inner PathDirection/COUNTER_CLOCKWISE)
              (.setMaskFilter paint filter)
              (canvas/translate canvas (* dx scale) (* dy scale))
-             (.drawPath canvas path paint))))}]]))
+             (with-open [path (.build builder)]
+               (.drawPath canvas path paint)))))}]]))
