@@ -18,7 +18,7 @@
                     0.21 0.72 0.07 0 0
                     0    0    0    1 0]))
         filter (ColorFilter/makeMatrix matrix)]
-    (^[ColorFilter ImageFilter IRect] ImageFilter/makeColorFilter filter nil nil)))
+    (ImageFilter/makeColorFilter filter nil)))
 
 (defn square [pos name filter color]
   (let [*pos (ui/signal pos)]
