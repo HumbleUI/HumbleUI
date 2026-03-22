@@ -1,8 +1,9 @@
 (ns examples.text-field
   (:require
-    [io.github.humbleui.util :as util]
-    [io.github.humbleui.signal :as signal]
-    [io.github.humbleui.ui :as ui]))
+   [io.github.humbleui.util :as util]
+   [io.github.humbleui.signal :as signal]
+   [io.github.humbleui.ui :as ui]
+   [io.github.humbleui.window :as window]))
 
 (defn text-field [text & {:keys [from to placeholder cursor-blink-interval cursor-width padding-h padding-v padding-top padding-bottom border-radius]
                           :or {cursor-blink-interval 500, cursor-width 1, padding-h 0, padding-v 3, border-radius 4}
@@ -22,6 +23,8 @@
          :placeholder placeholder
          :from        from
          :to          to}))]])
+
+(def *press-and-hold (ui/signal true))
 
 (defn ui []
   [ui/align {:y :center}
@@ -45,4 +48,11 @@
          [text-field "Align center" :padding-h 5 :padding-v 10]]]
        [ui/size {:width 300}
         [ui/align {:x :right}
-         [text-field "Align right" :padding-h 5 :padding-v 10]]]]]]]])
+         [text-field "Align right" :padding-h 5 :padding-v 10]]]
+       [ui/checkbox {:*value *press-and-hold
+                     :on-change (fn [enabled]
+                                  (window/set-press-and-hold enabled))}
+        [ui/label "Press and hold: " (if @*press-and-hold "ON" "OFF")]]
+       [ui/size {:width 300}
+        [text-field "Press and hold"
+         :from 13 :to 18 :border-radius 0]]]]]]])

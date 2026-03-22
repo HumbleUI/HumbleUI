@@ -4,7 +4,8 @@
     [io.github.humbleui.util :as util]
     [io.github.humbleui.ui :as ui])
   (:import
-    [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode ImageFilter]))
+   [io.github.humbleui.skija Color ColorFilter ColorMatrix FilterTileMode ImageFilter]
+   [io.github.humbleui.types IRect]))
 
 (defn blur [radius]
   (ImageFilter/makeBlur radius radius FilterTileMode/CLAMP))
@@ -17,7 +18,7 @@
                     0.21 0.72 0.07 0 0
                     0    0    0    1 0]))
         filter (ColorFilter/makeMatrix matrix)]
-    (ImageFilter/makeColorFilter filter nil nil)))
+    (ImageFilter/makeColorFilter filter nil)))
 
 (defn square [pos name filter color]
   (let [*pos (ui/signal pos)]

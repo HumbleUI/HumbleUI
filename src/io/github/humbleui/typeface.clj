@@ -18,19 +18,19 @@
 
 (def *default
   (delay
-    (Typeface/makeDefault)))
+    (.matchFamilyStyle (FontMgr/getDefault) nil FontStyle/NORMAL)))
   
 (defn make-from-data
   (^Typeface [^Data data]
-    (Typeface/makeFromFile data 0))
+    (.makeFromFile (FontMgr/getDefault) data 0))
   (^Typeface [^Data data index]
-    (Typeface/makeFromFile data index)))
+    (.makeFromFile (FontMgr/getDefault) data index)))
 
 (defn make-from-path
   (^Typeface [^String path]
-    (Typeface/makeFromFile path 0))
+    (.makeFromFile (FontMgr/getDefault) path 0))
   (^Typeface [^String path index]
-    (Typeface/makeFromFile path index)))
+    (.makeFromFile (FontMgr/getDefault) path index)))
 
 (defn make-from-resource
   (^Typeface [res]
@@ -39,7 +39,7 @@
     (with-open [is (io/input-stream (io/resource res))]
       (let [bytes (.readAllBytes is)]
         (with-open [data (Data/makeFromBytes bytes)]
-          (Typeface/makeFromData data index))))))
+          (.makeFromData (FontMgr/getDefault) data index))))))
 
 (defn family-name ^String [^Typeface typeface]
   (.getFamilyName typeface))
@@ -136,7 +136,7 @@
         (load-typeface data opts))
       
       (instance? Data what)
-      (let [typeface (Typeface/makeFromData what)
+      (let [typeface (.makeFromData (FontMgr/getDefault) what)
             family   (.getFamilyName typeface)
             style    (font-style->clj (.getFontStyle typeface))
             key      (util/merge-some {:font-family family} style)]
