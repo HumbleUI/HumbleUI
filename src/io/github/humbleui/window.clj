@@ -7,7 +7,7 @@
     [io.github.humbleui.debug :as debug]
     [io.github.humbleui.event :as event])
   (:import
-    [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window ZOrder]
+    [io.github.humbleui.jwm App MouseCursor Platform TextInputClient Window WindowMac ZOrder]
     [io.github.humbleui.jwm.skija LayerD3D12Skija LayerGLSkija LayerMetalSkija]
     [io.github.humbleui.skija ColorSpace Surface]
     [io.github.humbleui.types IRect]
@@ -234,3 +234,19 @@
   (let [c (cursors cursor)]
     (assert (some? c) (str "Unknown cursor " cursor))
     (.setMouseCursor window c)))
+
+(defn set-press-and-hold [window enabled]
+  (when (= :macos app/platform)
+    (.setPressAndHoldEnabled ^WindowMac window enabled)))
+
+(defn reset-press-and-hold [window]
+  (when (= :macos app/platform)
+    (.resetPressAndHoldEnabled ^WindowMac window)))
+
+(defn press-and-hold? [window]
+  (when (= :macos app/platform)
+    (.isPressAndHoldEnabled ^WindowMac window)))
+
+(defn press-and-hold-globally? []
+  (when (= :macos app/platform)
+    (WindowMac/isPressAndHoldEnabledGlobally)))
