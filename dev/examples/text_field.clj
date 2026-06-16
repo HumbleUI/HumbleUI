@@ -49,10 +49,9 @@
        [ui/size {:width 300}
         [ui/align {:x :right}
          [text-field "Align right" :padding-h 5 :padding-v 10]]]
+       [ui/size {:width 300}
+        [text-field "macOS: Try holding “A” key" :padding-h 5 :padding-v 10]]
        [ui/checkbox {:*value *press-and-hold
                      :on-change (fn [enabled]
-                                  (window/set-press-and-hold enabled))}
-        [ui/label "Press and hold: " (if @*press-and-hold "ON" "OFF")]]
-       [ui/size {:width 300}
-        [text-field "Press and hold"
-         :from 13 :to 18 :border-radius 0]]]]]]])
+                                  (window/set-press-and-hold (:window ui/*ctx*) enabled))}
+        [ui/label "Press and hold"]]]]]]])

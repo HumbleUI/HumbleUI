@@ -235,6 +235,18 @@
     (assert (some? c) (str "Unknown cursor " cursor))
     (.setMouseCursor window c)))
 
-(defn set-press-and-hold [enabled]
+(defn set-press-and-hold [window enabled]
   (when (= :macos app/platform)
-    (WindowMac/setPressAndHoldEnabled enabled)))
+    (.setPressAndHoldEnabled ^WindowMac window enabled)))
+
+(defn reset-press-and-hold [window]
+  (when (= :macos app/platform)
+    (.resetPressAndHoldEnabled ^WindowMac window)))
+
+(defn press-and-hold? [window]
+  (when (= :macos app/platform)
+    (.isPressAndHoldEnabled ^WindowMac window)))
+
+(defn press-and-hold-globally? []
+  (when (= :macos app/platform)
+    (WindowMac/isPressAndHoldEnabledGlobally)))
