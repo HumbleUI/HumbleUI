@@ -2,4 +2,4 @@
 set -o errexit -o nounset -o pipefail
 cd `dirname $0`/..
 
-clj -M:dev -m user
+clojure -M:dev -m user

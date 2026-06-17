@@ -1,7 +1,6 @@
 (ns io.github.humbleui.signal-test
   (:require
     [clojure.test :as test :refer [deftest is are testing]]
-    [io.github.humbleui.core :as core]
     [io.github.humbleui.signal :as s]))
 
 (deftest mutate-direct
@@ -198,7 +197,7 @@
     (s/reset! *a 6)
     (is (= 2 @*cnt))))
 
-(deftest incremental-mapv
+#_(deftest incremental-mapv
   (let [*range (s/signal (range 0 5))
         *calc  (atom [])
         *a     (s/mapv

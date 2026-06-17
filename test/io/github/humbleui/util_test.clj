@@ -1,19 +1,19 @@
-(ns io.github.humbleui.core-test
+(ns io.github.humbleui.util-test
   (:require
     [clojure.test :as test :refer [deftest is are testing]]
-    [io.github.humbleui.core :as core]))
+    [io.github.humbleui.util :as util]))
 
 (deftest test-loop+
   (testing "basic"
     (is (= 2
-          (core/loop+ [x 1]
+          (util/loop+ [x 1]
             (if (not= 1 x)
               x
               (recur [x 2]))))))
   
   (testing "incomplete recur"
     (is (= [2 3]
-          (core/loop+ [x 1
+          (util/loop+ [x 1
                        y 3]
             (if (not= 1 x)
               [x y]
@@ -22,7 +22,7 @@
   (testing "empty recur"
     (is (= [1 2]
           (let [*done? (volatile! false)]
-            (core/loop+ [x 1 y 2]
+            (util/loop+ [x 1 y 2]
               (if @*done?
                 [x y]
                 (do
@@ -31,7 +31,7 @@
   
   (testing "incomplete recur + shadowing"
     (is (= [2 3]
-          (core/loop+ [x 1
+          (util/loop+ [x 1
                        y 3]
             (if (not= 1 x)
               [x y]
@@ -40,7 +40,7 @@
   
   (testing "dependencies in recur"
     (is (= [2 3]
-          (core/loop+ [x 1
+          (util/loop+ [x 1
                        y 4]
             (if (not= 1 x)
               [x y]
@@ -49,7 +49,7 @@
         
   (testing "arbitrary order"
     (is (= [4 3]
-          (core/loop+ [x 1
+          (util/loop+ [x 1
                        y 2]
             (if (not= 1 x)
               [x y]
@@ -58,7 +58,7 @@
   
   (testing "example"
     (= [10 10 10]
-      (core/loop+ [x 0
+      (util/loop+ [x 0
                    y 0
                    z 0]
         (cond

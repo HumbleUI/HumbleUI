@@ -1,16 +1,19 @@
 (ns user
   (:require
-    [clojure.core.server :as server]
-    [clojure.java.io :as io]
-    [clojure.test :as t]
     [clj-reload.core :as reload]
-    [duti.core :as duti]))
+    [clojure+.core.server :as server]
+    [clojure+.test :as test]))
 
 (reload/init
   {:dirs ["src" "dev" "test"]
    :no-reload '#{user
                  io.github.humbleui.protocols
                  io.github.humbleui.signal}})
+
+(test/install!)
+
+(def test-re
+  #"io\.github\.humbleui\..*-test")
 
 (def ^:dynamic *t0*)
 
@@ -29,7 +32,7 @@
             clj-reload.util/*log-fn* log]
     ;; do not reload in the middle of the frame
     (locking monitor
-      (duti/reload))))
+      (reload/reload))))
 
 (defn -main [& args]
   (let [args (apply array-map args)
@@ -39,10 +42,12 @@
         _      (alter-var-root #'monitor (constantly window)) 
         ;; starting socket repl
         port   (some-> (get args "--port") parse-long)
-        _      (duti/start-socket-repl {:port port})]))
+        _      (server/start-server {:port port})]))
 
 (defn test-all []
-  (duti/test #"io\.github\.humbleui\..*-test"))
+  (reload/reload {:only test-re})
+  (test/run test-re))
 
 (defn -test-main [_]
-  (duti/test-exit #"io\.github\.humbleui\..*-test"))
+  (let [{:keys [fail error]} (test-all)]
+    (System/exit (+ fail error))))

@@ -65,11 +65,6 @@ def dev_deps():
 
     build_utils.fetch_maven("io.github.tonsky", "clj-reload", build_utils.deps_version("clj-reload"), repo = clojars),
     # "/Users/tonsky/ws/clj-reload/src",
-    build_utils.fetch_github("tonsky", "duti", build_utils.deps_version("duti")),
-    # "/Users/tonsky/ws/duti/src",
-    build_utils.fetch_maven("lambdaisland", "deep-diff2", "2.11.216", repo = clojars),
-    build_utils.fetch_maven("fipp", "fipp", "0.6.26", repo = clojars),
-    build_utils.fetch_maven("org.clojure", "core.rrb-vector", "0.1.2"),
-    build_utils.fetch_maven("lambdaisland", "clj-diff", "1.4.78", repo = clojars),
-    build_utils.fetch_maven("mvxcvi", "arrangement", "2.1.0", repo = clojars),    
+    build_utils.fetch_maven("io.github.tonsky", "clojure-plus", build_utils.deps_version("clojure-plus"), repo = clojars),
+    # "/Users/tonsky/ws/clojure-plus/src",
   ]
